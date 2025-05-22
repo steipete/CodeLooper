@@ -17,6 +17,8 @@ let package = Package(
         .package(url: "https://github.com/apple/swift-log.git", from: "1.6.3"),
         // User experience - launch at login
         .package(url: "https://github.com/sindresorhus/LaunchAtLogin", .upToNextMajor(from: "5.0.0")),
+        // Accessibility utilities
+        .package(path: "AXorcist"),
         // Development-only dependencies
         .package(url: "https://github.com/cpisciotta/xcbeautify", from: "2.28.0")
     ],
@@ -27,7 +29,8 @@ let package = Package(
                 "Defaults",
                 "LaunchAtLogin",
                 .product(name: "SwiftUIIntrospect", package: "SwiftUI-Introspect"),
-                .product(name: "Logging", package: "swift-log")
+                .product(name: "Logging", package: "swift-log"),
+                .product(name: "AXorcist", package: "AXorcist")
             ],
             path: "Sources",
             resources: [

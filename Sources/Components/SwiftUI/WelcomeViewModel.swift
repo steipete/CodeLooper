@@ -29,7 +29,7 @@ import SwiftUI
     // MARK: - Navigation
 
     func goToNextStep() {
-        logger.info("Attempting to move from step: \(String(describing: currentStep)) to next step")
+        logger.info("Attempting to move from step: \(String(describing: self.currentStep)) to next step")
 
         // Special cases based on current step
         switch currentStep {

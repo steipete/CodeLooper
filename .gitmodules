@@ -1,0 +1,3 @@
+[submodule "AXorcist"]
+	path = AXorcist
+	url = https://github.com/steipete/AXorcist.git

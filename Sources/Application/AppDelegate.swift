@@ -1,4 +1,5 @@
 import AppKit
+import AXorcist
 import Defaults
 @preconcurrency import Foundation
 @preconcurrency import OSLog
