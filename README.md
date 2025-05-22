@@ -84,4 +84,4 @@ For detailed documentation, see:
 
 ## License
 
-Copyright © Anantus Machina. All rights reserved.
+Copyright © Peter Steinberger. All rights reserved.
