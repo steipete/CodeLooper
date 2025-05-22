@@ -68,18 +68,31 @@ if [ -f "$TUIST_PLISTS_FILE" ]; then
         echo "Fixed nsAppTransportSecurity type"
     fi
     
-    # Fix cfBundleURLTypes - simplified approach using String:String dictionary
+    # Fix cfBundleURLTypes - ensure the type is [[String: Any]] to support schemes as an array
     if grep -q "cfBundleURLTypes: \[\[String: Any\]\]" "$TUIST_PLISTS_FILE"; then
-        echo "Found cfBundleURLTypes with [[String: Any]] type"
-        
-        # Replace with Sendable-compatible type
-        sed -i '' 's/cfBundleURLTypes: \[\[String: Any\]\]/cfBundleURLTypes: [[String: String]]/g' "$TUIST_PLISTS_FILE"
-        
-        # Convert array value to string for simpler typing
-        sed -i '' 's/\[\["CFBundleTypeRole": "Viewer", "CFBundleURLName": "com.friendshipai.auth", "CFBundleURLSchemes": \["friendship-ai"\]\]\]/[["CFBundleTypeRole": "Viewer", "CFBundleURLName": "ai.amantusmachina.codelooper", "CFBundleURLSchemes": "codelooper"]]/g' "$TUIST_PLISTS_FILE"
-        
-        echo "Fixed cfBundleURLTypes type with simpler [String: String] dictionary"
+        echo "cfBundleURLTypes already has [[String: Any]] type. No change needed for type."
+    elif grep -q "cfBundleURLTypes: \[\[String: String\]\]" "$TUIST_PLISTS_FILE"; then
+        echo "Found cfBundleURLTypes with [[String: String]] type"
+        sed -i '' 's/cfBundleURLTypes: \[\[String: String\]\]/cfBundleURLTypes: [[String: Any]]/g' "$TUIST_PLISTS_FILE"
+        echo "Changed cfBundleURLTypes type to [[String: Any]]"
+    else
+        echo "cfBundleURLTypes type not found or not in expected incorrect format. Manual check might be needed."
     fi
+
+    # Remove the incorrect conversion of CFBundleURLSchemes array to a string if that line exists
+    # This sed command looks for the specific incorrect transformation and deletes that line.
+    # Note: This might need adjustment if the exact string doesn't match.
+    # It assumes the problematic line specifically converts "CFBundleURLSchemes": ["<scheme>"] to "CFBundleURLSchemes": "<scheme>"
+    # For safety, it targets the specific pattern based on the previous script version.
+    if grep -q 's/\\\[\\\["CFBundleTypeRole": "Viewer", "CFBundleURLName": "ai.amantusmachina.codelooper", "CFBundleURLSchemes": \\\["codelooper"\\\]\\\]\\\]/\[\["CFBundleTypeRole": "Viewer", "CFBundleURLName": "ai.amantusmachina.codelooper", "CFBundleURLSchemes": "codelooper"\]\]/g' "$TUIST_PLISTS_FILE"; then
+        echo "Found incorrect sed line that flattens CFBundleURLSchemes array. Removing it."
+        # This is tricky with sed. It might be safer to ensure the data isn't flattened by ensuring the plist itself is correct
+        # and the type in Swift is [[String: Any]]. The previous step handles the type.
+        # If the data is still being flattened, it means the Project.swift or Info.plist might be causing it before generation.
+        # For now, we rely on the type change to [[String: Any]] to be sufficient, assuming the source data (Info.plist) is correct.
+        echo "Relying on [[String: Any]] to correctly handle the array from Info.plist. No data structure modification will be done by this script for CFBundleURLSchemes."
+    fi
+
 else
     echo "Tuist plists file not found at: $TUIST_PLISTS_FILE"
 fi
@@ -130,20 +143,47 @@ if [ -f "$RESOURCE_LOADER_FILE" ]; then
         echo "Fixed App Transport Security access methods"
     fi
     
-    # Fix the getURLScheme method to use the simple String approach
-    if grep -q "urlTypes = Bundle.main.infoDictionary?\[InfoKey.Bundle.urlTypes\] as? \[\[String: Any\]\]" "$RESOURCE_LOADER_FILE"; then
-        echo "Found URLTypes with [[String: Any]] in ResourceLoader"
+    # Fix the getURLScheme method to correctly handle [[String: Any]] and [String] for schemes
+    if grep -q "urlTypes = Bundle.main.infoDictionary?\[InfoKey.Bundle.urlTypes\] as? \[\[String: String\]\]" "$RESOURCE_LOADER_FILE"; then
+        echo "Found ResourceLoader getURLScheme expecting [[String: String]]. Fixing to [[String: Any]] and array handling."
+        # Change the expected type for urlTypes to [[String: Any]]
+        sed -i '' 's/urlTypes = Bundle.main.infoDictionary?\[InfoKey.Bundle.urlTypes\] as? \[\[String: String\]\]/urlTypes = Bundle.main.infoDictionary?[InfoKey.Bundle.urlTypes] as? [[String: Any]]/g' "$RESOURCE_LOADER_FILE"
         
-        # Replace the URLTypes function with a fixed version for [[String: String]]
-        sed -i '' 's/urlTypes = Bundle.main.infoDictionary?\[InfoKey.Bundle.urlTypes\] as? \[\[String: Any\]\]/urlTypes = Bundle.main.infoDictionary?[InfoKey.Bundle.urlTypes] as? [[String: String]]/g' "$RESOURCE_LOADER_FILE"
-        
-        # Update the array access to handle string value instead of array
-        sed -i '' 's/let urlSchemes = firstUrlType\[InfoKey.CFBundleURL.schemes\] as? \[String\],/let scheme = firstUrlType[InfoKey.CFBundleURL.schemes],/g' "$RESOURCE_LOADER_FILE"
-        
-        # Remove the unnecessary array access
-        sed -i '' 's/let scheme = urlSchemes.first/\/\/ No need to access first element - scheme is already a String/g' "$RESOURCE_LOADER_FILE"
-        
-        echo "Fixed URLTypes handling to use [String: String] dictionary"
+        # Modify how 'scheme' is extracted to handle an array of strings
+        # From: let scheme = firstUrlType[InfoKey.CFBundleURL.schemes]
+        # To:   let schemes = firstUrlType[InfoKey.CFBundleURL.schemes] as? [String],
+        #       let scheme = schemes.first
+        # This requires a multi-line sed or awk. Awk is safer for this.
+        awk '
+        /let scheme = firstUrlType\[InfoKey.CFBundleURL.schemes\]/ {
+            print "            let schemes = firstUrlType[InfoKey.CFBundleURL.schemes] as? [String],"
+            print "            let scheme = schemes?.first"
+            next
+        }
+        { print }
+        ' "$RESOURCE_LOADER_FILE" > "$RESOURCE_LOADER_FILE.tmp" && mv "$RESOURCE_LOADER_FILE.tmp" "$RESOURCE_LOADER_FILE"
+
+        echo "Fixed ResourceLoader getURLScheme to correctly handle CFBundleURLSchemes array."
+
+    elif grep -q "urlTypes = Bundle.main.infoDictionary?\[InfoKey.Bundle.urlTypes\] as? \[\[String: Any\]\]" "$RESOURCE_LOADER_FILE"; then
+        # If it's already [[String: Any]], just ensure the scheme extraction is correct
+        echo "ResourceLoader getURLScheme already expects [[String: Any]]. Verifying scheme extraction logic."
+        if grep -q "let scheme = firstUrlType\[InfoKey.CFBundleURL.schemes\]" "$RESOURCE_LOADER_FILE" && !grep -q "let schemes = firstUrlType\[InfoKey.CFBundleURL.schemes\] as? \[String\]," "$RESOURCE_LOADER_FILE"; then
+            echo "Fixing scheme extraction logic in ResourceLoader getURLScheme for existing [[String: Any]]."
+            awk '
+            /let scheme = firstUrlType\[InfoKey.CFBundleURL.schemes\]/ {
+                print "            let schemes = firstUrlType[InfoKey.CFBundleURL.schemes] as? [String],"
+                print "            let scheme = schemes?.first"
+                next
+            }
+            { print }
+            ' "$RESOURCE_LOADER_FILE" > "$RESOURCE_LOADER_FILE.tmp" && mv "$RESOURCE_LOADER_FILE.tmp" "$RESOURCE_LOADER_FILE"
+            echo "Fixed scheme extraction logic."
+        else
+            echo "Scheme extraction logic appears correct or already patched."
+        fi
+    else
+        echo "ResourceLoader getURLScheme does not match expected patterns for patching."
     fi
     
 else

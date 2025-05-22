@@ -53,7 +53,7 @@ struct GeneralSettingsView: View {
 
     var body: some View {
         Form {
-            Section("General Application Behavior") {
+            Section {
                 Toggle("Launch CodeLooper at Login", isOn: $startAtLogin)
                 Toggle("Show Icon in Menu Bar", isOn: $showInMenuBar)
                     .onChange(of: showInMenuBar) { oldValue, newValue in
@@ -63,9 +63,9 @@ struct GeneralSettingsView: View {
                             userInfo: ["visible": newValue]
                         )
                     }
-            }
+            } header: { Text("General Application Behavior") }
 
-            Section("Global Shortcut Configuration") {
+            Section {
                 Text("Define a global keyboard shortcut to quickly toggle monitoring.")
                     .font(.caption)
                     .foregroundColor(.secondary)
@@ -73,9 +73,9 @@ struct GeneralSettingsView: View {
                 Text("Use standard symbols: ⌘ (Command), ⌥ (Option/Alt), ⇧ (Shift), ⌃ (Control). Example: ⌘⇧M")
                     .font(.caption2)
                     .foregroundColor(.gray)
-            }
+            } header: { Text("Global Shortcut Configuration") }
 
-            Section("Supervision Core Settings") {
+            Section {
                 Toggle("Enable Global Monitoring", isOn: $isGlobalMonitoringEnabled)
                 HStack {
                     Text("Monitoring Interval (seconds):")
@@ -99,33 +99,34 @@ struct GeneralSettingsView: View {
                     TextEditor(text: $textForCursorStopsRecovery)
                         .frame(height: 60)
                 }
-            }
+            } header: { Text("Supervision Core Settings") }
 
-            Section("Updates (Powered by Sparkle)") {
-                Toggle("Automatically Check for Updates", isOn: $automaticallyCheckForUpdates)
-                Button("Check for Updates Now") {
-                    // This relies on AppDelegate being accessible and having a checkForUpdates method.
-                    // Consider a more decoupled way to trigger this if AppDelegate isn't directly available.
-                    if let appDelegate = NSApp.delegate as? AppDelegate {
-                        appDelegate.checkForUpdates()
-                    } else {
-                        // Log error or handle missing delegate
-                        print("Error: Could not get AppDelegate to check for updates.")
+            Section {
+                VStack(alignment: .leading) {
+                    HStack { Toggle("Automatically Check for Updates", isOn: $automaticallyCheckForUpdates) }
+                    HStack {
+                        Button("Check for Updates Now") {
+                            if let appDelegate = NSApp.delegate as? AppDelegate {
+                                appDelegate.checkForUpdates()
+                            } else {
+                                print("Error: Could not get AppDelegate to check for updates.")
+                            }
+                        }
+                    }
+                    HStack {
+                        Button("About CodeLooper") {
+                            if let appDelegate = NSApp.delegate as? AppDelegate {
+                                appDelegate.showAboutWindow()
+                            } else {
+                                print("Error: Could not get AppDelegate to show About window.")
+                            }
+                        }
                     }
                 }
-                Button("About CodeLooper") {
-                    if let appDelegate = NSApp.delegate as? AppDelegate {
-                        appDelegate.showAboutWindowClicked(nil)
-                    } else {
-                        print("Error: Could not get AppDelegate to show About window.")
-                    }
-                }
-                Text("CodeLooper Version: \(appVersion) (Build \(appBuild))")
-                    .font(.footnote)
-                    .foregroundColor(.secondary)
-            }
+                // HStack { Text("CodeLooper Version: ...") } // Keep this commented for now
+            } header: { Text("Updates") }
 
-            Section("Troubleshooting & Reset") {
+            Section {
                 Button("Reset Welcome Guide") {
                     Defaults[.hasShownWelcomeGuide] = false
                     // Similar to above, this relies on AppDelegate.
@@ -163,7 +164,7 @@ struct GeneralSettingsView: View {
                     )
                 }
                 .foregroundColor(.red)
-            }
+            } header: { Text("Troubleshooting & Reset") }
         }
         .padding()
         .frame(maxWidth: .infinity, maxHeight: .infinity) // Adjust frame as needed for settings pane

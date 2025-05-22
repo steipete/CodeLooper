@@ -79,7 +79,7 @@ struct CursorRuleSetsSettingsTab: View {
                         .disabled(viewModel.selectedProjectURL == nil && !canInstallWithoutProject(status: viewModel.currentRuleSetStatus)) // Disable if no project and action requires one
 
                         if case .updateAvailable(_, let newVersionString) = viewModel.currentRuleSetStatus, viewModel.selectedProjectURL != nil {
-                            Button("Update to v\\(newVersionString)") {
+                            Button("Update to v\(newVersionString)") {
                                 if let url = viewModel.selectedProjectURL {
                                     Task {
                                         viewModel.installTerminatorRuleSet(forProject: url)
@@ -120,13 +120,13 @@ struct CursorRuleSetsSettingsTab: View {
         }
         switch status {
         case .notInstalled, .bundleResourceMissing:
-            return "Install Rule Set to \\(projectDisplayName)"
+            return "Install Rule Set to \(projectDisplayName)"
         case .corrupted:
-            return "Re-install Rule Set to \\(projectDisplayName) (Corrupted)"
+            return "Re-install Rule Set to \(projectDisplayName) (Corrupted)"
         case .installed(let versionString):
-            return "Re-install v\\(versionString) to \\(projectDisplayName)"
+            return "Re-install v\(versionString) to \(projectDisplayName)"
         case .updateAvailable(let installedVersionString, _):
-            return "Update Rule Set in \\(projectDisplayName) (was v\\(installedVersionString))"
+            return "Update Rule Set in \(projectDisplayName) (was v\(installedVersionString))"
         }
     }
     
