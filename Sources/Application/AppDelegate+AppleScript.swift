@@ -1,5 +1,6 @@
 import AppKit
 import Foundation
+import Defaults
 
 /// AppDelegate extension for AppleScript support
 @MainActor
@@ -58,7 +59,7 @@ extension AppDelegate {
     @objc
     func scriptableMainWindow() -> NSWindow? {
         // Try to get the welcome window first
-        if let welcomeWindow = welcomeWindowController?.window {
+        if let welcomeWindow = self.windowManager?.welcomeWindowController?.window {
             return welcomeWindow
         }
 
@@ -70,8 +71,8 @@ extension AppDelegate {
     @objc(showWelcomeWindowForScripting)
     func showWelcomeWindowForScripting() {
         logger.info("AppleScript called: show welcome window")
-        // Post notification to show welcome window
-        NotificationCenter.default.post(name: .showWelcomeWindow, object: nil)
+        // Use windowManager to show the welcome window
+        self.windowManager?.showWelcomeWindow()
     }
 
     /// AppleScript handler to show the settings window
@@ -86,5 +87,28 @@ extension AppDelegate {
     func performBasicOperationForScripting() {
         logger.info("AppleScript called: perform basic operation")
         // Basic operation placeholder - can be extended as needed
+    }
+
+    // Example: Bring the welcome window to the front if it exists
+    func handleShowWelcomeCommand(_ command: NSScriptCommand) -> Any? {
+        logger.info("AppleScript command: Show Welcome")
+        // Ensure this is called on the main thread
+        DispatchQueue.main.async {
+            // Access welcomeWindowController through windowManager
+            if let welcomeWindow = self.windowManager?.welcomeWindowController?.window {
+                NSApp.activate(ignoringOtherApps: true)
+                welcomeWindow.makeKeyAndOrderFront(nil)
+            } else {
+                // If window doesn't exist, create and show it
+                self.windowManager?.showWelcomeWindow()
+            }
+        }
+        return nil // Or an appropriate result
+    }
+
+    func handleGetMonitoringStatusCommand(_ command: NSScriptCommand) -> Any? {
+        // Implementation of handleGetMonitoringStatusCommand
+        logger.info("AppleScript command: Get Monitoring Status")
+        return Defaults[.isGlobalMonitoringEnabled]
     }
 }

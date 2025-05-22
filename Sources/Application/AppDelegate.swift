@@ -8,7 +8,7 @@ import ApplicationServices // Ensure ApplicationServices is imported
 import os // Import os for os.Logger
 @preconcurrency import OSLog
 @preconcurrency import ServiceManagement
-import Sparkle
+// import Sparkle // Sparkle import is now managed by SparkleUpdaterManager
 import SwiftUI
 import KeyboardShortcuts // Added import
 
@@ -51,10 +51,14 @@ public class AppDelegate: NSObject, NSApplicationDelegate,
     var loginItemManager: LoginItemManager?
     var axApplicationObserver: AXApplicationObserver? // Observer for app launch/terminate
     var popover: NSPopover?
+    var sparkleUpdaterManager: SparkleUpdaterManager? // Added
+    private var axorcist: AXorcistLib.AXorcist? // Added for AXApplicationObserver
+    var updaterViewModel: UpdaterViewModel? // Added
+    var windowManager: WindowManager? // Added
 
     // View models and coordinators
     public var mainSettingsCoordinator: MainSettingsCoordinator?
-    public var welcomeWindowController: NSWindowController?
+    // public var welcomeWindowController: NSWindowController? // Moved to WindowManager
 
     // Observer tokens for proper notification cleanup
     @MainActor private var notificationObservers: [NSObjectProtocol] = []
@@ -63,9 +67,9 @@ public class AppDelegate: NSObject, NSApplicationDelegate,
     let sessionLogger = SessionLogger.shared
     private lazy var locatorManager = LocatorManager.shared
     private var cancellables = Set<AnyCancellable>()
-    private var welcomeWindow: NSWindow?
+    // private var welcomeWindow: NSWindow? // Moved to WindowManager
     private var settingsWindow: NSWindow?
-    private var updaterController: SPUStandardUpdaterController? // Sparkle updater controller
+    // private var updaterController: SPUStandardUpdaterController? // Removed, now in SparkleUpdaterManager
 
     // MARK: - App Lifecycle
 
@@ -78,15 +82,15 @@ public class AppDelegate: NSObject, NSApplicationDelegate,
 
         // Initialize core services (axorcist, cursorMonitor will be initialized here)
         logger.info("Initializing core services")
-        initializeServices()
+        initializeServices() // This will now initialize sparkleUpdaterManager
 
-        // Initialize Sparkle updater
-        logger.info("Initializing Sparkle updater")
-        updaterController = SPUStandardUpdaterController(
-            startingUpdater: true,
-            updaterDelegate: nil,
-            userDriverDelegate: nil
-        )
+        // Initialize Sparkle updater - MOVED to initializeServices, handled by SparkleUpdaterManager
+        // logger.info("Initializing Sparkle updater")
+        // updaterController = SPUStandardUpdaterController(
+        // startingUpdater: true,
+        // updaterDelegate: nil,
+        // userDriverDelegate: nil
+        // )
 
         // Setup AppIconStateController AFTER cursorMonitor is initialized
         AppIconStateController.shared.setup(cursorMonitor: CursorMonitor.shared)
@@ -121,7 +125,8 @@ public class AppDelegate: NSObject, NSApplicationDelegate,
         setupNotificationObservers()
 
         // Handle first launch or welcome screen logic
-        handleFirstLaunchOrWelcomeScreen()
+        // handleFirstLaunchOrWelcomeScreen() // Moved to WindowManager initialization
+        windowManager?.handleFirstLaunchOrWelcomeScreen()
         
         
         // Observe AppIconStateController tint color changes
@@ -173,13 +178,14 @@ public class AppDelegate: NSObject, NSApplicationDelegate,
         logger.info("Setting up settings coordinator")
 
         // Initialize the main settings coordinator
-        guard let loginItemManager else {
-            logger.error("Failed to initialize settings coordinator - missing required services")
+        guard let loginItemManager, let updaterViewModel else {
+            logger.error("Failed to initialize settings coordinator - missing required services (loginItemManager or updaterViewModel)")
             return
         }
 
         mainSettingsCoordinator = MainSettingsCoordinator(
-            loginItemManager: loginItemManager
+            loginItemManager: loginItemManager,
+            updaterViewModel: updaterViewModel
         )
 
         logger.info("Settings functionality is ready")
@@ -246,28 +252,9 @@ public class AppDelegate: NSObject, NSApplicationDelegate,
 
     // MARK: - Window Management
 
-    private var aboutWindowController: NSWindowController?
+    // private var aboutWindowController: NSWindowController? // Moved to WindowManager
 
-    @objc func showAboutWindow() {
-        logger.info("Showing About Window.")
-        if aboutWindowController == nil {
-            let aboutView = AboutView()
-            let window = NSWindow(
-                contentRect: NSRect(x: 0, y: 0, width: 400, height: 400), // Match AboutView frame
-                styleMask: [.titled, .closable], // Non-resizable, closable
-                backing: .buffered,
-                defer: false
-            )
-            window.center()
-            window.title = "About CodeLooper"
-            window.isReleasedWhenClosed = false // We manage its lifecycle
-            window.contentView = NSHostingView(rootView: aboutView)
-            aboutWindowController = NSWindowController(window: window)
-        }
-        aboutWindowController?.showWindow(self)
-        NSApp.activate(ignoringOtherApps: true)
-        aboutWindowController?.window?.makeKeyAndOrderFront(nil)
-    }
+    // @objc func showAboutWindow() { ... } // Moved to WindowManager
 
     // MARK: - App Initialization Methods
 
@@ -284,36 +271,65 @@ public class AppDelegate: NSObject, NSApplicationDelegate,
         }
     }
 
+    @MainActor
     private func initializeServices() {
-        logger.info("Initializing services")
+        logger.info("Initializing essential services...")
 
-        // Initialize login item manager first as other services may depend on it
-        loginItemManager = LoginItemManager.shared // Use shared instance for consistency
-
-        // Setup AXorcist and AXApplicationObserver - these should be early
-        let axorcistInstance = AXorcistLib.AXorcist() // Qualified with AXorcistLib
-        axApplicationObserver = AXApplicationObserver(axorcist: axorcistInstance) // Pass the instance
-        logger.info("AXorcistLib and AXApplicationObserver initialized.")
-
-        // Initialize CursorMonitor with the AXorcist instance
-        _ = CursorMonitor.shared // Ensures shared instance is initialized, using the one from its static let
-        logger.info("CursorMonitor initialized.")
-
-        // Initialize settings coordinator after dependent services
-        setupSettingsCoordinator()
-
-        // Initial check for accessibility, can prompt if needed
-        // Note: This Task will run on the MainActor due to initializeServices being called from MainActor context
-        Task {
-            // let keyString = AppDelegate.axTrustedCheckOptionPromptKeyString // Commented out
-            // let options = [keyString: true] // Commented out
-            let accessibilityEnabled = AXIsProcessTrustedWithOptions(nil) // Pass nil for options
-            if accessibilityEnabled {
-                logger.info("Accessibility permissions are granted.")
-            } else {
-                logger.warning("Accessibility permissions are NOT granted (or prompt was dismissed). AXorcist may not function.")
-            }
+        // Initialize AXorcist
+        axorcist = AXorcistLib.AXorcist()
+        if axorcist == nil {
+            logger.error("Failed to initialize AXorcist instance.")
+            // Depending on how critical AXorcist is, might need to handle this more gracefully
         }
+
+        // Initialize AXApplicationObserver for app launch/terminate events
+        axApplicationObserver = AXApplicationObserver(axorcist: self.axorcist)
+        // axApplicationObserver?.delegate = self // Ensure AppDelegate conforms to AXApplicationObserverDelegate - REMOVED
+
+        // Initialize Login Item Manager
+        loginItemManager = LoginItemManager.shared
+
+        // Initialize Locator Manager (already a lazy var, but ensure it's accessed if needed early)
+        _ = self.locatorManager
+        logger.info("LocatorManager accessed.")
+        
+        // Initialize SparkleUpdaterManager (New)
+        sparkleUpdaterManager = SparkleUpdaterManager()
+        logger.info("SparkleUpdaterManager initialized.")
+
+        // Initialize UpdaterViewModel (New)
+        if let sparkleManager = self.sparkleUpdaterManager {
+            updaterViewModel = UpdaterViewModel(sparkleUpdaterManager: sparkleManager)
+            logger.info("UpdaterViewModel initialized.")
+        } else {
+            logger.error("SparkleUpdaterManager was nil, cannot initialize UpdaterViewModel.")
+            // Initialize with nil if SparkleUpdaterManager couldn't be created for some reason
+            updaterViewModel = UpdaterViewModel(sparkleUpdaterManager: nil)
+        }
+
+        // Initialize CursorMonitor (depends on axorcist, sessionLogger, locatorManager)
+        // Ensure AXorcistLib.AXorcist() is initialized and passed if needed, or CursorMonitor handles it.
+        // CursorMonitor.shared is already initialized with its dependencies by its static initializer.
+        logger.info("CursorMonitor shared instance already initialized.")
+
+        // Initialize other services that might depend on the above
+        // For example, if MenuManager depends on CursorMonitor or other services, initialize it here or ensure dependencies are met.
+        // MenuManager initialization is currently in setupMenuBar, which is called later.
+
+        // Setup settings coordinator (depends on loginItemManager)
+        setupSettingsCoordinator()
+        logger.info("MainSettingsCoordinator initialized.")
+
+        // Initialize WindowManager (New)
+        if let loginMgr = self.loginItemManager {
+            windowManager = WindowManager(loginItemManager: loginMgr, sessionLogger: self.sessionLogger, delegate: self)
+            logger.info("WindowManager initialized.")
+        } else {
+            logger.error("LoginItemManager was nil, cannot initialize WindowManager.")
+            // Handle error or provide a fallback if necessary for WindowManager
+        }
+
+        logger.info("Essential services initialization complete.")
     }
 
     private func syncLoginItemStatus() {
@@ -427,110 +443,13 @@ public class AppDelegate: NSObject, NSApplicationDelegate,
         }
     }
 
-    private func handleFirstLaunchOrWelcomeScreen() {
-        logger.info("Checking if welcome guide should be shown.")
-        if !Defaults[.hasShownWelcomeGuide] {
-            logger.info("Welcome guide has not been shown. Displaying now.")
-            showWelcomeWindow()
-        } else {
-            logger.info("Welcome guide already shown. Checking accessibility permissions.")
-            // If welcome guide was shown, check permissions directly
-            // This is important if the app was quit before granting permissions after welcome.
-            checkAndPromptForAccessibilityPermissions()
-        }
-    }
-
-    @objc func showWelcomeWindow() {
-        logger.info("Showing Welcome Window.")
-        if welcomeWindowController == nil {
-            // Use the WelcomeViewModel
-            let welcomeViewModel = WelcomeViewModel(loginItemManager: LoginItemManager.shared) { [weak self] in
-                // This completion is called when WelcomeViewModel.finishOnboarding() is executed
-                self?.welcomeWindowController?.close()
-                self?.welcomeWindowController = nil // Release the window controller
-                self?.logger.info("Welcome onboarding flow finished. Accessibility should have been handled within the flow.")
-                // No need to call checkAndPromptForAccessibilityPermissions() here if it's part of the WelcomeView flow.
-                // Ensure that the app continues normal operation. For example, refresh UI or ensure monitoring starts if enabled.
-                self?.refreshUIStateAfterOnboarding()
-            }
-            // Use WelcomeView with the viewModel
-            let welcomeView = WelcomeView(viewModel: welcomeViewModel)
-            let window = NSWindow(
-                contentRect: NSRect(x: 0, y: 0, width: 480, height: 600), // Adjusted size
-                styleMask: [.titled, .closable], // Non-resizable, closable
-                backing: .buffered,
-                defer: false
-            )
-            window.center()
-            window.title = "Welcome to CodeLooper"
-            window.isReleasedWhenClosed = false // We manage its lifecycle
-            window.contentView = NSHostingView(rootView: welcomeView)
-            welcomeWindowController = NSWindowController(window: window)
-        }
-        welcomeWindowController?.showWindow(self)
-        NSApp.activate(ignoringOtherApps: true) // Bring app to front for the welcome guide
-        welcomeWindowController?.window?.makeKeyAndOrderFront(nil)
-    }
+    // @objc func showWelcomeWindow() { ... } // Moved to WindowManager
 
     // MARK: - Accessibility Permissions
 
-    /// Checks accessibility permissions and prompts the user if needed.
-    /// This function is essential for AXorcist to operate correctly.
-    func checkAndPromptForAccessibilityPermissions(showPromptIfNeeded: Bool = true) {
-        logger.info("Checking accessibility permissions.")
-        var debugLogs: [String] = []
-        var permissionsGranted = false
-        do {
-            // Check without auto-prompting first using the new global function
-            try AXorcistLib.checkAccessibilityPermissions(isDebugLoggingEnabled: false, currentDebugLogs: &debugLogs)
-            permissionsGranted = true
-            logger.info("Accessibility permissions already granted.")
-            Task { await sessionLogger.log(level: .info, message: "Accessibility permissions granted.") }
-        } catch let error as AccessibilityError {
-            if case .notAuthorized = error, showPromptIfNeeded {
-                logger.warning("Accessibility permissions not granted. Will attempt to prompt. Error: \(error.localizedDescription)")
-                Task { await sessionLogger.log(level: .warning, message: "Accessibility permissions not granted, prompting. Error: \(error.localizedDescription)") }
-                debugLogs.removeAll() // Clear logs for the next call
-                
-                // Attempt to prompt the user
-                do {
-                    try AXorcistLib.checkAccessibilityPermissions(isDebugLoggingEnabled: false, currentDebugLogs: &debugLogs) // This call will prompt if not trusted
-                    permissionsGranted = true // If it doesn't throw, permissions were granted (or already were)
-                    logger.info("Accessibility permissions granted after prompt (or were already granted).")
-                    Task { await sessionLogger.log(level: .info, message: "Accessibility permissions granted after prompt.") }
-                } catch let promptError {
-                    logger.error("Failed to obtain accessibility permissions after prompt: \(promptError.localizedDescription)")
-                    Task { await sessionLogger.log(level: .error, message: "Failed to obtain accessibility permissions after prompt: \(promptError.localizedDescription)") }
-                    // As a fallback or alternative, construct the URL to guide the user
-                    if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility") {
-                        NSWorkspace.shared.open(url)
-                    }
-                }
-            } else {
-                // Handle other AccessibilityError cases or if showPromptIfNeeded is false
-                logger.error("Error checking accessibility permissions: \(error.localizedDescription)")
-                Task { await sessionLogger.log(level: .error, message: "Error checking accessibility permissions: \(error.localizedDescription)") }
-                if showPromptIfNeeded { // Still guide to settings for other errors if prompting was intended
-                    if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility") {
-                        NSWorkspace.shared.open(url)
-                    }
-                }
-            }
-        } catch {
-            // Catch any other non-AccessibilityError types
-            logger.error("An unexpected error occurred while checking accessibility permissions: \(error.localizedDescription)")
-            Task { await sessionLogger.log(level: .error, message: "Unexpected error checking accessibility permissions: \(error.localizedDescription)") }
-            if showPromptIfNeeded {
-                if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility") {
-                    NSWorkspace.shared.open(url)
-                }
-            }
-        }
-
-        if permissionsGranted {
-            // Perform any actions needed once permissions are confirmed
-        }
-    }
+    // /// Checks accessibility permissions and prompts the user if needed.
+    // /// This function is essential for AXorcist to operate correctly.
+    // func checkAndPromptForAccessibilityPermissions(showPromptIfNeeded: Bool = true) { ... } // Moved to WindowManager
 
     // MARK: - MenuManagerDelegate Conformance
 
@@ -563,9 +482,8 @@ public class AppDelegate: NSObject, NSApplicationDelegate,
 
     // MARK: - Update Handling (Sparkle)
 
-    func checkForUpdates() {
-        logger.info("Check for updates triggered manually.")
-        updaterController?.checkForUpdates(nil)
+    @IBAction func checkForUpdates(_ sender: Any?) {
+        sparkleUpdaterManager?.updaterController.checkForUpdates(sender)
     }
 
     // Placeholder for debug overlay functionality
@@ -599,5 +517,37 @@ public class AppDelegate: NSObject, NSApplicationDelegate,
         }
         // Refresh menu, etc.
         menuManager?.refreshMenu()
+    }
+}
+
+// MARK: - WindowManagerDelegate
+extension AppDelegate: WindowManagerDelegate {
+    func windowManagerDidFinishOnboarding() {
+        refreshUIStateAfterOnboarding()
+    }
+
+    func windowManagerRequestsAccessibilityPermissions(showPromptIfNeeded: Bool) {
+        // This check is now internal to WindowManager if it directly uses AXorcistLib.
+        // If AppDelegate needs to trigger its own check method, it can be called here.
+        // For now, assuming WindowManager handles the check via its own method.
+        // If a distinct AppDelegate method for permissions is still required, it would be:
+        // self.checkAndPromptForAccessibilityPermissions(showPromptIfNeeded: showPromptIfNeeded)
+        // But since that logic was moved, we might not need this callback if WindowManager calls AXorcistLib directly.
+        // However, if the *intent* is that AppDelegate *triggers* its own (now removed) permission logic via this delegate, that's a circular dependency.
+        // Assuming the new WindowManager.checkAndPrompt... is the source of truth for this action.
+        logger.info("WindowManager requested accessibility check. WindowManager will handle it.")
+        // If WindowManager needs to call a specific AppDelegate method to perform the check (that wasn't moved),
+        // this delegate method could call that. For now, WindowManager.checkAndPromptForAccessibilityPermissions is self-contained.
+        // If the AppDelegate's version of checkAndPromptForAccessibilityPermissions was intended to be kept and called by WindowManager,
+        // then this delegate is correct, but the method shouldn't have been fully removed from AppDelegate.
+        // Given the refactor, it seems WindowManager's own method is now primary.
+        // So, this delegate might be for other callbacks or could be simplified if WindowManager is fully autonomous for this.
+        // Let's assume for now that WindowManager's own check is sufficient and this delegate call is a notification.
+        // If there's a specific AppDelegate method that needs to run, it would be called here. Example:
+        // self.performAppDelegateSpecificPermissionRelatedAction()
+        // For now, let's assume the primary check logic resides in WindowManager.
+        // A direct call from WindowManager if it holds an axorcist instance:
+        windowManager?.checkAndPromptForAccessibilityPermissions(showPromptIfNeeded: showPromptIfNeeded)
+
     }
 }

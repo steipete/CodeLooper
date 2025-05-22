@@ -5,31 +5,70 @@ import AppKit
 struct MainPopoverView: View {
     @ObservedObject private var cursorMonitor = CursorMonitor.shared
     @Default(.isGlobalMonitoringEnabled) private var isGlobalMonitoringEnabled
+    @EnvironmentObject var appDelegate: AppDelegate
+    @EnvironmentObject var mainSettingsViewModel: MainSettingsViewModel
 
     private func openSettings() {
         NotificationCenter.default.post(name: .openSettingsWindow, object: nil)
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            // MARK: - Header
-            headerView
-                .padding(.horizontal)
-                .padding(.top)
-                .padding(.bottom, 8)
+        VStack(alignment: .leading, spacing: 10) {
+            Text("CodeLooper Supervision")
+                .font(.headline)
+                .padding(.bottom, 5)
+
+            Toggle("Enable Cursor Supervision", isOn: $cursorMonitor.isMonitoringActive)
+                .onChange(of: cursorMonitor.isMonitoringActive) { _, newValue in
+                    if newValue {
+                        cursorMonitor.startMonitoringLoop()
+                    } else {
+                        cursorMonitor.stopMonitoringLoop()
+                    }
+                }
 
             Divider()
 
-            // MARK: - Cursor Instances List
-            instanceListView
+            if cursorMonitor.monitoredInstances.isEmpty {
+                Text("No Cursor instances detected.")
+                    .foregroundColor(.secondary)
+            } else {
+                Text("Monitored Cursor Instances:")
+                    .font(.subheadline)
+                List {
+                    ForEach(cursorMonitor.monitoredInstances) { instance in
+                        InstanceRowView(instance: instance, cursorMonitor: cursorMonitor)
+                    }
+                }
+                .listStyle(PlainListStyle())
+                .frame(maxHeight: 200) // Limit height of the list
+            }
+
+            Divider()
             
-            Divider()
+            Text("Session Interventions: \(cursorMonitor.totalAutomaticInterventionsThisSessionDisplay)")
+                .font(.caption)
+                .foregroundColor(.secondary)
 
-            // MARK: - Footer
-            footerView
-                .padding()
+            HStack {
+                Button("Open Settings") {
+                    appDelegate.mainSettingsCoordinator?.showSettings()
+                    // Close popover after clicking
+                    NSApp.deactivate()
+                }
+                Spacer()
+                Button("Reset All Counters") {
+                    Task {
+                        await cursorMonitor.resetAllInstancesAndResume()
+                    }
+                    // Close popover after clicking
+                    NSApp.deactivate()
+                }
+            }
+            .padding(.top, 5)
         }
-        .frame(width: 450, height: 580)
+        .padding()
+        .frame(width: 350)
     }
 
     private var headerView: some View {
@@ -206,41 +245,128 @@ struct MainPopoverView: View {
             return "Not Running ⏹️"
         }
     }
-    
-    private var footerView: some View {
-        HStack {
-            Text("Session Interventions: \(cursorMonitor.totalAutomaticInterventionsThisSession)")
-                .font(.caption)
-                .foregroundColor(.secondary)
+}
+
+struct InstanceRowView: View {
+    let instance: MonitoredInstanceInfo
+    let cursorMonitor: CursorMonitor
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack {
+                statusIndicator(for: instance.status, isActive: instance.isActivelyMonitored)
+                
+                Image(systemName: "app.badge")
+                    .resizable()
+                    .frame(width: 20, height: 20)
+                    .foregroundColor(.accentColor)
+
+                Text(instance.displayName)
+                    .fontWeight(.medium)
+                
+                Spacer()
+            }
             
-            Spacer()
-            
-            Button {
-                // Resume any manually paused instances
-                for instance in cursorMonitor.monitoredInstances {
+            HStack {
+                Text(friendlyStatusDescription(for: instance.status))
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+                
+                if instance.interventionCount > 0 {
+                    Text("•")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                    
+                    Text("\(instance.interventionCount) intervention\(instance.interventionCount == 1 ? "" : "s")")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                }
+            }
+
+            HStack(spacing: 10) {
+                Spacer()
+
+                Button {
                     if instance.status == .pausedManually {
                         cursorMonitor.resumeMonitoring(for: instance.pid)
+                    } else {
+                        cursorMonitor.pauseMonitoring(for: instance.pid)
+                    }
+                } label: {
+                    HStack(spacing: 4) {
+                        Image(systemName: instance.status == .pausedManually ? "play.fill" : "pause.fill")
+                            .font(.caption)
+                        Text(instance.status == .pausedManually ? "Resume" : "Pause")
                     }
                 }
-                // Reset all instances
-                Task {
-                    await cursorMonitor.resetAllInstancesAndResume()
-                }
-            } label: {
-                Image(systemName: "arrow.counterclockwise.circle.fill")
-                Text("Reset All")
+                .buttonStyle(.bordered)
+                .controlSize(.small)
+                .disabled(instance.status == .notRunning)
             }
-            .buttonStyle(.bordered)
-            .controlSize(.small)
-            
-            Button {
-                openSettings()
-            } label: {
-                Image(systemName: "gearshape.fill")
-            }
-            .buttonStyle(.borderless)
-            .controlSize(.small)
-            .padding(.leading, 6)
+            .padding(.top, 4)
+        }
+        .padding(.vertical, 6)
+        .padding(.horizontal, 12)
+        .background(Color(NSColor.controlBackgroundColor))
+        .cornerRadius(8)
+    }
+    
+    @ViewBuilder
+    private func statusIndicator(for status: DisplayStatus, isActive: Bool) -> some View {
+        let (iconName, color) = iconAndColor(for: status, isActive: isActive)
+        Image(systemName: iconName)
+            .foregroundColor(color)
+            .font(.title3)
+            .frame(width: 24, alignment: .center)
+    }
+
+    private func iconAndColor(for status: DisplayStatus, isActive: Bool) -> (String, Color) {
+        switch status {
+        case .unknown:
+            return ("questionmark.circle.fill", .gray)
+        case .active:
+            return isActive ? ("circle.fill", .blue) : ("circle", .gray)
+        case .positiveWork:
+            return ("checkmark.circle.fill", .green)
+        case .intervening:
+            return ("hand.raised.circle.fill", .orange)
+        case .observation:
+            return ("eye.circle.fill", .orange)
+        case .pausedManually:
+            return ("pause.circle.fill", .yellow)
+        case .pausedInterventionLimit:
+            return ("exclamationmark.circle.fill", .yellow)
+        case .pausedUnrecoverable:
+            return ("xmark.circle.fill", .red)
+        case .idle:
+            return ("moon.zzz.fill", .gray)
+        case .notRunning:
+            return ("xmark.octagon.fill", .red)
+        }
+    }
+
+    private func friendlyStatusDescription(for status: DisplayStatus) -> String {
+        switch status {
+        case .positiveWork:
+            return "Working ✅"
+        case .intervening:
+            return "Recovering (Intervention) 🛠️"
+        case .observation:
+            return "Observing Post-Intervention 👀"
+        case .pausedManually:
+            return "Paused (Manual) ⏸️"
+        case .pausedInterventionLimit:
+            return "Paused (Limit Reached) 🚫"
+        case .pausedUnrecoverable:
+            return "Error (Unrecoverable) 🆘"
+        case .idle:
+            return "Idle (Monitoring) ☕"
+        case .active:
+            return "Active (Monitoring) 🔍"
+        case .unknown:
+            return "Status Unknown 🤔"
+        case .notRunning:
+            return "Not Running ⏹️"
         }
     }
 }

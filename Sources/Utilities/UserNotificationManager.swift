@@ -53,12 +53,16 @@ public actor UserNotificationManager {
     ///   - body: The notification body text
     ///   - subtitle: Optional subtitle for the notification
     ///   - soundName: Optional name of the sound file to play (e.g., "Blow.aiff"). "default" for default sound, nil for no sound.
+    ///   - categoryIdentifier: Optional category identifier for the notification
+    ///   - userInfo: Optional user information for the notification
     public func sendNotification(
         identifier: String = UUID().uuidString,
         title: String,
         body: String,
         subtitle: String? = nil,
-        soundName: String? = "default"
+        soundName: String? = "default",
+        categoryIdentifier: String? = nil,
+        userInfo: [AnyHashable: Any]? = nil
     ) async {
         let authorizationStatus = await UNUserNotificationCenter.getSafeAuthorizationStatus()
         

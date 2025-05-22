@@ -18,6 +18,6 @@ public enum UIViews {
     // Reference to view types without explicit namespace
     // Make these internal since the underlying types are internal
     typealias StatsView = CodeLooper.StatsView
-    typealias UserAvatarView = CodeLooper.UserAvatarView
+    typealias MainPopoverView = CodeLooper.MainPopoverView
     typealias WelcomeView = CodeLooper.WelcomeView
 }

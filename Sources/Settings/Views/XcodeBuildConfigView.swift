@@ -88,7 +88,12 @@ extension MainSettingsViewModel {
     static var sharedForPreview: MainSettingsViewModel {
         // This creates a temporary instance for preview and init state. Consider if a proper singleton access is better.
         // Or pass the necessary values directly to init for XcodeBuildConfigView.
-        return MainSettingsViewModel(loginItemManager: LoginItemManager.shared)
+        let dummySparkleUpdaterManager = SparkleUpdaterManager()
+        let dummyUpdaterViewModel = UpdaterViewModel(sparkleUpdaterManager: dummySparkleUpdaterManager)
+        return MainSettingsViewModel(
+            loginItemManager: LoginItemManager.shared,
+            updaterViewModel: dummyUpdaterViewModel
+        )
     }
 }
 

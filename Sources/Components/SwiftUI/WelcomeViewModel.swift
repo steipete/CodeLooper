@@ -86,8 +86,8 @@ final class WelcomeViewModel: ObservableObject {
 
     func handleOpenAccessibilitySettingsAndPrompt() {
         logger.info("Handling open accessibility settings and prompt.")
-        // First, try to trigger the system prompt via AppDelegate's existing logic
-        AppDelegate.shared.checkAndPromptForAccessibilityPermissions(showPromptIfNeeded: true)
+        // First, try to trigger the system prompt via AppDelegate's WindowManager
+        AppDelegate.shared.windowManager?.checkAndPromptForAccessibilityPermissions(showPromptIfNeeded: true)
 
         // Then, open the system settings pane as before
         if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility") {

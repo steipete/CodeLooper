@@ -10,12 +10,12 @@ import Defaults
 // }
 
 struct SettingsPanesContainerView: View {
-    @StateObject private var mainSettingsViewModel = MainSettingsViewModel(loginItemManager: LoginItemManager.shared)
+    @EnvironmentObject var mainSettingsViewModel: MainSettingsViewModel
     @EnvironmentObject var sessionLogger: SessionLogger // Assuming SessionLogger is provided higher up
 
     var body: some View {
         TabView {
-            GeneralSettingsView()
+            GeneralSettingsView(updaterViewModel: mainSettingsViewModel.updaterViewModel)
                 .tabItem {
                     Label("General", systemImage: "gear")
                 }
@@ -78,7 +78,17 @@ enum SettingsTab: Hashable {
 #if DEBUG
 struct SettingsPanesContainerView_Previews: PreviewProvider {
     static var previews: some View {
+        // Create dummy UpdaterViewModel for the preview
+        let dummySparkleUpdaterManager = SparkleUpdaterManager()
+        let dummyUpdaterViewModel = UpdaterViewModel(sparkleUpdaterManager: dummySparkleUpdaterManager)
+        // Create dummy MainSettingsViewModel for the preview, now including UpdaterViewModel
+        let dummyMainSettingsViewModel = MainSettingsViewModel(
+            loginItemManager: LoginItemManager.shared, 
+            updaterViewModel: dummyUpdaterViewModel
+        )
+
         SettingsPanesContainerView()
+            .environmentObject(dummyMainSettingsViewModel) // Provide MainSettingsViewModel for preview
             .environmentObject(SessionLogger.shared) // Provide mock/shared logger for preview
     }
 }

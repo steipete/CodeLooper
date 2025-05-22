@@ -23,6 +23,8 @@ extension Defaults.Keys {
     static let playSoundOnIntervention = Key<Bool>("playSoundOnIntervention", default: true)
     static let successfulInterventionSoundName = Key<String>("successfulInterventionSoundName", default: "Funk")
     static let sendNotificationOnPersistentError = Key<Bool>("sendNotificationOnPersistentError", default: true)
+    static let sendNotificationOnMaxInterventions = Key<Bool>("sendNotificationOnMaxInterventions", default: true)
+    static let notificationSoundName = Key<String?>("notificationSoundName", default: "Default") // Added as per Spec 3.3.A and 5.1.B
     
     // --- Text for "Cursor Stops" recovery (Spec 3.3.A) ---
     static let textForCursorStopsRecovery = Key<String>(

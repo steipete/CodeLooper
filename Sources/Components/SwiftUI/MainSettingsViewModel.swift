@@ -17,6 +17,7 @@ public final class MainSettingsViewModel: ObservableObject {
     // Dependencies
     private let loginItemManager: LoginItemManager
     let mcpConfigManager = MCPConfigManager.shared // Made public for access from previews if needed, but primarily internal
+    let updaterViewModel: UpdaterViewModel // Modified: Changed to internal (default access level)
 
     // @Observable handles publishing for these, so @Published / @State are removed.
     private(set) var startAtLogin: Bool = Defaults[.startAtLogin]
@@ -88,8 +89,9 @@ public final class MainSettingsViewModel: ObservableObject {
     // MARK: - Initialization
 
     /// Initialize with required services
-    public init(loginItemManager: LoginItemManager) {
+    public init(loginItemManager: LoginItemManager, updaterViewModel: UpdaterViewModel) {
         self.loginItemManager = loginItemManager
+        self.updaterViewModel = updaterViewModel
         // Load initial global shortcut string - REMOVED
         // self.globalShortcutString = mcpConfigManager.getGlobalShortcut() ?? ""
         

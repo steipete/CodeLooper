@@ -94,7 +94,12 @@ struct GeneralSettingsTab: View {
 }
 
 #Preview {
+    // Create dummy UpdaterViewModel for the preview
+    let dummySparkleUpdaterManager = SparkleUpdaterManager()
+    let dummyUpdaterViewModel = UpdaterViewModel(sparkleUpdaterManager: dummySparkleUpdaterManager)
+
     GeneralSettingsTab(viewModel: MainSettingsViewModel(
-        loginItemManager: LoginItemManager.shared
+        loginItemManager: LoginItemManager.shared,
+        updaterViewModel: dummyUpdaterViewModel // Added dummyUpdaterViewModel
     ))
 }

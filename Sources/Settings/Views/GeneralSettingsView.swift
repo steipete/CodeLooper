@@ -43,6 +43,7 @@ struct GeneralSettingsView: View {
     var stuckDetectionTimeoutSeconds: TimeInterval
     @Default(.showDebugMenu)
     var showDebugMenu
+    @ObservedObject var updaterViewModel: UpdaterViewModel
 
     private var appVersion: String {
         Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "N/A"
@@ -107,16 +108,17 @@ struct GeneralSettingsView: View {
                     HStack {
                         Button("Check for Updates Now") {
                             if let appDelegate = NSApp.delegate as? AppDelegate {
-                                appDelegate.checkForUpdates()
+                                appDelegate.checkForUpdates(nil)
                             } else {
                                 print("Error: Could not get AppDelegate to check for updates.")
                             }
                         }
+                        .disabled(updaterViewModel.isUpdateInProgress)
                     }
                     HStack {
                         Button("About CodeLooper") {
                             if let appDelegate = NSApp.delegate as? AppDelegate {
-                                appDelegate.showAboutWindow()
+                                appDelegate.windowManager?.showAboutWindow()
                             } else {
                                 print("Error: Could not get AppDelegate to show About window.")
                             }
@@ -131,7 +133,7 @@ struct GeneralSettingsView: View {
                     Defaults[.hasShownWelcomeGuide] = false
                     // Similar to above, this relies on AppDelegate.
                     if let appDelegate = NSApp.delegate as? AppDelegate {
-                        appDelegate.showWelcomeWindow()
+                        appDelegate.windowManager?.showWelcomeWindow()
                     } else {
                          print("Error: Could not get AppDelegate to reset welcome guide.")
                     }
@@ -186,9 +188,16 @@ extension NumberFormatter {
 #if DEBUG
 struct GeneralSettingsView_Previews: PreviewProvider {
     static var previews: some View {
-        GeneralSettingsView()
-            // .environmentObject(your_mock_dependencies_if_any)
-            .frame(width: 600, height: 700) // Example frame for preview
+        // Create a dummy LoginItemManager for the preview
+        let dummyLoginItemManager = LoginItemManager.shared // Or a mock if available
+        // Create a dummy SparkleUpdaterManager for the preview
+        let dummySparkleUpdaterManager = SparkleUpdaterManager()
+        // Create a dummy UpdaterViewModel for the preview
+        let dummyUpdaterViewModel = UpdaterViewModel(sparkleUpdaterManager: dummySparkleUpdaterManager)
+
+        GeneralSettingsView(updaterViewModel: dummyUpdaterViewModel) // Pass the dummy view model
+            .environmentObject(dummyLoginItemManager) // If LoginItemManager is used as an EnvironmentObject elsewhere
+            .frame(width: 450, height: 400)
     }
 }
 #endif 

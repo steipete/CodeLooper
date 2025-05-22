@@ -7,7 +7,7 @@ import os.log
 /// Manages the app's login item settings for starting at login
 /// Uses the LaunchAtLogin library for simplified management
 @MainActor
-public final class LoginItemManager {
+public final class LoginItemManager: ObservableObject {
     // MARK: - Shared instance
 
     public static let shared = LoginItemManager()

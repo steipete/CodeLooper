@@ -11,11 +11,13 @@ public final class MainSettingsCoordinator: NSObject {
     private let logger = Logger(subsystem: "ai.amantusmachina.codelooper", category: "MainSettingsCoordinator")
     private var cancellables = Set<AnyCancellable>()
     private let loginItemManager: LoginItemManager
+    private let updaterViewModel: UpdaterViewModel
 
     // MARK: - Initialization
 
-    public init(loginItemManager: LoginItemManager) {
+    public init(loginItemManager: LoginItemManager, updaterViewModel: UpdaterViewModel) {
         self.loginItemManager = loginItemManager
+        self.updaterViewModel = updaterViewModel
         super.init()
 
         // Set up observers

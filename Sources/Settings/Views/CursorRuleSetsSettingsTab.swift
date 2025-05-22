@@ -141,7 +141,14 @@ struct CursorRuleSetsSettingsTab: View {
 #if DEBUG
 struct CursorRuleSetsSettingsTab_Previews: PreviewProvider {
     static var previews: some View {
-        let mockViewModel = MainSettingsViewModel(loginItemManager: LoginItemManager.shared)
+        // Create dummy UpdaterViewModel for the preview
+        let dummySparkleUpdaterManager = SparkleUpdaterManager()
+        let dummyUpdaterViewModel = UpdaterViewModel(sparkleUpdaterManager: dummySparkleUpdaterManager)
+        
+        let mockViewModel = MainSettingsViewModel(
+            loginItemManager: LoginItemManager.shared,
+            updaterViewModel: dummyUpdaterViewModel // Added dummyUpdaterViewModel
+        )
         // Example: Set up a specific state for previewing
         // mockViewModel.selectedProjectURL = URL(fileURLWithPath: "/Users/steipete/DummyProject")
         // mockViewModel.projectDisplayName = "DummyProject"

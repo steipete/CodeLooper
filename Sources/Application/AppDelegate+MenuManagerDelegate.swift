@@ -30,12 +30,7 @@ extension AppDelegate: MenuManagerDelegate {
 
     func showAbout() {
         logger.info("About menu item clicked")
-        let alert = NSAlert()
-        alert.messageText = Constants.appName
-        alert.informativeText = "A simple menu bar application for code loops.\n\nVersion: \(getAppVersion())"
-        alert.alertStyle = .informational
-        alert.addButton(withTitle: "OK")
-        alert.runModal()
+        self.windowManager?.showAboutWindow()
     }
 
     private func getAppVersion() -> String {
