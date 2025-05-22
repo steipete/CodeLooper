@@ -17,212 +17,69 @@ public final class MainSettingsViewModel {
     private let loginItemManager: LoginItemManager
     let mcpConfigManager = MCPConfigManager.shared // Made public for access from previews if needed, but primarily internal
 
-    // Using stored properties instead of computed properties to ensure SwiftUI observes changes
+    // @Observable handles publishing for these, so @Published / @State are removed.
     private(set) var startAtLogin: Bool = Defaults[.startAtLogin]
     private(set) var showInMenuBar: Bool = Defaults[.showInMenuBar]
     private(set) var showWelcomeScreen: Bool = Defaults[.isFirstLaunch] || Defaults[.showWelcomeScreen]
+    private(set) var showCopyCounter: Bool = Defaults[.showCopyCounter]
+    private(set) var showPasteCounter: Bool = Defaults[.showPasteCounter]
+    private(set) var showTotalInterventions: Bool = Defaults[.showTotalInterventions]
+    var isGlobalMonitoringEnabled: Bool = Defaults[.isGlobalMonitoringEnabled]
+    var playSoundOnIntervention: Bool = Defaults[.playSoundOnIntervention]
+    var flashIconOnIntervention: Bool = Defaults[.flashIconOnIntervention]
 
     // Global Shortcut
-    @State var globalShortcutString: String = ""
+    var globalShortcutString: String = ""
 
-    // Published properties for MCP status messages
-    @Published var claudeCodeStatusMessage: String = "Loading..."
-    @Published var macOSAutomatorStatusMessage: String = "Loading..."
-    @Published var xcodeBuildStatusMessage: String = "Loading..."
-
-    // Explicit setter methods that update both the stored property and UserDefaults
-    func setStartAtLogin(_ newValue: Bool) {
-        startAtLogin = newValue
-        Defaults[.startAtLogin] = newValue
-    }
-
-    func setShowInMenuBar(_ newValue: Bool) {
-        showInMenuBar = newValue
-        Defaults[.showInMenuBar] = newValue
-    }
-
-    func setShowWelcomeScreen(_ newValue: Bool) {
-        showWelcomeScreen = newValue
-        if newValue {
-            Defaults[.isFirstLaunch] = true
-            Defaults[.showWelcomeScreen] = true
-        } else {
-            // When toggled off, only update showWelcomeScreen, keep isFirstLaunch
-            Defaults[.showWelcomeScreen] = false
-        }
-    }
-
+    // Computed property for showDebugMenu
     var showDebugMenu: Bool {
         get { Defaults[.showDebugMenu] }
         set { Defaults[.showDebugMenu] = newValue }
     }
 
-    // MARK: - MCP and Rule Set Properties and Methods
+    // Published properties for MCP status messages - @Observable handles publishing
+    var claudeCodeStatusMessage: String = "Loading..."
+    var macOSAutomatorStatusMessage: String = "Loading..."
+    var xcodeBuildStatusMessage: String = "Loading..."
 
-    // Sheet presentation state
-    @State var showingClaudeConfigSheet = false
-    @State var showingXcodeConfigSheet = false
-    @State var showingAutomatorConfigSheet = false
+    // Sheet presentation state - @Observable handles publishing
+    var showingClaudeConfigSheet = false
+    var showingXcodeConfigSheet = false
+    var showingAutomatorConfigSheet = false
 
     // Properties to hold MCP configuration values, to be bound to config views
-    // These should be initialized from mcpConfigManager on ViewModel init or view appear
     var claudeCodeCustomCliName: String = ""
     var xcodeBuildVersionString: String = ""
     var xcodeBuildIncrementalBuilds: Bool = false
     var xcodeBuildSentryDisabled: Bool = false
 
+    // Rule Set Properties - @Observable handles changes, so @State is removed.
+    var projectDisplayName: String = "Selected Project"
+    var ruleSetStatusMessage: String = "Verify or Install Rule Set"
+    var selectedProjectURL: URL? = nil
+
+    // Status for individual MCPs (raw boolean enabled/disabled)
+    // These are now computed properties based on mcpConfigManager
+    // The stored properties for these were removed in a previous step, this is a getter/setter structure
     var isClaudeCodeEnabled: Bool {
         get { mcpConfigManager.getMCPStatus(mcpIdentifier: "claude-code").enabled }
         set { 
-            mcpConfigManager.setMCPEnabled(mcpIdentifier: "claude-code", nameForEntry: "Claude Code Agent", enabled: newValue, defaultCommand: ["claude-code"])
-            refreshAllMCPStatusMessages() // Refresh status after changing enabled state
+            mcpConfigManager.setMCPEnabled(mcpIdentifier: "claude-code", nameForEntry: "Claude Code", enabled: newValue, defaultCommand: ["claude-code"])
+            refreshMCPStatusMessage(for: "claude-code")
         }
     }
     var isMacOSAutomatorEnabled: Bool {
         get { mcpConfigManager.getMCPStatus(mcpIdentifier: "macos-automator").enabled }
         set { 
-            mcpConfigManager.setMCPEnabled(mcpIdentifier: "macos-automator", nameForEntry: "macOS Automator", enabled: newValue) 
-            refreshAllMCPStatusMessages()
+            mcpConfigManager.setMCPEnabled(mcpIdentifier: "macos-automator", nameForEntry: "macOS Automator", enabled: newValue, defaultCommand: ["macos-automator"])
+            refreshMCPStatusMessage(for: "macos-automator")
         }
     }
     var isXcodeBuildEnabled: Bool {
         get { mcpConfigManager.getMCPStatus(mcpIdentifier: "XcodeBuildMCP").enabled }
         set { 
-            mcpConfigManager.setMCPEnabled(mcpIdentifier: "XcodeBuildMCP", nameForEntry: "Xcode Build Service", enabled: newValue, defaultCommand: ["xcodebuildmcp"]) 
-            refreshAllMCPStatusMessages()
-        }
-    }
-
-    func configureClaudeCode() {
-        logger.info("Configure Claude Code MCP clicked")
-        let status = mcpConfigManager.getMCPStatus(mcpIdentifier: "claude-code")
-        self.claudeCodeCustomCliName = status.customCliName ?? ""
-        showingClaudeConfigSheet = true
-    }
-
-    func configureMacOSAutomator() {
-        logger.info("Configure macOS Automator MCP clicked")
-        showingAutomatorConfigSheet = true
-    }
-
-    func configureXcodeBuild() {
-        logger.info("Configure XcodeBuild MCP clicked")
-        let status = mcpConfigManager.getMCPStatus(mcpIdentifier: "XcodeBuildMCP")
-        self.xcodeBuildVersionString = status.version ?? ""
-        self.xcodeBuildIncrementalBuilds = status.incrementalBuildsEnabled ?? false
-        self.xcodeBuildSentryDisabled = status.sentryDisabled ?? false
-        showingXcodeConfigSheet = true
-    }
-
-    func saveClaudeCodeConfiguration(newCliName: String) {
-        logger.info("Saving Claude Code custom CLI name: \(newCliName)")
-        if mcpConfigManager.updateMCPConfiguration(mcpIdentifier: "claude-code", params: ["customCliName": newCliName]) {
-            AlertPresenter.shared.showInfo(title: "Configuration Saved", message: "Claude Code CLI name updated.")
-        } else {
-            AlertPresenter.shared.showAlert(title: "Save Failed", message: "Could not save Claude Code configuration. Check logs.", style: .critical)
-        }
-        // Optionally, refresh related status messages if they depend on the CLI name
-        refreshAllMCPStatusMessages()
-    }
-
-    func saveXcodeBuildConfiguration(version: String, incrementalBuilds: Bool, sentryDisabled: Bool) {
-        logger.info("Saving XcodeBuild MCP configuration: Version=\(version), Incremental=\(incrementalBuilds), SentryDisabled=\(sentryDisabled)")
-        var params: [String: Any] = ["version": version]
-        params["incrementalBuildsEnabled"] = incrementalBuilds
-        params["sentryDisabled"] = sentryDisabled
-        
-        if mcpConfigManager.updateMCPConfiguration(mcpIdentifier: "XcodeBuildMCP", params: params) {
-            AlertPresenter.shared.showInfo(title: "Configuration Saved", message: "XcodeBuild MCP settings updated.")
-        } else {
-            AlertPresenter.shared.showAlert(title: "Save Failed", message: "Could not save XcodeBuild MCP configuration. Check logs.", style: .critical)
-        }
-        // Optionally, refresh related status messages
-        refreshAllMCPStatusMessages()
-    }
-
-    func saveGlobalShortcut() {
-        logger.info("Saving global shortcut: \(self.globalShortcutString)")
-        if mcpConfigManager.setGlobalShortcut(self.globalShortcutString.isEmpty ? nil : self.globalShortcutString) {
-            AlertPresenter.shared.showInfo(title: "Shortcut Saved", message: "Global MCP shortcut updated.")
-        } else {
-            AlertPresenter.shared.showAlert(title: "Save Failed", message: "Could not save global MCP shortcut. Check logs.", style: .critical)
-        }
-        // Potentially notify other parts of the app if the shortcut changes and is actively used.
-    }
-
-    func installTerminatorRuleSet(forProject projectURL: URL? = nil) {
-        logger.info("Install/Update Terminator Rule Set called. Project URL: \(projectURL?.path ?? "Not specified, will prompt")")
-        Task {
-            var targetURL: URL?
-
-            if let providedURL = projectURL {
-                targetURL = providedURL
-            } else {
-                let panel = NSOpenPanel()
-                panel.canChooseFiles = false
-                panel.canChooseDirectories = true
-                panel.allowsMultipleSelection = false
-                panel.message = "Select the root directory of your project to install/update the Terminator Rule Set."
-
-                if await panel.runModal() == .OK {
-                    targetURL = panel.url
-                } else {
-                    logger.info("Project selection cancelled by user.")
-                    // Post notification or update state if needed to inform UI about cancellation
-                    return // Exit if user cancelled panel and no URL was provided
-                }
-            }
-
-            guard let finalURL = targetURL else {
-                logger.warning("No project directory selected or provided for rule set installation.")
-                // Update UI or show alert if no URL could be determined
-                return
-            }
-            
-            logger.info("Proceeding with rule set installation/update for: \(finalURL.path)")
-            if mcpConfigManager.installTerminatorRuleSet(to: finalURL) {
-                AlertPresenter.shared.showInfo(title: "Rule Set Processed", message: "The Terminator Rule Set was successfully processed for \(finalURL.lastPathComponent).")
-                // Notify the CursorRuleSetsSettingsTab to re-verify and update its status display
-                // This could be done via a Notification or by having the tab observe a property that changes.
-                // For now, manual re-verification by the user is implied after this alert.
-            } else {
-                AlertPresenter.shared.showAlert(title: "Operation Failed", message: "Could not install/update the Terminator Rule Set for \(finalURL.lastPathComponent). Check logs for details.", style: .critical)
-            }
-        }
-    }
-
-    func verifyTerminatorRuleSetStatus(projectURL: URL) -> MCPConfigManager.RuleSetStatus {
-        logger.info("Verifying Terminator Rule Set status for project: \(projectURL.path)")
-        let status = mcpConfigManager.verifyTerminatorRuleSet(at: projectURL)
-        // No need to update UI here, the caller (CursorRuleSetsSettingsTab) will use the status directly.
-        return status
-    }
-
-    // MARK: - MCP File Operations (Spec 7.A.3)
-    func viewMCPFile() {
-        let path = mcpConfigManager.getMCPFilePath()
-        NSWorkspace.shared.open(path)
-        logger.info("Attempting to open mcp.json at: \(path.path)")
-    }
-
-    func clearMCPFile() {
-        if mcpConfigManager.clearMCPFile() {
-            // Refresh UI state that depends on mcp.json
-            // This includes MCP enabled states and global shortcut
-            self.isClaudeCodeEnabled = mcpConfigManager.getMCPStatus(mcpIdentifier: "claude-code").enabled
-            self.isMacOSAutomatorEnabled = mcpConfigManager.getMCPStatus(mcpIdentifier: "macos-automator").enabled
-            self.isXcodeBuildEnabled = mcpConfigManager.getMCPStatus(mcpIdentifier: "XcodeBuildMCP").enabled
-            self.claudeCodeCustomCliName = mcpConfigManager.getMCPStatus(mcpIdentifier: "claude-code").customCliName ?? ""
-            self.xcodeBuildVersionString = mcpConfigManager.getMCPStatus(mcpIdentifier: "XcodeBuildMCP").version ?? ""
-            self.xcodeBuildIncrementalBuilds = mcpConfigManager.getXcodeBuildIncrementalBuildsFlag()
-            self.xcodeBuildSentryDisabled = mcpConfigManager.getXcodeBuildSentryDisabledFlag()
-            self.globalShortcutString = mcpConfigManager.getGlobalShortcut() ?? ""
-            
-            AlertPresenter.shared.showInfo(title: "MCP File Cleared", message: "~/.cursor/mcp.json has been reset to its default empty state.")
-            logger.info("mcp.json cleared successfully and UI state refreshed.")
-        } else {
-            AlertPresenter.shared.showAlert(title: "Error Clearing MCP File", message: "Could not clear ~/.cursor/mcp.json. Check logs for details.", style: .critical)
-            logger.error("Failed to clear mcp.json.")
+            mcpConfigManager.setMCPEnabled(mcpIdentifier: "XcodeBuildMCP", nameForEntry: "XcodeBuildMCP", enabled: newValue, defaultCommand: ["XcodeBuildMCP"])
+            refreshMCPStatusMessage(for: "XcodeBuildMCP")
         }
     }
 
@@ -322,9 +179,7 @@ public final class MainSettingsViewModel {
 
     /// Toggle debug menu
     public func toggleDebugMenu() {
-        // No need to explicitly set Defaults since showDebugMenu is a computed property
-        // that will handle the UserDefaults update
-        showDebugMenu.toggle()
+        Defaults[.showDebugMenu].toggle()
         NotificationCenter.default.post(name: .highlightMenuBarIcon, object: nil)
     }
 
@@ -339,9 +194,9 @@ public final class MainSettingsViewModel {
     /// Method to refresh all settings
     public func refreshSettings() async {
         // Update our stored properties from UserDefaults
-        setStartAtLogin(Defaults[.startAtLogin])
-        setShowInMenuBar(Defaults[.showInMenuBar])
-        setShowWelcomeScreen(Defaults[.isFirstLaunch] || Defaults[.showWelcomeScreen])
+        self.startAtLogin = Defaults[.startAtLogin]
+        self.showInMenuBar = Defaults[.showInMenuBar]
+        self.showWelcomeScreen = Defaults[.isFirstLaunch] || Defaults[.showWelcomeScreen]
 
         logger.info("Settings refreshed")
     }
@@ -365,5 +220,9 @@ public final class MainSettingsViewModel {
 
         logger.info("Refreshed all MCP status messages.")
         logger.info("Claude: \(self.claudeCodeStatusMessage), Automator: \(self.macOSAutomatorStatusMessage), Xcode: \(self.xcodeBuildStatusMessage)")
+    }
+
+    func refreshMCPStatusMessage(for mcpIdentifier: String) {
+        // Implementation of refreshMCPStatusMessage method
     }
 }

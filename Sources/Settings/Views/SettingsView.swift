@@ -3,6 +3,8 @@ import Defaults
 import SwiftUI
 
 struct SettingsView: View {
+    @State private var mainSettingsViewModel = MainSettingsViewModel(loginItemManager: LoginItemManager.shared)
+
     var body: some View {
         TabView {
             GeneralSettingsView()
@@ -15,12 +17,12 @@ struct SettingsView: View {
                     Label("Supervision", systemImage: "eye.fill")
                 }
             
-            CursorRuleSetsSettingsTab()
+            CursorRuleSetsSettingsTab(viewModel: mainSettingsViewModel)
                 .tabItem {
                     Label("Rule Sets", systemImage: "list.star")
                 }
             
-            ExternalMCPsSettingsTab()
+            ExternalMCPsSettingsTab(viewModel: mainSettingsViewModel)
                 .tabItem {
                     Label("External MCPs", systemImage: "server.rack")
                 }
@@ -62,7 +64,7 @@ struct GeneralSettingsView: View {
     @Default(.playSoundOnIntervention)
     var playSoundOnIntervention
     @Default(.sendNotificationOnPersistentError)
-    var sendNotificationOnPersistentError
+    var sendNotificationOnPersistentError: Bool
     @Default(.textForCursorStopsRecovery)
     var textForCursorStopsRecovery
     @Default(.monitorSidebarActivity)
@@ -70,7 +72,7 @@ struct GeneralSettingsView: View {
     @Default(.postInterventionObservationWindowSeconds)
     var postInterventionObservationWindowSeconds
     @Default(.stuckDetectionTimeoutSeconds)
-    var stuckDetectionTimeoutSeconds
+    var stuckDetectionTimeoutSeconds: TimeInterval
     @Default(.showDebugMenu)
     var showDebugMenu
 
@@ -232,7 +234,7 @@ struct CursorSupervisionSettingsView: View {
 
 // MARK: - Cursor Rule Sets Tab (Integrated from Sources/Components/SwiftUI/SettingsTabs/CursorRuleSetsSettingsTab.swift)
 struct CursorRuleSetsSettingsTab: View {
-    @Bindable var viewModel: MainSettingsViewModel // This will be provided by the parent SettingsView
+    @Bindable var viewModel: MainSettingsViewModel
     @State private var selectedProjectURL: URL? 
     @State private var ruleSetStatus: MCPConfigManager.RuleSetStatus = .notInstalled 
     @State private var projectDisplayName: String = "Selected Project"
@@ -370,7 +372,7 @@ struct CursorRuleSetsSettingsTab: View {
 
 // MARK: - External MCPs Tab (Integrated from Sources/Components/SwiftUI/SettingsTabs/ExternalMCPsSettingsTab.swift)
 struct ExternalMCPsSettingsTab: View {
-    @Bindable var viewModel: MainSettingsViewModel // This will be provided by the parent SettingsView
+    @Bindable var viewModel: MainSettingsViewModel
     
     // State for warning alerts (Spec 3.3.D)
     @State private var showClaudeCodeEnableWarning = false
@@ -381,7 +383,7 @@ struct ExternalMCPsSettingsTab: View {
     // They are now obtained directly from viewModel.claudeCodeStatusMessage etc.
 
     var body: some View {
-        ScrollView {
+        ScrollView(.vertical) {
             VStack(alignment: .leading, spacing: 20) {
                 Text("External Model Context Protocol (MCP) Servers")
                     .font(.title2)
@@ -597,18 +599,18 @@ struct AdvancedSettingsView: View {
     @Default(.maxConnectionIssueRetries) var maxConnectionIssueRetries
     @Default(.maxConsecutiveRecoveryFailures) var maxConsecutiveRecoveryFailures
     @Default(.postInterventionObservationWindowSeconds) var postInterventionObservationWindowSeconds
-    @Default(.sendNotificationOnPersistentError) var sendNotificationOnPersistentError
-    @Default(.stuckDetectionTimeoutSeconds) var stuckDetectionTimeoutSeconds // Added from spec
+    @Default(.sendNotificationOnPersistentError) var sendNotificationOnPersistentError: Bool
+    @Default(.stuckDetectionTimeoutSeconds) var stuckDetectionTimeoutSeconds: TimeInterval
 
     // Custom Locator Defaults
-    @Default(.locatorJSON_generatingIndicatorText) var locatorGeneratingIndicatorText
-    @Default(.locatorJSON_sidebarActivityArea) var locatorSidebarActivityArea
-    @Default(.locatorJSON_errorMessagePopup) var locatorErrorMessagePopup
-    @Default(.locatorJSON_stopGeneratingButton) var locatorStopGeneratingButton
-    @Default(.locatorJSON_connectionErrorIndicator) var locatorConnectionErrorIndicator
-    @Default(.locatorJSON_resumeConnectionButton) var locatorResumeConnectionButton
-    @Default(.locatorJSON_forceStopResumeLink) var locatorForceStopResumeLink
-    @Default(.locatorJSON_mainInputField) var locatorMainInputField
+    @Default(.locatorJSONGeneratingIndicatorText) var locatorGeneratingIndicatorText: String
+    @Default(.locatorJSONSidebarActivityArea) var locatorSidebarActivityArea: String
+    @Default(.locatorJSONErrorMessagePopup) var locatorErrorMessagePopup: String
+    @Default(.locatorJSONStopGeneratingButton) var locatorStopGeneratingButton: String
+    @Default(.locatorJSONConnectionErrorIndicator) var locatorConnectionErrorIndicator: String
+    @Default(.locatorJSONResumeConnectionButton) var locatorResumeConnectionButton: String
+    @Default(.locatorJSONForceStopResumeLink) var locatorForceStopResumeLink: String
+    @Default(.locatorJSONMainInputField) var locatorMainInputField: String
 
     private let locatorPlaceholders: [String: String] = [
         "generatingIndicatorText": "e.g., {\"criteria\":[{\"key\":\"AXValue\",\"value\":\"Generating...\",\"match_type\":\"contains\"}],\"type\":\"text\"}",
@@ -640,28 +642,28 @@ struct AdvancedSettingsView: View {
                     .padding(.bottom, 5)
                 
                 Group {
-                    locatorEditor(title: "Generating Indicator Text", textBinding: $locatorGeneratingIndicatorText, key: .locatorJSON_generatingIndicatorText, placeholder: locatorPlaceholders["generatingIndicatorText"] ?? "")
-                    locatorEditor(title: "Sidebar Activity Area", textBinding: $locatorSidebarActivityArea, key: .locatorJSON_sidebarActivityArea, placeholder: locatorPlaceholders["sidebarActivityArea"] ?? "")
-                    locatorEditor(title: "Error Message Popup", textBinding: $locatorErrorMessagePopup, key: .locatorJSON_errorMessagePopup, placeholder: locatorPlaceholders["errorMessagePopup"] ?? "")
-                    locatorEditor(title: "Stop Generating Button", textBinding: $locatorStopGeneratingButton, key: .locatorJSON_stopGeneratingButton, placeholder: locatorPlaceholders["stopGeneratingButton"] ?? "")
+                    locatorEditor(title: "Generating Indicator Text", textBinding: $locatorGeneratingIndicatorText, key: .locatorJSONGeneratingIndicatorText, placeholder: locatorPlaceholders["generatingIndicatorText"] ?? "")
+                    locatorEditor(title: "Sidebar Activity Area", textBinding: $locatorSidebarActivityArea, key: .locatorJSONSidebarActivityArea, placeholder: locatorPlaceholders["sidebarActivityArea"] ?? "")
+                    locatorEditor(title: "Error Message Popup", textBinding: $locatorErrorMessagePopup, key: .locatorJSONErrorMessagePopup, placeholder: locatorPlaceholders["errorMessagePopup"] ?? "")
+                    locatorEditor(title: "Stop Generating Button", textBinding: $locatorStopGeneratingButton, key: .locatorJSONStopGeneratingButton, placeholder: locatorPlaceholders["stopGeneratingButton"] ?? "")
                 }
                 Group {
-                    locatorEditor(title: "Connection Error Indicator", textBinding: $locatorConnectionErrorIndicator, key: .locatorJSON_connectionErrorIndicator, placeholder: locatorPlaceholders["connectionErrorIndicator"] ?? "")
-                    locatorEditor(title: "Resume Connection Button", textBinding: $locatorResumeConnectionButton, key: .locatorJSON_resumeConnectionButton, placeholder: locatorPlaceholders["resumeConnectionButton"] ?? "")
-                    locatorEditor(title: "Force-Stop Resume Link", textBinding: $locatorForceStopResumeLink, key: .locatorJSON_forceStopResumeLink, placeholder: locatorPlaceholders["forceStopResumeLink"] ?? "")
-                    locatorEditor(title: "Main Input Field", textBinding: $locatorMainInputField, key: .locatorJSON_mainInputField, placeholder: locatorPlaceholders["mainInputField"] ?? "")
+                    locatorEditor(title: "Connection Error Indicator", textBinding: $locatorConnectionErrorIndicator, key: .locatorJSONConnectionErrorIndicator, placeholder: locatorPlaceholders["connectionErrorIndicator"] ?? "")
+                    locatorEditor(title: "Resume Connection Button", textBinding: $locatorResumeConnectionButton, key: .locatorJSONResumeConnectionButton, placeholder: locatorPlaceholders["resumeConnectionButton"] ?? "")
+                    locatorEditor(title: "Force-Stop Resume Link", textBinding: $locatorForceStopResumeLink, key: .locatorJSONForceStopResumeLink, placeholder: locatorPlaceholders["forceStopResumeLink"] ?? "")
+                    locatorEditor(title: "Main Input Field", textBinding: $locatorMainInputField, key: .locatorJSONMainInputField, placeholder: locatorPlaceholders["mainInputField"] ?? "")
                 }
 
                 Button("Reset All Locators to Defaults") {
                     Defaults.reset(
-                        .locatorJSON_generatingIndicatorText,
-                        .locatorJSON_sidebarActivityArea,
-                        .locatorJSON_errorMessagePopup,
-                        .locatorJSON_stopGeneratingButton,
-                        .locatorJSON_connectionErrorIndicator,
-                        .locatorJSON_resumeConnectionButton,
-                        .locatorJSON_forceStopResumeLink,
-                        .locatorJSON_mainInputField
+                        .locatorJSONGeneratingIndicatorText,
+                        .locatorJSONSidebarActivityArea,
+                        .locatorJSONErrorMessagePopup,
+                        .locatorJSONStopGeneratingButton,
+                        .locatorJSONConnectionErrorIndicator,
+                        .locatorJSONResumeConnectionButton,
+                        .locatorJSONForceStopResumeLink,
+                        .locatorJSONMainInputField
                     )
                 }
                 .foregroundColor(.orange)
@@ -758,8 +760,11 @@ struct LogSettingsView: View {
         switch level {
         case .debug: return .gray
         case .info: return .blue
-        case .warn: return .orange
+        case .warning: return .orange
         case .error: return .red
+        case .notice: return .purple
+        case .critical: return .pink
+        case .fault: return .black
         }
     }
 }

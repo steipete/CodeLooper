@@ -14,7 +14,7 @@ import SwiftUI
 @MainActor
 public class AppDelegate: NSObject, NSApplicationDelegate,
     @unchecked Sendable,
-    ObservableObject, MenuManagerDelegate {
+    ObservableObject {
 
     /// Shared singleton instance for global access
     public static var shared: AppDelegate {
@@ -299,7 +299,7 @@ public class AppDelegate: NSObject, NSApplicationDelegate,
         logger.info("Initializing services")
 
         // Login Item Manager - needs to be initialized early for settings
-        loginItemManager = LoginItemManager() // Assuming public init
+        loginItemManager = LoginItemManager.shared // Use .shared
         logger.info("LoginItemManager initialized")
         
         // AXApplicationObserver - for general app monitoring if needed beyond Cursor
@@ -463,7 +463,10 @@ public class AppDelegate: NSObject, NSApplicationDelegate,
 
     @MainActor
     func checkAndPromptForAccessibilityIfNeeded(isInteractive: Bool) {
-        let trustedCheckOptionPromptKey = kAXTrustedCheckOptionPrompt.takeUnretainedValue() as String
+        // Capture the global constant locally within the @MainActor isolated function
+        let axTrustedCheckOptionPromptCFString = kAXTrustedCheckOptionPrompt
+        let trustedCheckOptionPromptKey = axTrustedCheckOptionPromptCFString.takeUnretainedValue() as String
+        
         let options = [trustedCheckOptionPromptKey: isInteractive]
         let isTrusted = AXIsProcessTrustedWithOptions(options as CFDictionary)
 
@@ -494,32 +497,13 @@ public class AppDelegate: NSObject, NSApplicationDelegate,
 
     // MARK: - MenuManagerDelegate Conformance
 
-    func showSettings() {
-        logger.info("MenuManagerDelegate: showSettings() called.")
-        self.showSettingsWindow(nil)
-    }
-
-    func toggleStartAtLogin() {
-        logger.info("MenuManagerDelegate: toggleStartAtLogin() called.")
-        // Toggle start at login using LoginItemManager
-        Defaults[.startAtLogin].toggle()
-        loginItemManager?.syncLoginItemWithPreference()
-        menuManager?.refreshMenu() // To update checkmark
-    }
-
-    func toggleDebugMenu() {
-        logger.info("MenuManagerDelegate: toggleDebugMenu() called.")
-        // Toggle debug menu visibility via Defaults
-        Defaults[.showDebugMenu].toggle()
-        menuManager?.refreshMenu() // To show/hide menu items
-    }
-
-    func showAbout() {
-        logger.info("MenuManagerDelegate: showAbout() called.")
-        // Show standard about panel
-        // For now, standard about panel
-        NSApp.orderFrontStandardAboutPanel(options: [:])
-    }
+    // Removed duplicate methods that are in AppDelegate+MenuManagerDelegate.swift
+    /*
+    func showSettings() { ... }
+    func toggleStartAtLogin() { ... }
+    func toggleDebugMenu() { ... }
+    func showAbout() { ... }
+    */
 
     deinit {
         // In deinit, we need direct synchronous cleanup

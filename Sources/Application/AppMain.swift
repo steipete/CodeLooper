@@ -75,15 +75,41 @@ struct AppMain: App {
 
         // Add the native macOS Settings scene with fixed width
         Settings {
-            SettingsView(
-                viewModel: MainSettingsViewModel(
-                    loginItemManager: appDelegate.loginItemManager ?? LoginItemManager.shared
-                )
-            )
-            .navigationTitle(Constants.appName)
-            .frame(minWidth: 560, idealWidth: 560, maxWidth: 560, minHeight: 340)
+            SettingsView()
         }
         .defaultSize(width: 560, height: 340)
+
+        CommandGroup("Debug") {
+            if Defaults[.showDebugMenu] {
+                Section("AXorcist Debug") {
+                    Button("Log Current Focused Element (AXorcist)") {
+                        Task {
+                            await appDelegate.cursorMonitor.logFocusedElementViaAXorcist()
+                        }
+                    }
+                    Button("Log All Elements (AXorcist) - Focused App") {
+                        Task {
+                            await appDelegate.cursorMonitor.logAllWindowsForFocusedAppViaAXorcist()
+                        }
+                    }
+                }
+                Divider()
+                Button("Toggle Supervision Debug Overlay") {
+                    appDelegate.toggleDebugOverlay()
+                }
+                Button("Show Session Log") {
+                    appDelegate.sessionLogger.showLogWindow()
+                }
+            }
+        }
+
+        CommandGroup("CodeLooper") {
+            CodeLooperCommands()
+        }
+
+        CommandGroup("Help") {
+            HelpCommands()
+        }
     }
 
     /// Check if welcome screen should be shown based on defaults

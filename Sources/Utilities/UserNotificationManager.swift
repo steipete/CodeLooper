@@ -1,6 +1,6 @@
 import Foundation
 import OSLog
-import UserNotifications
+@preconcurrency import UserNotifications
 
 /// UserNotificationManager handles user notifications on macOS with full Swift 6 concurrency compliance.
 /// This actor safely manages notification authorization and delivery while properly handling

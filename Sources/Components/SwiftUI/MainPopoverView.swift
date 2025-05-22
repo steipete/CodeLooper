@@ -46,7 +46,9 @@ struct MainPopoverView: View {
                     .font(.footnote)
                 Spacer()
                 Button("Reset All & Resume") {
-                    cursorMonitor.resetAllInstancesAndResume()
+                    Task {
+                        await cursorMonitor.resetAllInstancesAndResume()
+                    }
                 }
                 .font(.footnote)
             }

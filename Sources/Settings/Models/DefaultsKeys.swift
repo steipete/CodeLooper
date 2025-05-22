@@ -54,10 +54,18 @@ extension Defaults.Keys {
 
     // --- Onboarding ---
     static let hasShownWelcomeGuide = Key<Bool>("hasShownWelcomeGuide", default: false)
+    static let isFirstLaunch = Key<Bool>("isFirstLaunch", default: true)
+    static let hasCompletedOnboarding = Key<Bool>("hasCompletedOnboarding", default: false)
+    static let showWelcomeScreen = Key<Bool>("showWelcomeScreen", default: true)
 
     // --- General Settings (from MenuManager usage in AppDelegate & Spec 3.3.A) ---
     static let startAtLogin = Key<Bool>("startAtLogin", default: true) // "Launch CodeLooper at Login"
     static let showDebugMenu = Key<Bool>("showDebugMenu", default: false) // For debug menu in status bar
+    static let debugModeEnabled = Key<Bool>("debugModeEnabled", default: false)
+    static let showCopyCounter = Key<Bool>("showCopyCounter", default: false)
+    static let showPasteCounter = Key<Bool>("showPasteCounter", default: false)
+    static let showTotalInterventions = Key<Bool>("showTotalInterventions", default: false)
+    static let flashIconOnIntervention = Key<Bool>("flashIconOnIntervention", default: true)
 
     // --- Updates (Sparkle - Spec 3.3.A) ---
     static let automaticallyCheckForUpdates = Key<Bool>("automaticallyCheckForUpdates", default: true)
@@ -95,4 +103,10 @@ extension Defaults.Keys {
         "locatorJSON_mainInputField",
         default: ""
     )
+
+    // --- Logging Configuration (Spec 3.3.A / LogSettingsView) ---
+    static let selectedLogLevel = Key<LogLevel>("selectedLogLevel", default: .info)
+    static let verboseLogging = Key<Bool>("verboseLogging", default: false)
+
+    // --- AXorcist Locators (Advanced Settings - Spec 3.3.A / AdvancedSettingsView) ---
 }
