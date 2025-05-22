@@ -62,7 +62,7 @@ struct UserAvatarView: View {
             Color(red: 0.2, green: 0.5, blue: 0.9),
             Color(red: 0.8, green: 0.4, blue: 0.2),
             Color(red: 0.5, green: 0.7, blue: 0.3),
-            Color(red: 0.7, green: 0.3, blue: 0.8)
+            Color(red: 0.7, green: 0.3, blue: 0.8),
         ]
 
         // Select color based on hash

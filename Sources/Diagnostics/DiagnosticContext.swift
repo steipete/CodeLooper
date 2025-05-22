@@ -79,63 +79,70 @@ struct DiagnosticContext: Sendable {
         var context = DiagnosticContext()
 
         for (key, value) in dictionary {
-            switch key {
-            case "operation":
-                if let strValue = value as? String {
-                    context.operation = strValue
-                }
-            case "requestTime":
-                if let timestamp = value as? TimeInterval {
-                    context.requestTimeInterval = timestamp
-                } else if let date = value as? Date {
-                    context.requestTimeInterval = date.timeIntervalSince1970
-                }
-            case "uploadTime":
-                if let timestamp = value as? TimeInterval {
-                    context.uploadTimeInterval = timestamp
-                } else if let date = value as? Date {
-                    context.uploadTimeInterval = date.timeIntervalSince1970
-                }
-            case "syncTime":
-                if let timestamp = value as? TimeInterval {
-                    context.syncTimeInterval = timestamp
-                } else if let date = value as? Date {
-                    context.syncTimeInterval = date.timeIntervalSince1970
-                }
-            case "reason":
-                if let strValue = value as? String {
-                    context.reason = strValue
-                }
-            case "exportType":
-                if let strValue = value as? String {
-                    context.exportType = strValue
-                }
-            case "scheduleTime":
-                if let timeValue = value as? TimeInterval {
-                    context.scheduleTime = timeValue
-                }
-            case "failTime":
-                if let timestamp = value as? TimeInterval {
-                    context.failTimeInterval = timestamp
-                } else if let date = value as? Date {
-                    context.failTimeInterval = date.timeIntervalSince1970
-                }
-            case "timeoutInterval":
-                if let timeValue = value as? TimeInterval {
-                    context.timeoutInterval = timeValue
-                }
-            case "timeoutTimerValid":
-                if let boolValue = value as? Bool {
-                    context.timeoutTimerValidInt = boolValue ? 1 : 0
-                }
-            default:
-                // Store as string representation in the array
-                context.customValuesList.append(key)
-                context.customValuesList.append(String(describing: value))
-            }
+            context.processKeyValue(key: key, value: value)
         }
 
         return context
+    }
+
+    /// Process individual key-value pairs from dictionary
+    private mutating func processKeyValue(key: String, value: Any) {
+        switch key {
+        case "operation":
+            processStringValue(value, setter: { self.operation = $0 })
+        case "requestTime":
+            processTimeValue(value, setter: { self.requestTimeInterval = $0 })
+        case "uploadTime":
+            processTimeValue(value, setter: { self.uploadTimeInterval = $0 })
+        case "syncTime":
+            processTimeValue(value, setter: { self.syncTimeInterval = $0 })
+        case "reason":
+            processStringValue(value, setter: { self.reason = $0 })
+        case "exportType":
+            processStringValue(value, setter: { self.exportType = $0 })
+        case "scheduleTime":
+            processTimeIntervalValue(value, setter: { self.scheduleTime = $0 })
+        case "failTime":
+            processTimeValue(value, setter: { self.failTimeInterval = $0 })
+        case "timeoutInterval":
+            processTimeIntervalValue(value, setter: { self.timeoutInterval = $0 })
+        case "timeoutTimerValid":
+            processBoolValue(value, setter: { self.timeoutTimerValidInt = $0 ? 1 : 0 })
+        default:
+            // Store as string representation in the array
+            customValuesList.append(key)
+            customValuesList.append(String(describing: value))
+        }
+    }
+
+    /// Helper to process string values
+    private func processStringValue(_ value: Any, setter: (String) -> Void) {
+        if let strValue = value as? String {
+            setter(strValue)
+        }
+    }
+
+    /// Helper to process time values (TimeInterval or Date)
+    private func processTimeValue(_ value: Any, setter: (TimeInterval) -> Void) {
+        if let timestamp = value as? TimeInterval {
+            setter(timestamp)
+        } else if let date = value as? Date {
+            setter(date.timeIntervalSince1970)
+        }
+    }
+
+    /// Helper to process TimeInterval values
+    private func processTimeIntervalValue(_ value: Any, setter: (TimeInterval) -> Void) {
+        if let timeValue = value as? TimeInterval {
+            setter(timeValue)
+        }
+    }
+
+    /// Helper to process boolean values
+    private func processBoolValue(_ value: Any, setter: (Bool) -> Void) {
+        if let boolValue = value as? Bool {
+            setter(boolValue)
+        }
     }
 
     /// Helper to get custom values as dictionary (non-modifying)

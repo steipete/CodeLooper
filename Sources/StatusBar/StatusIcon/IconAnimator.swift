@@ -189,7 +189,7 @@ class IconAnimator {
         }
 
         // Generate animation frames
-        for i in 0 ..< count {
+        for frameIndex in 0 ..< count {
             // Create a new image copy for this frame
             let frame = NSImage(size: size)
             frame.lockFocus()
@@ -207,12 +207,12 @@ class IconAnimator {
             context?.saveGState()
 
             // Calculate angle for this frame
-            let angle = 2.0 * Double.pi * Double(i) / Double(count)
+            let angle = 2.0 * Double.pi * Double(frameIndex) / Double(count)
 
             // Draw a dot or indicator at this angle - keep dots near the edge
             let radius = min(size.width, size.height) / 2.5
-            let x = size.width / 2 + cos(angle) * radius
-            let y = size.height / 2 + sin(angle) * radius
+            let xPos = size.width / 2 + cos(angle) * radius
+            let yPos = size.height / 2 + sin(angle) * radius
             let dotSize: CGFloat = 2.5 // Slightly smaller dots
 
             // Make sure the dot color contrasts with the app icon
@@ -225,8 +225,8 @@ class IconAnimator {
             }
 
             let dotRect = NSRect(
-                x: x - dotSize / 2,
-                y: y - dotSize / 2,
+                x: xPos - dotSize / 2,
+                y: yPos - dotSize / 2,
                 width: dotSize,
                 height: dotSize
             )
