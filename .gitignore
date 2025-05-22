@@ -35,7 +35,6 @@ playground.xcworkspace
 .build/
 .swiftpm/
 DerivedData/
-# /*.xcodeproj  # We want to track the Xcode project
 xcuserdata/
 package.xcworkspace
 Package.resolved
