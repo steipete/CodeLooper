@@ -18,7 +18,6 @@ We've consolidated the app signing and notarization into a single script: `sign-
 ### Usage
 
 ```bash
-cd mac
 ./scripts/sign-and-notarize.sh [options]
 ```
 
@@ -76,7 +75,7 @@ If you encounter issues during the signing or notarization process:
 
 ## Distributable Files
 
-The script creates the following files in the `mac/binary/` directory:
+The script creates the following files in the `binary/` directory:
 
 - `CodeLooper.app`: The signed and (optionally) notarized app bundle
 - `CodeLooper-notarized.zip`: The notarized ZIP archive (if notarization was performed)

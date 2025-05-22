@@ -16,44 +16,27 @@ This document provides comprehensive instructions for building the CodeLooper ma
 
 ## Prerequisites
 
-- macOS 14.0 (Sonoma) or later
-- Xcode 15.0 or later
-- Node.js v22.14.0 or later
-- pnpm v10.10.0
-- Supabase account and API credentials
+- macOS 15.0 (Sequoia) or later
+- Xcode 16.0 or later
+- Swift Package Manager (included with Xcode)
 
 ## Building Methods
 
-### Building via pnpm (Recommended)
+### Building via Scripts (Recommended)
 
-The recommended way to build the macOS app is using the project's pnpm scripts from the repository root. This method automatically handles environment variables and credential management.
-
-#### Setup Environment Variables
-
-```bash
-# Option 1: Set for current shell session only
-export SUPABASE_URL=https://api.friendship.ai
-export SUPABASE_ANON_KEY=your_supabase_anon_key_here
-
-# Option 2: Set just for the build command
-SUPABASE_URL=https://api.friendship.ai SUPABASE_ANON_KEY=your_key_here pnpm build:mac
-```
-
-> ⚠️ **Security Warning**: Never commit your Supabase keys to version control.
+The recommended way to build the macOS app is using the provided build scripts.
 
 #### Build Commands
 
 From the repository root:
 
 ```bash
-# Standard build
-pnpm build:mac
+# Standard build using the run script
+./scripts/run-app.sh
 
-# Debug build
-pnpm build:mac -- --debug
-
-# Clean build (forces clean build artifacts)
-pnpm build:mac -- --clean
+# Or build directly
+./scripts/generate-xcproj.sh
+# Then open CodeLooper.xcodeproj and build
 ```
 
 ### Manual Building (Advanced)
@@ -63,88 +46,67 @@ If you need more control over the build process, you can build the macOS app dir
 #### Step 1: Clone the Repository
 
 ```bash
-git clone https://github.com/your-org/CodeLooper.git
+git clone https://github.com/steipete/CodeLooper.git
 cd CodeLooper
 ```
 
-#### Step 2: Set Up Environment Variables
+#### Step 2: Generate Xcode Project
 
-Create an `.env` file in the project root with your Supabase credentials:
-
-```
-SUPABASE_URL=https://api.friendship.ai
-SUPABASE_ANON_KEY=your_supabase_anon_key_here
+```bash
+./scripts/generate-xcproj.sh
 ```
 
 #### Step 3: Build the App
 
 ```bash
-cd mac
-NEXT_PUBLIC_SUPABASE_URL=$SUPABASE_URL NEXT_PUBLIC_SUPABASE_ANON_KEY=$SUPABASE_ANON_KEY ./build.sh
+# Option 1: Use the run script
+./scripts/run-app.sh
+
+# Option 2: Open in Xcode and build
+open CodeLooper.xcodeproj
 ```
 
 ## Build Script Options
 
-The `build.sh` script provides various options to customize the build process:
+The project provides several build and development scripts:
 
-```bash
-./build.sh [options]
-```
+### Available Scripts
 
-### Available Options
-
-- `--debug`: Build debug configuration instead of release
-- `--clean`: Force clean build artifacts and resolve dependencies
-- `--analyzer`: Run Swift analyzer with strict checking during build
-- `--no-xcbeautify`: Skip xcbeautify formatting of build output
-- `-Xswiftc <flag>`: Pass additional flags to the Swift compiler
-- `--help`: Show help message
+- `./scripts/run-app.sh`: Build and run the app
+- `./scripts/generate-xcproj.sh`: Generate Xcode project from Package.swift
+- `./scripts/open-xcode.sh`: Open the project in Xcode
+- `./lint.sh`: Run code linting and formatting
+- `./run-swiftlint.sh`: Run SwiftLint checks
+- `./run-swiftformat.sh`: Format code with SwiftFormat
 
 ### Build Modes
 
-1. **Standard Build** (default): Full-featured build with error recovery
+1. **Development Build** (recommended for development):
 
    ```bash
-   ./build.sh
+   ./scripts/run-app.sh
    ```
 
-2. **Clean Build** (resolves dependency issues):
+2. **Xcode Build** (for debugging and development):
 
    ```bash
-   ./build.sh --clean
-   ```
-
-3. **Debug Build** (for development and debugging):
-
-   ```bash
-   ./build.sh --debug
-   ```
-
-4. **Analyzer Build** (finds potential issues with stricter checks):
-   ```bash
-   ./build.sh --analyzer
+   ./scripts/generate-xcproj.sh
+   open CodeLooper.xcodeproj
    ```
 
 ## How the Build System Works
 
 The build process follows these steps:
 
-1. The `pnpm build:mac` command runs `scripts/mac-build-with-env.js`
-2. This script:
-
-   - Validates Supabase credentials are present in environment variables
-   - Passes these credentials to the macOS build script
-   - Invokes the macOS build script with any additional flags
-
-3. The macOS build script (`mac/build.sh`):
-   - Injects the Supabase credentials into `Constants.swift` via `inject-keys.sh`
-   - Builds the app using Swift Package Manager
+1. **Project Generation**: The `generate-xcproj.sh` script creates an Xcode project from the Swift Package Manager manifest (`Package.swift`)
+2. **Build Process**:
+   - Uses Swift Package Manager for dependency resolution
+   - Builds the app using Xcode or swift build
    - Creates an application bundle
-   - Cleans up temporary files and restores original source files
-4. When running in CI (GitHub Actions):
-   - The binary information is collected (size, date, checksum)
-   - A detailed comment is posted to the PR with this information
-   - Download links to the binary are provided in the PR comment
+3. **CI/CD Integration**:
+   - GitHub Actions automatically builds on PR and main branch commits
+   - Binary information is collected and posted to PRs
+   - Notarization and code signing for distribution builds
 
 ### Script Behavior
 
@@ -156,15 +118,14 @@ The build process follows these steps:
 - Creates the final application bundle in `binary/CodeLooper.app`
 - Targets macOS 14.0 with the latest development tools
 
-## Authentication Flow
+## Accessibility Permissions
 
-The macOS app uses ASWebAuthenticationSession with a custom URL scheme for authentication:
+CodeLooper requires accessibility permissions to interact with Cursor's UI elements:
 
-1. App opens web auth session to `/api/auth/desktop?client=macos`
-2. User authenticates via Supabase in a web browser
-3. After successful authentication, the web app redirects to `codelooper://auth?token=xxx`
-4. The macOS app receives this callback and extracts the token
-5. Token is stored in the macOS Keychain for persistent authentication
+1. On first launch, the app will prompt for accessibility permissions
+2. The user will be directed to System Settings > Privacy & Security > Accessibility
+3. Add CodeLooper to the list of allowed applications
+4. The app uses the AXorcist library for reliable UI element detection and interaction
 
 ## Versioning
 
@@ -211,29 +172,31 @@ This is useful for local testing or when you want to share binary information ou
 
 ## Troubleshooting
 
-### Build Fails with "No Supabase Credentials"
+### Build Fails with Missing Dependencies
 
-Ensure you've set both `SUPABASE_URL` and `SUPABASE_ANON_KEY` environment variables.
+Ensure you have the required dependencies by running:
 
-### Authentication Failure
+```bash
+./scripts/generate-xcproj.sh
+```
 
-1. Verify your Supabase anon key is correct
-2. Check that the macOS app has the correct URL scheme registered
-3. Verify the web API endpoint is working correctly
+### Accessibility Permission Issues
+
+1. Verify CodeLooper has accessibility permissions in System Settings
+2. Restart the app after granting permissions
+3. Check that Cursor is running and accessible
 
 ### Swift Build Errors
 
 If you encounter Swift build errors:
 
 ```bash
-# Try a clean build
-pnpm build:mac -- --clean
+# Try regenerating the Xcode project
+./scripts/generate-xcproj.sh
 
-# Or manually:
-cd mac
+# Or clean Swift Package Manager cache
 rm -rf .build Package.resolved
 swift package reset
-./build.sh
 ```
 
 For more information on CI/CD systems, see [CI.md](CI.md).

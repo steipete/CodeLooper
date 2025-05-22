@@ -23,28 +23,27 @@ This directory contains comprehensive documentation for the CodeLooper macOS app
 
 ## About CodeLooper macOS App
 
-The CodeLooper macOS app is a native menubar application that securely syncs your contacts with the CodeLooper service. It runs in the background, providing easy access to sync status and settings through a menu bar icon.
+The CodeLooper macOS app is a native menu bar application that supervises Cursor AI editor instances, automatically resolving common interruptions and stuck states. It also assists with configuring Model Context Protocol (MCP) servers for enhanced AI development workflows.
 
 ### Key Features
 
-- **Contact Export & Sync**: Securely exports contacts from macOS Contacts app and syncs with CodeLooper
-- **Menu Bar Integration**: Lightweight, unobtrusive menu bar app for status and control
-- **Automatic Background Sync**: Configurable sync frequency with battery-aware operation
-- **Secure Authentication**: OAuth-based secure authentication with Keychain integration
-- **Privacy-Focused**: Clear permissions model and secure data handling
+- **Cursor Supervision**: Automatically detects and resolves "Connection Issues," "Cursor Stops," and "Force-Stopped" states
+- **Menu Bar Integration**: Lightweight, unobtrusive menu bar app with status-indicating icons
+- **MCP Server Management**: Easy setup and configuration of Claude Code, macOS Automator, and XcodeBuild MCP servers
+- **Accessibility Integration**: Uses AXorcist library for reliable UI element detection and interaction
+- **Privacy-Focused**: Local operation with clear permissions model and secure data handling
 
 ## Development Quick Start
 
 1. Clone the repository
-2. Run `pnpm install` from the project root to set up the project
-3. Navigate to the `mac` directory
-4. Run `./build.sh` to build the app
+2. Open the Xcode project or workspace
+3. Build and run the app
 
 Key commands:
 
 ```bash
 # Build the app
-./build.sh
+./scripts/run-app.sh
 
 # Format and lint code
 ./lint.sh
@@ -52,11 +51,11 @@ Key commands:
 # Run SwiftLint checks only
 ./run-swiftlint.sh
 
+# Generate Xcode project
+./scripts/generate-xcproj.sh
+
 # Post binary information to a PR
 ./scripts/post-binary-info.sh --pr-number <PR_NUMBER>
-
-# Set up git hooks (including pre-commit linting)
-./setup-hooks.sh
 ```
 
 ## CI Features

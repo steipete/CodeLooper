@@ -26,19 +26,19 @@ If you need more control, you can run each step individually.
 ### 1. Build the Application
 
 ```bash
-./build.sh
+./scripts/run-app.sh
 ```
 
 ### 2. Code Sign the Application
 
 ```bash
-./scripts/codesign-app.sh --identity "Developer ID Application: Your Name (TEAMID)"
+./scripts/sign-and-notarize.sh --sign-only --identity "Developer ID Application: Your Name (TEAMID)"
 ```
 
 ### 3. Notarize the Application
 
 ```bash
-./scripts/notarize-mac.sh
+./scripts/sign-and-notarize.sh --notarize-only
 ```
 
 The notarization script supports both standard development environments and CI environments with a unified interface. Additional options include:
