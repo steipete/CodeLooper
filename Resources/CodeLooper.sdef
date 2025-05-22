@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE dictionary SYSTEM "file://localhost/System/Library/DTDs/sdef.dtd">
+<dictionary title="CodeLooper Terminology">
+    <suite name="CodeLooper Suite" code="CLis" description="CodeLooper application commands">
+        <command name="move window" code="CLisMWIN" description="Move the application window to a specific position">
+            <cocoa class="WindowPositionManager" method="moveWindowToPosition:y:"/>
+            <parameter name="x" code="xPos" type="real" description="The x coordinate">
+                <cocoa key="1"/>
+            </parameter>
+            <parameter name="y" code="yPos" type="real" description="The y coordinate">
+                <cocoa key="2"/>
+            </parameter>
+            <result type="boolean" description="Whether the command was successful"/>
+        </command>
+        
+        <command name="resize window" code="CLisRWIN" description="Resize the application window">
+            <cocoa class="WindowPositionManager" method="resizeWindowToSize:height:"/>
+            <parameter name="width" code="wdth" type="real" description="The window width">
+                <cocoa key="1"/>
+            </parameter>
+            <parameter name="height" code="hght" type="real" description="The window height">
+                <cocoa key="2"/>
+            </parameter>
+            <result type="boolean" description="Whether the command was successful"/>
+        </command>
+        
+        <command name="center window" code="CLisCWIN" description="Center the application window on screen">
+            <cocoa class="WindowPositionManager" method="centerWindowFromScript"/>
+            <result type="boolean" description="Whether the command was successful"/>
+        </command>
+        
+        <command name="show settings" code="CLisSETT" description="Show the application settings window">
+            <cocoa class="AppDelegate" method="showSettings"/>
+            <result type="boolean" description="Whether the command was successful"/>
+        </command>
+        
+        <command name="quit" code="CLisQUIT" description="Quit the application">
+            <cocoa class="AppDelegate" method="handleQuit"/>
+            <result type="boolean" description="Whether the command was successful"/>
+        </command>
+    </suite>
+</dictionary>

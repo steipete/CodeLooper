@@ -1,0 +1,51 @@
+name: FriendshipAI
+options:
+  bundleIdPrefix: ai.friendship
+  deploymentTarget:
+    macOS: '14.0'
+packages:
+  FriendshipAI:
+    path: .
+targets:
+  FriendshipAI:
+    type: application
+    platform: macOS
+    sources:
+      # Default sources
+      - path: Sources
+        excludes:
+          - '**/.DS_Store'
+
+      # Resources folder
+      - path: Resources
+
+    # Build settings
+    settings:
+      base:
+        # Basic settings
+        INFOPLIST_FILE: FriendshipAI/Info.plist
+        MACOSX_DEPLOYMENT_TARGET: '14.0'
+        PRODUCT_BUNDLE_IDENTIFIER: ai.friendship.mac
+
+        # Swift concurrency settings
+        SWIFT_STRICT_CONCURRENCY: complete
+
+        # Swift only - no Objective-C support needed
+        SWIFT_OBJC_BRIDGING_HEADER: ''
+
+        # Additional settings
+        ALWAYS_SEARCH_USER_PATHS: NO
+        GCC_PRECOMPILE_PREFIX_HEADER: NO
+    dependencies:
+      - package: FriendshipAI
+    info:
+      path: FriendshipAI/Info.plist
+      properties:
+        CFBundleName: FriendshipAI
+        CFBundleDisplayName: FriendshipAI
+        CFBundleIdentifier: ai.friendship.mac
+        CFBundleVersion: 1.0
+        CFBundleShortVersionString: 1.0
+        LSApplicationCategoryType: public.app-category.productivity
+        LSUIElement: true
+        NSMainStoryboardFile: Main

@@ -1,0 +1,22 @@
+{
+    "configurations": [
+        {
+            "type": "swift",
+            "request": "launch",
+            "args": [],
+            "cwd": "${workspaceFolder:CodeLooper}",
+            "name": "Debug CodeLooper-Mac",
+            "program": "${workspaceFolder:CodeLooper}/.build/debug/CodeLooper-Mac",
+            "preLaunchTask": "swift: Build Debug CodeLooper-Mac"
+        },
+        {
+            "type": "swift",
+            "request": "launch",
+            "args": [],
+            "cwd": "${workspaceFolder:CodeLooper}",
+            "name": "Release CodeLooper-Mac",
+            "program": "${workspaceFolder:CodeLooper}/.build/release/CodeLooper-Mac",
+            "preLaunchTask": "swift: Build Release CodeLooper-Mac"
+        }
+    ]
+}

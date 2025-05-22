@@ -1,0 +1,298 @@
+name: macOS CodeLooper App
+
+permissions:
+  contents: read
+  packages: write
+  pull-requests: write
+
+on:
+  # Removed push trigger to eliminate duplicate checks
+  pull_request:
+    branches: [main]
+    paths:
+      - 'Sources/**'
+      - 'CodeLooper/**'
+      - 'Resources/**'
+      - 'scripts/**'
+      - '.github/workflows/build-mac-app.yml'
+      - 'Project.swift'
+      - 'Package.swift'
+  workflow_dispatch:  # Allows manual triggering
+    inputs:
+      notarize:
+        description: 'Notarize the build (default: true for PRs/tags, respects input for dispatch)'
+        type: boolean
+        default: true
+      create_release:
+        description: 'Create a release (only for tags)'
+        type: boolean
+        default: false
+
+# Prevent multiple workflow runs for the same ref
+concurrency:
+  group: "${{ github.workflow }}-${{ github.ref }}"
+  cancel-in-progress: true
+
+env:
+  DEVELOPER_DIR: /Applications/Xcode_16.3.app
+
+jobs:
+  build_and_process_mac_app:
+    name: Build, Sign & Optionally Notarize macOS CodeLooper App
+    runs-on: ghcr.io/cirruslabs/macos-runner:sequoia-xl
+    timeout-minutes: 60
+
+    outputs:
+      build_outcome: ${{ steps.build_sign_notarize_step.outcome }}
+      notarize_status: ${{ steps.build_sign_notarize_step.outputs.notarization_status || 'skipped' }}
+      app_version: ${{ steps.set-version.outputs.version }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # Set up Swift environment
+      - name: Setup Swift
+        uses: swift-actions/setup-swift@v2
+        with:
+          swift-version: "6.1"
+
+      - name: Set build version and cache fingerprints
+        id: set-version
+        run: |
+          # Generate build number based on date and github run number
+          RUN_NUMBER="${{ github.run_number }}"
+          BUILD_NUMBER="$(date +'%Y%m%d')${RUN_NUMBER}"
+          VERSION_FROM_INFO=$(defaults read "$(pwd)/CodeLooper/Info.plist" CFBundleShortVersionString 2>/dev/null || echo "1.0.0")
+          VERSION="${VERSION_FROM_INFO}-b${BUILD_NUMBER}"
+          echo "App Version: $VERSION"
+
+          SWIFT_VERSION="$(swift --version | head -n 1)"
+          SWIFT_VERSION_HASH="$(echo "${SWIFT_VERSION}" | shasum -a 256 | cut -d ' ' -f 1)"
+          PACKAGE_HASH="$(shasum -a 256 Package.swift 2>/dev/null | cut -d ' ' -f 1 || echo "none")"
+          BUILD_SCRIPT_HASH="$(shasum -a 256 scripts/build.sh 2>/dev/null | cut -d ' ' -f 1 || echo "none")"
+          SWIFT_FILES_HASH="$(find Sources -name "*.swift" -type f | sort -r | head -5 | xargs -I{} shasum -a 256 "{}" 2>/dev/null | shasum -a 256 | cut -d ' ' -f 1 || echo "none")"
+          {
+            printf "build_number=%s\\n" "${BUILD_NUMBER}"
+            printf "swift_version=%s\\n" "${SWIFT_VERSION}"
+            printf "swift_hash=%s\\n" "${SWIFT_VERSION_HASH}"
+            printf "package_hash=%s\\n" "${PACKAGE_HASH}"
+            printf "build_script_hash=%s\\n" "${BUILD_SCRIPT_HASH}"
+            printf "swift_files_hash=%s\\n" "${SWIFT_FILES_HASH}"
+            printf "version=%s\\n" "${VERSION}"
+          } >> $GITHUB_OUTPUT
+
+      - name: Cache Swift packages
+        id: cache-spm
+        uses: cirruslabs/cache@v4
+        with:
+          path: |
+            .build
+            .swiftpm
+            Package.resolved
+          key: ${{ runner.os }}-spm-${{ hashFiles('Package.swift') }}-${{ steps.set-version.outputs.swift_version }}
+          restore-keys: |
+            ${{ runner.os }}-spm-${{ hashFiles('Package.swift') }}-
+            ${{ runner.os }}-spm-
+
+      - name: Cache build artifacts
+        id: cache-build
+        uses: cirruslabs/cache@v4
+        with:
+          path: |
+            binary
+          key: ${{ runner.os }}-binary-${{ hashFiles('Sources/**/*.swift', 'Package.swift', 'scripts/build.sh') }}-${{ steps.set-version.outputs.swift_version }}
+          restore-keys: |
+            ${{ runner.os }}-binary-${{ hashFiles('Sources/**/*.swift') }}-
+            ${{ runner.os }}-binary-
+
+      - name: Cache Xcode DerivedData
+        uses: cirruslabs/cache@v4
+        with:
+          path: |
+            ~/Library/Developer/Xcode/DerivedData
+            ~/Library/Caches/org.swift.swiftpm
+          key: ${{ runner.os }}-xcode-${{ hashFiles('Package.swift') }}-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-xcode-${{ hashFiles('Package.swift') }}-
+            ${{ runner.os }}-xcode-
+
+      - name: Prepare P12 Certificate File from Secret
+        id: prepare_p12_cert
+        # This step runs if the secret is likely populated AND signing is intended
+        if: env.P12_BASE64_CONTENT != ''
+        env:
+          P12_BASE64_CONTENT: ${{ secrets.MACOS_SIGNING_CERTIFICATE_P12_BASE64 }}
+        run: |
+          echo "Preparing P12 certificate file from Base64 secret..."
+          mkdir -p .private_keys
+          P12_FILE_PATH="${{ github.workspace }}/.private_keys/ci_signing_cert.p12"
+          echo "$P12_BASE64_CONTENT" | base64 --decode > "$P12_FILE_PATH"
+          if [ $? -ne 0 ] || [ ! -s "$P12_FILE_PATH" ]; then
+            echo "::error::Failed to decode MACOS_SIGNING_CERTIFICATE_P12_BASE64 secret into $P12_FILE_PATH"
+            echo "p12_file_path=" >> $GITHUB_OUTPUT
+          else
+            echo "Successfully decoded P12 to $P12_FILE_PATH"
+            echo "p12_file_path=$P12_FILE_PATH" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Prepare App Store Connect API Key File (P8)
+        id: prepare_p8_key
+        # This step runs if notarization is intended AND the secret is populated
+        if: env.P8_KEY_CONTENT != '' && !((github.event_name == 'workflow_dispatch' && inputs.notarize == false))
+        env:
+          P8_KEY_CONTENT: ${{ secrets.APP_STORE_CONNECT_API_KEY_P8 }}
+        run: |
+          echo "Preparing App Store Connect API Key (.p8) file..."
+          mkdir -p .private_keys
+          P8_FILE_PATH="${{ github.workspace }}/.private_keys/AuthKey_ci_rcodesign.p8"
+          echo "$P8_KEY_CONTENT" > "$P8_FILE_PATH"
+          if [ $? -ne 0 ] || [ ! -s "$P8_FILE_PATH" ]; then
+            echo "::error::Failed to write APP_STORE_CONNECT_API_KEY_P8 secret to $P8_FILE_PATH"
+            echo "p8_file_path=" >> $GITHUB_OUTPUT
+          else
+            echo "Successfully created P8 key file at $P8_FILE_PATH"
+            echo "p8_file_path=$P8_FILE_PATH" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Make scripts executable
+        run: |
+          chmod +x scripts/build-and-notarize.sh
+          chmod +x scripts/build.sh
+          chmod +x scripts/codesign-app.sh
+
+      - name: Build, Sign, and Optionally Notarize macOS App
+        id: build_sign_notarize_step
+        continue-on-error: true
+        env:
+          MACOS_SIGNING_P12_FILE_PATH: ${{ steps.prepare_p12_cert.outputs.p12_file_path }}
+          MACOS_SIGNING_CERTIFICATE_PASSWORD: ${{ secrets.MACOS_SIGNING_CERTIFICATE_PASSWORD }}
+          APP_STORE_CONNECT_P8_FILE_PATH: ${{ steps.prepare_p8_key.outputs.p8_file_path }}
+          APP_STORE_CONNECT_KEY_ID: ${{ secrets.APP_STORE_CONNECT_KEY_ID }}
+          APP_STORE_CONNECT_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
+          APP_VERSION_FOR_SCRIPT: ${{ steps.set-version.outputs.version }}
+        run: |
+          echo "Starting combined build, sign, optional notarization, and DMG creation step..."
+          FINAL_COMMAND=""
+          NOTARIZATION_INTENT_MESSAGE=""
+          VERSION_ARG="--app-version \"${APP_VERSION_FOR_SCRIPT}\""
+
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" && "${{ inputs.notarize }}" == "false" ]]; then
+            echo "Workflow dispatch with notarize=false. Building, signing, and creating DMG."
+            FINAL_COMMAND="./scripts/build-and-notarize.sh --skip-notarization --create-dmg $VERSION_ARG"
+            NOTARIZATION_INTENT_MESSAGE="Notarization explicitly skipped by input. DMG will be created."
+          else
+            # For PRs, tags, or workflow_dispatch with notarize=true (default)
+            echo "Full flow: Building, signing, notarizing (if possible), and creating DMG."
+            FINAL_COMMAND="./scripts/build-and-notarize.sh --create-dmg $VERSION_ARG"
+            NOTARIZATION_INTENT_MESSAGE="Full build, sign, notarize, and DMG creation attempted."
+          fi
+
+          echo "Executing: $FINAL_COMMAND"
+          echo "Intent: $NOTARIZATION_INTENT_MESSAGE"
+          
+          if eval "$FINAL_COMMAND"; then
+            echo "✅ Build script completed successfully."
+            # Determine notarization status for PR comment
+            if [[ "$FINAL_COMMAND" == *"--skip-notarization"* ]]; then
+              echo "notarization_status=skipped_by_command" >> $GITHUB_OUTPUT
+            elif [ -n "${{ env.APP_STORE_CONNECT_KEY_ID }}" ]; then
+              echo "notarization_status=success" >> $GITHUB_OUTPUT 
+            else
+              echo "notarization_status=skipped_no_creds" >> $GITHUB_OUTPUT
+            fi
+          else
+            echo "::error::Build script failed."
+            echo "notarization_status=failed" >> $GITHUB_OUTPUT
+            exit 1
+          fi
+
+      - name: Verify build artifacts
+        if: steps.build_sign_notarize_step.outcome == 'success'
+        run: |
+          echo "Checking build artifacts..."
+          APP_PATH="binary/CodeLooper.app"
+          if [ -d "$APP_PATH" ]; then
+            echo "✅ CodeLooper.app found at $APP_PATH"
+            ls -la "$APP_PATH/Contents/MacOS"
+            if [ -f "$APP_PATH/Contents/MacOS/CodeLooper" ]; then
+              echo "✅ CodeLooper executable found"
+              file "$APP_PATH/Contents/MacOS/CodeLooper"
+            else
+              echo "::error::CodeLooper executable not found in $APP_PATH/Contents/MacOS/"
+              exit 1
+            fi
+          else
+            echo "::error::CodeLooper.app not found at $APP_PATH"
+            exit 1
+          fi
+
+      - name: Create Build Artifacts
+        id: create_artifacts
+        if: steps.build_sign_notarize_step.outcome == 'success'
+        env:
+          APP_VERSION: ${{ steps.set-version.outputs.version }}
+        run: |
+          echo "Creating artifacts directory..."
+          mkdir -p artifacts
+          
+          APP_BUNDLE_DIR="binary"
+          APP_NAME="CodeLooper.app"
+          ZIP_NAME="CodeLooper-macOS-${APP_VERSION}.zip"
+          DMG_NAME="CodeLooper-macOS-${APP_VERSION}.dmg"
+
+          echo "Creating ZIP artifact: artifacts/$ZIP_NAME"
+          cd "$APP_BUNDLE_DIR"
+          ditto -c -k --keepParent "$APP_NAME" "../artifacts/$ZIP_NAME"
+          cd ../
+          echo "✅ ZIP created."
+
+          echo "artifact_zip_path=artifacts/$ZIP_NAME" >> $GITHUB_OUTPUT
+          if [ -f "artifacts/$DMG_NAME" ]; then
+            echo "DMG found at artifacts/$DMG_NAME"
+            echo "artifact_dmg_path=artifacts/$DMG_NAME" >> $GITHUB_OUTPUT
+            echo "dmg_status=success" >> $GITHUB_OUTPUT
+          else
+            echo "::warning::DMG file artifacts/$DMG_NAME not found."
+            echo "artifact_dmg_path=" >> $GITHUB_OUTPUT
+            echo "dmg_status=missing" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Upload Build Artifacts
+        if: steps.build_sign_notarize_step.outcome == 'success'
+        uses: actions/upload-artifact@v4
+        with:
+          name: CodeLooper-macOS-Build-${{ steps.set-version.outputs.version }}
+          path: |
+            ${{ steps.create_artifacts.outputs.artifact_zip_path }}
+            ${{ steps.create_artifacts.outputs.artifact_dmg_path }}
+          retention-days: 14
+          if-no-files-found: error
+
+      - name: Create PR Comment
+        if: github.event_name == 'pull_request' && always()
+        uses: marocchino/sticky-pull-request-comment@v2
+        with:
+          header: macos-codelooper-build
+          message: |
+            **🍎 macOS CodeLooper App (${{ steps.set-version.outputs.version }})**
+            Build & Sign: ${{ steps.build_sign_notarize_step.outcome == 'success' && '✅ Success' || '❌ Failed' }}
+            Notarization: ${{ steps.build_sign_notarize_step.outputs.notarization_status || 'Unknown/Skipped' }} 
+            ${{ steps.build_sign_notarize_step.outcome == 'success' && '[Download Artifacts](https://github.com/' }}${{ github.repository }}${{ '/actions/runs/' }}${{ github.run_id }}${{ ')' || '' }}
+            ${{ steps.build_sign_notarize_step.outcome != 'success' && '⚠️ **Build/Sign Failed** - Check logs.' || '' }}
+            ${{ steps.build_sign_notarize_step.outcome == 'success' && (steps.build_sign_notarize_step.outputs.notarization_status == 'failed' || steps.build_sign_notarize_step.outputs.notarization_status == 'attempted_failure') && '⚠️ **Notarization Issue** - Check logs.' || '' }}
+
+      - name: Create Release
+        id: create_release
+        if: startsWith(github.ref, 'refs/tags/') && steps.build_sign_notarize_step.outcome == 'success' && (github.event_name != 'workflow_dispatch' || inputs.create_release == true)
+        uses: softprops/action-gh-release@v1
+        with:
+          name: CodeLooper macOS ${{ steps.set-version.outputs.version }}
+          files: |
+            ${{ steps.create_artifacts.outputs.artifact_zip_path }}
+            ${{ steps.create_artifacts.outputs.artifact_dmg_path }}
+          draft: false
+          prerelease: false
+          generate_release_notes: true
