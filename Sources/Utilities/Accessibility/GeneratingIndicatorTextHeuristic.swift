@@ -1,5 +1,7 @@
 import AXorcistLib
 import Foundation
+import ApplicationServices
+import Defaults
 
 // MARK: - Generating Indicator Text Heuristic
 
@@ -7,67 +9,62 @@ struct GeneratingIndicatorTextHeuristic: AXElementHeuristic {
     let locatorType: LocatorType = .generatingIndicatorText
 
     @MainActor func discover(for pid: pid_t, axorcist: AXorcist) async -> AXorcistLib.Locator? {
-        // Strategy 1: Look for static text containing "generating" (case insensitive)
-        let strategy1 = AXorcistLib.Locator(
-            match_all: false,
-            criteria: ["role": kAXStaticTextRole],
-            root_element_path_hint: nil,
-            requireAction: nil,
-            computed_name_contains: "generating"
-        )
-        
         var tempLogs: [String] = []
-        let queryResponse1 = axorcist.handleQuery(
-            for: nil,
-            locator: strategy1,
-            maxDepth: 10,
-            isDebugLoggingEnabled: true,
-            currentDebugLogs: &tempLogs
-        )
-        if queryResponse1.error == nil, let _ = queryResponse1.data {
-            return strategy1
-        }
-        
-        // Strategy 2: Look for text containing "Generating response" or similar patterns
-        let strategy2 = AXorcistLib.Locator(
+        let axorcist = AXorcist() // Assuming a new instance per call or shared instance access
+
+        // Attempt 1: Specific text and role
+        let locator1 = AXorcistLib.Locator(
             match_all: false,
             criteria: ["role": kAXStaticTextRole],
-            root_element_path_hint: nil,
-            requireAction: nil,
             computed_name_contains: "Generating"
         )
-        
-        var tempLogs2: [String] = []
-        let queryResponse2 = axorcist.handleQuery(
+        let queryResponse1 = await axorcist.handleQuery(
             for: nil,
-            locator: strategy2,
-            maxDepth: 10,
-            isDebugLoggingEnabled: true,
-            currentDebugLogs: &tempLogs2
+            locator: locator1,
+            pathHint: nil,
+            maxDepth: nil,
+            requestedAttributes: nil,
+            outputFormat: nil,
+            isDebugLoggingEnabled: Defaults[.verboseLogging],
+            currentDebugLogs: &tempLogs
         )
-        if queryResponse2.error == nil, let _ = queryResponse2.data {
-            return strategy2
-        }
-        
-        // Strategy 3: Look for progress indicators or activity indicators
-        let strategy3 = AXorcistLib.Locator(
+        if queryResponse1.data != nil { return locator1 }
+
+        // Attempt 2: Broader role with general keywords
+        let locator2 = AXorcistLib.Locator(
             match_all: false,
-            criteria: ["role": kAXProgressIndicatorRole],
-            root_element_path_hint: nil,
-            requireAction: nil,
-            computed_name_contains: nil
+            criteria: ["role": kAXStaticTextRole],
+            computed_name_contains: "loading"
         )
-        
-        var tempLogs3: [String] = []
-        let queryResponse3 = axorcist.handleQuery(
+        let queryResponse2 = await axorcist.handleQuery(
             for: nil,
-            locator: strategy3,
-            maxDepth: 10,
-            isDebugLoggingEnabled: true,
-            currentDebugLogs: &tempLogs3
+            locator: locator2,
+            pathHint: nil,
+            maxDepth: nil,
+            requestedAttributes: nil,
+            outputFormat: nil,
+            isDebugLoggingEnabled: Defaults[.verboseLogging],
+            currentDebugLogs: &tempLogs
         )
-        if queryResponse3.error == nil, let _ = queryResponse3.data {
-            return strategy3
+        if queryResponse2.data != nil { return locator2 }
+
+        // Attempt 3: Progress indicator role
+        let locator3 = AXorcistLib.Locator(
+            match_all: false,
+            criteria: ["role": kAXProgressIndicatorRole]
+        )
+        let queryResponse3 = await axorcist.handleQuery(
+            for: nil,
+            locator: locator3,
+            pathHint: nil,
+            maxDepth: nil,
+            requestedAttributes: nil,
+            outputFormat: nil,
+            isDebugLoggingEnabled: Defaults[.verboseLogging],
+            currentDebugLogs: &tempLogs
+        )
+        if queryResponse3.data != nil {
+            return locator3
         }
         
         return nil

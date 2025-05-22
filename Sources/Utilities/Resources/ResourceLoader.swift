@@ -19,7 +19,7 @@ public final class ResourceLoader: Sendable {
 
     // Get URL scheme from Info.plist
     public static func getURLScheme() -> String? {
-        guard let urlTypes = Bundle.main.infoDictionary?[InfoKey.Bundle.urlTypes] as? [[String: Any]],
+        guard let urlTypes = Bundle.main.infoDictionary?[InfoKey.Bundle.urlTypes] as? [[String: Sendable]],
             let firstUrlType = urlTypes.first,
             let schemes = firstUrlType[InfoKey.CFBundleURL.schemes] as? [String],
             let scheme = schemes.first

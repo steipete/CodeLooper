@@ -6,6 +6,8 @@ import os
 import Defaults
 import SwiftUI
 import Foundation
+import ApplicationServices
+import AXorcistLib
 
 // Assuming AXApplicationObserver is in a place where it can be imported, or its relevant notifications are used.
 
@@ -207,6 +209,22 @@ public class CursorMonitor: ObservableObject {
                 continue
             }
 
+            // Check if manually paused before diving into the use case which might do AX queries
+            if instanceStateManager.isManuallyPaused(pid: pid) {
+                logger.debug("PID \(pid) is manually paused. Skipping deep check in this tick.")
+                // Ensure UI reflects this state accurately if not already set
+                if var infoToUpdate = appLifecycleManager.instanceInfo[pid] {
+                    if infoToUpdate.status != .paused {
+                        infoToUpdate.status = .paused
+                        infoToUpdate.statusMessage = "Monitoring Paused (Manual)"
+                        appLifecycleManager.instanceInfo[pid] = infoToUpdate
+                        let displayStatus = mapCursorStatusToDisplayStatus(infoToUpdate.status)
+                        updateInstanceDisplayInfo(for: pid, newStatus: displayStatus, interventionCount: instanceStateManager.getAutomaticInterventions(for: pid))
+                    }
+                }
+                continue // Skip to next PID
+            }
+
             let useCase = ProcessMonitoringTickUseCase(
                 pid: pid,
                 currentInfo: currentInfo,
@@ -219,6 +237,8 @@ public class CursorMonitor: ObservableObject {
                 parentLogger: self.logger // Pass CursorMonitor's logger as parent
             )
 
+            // All calls to interventionEngine methods are within useCase.execute(), which is async.
+            // The execute() method itself is async, so the 'await' here covers those calls implicitly.
             let (newStatus, newStatusMessage, shouldStopProcessingPID) = await useCase.execute()
 
             if var infoToUpdate = appLifecycleManager.instanceInfo[pid] { // Re-fetch in case it was removed by termination logic
@@ -227,7 +247,7 @@ public class CursorMonitor: ObservableObject {
                 appLifecycleManager.instanceInfo[pid] = infoToUpdate // Update the source of truth
 
                 let displayStatus = mapCursorStatusToDisplayStatus(newStatus)
-                updateInstanceDisplayInfo(for: pid, newStatus: displayStatus, interventionCount: instanceStateManager.getAutomaticInterventions(for: pid), statusMessage: newStatusMessage)
+                updateInstanceDisplayInfo(for: pid, newStatus: displayStatus, interventionCount: instanceStateManager.getAutomaticInterventions(for: pid))
             } else {
                 logger.info("PID \(pid) no longer in instanceInfo after use case execution (likely terminated). Skipping UI update for it.")
             }
@@ -238,23 +258,19 @@ public class CursorMonitor: ObservableObject {
                 logger.debug("PID \(pid): Processing stopped for this tick based on use case result.")
                 continue
             }
-            
-            // Original complex logic for a single PID is now inside ProcessMonitoringTickUseCase.execute()
-            // The switch statement and calls to interventionEngine methods are handled there.
-            // Checks for max interventions and consecutive failures are also handled there.
 
         } // end for pid in pidsToProcess
         logger.debug("Finished monitoring tick.")
     }
 
-    private func getTextFromAXElement(_ axElement: AXorcistLib.AXElement?) -> String {
+    private func getPrimaryDisplayableText(axElement: AXElement?) -> String {
         guard let element = axElement else { return "" }
         let attributeKeysInOrder: [String] = [
-            AXorcistLib.kAXValueAttribute as String,
-            AXorcistLib.kAXTitleAttribute as String,
-            AXorcistLib.kAXDescriptionAttribute as String,
-            AXorcistLib.kAXPlaceholderValueAttribute as String,
-            AXorcistLib.kAXHelpAttribute as String
+            AXAttributeNames.kAXValueAttribute as String,
+            AXAttributeNames.kAXTitleAttribute as String,
+            AXAttributeNames.kAXDescriptionAttribute as String,
+            AXAttributeNames.kAXPlaceholderValueAttribute as String,
+            AXAttributeNames.kAXHelpAttribute as String
         ]
         for key in attributeKeysInOrder {
             if let anyCodableInstance = element.attributes?[key] {
@@ -266,39 +282,21 @@ public class CursorMonitor: ObservableObject {
         return ""
     }
     
-    private func getTextualRepresentation(for axElement: AXorcistLib.AXElement?, depth: Int = 0, maxDepth: Int = 1) -> String {
-        guard let element = axElement, depth <= maxDepth else { return "" }
-
-        var components: [String] = []
-        var _: [String] = [] 
-
+    private func getSecondaryDisplayableText(axElement: AXElement?) -> String {
+        guard let element = axElement else { return "" }
         let attributeKeysInOrder: [String] = [
-            AXorcistLib.kAXValueAttribute as String,
-            AXorcistLib.kAXTitleAttribute as String,
-            AXorcistLib.kAXDescriptionAttribute as String,
+            AXAttributeNames.kAXValueAttribute as String,
+            AXAttributeNames.kAXTitleAttribute as String,
+            AXAttributeNames.kAXDescriptionAttribute as String,
         ]
         for key in attributeKeysInOrder {
             if let anyCodableInstance = element.attributes?[key] {
                 if let stringValue = anyCodableInstance.value as? String, !stringValue.isEmpty {
-                    components.append(stringValue.trimmingCharacters(in: CharacterSet.whitespacesAndNewlines))
+                    return stringValue.trimmingCharacters(in: CharacterSet.whitespacesAndNewlines)
                 }
             }
         }
-        
-        if depth < maxDepth {
-            /*
-            if let childrenElements = element.children(isDebugLoggingEnabled: false, currentDebugLogs: &tempLogs) {
-                for child in childrenElements {
-                    let childText = getTextualRepresentation(for: child, depth: depth + 1, maxDepth: maxDepth)
-                    if !childText.isEmpty {
-                        components.append(childText)
-                    }
-                }
-            }
-            */
-        }
-        
-        return components.joined(separator: " | ")
+        return ""
     }
 
     public func resumeInterventions(for pid: pid_t) async {
@@ -403,5 +401,11 @@ public class CursorMonitor: ObservableObject {
         // Missing: How to map to .pausedManually from CursorInstanceStatus if it only has .paused?
         // Add a check here if needed, or rely on instanceStateManager.isManuallyPaused for distinct UI in popover.
         }
+    }
+
+    // Called from AppDelegate or similar UI context
+    @MainActor
+    public func updateInstanceDisplayInfo(for pid: pid_t, newStatus: DisplayStatus, interventionCount: Int) {
+        // ... existing code ...
     }
 }

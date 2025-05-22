@@ -68,13 +68,17 @@ if [ -f "$TUIST_PLISTS_FILE" ]; then
         echo "Fixed nsAppTransportSecurity type"
     fi
     
-    # Fix cfBundleURLTypes - ensure the type is [[String: Any]] to support schemes as an array
+    # Fix cfBundleURLTypes - change from [[String: Any]] to a Sendable-compliant type
+    # Since we know the exact structure, we can make it more type-safe
     if grep -q "cfBundleURLTypes: \[\[String: Any\]\]" "$TUIST_PLISTS_FILE"; then
-        echo "cfBundleURLTypes already has [[String: Any]] type. No change needed for type."
+        echo "Found cfBundleURLTypes with [[String: Any]] type. Converting to Sendable type."
+        # Replace the type and convert the array value to use proper typing
+        sed -i '' 's/cfBundleURLTypes: \[\[String: Any\]\] = \[\["CFBundleTypeRole": "Viewer", "CFBundleURLName": "ai\.amantusmachina\.codelooper", "CFBundleURLSchemes": \["codelooper"\]\]\]/cfBundleURLTypes: [[String: Sendable]] = [["CFBundleTypeRole": "Viewer", "CFBundleURLName": "ai.amantusmachina.codelooper", "CFBundleURLSchemes": ["codelooper"]]]/g' "$TUIST_PLISTS_FILE"
+        echo "Changed cfBundleURLTypes to use [[String: Sendable]] type"
     elif grep -q "cfBundleURLTypes: \[\[String: String\]\]" "$TUIST_PLISTS_FILE"; then
         echo "Found cfBundleURLTypes with [[String: String]] type"
-        sed -i '' 's/cfBundleURLTypes: \[\[String: String\]\]/cfBundleURLTypes: [[String: Any]]/g' "$TUIST_PLISTS_FILE"
-        echo "Changed cfBundleURLTypes type to [[String: Any]]"
+        sed -i '' 's/cfBundleURLTypes: \[\[String: String\]\]/cfBundleURLTypes: [[String: Sendable]]/g' "$TUIST_PLISTS_FILE"
+        echo "Changed cfBundleURLTypes type to [[String: Sendable]]"
     else
         echo "cfBundleURLTypes type not found or not in expected incorrect format. Manual check might be needed."
     fi
@@ -143,11 +147,11 @@ if [ -f "$RESOURCE_LOADER_FILE" ]; then
         echo "Fixed App Transport Security access methods"
     fi
     
-    # Fix the getURLScheme method to correctly handle [[String: Any]] and [String] for schemes
+    # Fix the getURLScheme method to correctly handle [[String: Sendable]] and [String] for schemes
     if grep -q "urlTypes = Bundle.main.infoDictionary?\[InfoKey.Bundle.urlTypes\] as? \[\[String: String\]\]" "$RESOURCE_LOADER_FILE"; then
-        echo "Found ResourceLoader getURLScheme expecting [[String: String]]. Fixing to [[String: Any]] and array handling."
-        # Change the expected type for urlTypes to [[String: Any]]
-        sed -i '' 's/urlTypes = Bundle.main.infoDictionary?\[InfoKey.Bundle.urlTypes\] as? \[\[String: String\]\]/urlTypes = Bundle.main.infoDictionary?[InfoKey.Bundle.urlTypes] as? [[String: Any]]/g' "$RESOURCE_LOADER_FILE"
+        echo "Found ResourceLoader getURLScheme expecting [[String: String]]. Fixing to [[String: Sendable]] and array handling."
+        # Change the expected type for urlTypes to [[String: Sendable]]
+        sed -i '' 's/urlTypes = Bundle.main.infoDictionary?\[InfoKey.Bundle.urlTypes\] as? \[\[String: String\]\]/urlTypes = Bundle.main.infoDictionary?[InfoKey.Bundle.urlTypes] as? [[String: Sendable]]/g' "$RESOURCE_LOADER_FILE"
         
         # Modify how 'scheme' is extracted to handle an array of strings
         # From: let scheme = firstUrlType[InfoKey.CFBundleURL.schemes]
@@ -166,10 +170,28 @@ if [ -f "$RESOURCE_LOADER_FILE" ]; then
         echo "Fixed ResourceLoader getURLScheme to correctly handle CFBundleURLSchemes array."
 
     elif grep -q "urlTypes = Bundle.main.infoDictionary?\[InfoKey.Bundle.urlTypes\] as? \[\[String: Any\]\]" "$RESOURCE_LOADER_FILE"; then
-        # If it's already [[String: Any]], just ensure the scheme extraction is correct
-        echo "ResourceLoader getURLScheme already expects [[String: Any]]. Verifying scheme extraction logic."
+        # If it's [[String: Any]], change to [[String: Sendable]] and ensure scheme extraction is correct
+        echo "Found ResourceLoader getURLScheme expecting [[String: Any]]. Fixing to [[String: Sendable]] and verifying scheme extraction logic."
+        sed -i '' 's/urlTypes = Bundle.main.infoDictionary?\[InfoKey.Bundle.urlTypes\] as? \[\[String: Any\]\]/urlTypes = Bundle.main.infoDictionary?[InfoKey.Bundle.urlTypes] as? [[String: Sendable]]/g' "$RESOURCE_LOADER_FILE"
         if grep -q "let scheme = firstUrlType\[InfoKey.CFBundleURL.schemes\]" "$RESOURCE_LOADER_FILE" && !grep -q "let schemes = firstUrlType\[InfoKey.CFBundleURL.schemes\] as? \[String\]," "$RESOURCE_LOADER_FILE"; then
             echo "Fixing scheme extraction logic in ResourceLoader getURLScheme for existing [[String: Any]]."
+            awk '
+            /let scheme = firstUrlType\[InfoKey.CFBundleURL.schemes\]/ {
+                print "            let schemes = firstUrlType[InfoKey.CFBundleURL.schemes] as? [String],"
+                print "            let scheme = schemes?.first"
+                next
+            }
+            { print }
+            ' "$RESOURCE_LOADER_FILE" > "$RESOURCE_LOADER_FILE.tmp" && mv "$RESOURCE_LOADER_FILE.tmp" "$RESOURCE_LOADER_FILE"
+            echo "Fixed scheme extraction logic."
+        else
+            echo "Scheme extraction logic appears correct or already patched."
+        fi
+    elif grep -q "urlTypes = Bundle.main.infoDictionary?\[InfoKey.Bundle.urlTypes\] as? \[\[String: Sendable\]\]" "$RESOURCE_LOADER_FILE"; then
+        # If it's already [[String: Sendable]], just ensure the scheme extraction is correct
+        echo "ResourceLoader getURLScheme already expects [[String: Sendable]]. Verifying scheme extraction logic."
+        if grep -q "let scheme = firstUrlType\[InfoKey.CFBundleURL.schemes\]" "$RESOURCE_LOADER_FILE" && !grep -q "let schemes = firstUrlType\[InfoKey.CFBundleURL.schemes\] as? \[String\]," "$RESOURCE_LOADER_FILE"; then
+            echo "Fixing scheme extraction logic in ResourceLoader getURLScheme for existing [[String: Sendable]]."
             awk '
             /let scheme = firstUrlType\[InfoKey.CFBundleURL.schemes\]/ {
                 print "            let schemes = firstUrlType[InfoKey.CFBundleURL.schemes] as? [String],"

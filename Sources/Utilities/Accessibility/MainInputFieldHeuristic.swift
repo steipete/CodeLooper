@@ -1,5 +1,7 @@
 import AXorcistLib
 import Foundation
+import ApplicationServices
+import Defaults
 
 // MARK: - Main Input Field Heuristic (Enhanced)
 
@@ -7,72 +9,64 @@ struct MainInputFieldHeuristic: AXElementHeuristic {
     let locatorType: LocatorType = .mainInputField
 
     @MainActor func discover(for pid: pid_t, axorcist: AXorcist) async -> AXorcistLib.Locator? {
-        // Strategy 1: Look for focused text area in main window
-        let strategy1 = AXorcistLib.Locator(
+        var tempLogs: [String] = []
+        // axorcist instance is passed in
+
+        // Attempt 1: Common role and placeholder/value - simplified
+        let locator1 = AXorcistLib.Locator(
             match_all: false,
             criteria: [
                 "role": kAXTextAreaRole,
-                "focused": "true"
-            ],
-            root_element_path_hint: ["AXApplication", "AXWindow"],
-            requireAction: nil,
-            computed_name_contains: nil
+                "placeholder_value": "message" // Simplified from placeholder_value_contains_any
+            ]
         )
-        
-        var tempLogs: [String] = []
-        let queryResponse1 = axorcist.handleQuery(
+        let queryResponse1 = await axorcist.handleQuery( // Added await
             for: nil,
-            locator: strategy1,
-            maxDepth: 10,
-            isDebugLoggingEnabled: true,
+            locator: locator1,
+            pathHint: nil,
+            maxDepth: nil, 
+            requestedAttributes: nil,
+            outputFormat: nil,
+            isDebugLoggingEnabled: Defaults[.verboseLogging], // Corrected Defaults usage
             currentDebugLogs: &tempLogs
         )
-        if queryResponse1.error == nil, let _ = queryResponse1.data {
-            return strategy1
-        }
-        
-        // Strategy 2: Look for text area containing "Chat with Cursor"
-        let strategy2 = AXorcistLib.Locator(
+        if queryResponse1.data != nil { return locator1 }
+
+        // Attempt 2: Specific accessibility labels or titles - simplified
+        let locator2 = AXorcistLib.Locator(
             match_all: false,
             criteria: ["role": kAXTextAreaRole],
-            root_element_path_hint: nil,
-            requireAction: nil,
-            computed_name_contains: "Chat with Cursor"
+            computed_name_contains: "Chat Input" // Simplified from computed_name_equals_any
         )
-        
-        var tempLogs2: [String] = []
-        let queryResponse2 = axorcist.handleQuery(
+        let queryResponse2 = await axorcist.handleQuery( // Added await
             for: nil,
-            locator: strategy2,
-            maxDepth: 10,
-            isDebugLoggingEnabled: true,
-            currentDebugLogs: &tempLogs2
+            locator: locator2,
+            pathHint: nil,
+            maxDepth: nil,
+            requestedAttributes: nil,
+            outputFormat: nil,
+            isDebugLoggingEnabled: Defaults[.verboseLogging], // Corrected Defaults usage
+            currentDebugLogs: &tempLogs
         )
-        if queryResponse2.error == nil, let _ = queryResponse2.data {
-            return strategy2
-        }
-        
-        // Strategy 3: Look for any focusable text area in main window
-        let strategy3 = AXorcistLib.Locator(
+        if queryResponse2.data != nil { return locator2 }
+
+        // Attempt 3: Generic enabled text area (fallback)
+        let locator3 = AXorcistLib.Locator(
             match_all: false,
-            criteria: ["role": kAXTextAreaRole],
-            root_element_path_hint: ["AXApplication", "AXWindow"],
-            requireAction: nil,
-            computed_name_contains: nil
+            criteria: ["role": kAXTextAreaRole, "enabled": "true"]
         )
-        
-        var tempLogs3: [String] = []
-        let queryResponse3 = axorcist.handleQuery(
+        let queryResponse3 = await axorcist.handleQuery( // Added await
             for: nil,
-            locator: strategy3,
-            maxDepth: 10,
-            isDebugLoggingEnabled: true,
-            currentDebugLogs: &tempLogs3
+            locator: locator3,
+            pathHint: nil,
+            maxDepth: nil,
+            requestedAttributes: nil,
+            outputFormat: nil,
+            isDebugLoggingEnabled: Defaults[.verboseLogging], // Corrected Defaults usage
+            currentDebugLogs: &tempLogs
         )
-        if queryResponse3.error == nil, let _ = queryResponse3.data {
-            return strategy3
-        }
-        
+        if queryResponse3.data != nil { return locator3 }
+
         return nil
     }
 } 

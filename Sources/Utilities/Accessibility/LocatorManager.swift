@@ -1,6 +1,7 @@
 import AXorcistLib // Use the library product
 import Defaults // For UserDefaults access
 import Foundation
+import ApplicationServices
 
 // AXorcistLib.Locator should be directly usable as `Locator` after import.
 
@@ -15,14 +16,14 @@ public class LocatorManager {
     private let defaultLocators: [LocatorType: AXorcistLib.Locator] = [
         .generatingIndicatorText: AXorcistLib.Locator(
             match_all: false,
-            criteria: ["AXRole": kAXStaticTextRole],
+            criteria: ["role": AXRoleNames.kAXStaticTextRole],
             root_element_path_hint: nil,
             requireAction: nil,
             computed_name_contains: "generating"
         ),
         .sidebarActivityArea: AXorcistLib.Locator(
             match_all: false,
-            criteria: ["AXRole": kAXScrollAreaRole],
+            criteria: ["role": AXRoleNames.kAXScrollAreaRole],
             root_element_path_hint: nil,
             requireAction: nil,
             computed_name_contains: nil
@@ -30,7 +31,7 @@ public class LocatorManager {
         .errorMessagePopup: AXorcistLib.Locator(
             match_all: false,
             criteria: [
-                "AXRole": kAXStaticTextRole,
+                "role": AXRoleNames.kAXStaticTextRole,
                 "isLikelyErrorMessage": "true"
             ],
             root_element_path_hint: nil,
@@ -39,28 +40,28 @@ public class LocatorManager {
         ),
         .stopGeneratingButton: AXorcistLib.Locator(
             match_all: false,
-            criteria: ["AXRole": kAXButtonRole],
+            criteria: ["role": AXRoleNames.kAXButtonRole],
             root_element_path_hint: nil,
             requireAction: nil,
             computed_name_contains: "Stop"
         ),
         .connectionErrorIndicator: AXorcistLib.Locator(
             match_all: false,
-            criteria: ["AXRole": kAXStaticTextRole],
+            criteria: ["role": AXRoleNames.kAXStaticTextRole],
             root_element_path_hint: nil,
             requireAction: nil,
             computed_name_contains: "offline"
         ),
         .resumeConnectionButton: AXorcistLib.Locator(
             match_all: false,
-            criteria: ["AXRole": kAXButtonRole],
+            criteria: ["role": AXRoleNames.kAXButtonRole],
             root_element_path_hint: nil,
             requireAction: nil,
             computed_name_contains: "Resume"
         ),
         .forceStopResumeLink: AXorcistLib.Locator(
             match_all: false,
-            criteria: ["AXRole": kAXLinkRole],
+            criteria: ["role": AXRoleNames.kAXLinkRole],
             root_element_path_hint: nil,
             requireAction: nil,
             computed_name_contains: "Resume Conversation"
@@ -68,7 +69,7 @@ public class LocatorManager {
         .mainInputField: AXorcistLib.Locator(
             match_all: false,
             criteria: [
-                "AXRole": kAXTextAreaRole,
+                "role": AXRoleNames.kAXTextAreaRole,
                 "AXMainWindow": "true",
                 "AXEnabled": "true"
             ],
