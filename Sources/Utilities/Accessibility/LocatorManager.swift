@@ -7,103 +7,190 @@ import Foundation
 @MainActor // Changed from actor to @MainActor class
 public class LocatorManager {
     public static let shared = LocatorManager()
+    private let axorcistInstance: AXorcist // To pass to discoverer
+    private let dynamicDiscoverer: DynamicLocatorDiscoverer
 
-    // Default locators - these will need to be populated with actual Locator instances
-    // based on AXorcistLib.Locator's definition and the specific elements to target.
-    private let defaultLocators: [String: AXorcistLib.Locator] = [
-        "generatingIndicatorText": AXorcistLib.Locator(),
-        "sidebarActivityArea": AXorcistLib.Locator(),
-        "errorMessagePopup": AXorcistLib.Locator(),
-        "stopGeneratingButton": AXorcistLib.Locator(),
-        "connectionErrorIndicator": AXorcistLib.Locator(),
-        "resumeConnectionButton": AXorcistLib.Locator(),
-        "forceStopResumeLink": AXorcistLib.Locator(),
-        "mainInputField": AXorcistLib.Locator()
+    // Default locators - these are fallback locators if not overridden by user or found in session cache.
+    // These should represent common, reasonably stable ways to find these elements.
+    private let defaultLocators: [LocatorType: AXorcistLib.Locator] = [
+        .generatingIndicatorText: AXorcistLib.Locator(
+            match_all: false,
+            criteria: ["AXRole": kAXStaticTextRole],
+            root_element_path_hint: nil,
+            requireAction: nil,
+            computed_name_contains: "generating"
+        ),
+        .sidebarActivityArea: AXorcistLib.Locator(
+            match_all: false,
+            criteria: ["AXRole": kAXScrollAreaRole],
+            root_element_path_hint: nil,
+            requireAction: nil,
+            computed_name_contains: nil
+        ),
+        .errorMessagePopup: AXorcistLib.Locator(
+            match_all: false,
+            criteria: [
+                "AXRole": kAXStaticTextRole,
+                "isLikelyErrorMessage": "true"
+            ],
+            root_element_path_hint: nil,
+            requireAction: nil,
+            computed_name_contains: nil
+        ),
+        .stopGeneratingButton: AXorcistLib.Locator(
+            match_all: false,
+            criteria: ["AXRole": kAXButtonRole],
+            root_element_path_hint: nil,
+            requireAction: nil,
+            computed_name_contains: "Stop"
+        ),
+        .connectionErrorIndicator: AXorcistLib.Locator(
+            match_all: false,
+            criteria: ["AXRole": kAXStaticTextRole],
+            root_element_path_hint: nil,
+            requireAction: nil,
+            computed_name_contains: "offline"
+        ),
+        .resumeConnectionButton: AXorcistLib.Locator(
+            match_all: false,
+            criteria: ["AXRole": kAXButtonRole],
+            root_element_path_hint: nil,
+            requireAction: nil,
+            computed_name_contains: "Resume"
+        ),
+        .forceStopResumeLink: AXorcistLib.Locator(
+            match_all: false,
+            criteria: ["AXRole": kAXLinkRole],
+            root_element_path_hint: nil,
+            requireAction: nil,
+            computed_name_contains: "Resume Conversation"
+        ),
+        .mainInputField: AXorcistLib.Locator(
+            match_all: false,
+            criteria: [
+                "AXRole": kAXTextAreaRole,
+                "AXMainWindow": "true",
+                "AXEnabled": "true"
+            ],
+            root_element_path_hint: nil,
+            requireAction: nil,
+            computed_name_contains: nil
+        )
     ]
 
     // Session cache for successfully used/discovered locators
-    private var sessionCache: [String: AXorcistLib.Locator] = [:]
+    private var sessionCache: [LocatorType: AXorcistLib.Locator] = [:]
 
-    // UserDefaults keys are now statically defined in DefaultsKeys.swift
-    // private func userDefaultsKey(for elementName: String) -> Defaults.Key<String?> {
-    //     return Defaults.Key<String?>("locator_override_\(elementName)", default: nil)
-    // }
+    private init() {
+        // Initialize AXorcist instance here or ensure it's passed if needed by discoverer directly.
+        // For simplicity, assuming discoverer can take it during its discover call.
+        self.axorcistInstance = AXorcist() // Or get from a shared context if appropriate
+        self.dynamicDiscoverer = DynamicLocatorDiscoverer()
+    }
 
-    private init() {}
-
-    // No longer async as it's on the same MainActor as callers like CursorMonitor
-    public func getLocator(for elementName: String) -> AXorcistLib.Locator? {
+    public func getLocator(for type: LocatorType, pid: pid_t? = nil) async -> AXorcistLib.Locator? {
         var jsonString: String?
+        let defaultsKeyName = type.rawValue // Assuming LocatorType rawValues match the string keys used before
 
         // 1. Check UserDefaults for user override (JSON string)
-        switch elementName {
-        case "generatingIndicatorText": jsonString = Defaults[.locatorJSONGeneratingIndicatorText]
-        case "sidebarActivityArea": jsonString = Defaults[.locatorJSONSidebarActivityArea]
-        case "errorMessagePopup": jsonString = Defaults[.locatorJSONErrorMessagePopup]
-        case "stopGeneratingButton": jsonString = Defaults[.locatorJSONStopGeneratingButton]
-        case "connectionErrorIndicator": jsonString = Defaults[.locatorJSONConnectionErrorIndicator]
-        case "resumeConnectionButton": jsonString = Defaults[.locatorJSONResumeConnectionButton]
-        case "forceStopResumeLink": jsonString = Defaults[.locatorJSONForceStopResumeLink]
-        case "mainInputField": jsonString = Defaults[.locatorJSONMainInputField]
-        default: break
+        switch type {
+        case .generatingIndicatorText: jsonString = Defaults[.locatorJSONGeneratingIndicatorText]
+        case .sidebarActivityArea: jsonString = Defaults[.locatorJSONSidebarActivityArea]
+        case .errorMessagePopup: jsonString = Defaults[.locatorJSONErrorMessagePopup]
+        case .stopGeneratingButton: jsonString = Defaults[.locatorJSONStopGeneratingButton]
+        case .connectionErrorIndicator: jsonString = Defaults[.locatorJSONConnectionErrorIndicator]
+        case .resumeConnectionButton: jsonString = Defaults[.locatorJSONResumeConnectionButton]
+        case .forceStopResumeLink: jsonString = Defaults[.locatorJSONForceStopResumeLink]
+        case .mainInputField: jsonString = Defaults[.locatorJSONMainInputField]
+        // default: break // Not needed if LocatorType is comprehensive and matches DefaultsKeys
         }
         
         if let str = jsonString, !str.isEmpty,
             let jsonData = str.data(using: .utf8) {
             do {
                 let userLocator = try JSONDecoder().decode(AXorcistLib.Locator.self, from: jsonData)
-                // Log success for debugging or diagnostics if needed
-                // SessionLogger.shared.log(level: .debug, message: "Successfully decoded user locator for \(elementName)")
+                await SessionLogger.shared.log(level: .debug, message: "Using user-defined locator for \(type.rawValue) from Defaults.", pid: pid)
                 return userLocator
             } catch {
-                Task {
-                    await SessionLogger.shared.log(
-                        level: .error,
-                        message: "Failed to decode user-defined locator JSON for \(elementName): " +
-                            "\(error.localizedDescription). JSON: \(str)"
-                    )
-                }
+                await SessionLogger.shared.log(
+                    level: .error,
+                    message: "Failed to decode user-defined locator JSON for \(type.rawValue): " +
+                        "\(error.localizedDescription). JSON: \(str)", pid: pid
+                )
             }
         }
 
         // 2. Check session cache
-        if let cachedLocator = sessionCache[elementName] {
+        if let cachedLocator = sessionCache[type] {
+            await SessionLogger.shared.log(level: .debug, message: "Using session-cached locator for \(type.rawValue).", pid: pid)
             return cachedLocator
         }
 
         // 3. Return bundled default
-        return defaultLocators[elementName]
-    }
+        if let bundledLocator = defaultLocators[type] {
+            await SessionLogger.shared.log(level: .debug, message: "Using bundled default locator for \(type.rawValue).", pid: pid)
+            // Attempt to use this locator once. If it fails, dynamic discovery might be tried next (implicitly by caller or explicitly here)
+            // For now, just return it. Dynamic discovery is the next step if this doesn't work for the caller.
+             // return bundledLocator // Old behavior: just return the bundled one
+        } else {
+            await SessionLogger.shared.log(level: .warning, message: "No bundled default locator found for type: \(type.rawValue)", pid: pid)
+        }
+        
+        // 4. If PID is available, attempt dynamic discovery as a fallback
+        // This happens if user, cache, and bundled (or if bundled fails in practice) don't yield a result.
+        // For clarity, we try dynamic discovery if user & cache miss, and bundled is considered a starting point for heuristics or a direct attempt.
+        
+        // First, try the bundled locator if it exists. Actual query to AXorcist is done by the caller (CursorMonitor).
+        // If the caller determines the bundled locator failed, it could re-call getLocator with a flag to force discovery, 
+        // or LocatorManager can attempt discovery now if the bundled one *might* be stale.
+        // Let's try dynamic discovery if user & cache miss. Bundled is the ultimate fallback if discovery also fails.
 
-    // No longer async
-    public func updateSessionCache(for elementName: String, with locator: AXorcistLib.Locator) {
-        sessionCache[elementName] = locator
-    }
-
-    // No longer async
-    public func resetUserOverride(for elementName: String) {
-        // Defaults[userDefaultsKey(for: elementName)] = nil // Old way
-        switch elementName {
-        case "generatingIndicatorText": Defaults.reset(.locatorJSONGeneratingIndicatorText)
-        case "sidebarActivityArea": Defaults.reset(.locatorJSONSidebarActivityArea)
-        case "errorMessagePopup": Defaults.reset(.locatorJSONErrorMessagePopup)
-        case "stopGeneratingButton": Defaults.reset(.locatorJSONStopGeneratingButton)
-        case "connectionErrorIndicator": Defaults.reset(.locatorJSONConnectionErrorIndicator)
-        case "resumeConnectionButton": Defaults.reset(.locatorJSONResumeConnectionButton)
-        case "forceStopResumeLink": Defaults.reset(.locatorJSONForceStopResumeLink)
-        case "mainInputField": Defaults.reset(.locatorJSONMainInputField)
-        default:
-            Task {
-                await SessionLogger.shared.log(
-                    level: .warning,
-                    message: "Attempted to reset unknown locator override: \(elementName)"
-                )
+        if let currentPid = pid {
+            await SessionLogger.shared.log(level: .info, message: "User/cached locator not found for \(type.rawValue). Attempting dynamic discovery for PID: \(currentPid).", pid: currentPid)
+            var debugLogs: [String] = []
+            if let discoveredLocator = await dynamicDiscoverer.discover(type: type, for: currentPid, axorcist: self.axorcistInstance, isDebugLoggingEnabled: true, currentDebugLogs: &debugLogs) {
+                await SessionLogger.shared.log(level: .info, message: "Dynamic discovery successful for \(type.rawValue). Caching and returning.", pid: currentPid)
+                updateSessionCache(for: type, with: discoveredLocator) // Use type directly
+                return discoveredLocator
             }
         }
-        sessionCache.removeValue(forKey: elementName)
+        
+        // 5. If dynamic discovery also fails or no PID, fall back to bundled default (if it exists)
+        if let bundledLocator = defaultLocators[type] {
+             await SessionLogger.shared.log(level: .debug, message: "Falling back to bundled default locator for \(type.rawValue) after other attempts.", pid: pid)
+            return bundledLocator
+        }
+        
+        await SessionLogger.shared.log(level: .error, message: "Failed to find any locator for type: \(type.rawValue) after all attempts.", pid: pid)
+        return nil // Absolute fallback
     }
 
-    // No longer async
+    public func updateSessionCache(for type: LocatorType, with locator: AXorcistLib.Locator) {
+        sessionCache[type] = locator
+        Task { // Fire and forget log
+            await SessionLogger.shared.log(level: .info, message: "Session cache updated for locator type: \(type.rawValue)")
+        }
+    }
+
+    public func resetUserOverride(for type: LocatorType) {
+        let defaultsKeyName = type.rawValue
+        switch type {
+        case .generatingIndicatorText: Defaults.reset(.locatorJSONGeneratingIndicatorText)
+        case .sidebarActivityArea: Defaults.reset(.locatorJSONSidebarActivityArea)
+        case .errorMessagePopup: Defaults.reset(.locatorJSONErrorMessagePopup)
+        case .stopGeneratingButton: Defaults.reset(.locatorJSONStopGeneratingButton)
+        case .connectionErrorIndicator: Defaults.reset(.locatorJSONConnectionErrorIndicator)
+        case .resumeConnectionButton: Defaults.reset(.locatorJSONResumeConnectionButton)
+        case .forceStopResumeLink: Defaults.reset(.locatorJSONForceStopResumeLink)
+        case .mainInputField: Defaults.reset(.locatorJSONMainInputField)
+        // default: await SessionLogger.shared.log(level: .warning, message: "Attempted to reset unknown locator override: \(defaultsKeyName)")
+        }
+        sessionCache.removeValue(forKey: type)
+        Task { // Fire and forget log
+            await SessionLogger.shared.log(level: .info, message: "User override reset for locator type: \(type.rawValue) and cleared from session cache.")
+        }
+    }
+
     public func resetAllUserOverrides() {
         Defaults.reset(
             .locatorJSONGeneratingIndicatorText,
@@ -116,6 +203,9 @@ public class LocatorManager {
             .locatorJSONMainInputField
         )
         sessionCache.removeAll()
+        Task { // Fire and forget log
+            await SessionLogger.shared.log(level: .info, message: "All user locator overrides reset and session cache cleared.")
+        }
     }
 }
 

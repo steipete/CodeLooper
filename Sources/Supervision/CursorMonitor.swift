@@ -50,6 +50,8 @@ public class CursorMonitor: ObservableObject {
     private var consecutiveRecoveryFailures: [pid_t: Int] = [:]
     private var lastKnownSidebarStateHash: [pid_t: Int?] = [:] // Changed String? to Int?
     private var lastActivityTimestamp: [pid_t: Date] = [:] // For Stuck Detection Timeout
+    // New state for Post-Intervention Observation Window
+    private var pendingObservationForPID: [pid_t: (startTime: Date, initialInterventionCount: Int)] = [:] 
 
     // These are accessed and mutated on the MainActor due to the class being @MainActor
     @MainActor private var appLaunchObserver: AnyCancellable?
@@ -71,12 +73,8 @@ public class CursorMonitor: ObservableObject {
 
     deinit {
         logger.info("CursorMonitor deinitialized...")
-        Task { [weak self] in // Already weak self
-            await MainActor.run {
-                Task { // New Task here
-                    self?.stopMonitoringLoop()
-                }
-            }
+        Task { @MainActor [weak self] in
+            self?.stopMonitoringLoop()
         }
     }
 
@@ -152,6 +150,7 @@ public class CursorMonitor: ObservableObject {
         consecutiveRecoveryFailures.removeValue(forKey: pid)
         lastKnownSidebarStateHash.removeValue(forKey: pid)
         lastActivityTimestamp.removeValue(forKey: pid)
+        pendingObservationForPID.removeValue(forKey: pid)
 
         logger.info("Cursor instance terminated (PID: \\(pid)). Stopped monitoring for this instance.")
         Task {
@@ -180,6 +179,7 @@ public class CursorMonitor: ObservableObject {
                  consecutiveRecoveryFailures.removeValue(forKey: pid)
                  lastKnownSidebarStateHash.removeValue(forKey: pid)
                  lastActivityTimestamp.removeValue(forKey: pid)
+                 pendingObservationForPID.removeValue(forKey: pid)
             }
         }
         scanForExistingInstances()
@@ -255,18 +255,21 @@ public class CursorMonitor: ObservableObject {
         for (pid, currentInfo) in instanceInfo {
             guard let runningApp = NSRunningApplication(processIdentifier: pid), !runningApp.isTerminated else {
                 logger.info("Instance PID \\(pid) found terminated during tick, removing.")
+                // Use a local variable for app if it might be nil after the guard
                 if let appToTerminate = NSRunningApplication(processIdentifier: pid) {
                     handleCursorTermination(appToTerminate)
-                 } else {
+                } else {
+                    // If app is not running, directly remove info
                     if instanceInfo.removeValue(forKey: pid) != nil {
                         automaticInterventionsSincePositiveActivity.removeValue(forKey: pid)
                         connectionIssueResumeButtonClicks.removeValue(forKey: pid)
                         consecutiveRecoveryFailures.removeValue(forKey: pid)
                         lastKnownSidebarStateHash.removeValue(forKey: pid)
                         lastActivityTimestamp.removeValue(forKey: pid)
+                        pendingObservationForPID.removeValue(forKey: pid) // Clean up observation state too
                         Task { await sessionLogger.log(level: .info, message: "Instance PID \\(pid) terminated and removed.", pid: pid) }
                     }
-                 }
+                }
                 continue
             }
 
@@ -275,24 +278,36 @@ public class CursorMonitor: ObservableObject {
 
             var newStatus: CursorInstanceStatus = currentInfo.status
             var newStatusMessage: String = currentInfo.statusMessage
+            var interventionMadeThisTick = false // Keep this flag to track if an intervention happened for failure cycle detection
 
-            // Flag to track if an intervention was made in this tick for this PID
-            var interventionMadeThisTick = false
+            // 0. Handle Post-Intervention Observation Window if active
+            if let observationInfo = pendingObservationForPID[pid] {
+                if Date().timeIntervalSince(observationInfo.startTime) > Defaults[.postInterventionObservationWindowSeconds] {
+                    let currentInterventionCount = automaticInterventionsSincePositiveActivity[pid, default: 0]
+                    // Check if positive activity occurred (counter reset) OR if it incremented but wasn't reset by *this specific* intervention observation.
+                    // This means if currentInterventionCount > 0 (not reset) AND it's the same or higher than when observation started.
+                    if currentInterventionCount > 0 && currentInterventionCount >= observationInfo.initialInterventionCount {
+                        consecutiveRecoveryFailures[pid, default: 0] += 1
+                        logger.info("PID \\(pid): Post-intervention observation window ended without positive activity. Consecutive failures: \\(consecutiveRecoveryFailures[pid, default: 0])")
+                        await sessionLogger.log(level: .warning, message: "Post-intervention observation window ended without positive activity. Consecutive failures incremented.", pid: pid)
+                    }
+                    pendingObservationForPID.removeValue(forKey: pid) // End observation
+                }
+            }
 
-            if case .unrecoverable(let reason) = newStatus {
-                logger.warning("PID \\(pid) is in unrecoverable state: \\(reason). Skipping further checks.")
-                await sessionLogger.log(level: .warning, message: "PID \\(pid) is unrecoverable: \\(reason)", pid: pid)
-                newStatusMessage = "Unrecoverable: \\(reason)"
-                instanceInfo[pid]?.status = newStatus
-                instanceInfo[pid]?.statusMessage = newStatusMessage
+            // 1. Unrecoverable State Check (Spec 2.3.1)
+            if case .unrecoverable(let actualReason) = currentInfo.status {
+                logger.warning("PID \\(pid) is in unrecoverable state: \\(actualReason). Skipping further checks.")
+                await sessionLogger.log(level: .warning, message: "PID \\(pid) is unrecoverable: \\(actualReason)", pid: pid)
+                newStatus = .unrecoverable(reason: actualReason)
+                newStatusMessage = "Unrecoverable: \\(actualReason)"
                 continue
             }
-            if case .paused = newStatus {
+            if case .paused = currentInfo.status {
                 logger.info("PID \\(pid) is paused. Skipping further checks.")
                 await sessionLogger.log(level: .info, message: "PID \\(pid) is paused. Skipping checks.", pid: pid)
+                newStatus = .paused
                 newStatusMessage = "Paused (Intervention Limit Reached)"
-                instanceInfo[pid]?.status = newStatus
-                instanceInfo[pid]?.statusMessage = newStatusMessage
                 continue
             }
 
@@ -310,17 +325,16 @@ public class CursorMonitor: ObservableObject {
                         soundName: nil
                     )
                 }
-                instanceInfo[pid]?.status = newStatus
-                instanceInfo[pid]?.statusMessage = newStatusMessage
                 continue
             }
             
             var tempLogs: [String] = []
             var isShowingPositiveWork = false
 
-            if let generatingIndicatorLocator = locatorManager.getLocator(for: "generatingIndicatorText") {
-                let response = axorcist.handleQuery(for: String(pid), locator: generatingIndicatorLocator, isDebugLoggingEnabled: false, currentDebugLogs: &tempLogs)
-                if let axData = response.data {
+            // Try to find a generating indicator first.
+            if let generatingIndicatorLocator = await locatorManager.getLocator(for: .generatingIndicatorText, pid: pid) {
+                let response = await axorcist.queryElement(pid: pid, matching: generatingIndicatorLocator)
+                if let axData = response.element {
                     let textContent = getTextFromAXElement(axData)
                     if POSITIVE_WORK_KEYWORDS.contains(where: { keyword in textContent.localizedCaseInsensitiveContains(keyword) }) {
                          isShowingPositiveWork = true
@@ -348,6 +362,7 @@ public class CursorMonitor: ObservableObject {
                 connectionIssueResumeButtonClicks[pid] = 0
                 consecutiveRecoveryFailures[pid] = 0
                 lastActivityTimestamp[pid] = Date() // Update activity timestamp
+                pendingObservationForPID.removeValue(forKey: pid) // Positive work ends observation
             } else {
                  newStatus = .idle
                  newStatusMessage = "Idle (Monitoring)"
@@ -355,9 +370,9 @@ public class CursorMonitor: ObservableObject {
 
             if !isShowingPositiveWork {
                 var detectedStuckMessageText: String? = nil
-                if let errorMessageLocator = locatorManager.getLocator(for: "errorMessagePopup") {
-                    let response = axorcist.handleQuery(for: String(pid), locator: errorMessageLocator, isDebugLoggingEnabled: false, currentDebugLogs: &tempLogs)
-                    if let axData = response.data {
+                if let errorMessageLocator = await locatorManager.getLocator(for: .errorMessagePopup, pid: pid) {
+                    let response = await axorcist.queryElement(pid: pid, matching: errorMessageLocator)
+                    if let axData = response.element {
                         let textContent = getTextFromAXElement(axData)
                         if STUCK_MESSAGE_KEYWORDS.contains(where: { keyword in textContent.localizedCaseInsensitiveContains(keyword) }) {
                             detectedStuckMessageText = textContent
@@ -370,28 +385,28 @@ public class CursorMonitor: ObservableObject {
                 }
 
                 if detectedStuckMessageText != nil {
-                    if let stopButtonLocator = locatorManager.getLocator(for: "stopGeneratingButton") {
+                    if let stopButtonLocator = await locatorManager.getLocator(for: .stopGeneratingButton, pid: pid) {
                         logger.info("PID \\(pid): Attempting to click 'Stop Generating' button for stuck state.")
                         await sessionLogger.log(level: .info, message: "PID \\(pid): Attempting to click 'Stop Generating' for stuck state.", pid: pid)
                         let attempts = (automaticInterventionsSincePositiveActivity[pid] ?? 0) + 1
                         newStatus = .recovering(type: .stopGenerating, attempt: attempts)
-                        newStatusMessage = "Recovering (Clicking Stop...)"
+                        newStatusMessage = "Clicked Stop Generating. Observing..."
                         
-                        let performResponse = axorcist.handlePerformAction(for: String(pid), locator: stopButtonLocator, actionName: AXorcistLib.kAXPressAction, actionValue: nil, isDebugLoggingEnabled: false, currentDebugLogs: &tempLogs)
-                        if performResponse.error == nil {
+                        let performResponse = await axorcist.performAction(pid: pid, locator: stopButtonLocator, actionName: AXorcistLib.kAXPressAction, actionValue: nil)
+                        if performResponse.success {
                             logger.info("PID \\(pid): Successfully clicked 'Stop Generating' button.")
                             await sessionLogger.log(level: .info, message: "PID \\(pid): Clicked 'Stop Generating' button.", pid: pid)
                             automaticInterventionsSincePositiveActivity[pid, default: 0] += 1
                             totalAutomaticInterventionsThisSession += 1
-                            interventionMadeThisTick = true
+                            pendingObservationForPID[pid] = (startTime: Date(), initialInterventionCount: automaticInterventionsSincePositiveActivity[pid, default: 0])
                             await SoundManager.shared.playInterventionSound()
                             AppIconStateController.shared.flashIcon()
                             lastActivityTimestamp[pid] = Date() // Update activity timestamp
+                            interventionMadeThisTick = true
                         } else {
-                            let errorLogMessage = performResponse.error ?? "Unknown error"
-                            logger.error("PID \\(pid): Failed to click 'Stop Generating' button. Error: \\(errorLogMessage)")
-                            await sessionLogger.log(level: .error, message: "PID \\(pid): Failed to click 'Stop Generating'. Error: \\(errorLogMessage)", pid: pid)
-                            newStatus = .error(reason: "Failed to click 'Stop Generating' button: \\(errorLogMessage)")
+                            logger.error("PID \\(pid): Failed to click 'Stop Generating' button. Error: \\(performResponse.error ?? "Unknown error")")
+                            await sessionLogger.log(level: .error, message: "PID \\(pid): Failed to click 'Stop Generating'. Error: \\(performResponse.error ?? "Unknown error")", pid: pid)
+                            newStatus = .error(reason: "Failed to click 'Stop Generating' button: \\(performResponse.error ?? "Unknown error")")
                             newStatusMessage = "Error (Failed Action)"
                         }
                     } else {
@@ -402,103 +417,39 @@ public class CursorMonitor: ObservableObject {
                 }
             }
 
-            if !isShowingPositiveWork && !(newStatus == .recovering(type: .stopGenerating, attempt: 0)) {
-                var detectedConnectionIssueFlag = false
-                if let connectionErrorLocator = locatorManager.getLocator(for: "connectionErrorIndicator") {
-                     let response = axorcist.handleQuery(for: String(pid), locator: connectionErrorLocator, isDebugLoggingEnabled: false, currentDebugLogs: &tempLogs)
-                     if let axData = response.data {
-                        let textContent = getTextFromAXElement(axData)
-                        if CONNECTION_ISSUE_KEYWORDS.contains(where: { keyword in textContent.localizedCaseInsensitiveContains(keyword) }) {
-                            detectedConnectionIssueFlag = true
-                            newStatus = .error(reason: "Connection Issue: \\(textContent.prefix(50))")
-                            newStatusMessage = "Error: Connection Issue"
-                            logger.warning("PID \\(pid): Detected connection issue message: '\\(textContent)'.")
-                            await sessionLogger.log(level: .warning, message: "PID \\(pid): Detected connection issue: '\\(textContent)'.", pid: pid)
-                        }
-                    }
-                }
-            
-                if detectedConnectionIssueFlag {
-                    let maxRetries = Defaults[.maxConnectionIssueRetries]
-                    let currentRetries = connectionIssueResumeButtonClicks[pid, default: 0]
-                    if currentRetries < maxRetries {
-                        if let resumeButtonLocator = locatorManager.getLocator(for: "resumeConnectionButton") { 
-                            let attemptCount = currentRetries + 1
-                            logger.info("PID \\(pid): Attempting to click 'Resume' button for connection issue (attempt \\(attemptCount)/\\(maxRetries)).")
-                            await sessionLogger.log(level: .info, message: "PID \\(pid): Attempting 'Resume' for connection (attempt \\(attemptCount)/\\(maxRetries)).", pid: pid)
-                            newStatus = .recovering(type: .connection, attempt: attemptCount)
-                            newStatusMessage = "Recovering (Connection Attempt \\(attemptCount))"
-
-                            let performResponse = axorcist.handlePerformAction(for: String(pid), locator: resumeButtonLocator, actionName: AXorcistLib.kAXPressAction, actionValue: nil, isDebugLoggingEnabled: false, currentDebugLogs: &tempLogs)
-                            if performResponse.error == nil {
-                                logger.info("PID \\(pid): Successfully clicked 'Resume' button.")
-                                await sessionLogger.log(level: .info, message: "PID \\(pid): Clicked 'Resume' for connection.", pid: pid)
-                                connectionIssueResumeButtonClicks[pid, default: 0] += 1
-                                automaticInterventionsSincePositiveActivity[pid, default: 0] += 1
-                                totalAutomaticInterventionsThisSession += 1
-                                interventionMadeThisTick = true
-                                await SoundManager.shared.playInterventionSound()
-                                AppIconStateController.shared.flashIcon()
-                                lastActivityTimestamp[pid] = Date() // Update activity timestamp
-                            } else {
-                                let errorLogMessage = performResponse.error ?? "Unknown error"
-                                logger.error("PID \\(pid): Failed to click 'Resume' button. Error: \\(errorLogMessage)")
-                                await sessionLogger.log(level: .error, message: "PID \\(pid): Failed 'Resume' click. Error: \\(errorLogMessage)", pid: pid)
-                                newStatus = .error(reason: "Failed to click 'Resume' button: \\(errorLogMessage)")
-                                newStatusMessage = "Error (Failed Action)"
-                            }
-                        } else {
-                            logger.warning("PID \\(pid): Connection issue detected, but 'resumeConnectionButton' locator not found.")
-                            await sessionLogger.log(level: .warning, message: "PID \\(pid): Connection issue, but 'resumeConnectionButton' locator missing.", pid: pid)
-                            newStatus = .error(reason: "Connection Issue, but Resume locator missing")
-                            newStatusMessage = "Error (Locator Missing)"
-                        }
-                    } else {
-                        logger.error("PID \\(pid): Max retries (\\(maxRetries)) for connection issue reached.")
-                        await sessionLogger.log(level: .error, message: "PID \\(pid): Max connection retries (\\(maxRetries)).", pid: pid)
-                        newStatus = .unrecoverable(reason: "Max connection issue retries (\\(maxRetries)) reached.")
-                        newStatusMessage = "Unrecoverable (Max Connection Retries)"
-                        if Defaults[.sendNotificationOnPersistentError] {
-                            await UserNotificationManager.shared.sendNotification(
-                                identifier: "maxConnectionRetries_\(pid)",
-                                title: "Cursor Connection Issue (PID: \(pid))",
-                                body: "Code Looper could not resolve a connection issue for Cursor (PID: \(pid)) after \(maxRetries) attempts. Interventions for this issue are paused. Check Cursor and network status.",
-                                soundName: nil
-                            )
-                        }
-                    }
-                }
-            }
-            
-            if !isShowingPositiveWork, case .idle = newStatus {
+            if !isShowingPositiveWork && !(newStatus.isRecovering(ofAnyType: [.stopGenerating])) {
                 if Defaults[.monitorSidebarActivity] {
-                    if let sidebarLocator = locatorManager.getLocator(for: "sidebarActivityArea") {
-                        let response = axorcist.handleQuery(for: String(pid), locator: sidebarLocator, isDebugLoggingEnabled: false, currentDebugLogs: &tempLogs)
-                        if let axData = response.data {
-                            let sidebarTextRepresentation = getTextualRepresentation(for: axData, maxDepth: 2)
-                            let currentHash = sidebarTextRepresentation.hashValue
-                            
-                            if let lastHashValue = lastKnownSidebarStateHash[pid], lastHashValue != nil, lastHashValue != currentHash {
-                                logger.info("PID \\(pid): Sidebar activity detected (hash changed from \\(String(describing: lastHashValue)) to \\(currentHash)). Text: \\(sidebarTextRepresentation.prefix(100))...")
-                                await sessionLogger.log(level: .info, message: "PID \\(pid): Sidebar activity detected.", pid: pid)
-                                automaticInterventionsSincePositiveActivity[pid] = 0
-                                connectionIssueResumeButtonClicks[pid] = 0
-                                consecutiveRecoveryFailures[pid] = 0
-                                newStatus = .working(detail: "Recent Sidebar Activity")
-                                newStatusMessage = "Working (Recent Activity)"
-                                lastActivityTimestamp[pid] = Date()
-                            } else if lastKnownSidebarStateHash[pid] == nil {
-                                logger.debug("PID \\(pid): Initial sidebar state observed or re-observed after nil. Hash: \\(currentHash)")
-                            }
-                            lastKnownSidebarStateHash[pid] = currentHash
-                        } else {
-                            if response.error != nil {
-                                logger.debug("PID \\(pid): Sidebar query failed or element not found. Error: \\(response.error!.localizedDescription)")
-                            } else {
-                                logger.debug("PID \\(pid): Sidebar query failed or element not found (no specific error).")
-                            }
-                            lastKnownSidebarStateHash[pid] = nil
+                    let sidebarLocator = locatorManager.getLocator(for: .sidebarActivityArea)
+                    let response = await axorcist.handleQuery(
+                        for: pid,
+                        locator: sidebarLocator,
+                        maxDepth: Defaults[.sidebarActivityMaxDepth],
+                        debugLog: &tempLogs
+                    )
+
+                    if response.error != nil {
+                        logger.debug("PID \\(pid): Sidebar query failed or element not found. Error: \\(response.error ?? "No error description")")
+                        Task { await sessionLogger.log(level: .debug, message: "Sidebar query failed or element not found. Error: \\(response.error ?? "No error description")", pid: pid, axLogs: tempLogs) }
+                        tempLogs.removeAll()
+                        lastKnownSidebarStateHash[pid] = nil
+                    } else {
+                        let sidebarTextRepresentation = getTextualRepresentation(for: response.element, depth: 0, maxDepth: Defaults[.sidebarActivityMaxDepth])
+                        let currentHash = sidebarTextRepresentation.hashValue
+                        
+                        if let lastHashValue = lastKnownSidebarStateHash[pid], lastHashValue != nil, lastHashValue != currentHash {
+                            logger.info("PID \\(pid): Sidebar activity detected (hash changed from \\(String(describing: lastHashValue)) to \\(currentHash)). Text: \\(sidebarTextRepresentation.prefix(100))...")
+                            await sessionLogger.log(level: .info, message: "PID \\(pid): Sidebar activity detected.", pid: pid)
+                            automaticInterventionsSincePositiveActivity[pid] = 0
+                            connectionIssueResumeButtonClicks[pid] = 0
+                            consecutiveRecoveryFailures[pid] = 0
+                            newStatus = .working(detail: "Recent Sidebar Activity")
+                            newStatusMessage = "Working (Recent Activity)"
+                            lastActivityTimestamp[pid] = Date()
+                            pendingObservationForPID.removeValue(forKey: pid) // Positive work/activity ends observation
+                        } else if lastKnownSidebarStateHash[pid] == nil {
+                            logger.debug("PID \\(pid): Initial sidebar state observed or re-observed after nil. Hash: \\(currentHash)")
                         }
+                        lastKnownSidebarStateHash[pid] = currentHash
                     }
                 }
             }
@@ -508,47 +459,37 @@ public class CursorMonitor: ObservableObject {
             // G. Cursor Force-Stopped / Not Responding
             var shouldProceedToStuckDetectionNotForceStopped = false
 
-            if !isShowingPositiveWork, case .error = newStatus { // Only if not working and some error or idle state
-                if case .recovering = currentInfo.status {
-                    // Skip if already recovering
-                } else {
-                    if !Defaults[.enableCursorForceStoppedRecovery] {
-                        logger.debug("PID \\(pid): Cursor Force-Stopped recovery is disabled, skipping to stuck detection.")
-                        shouldProceedToStuckDetectionNotForceStopped = true
-                    }
-                    if !shouldProceedToStuckDetectionNotForceStopped, let forceStopLocator = locatorManager.getLocator(for: "forceStopResumeLink") {
-                        let response = axorcist.handleQuery(for: String(pid), locator: forceStopLocator, isDebugLoggingEnabled: false, currentDebugLogs: &tempLogs)
-                        if let axData = response.data, response.error == nil { // Element found
-                            let textContent = getTextFromAXElement(axData)
-                            if !textContent.isEmpty {
-                                logger.info("PID \\(pid): Detected 'Force-Stop / Resume Conversation' state. Attempting to click.")
-                                await sessionLogger.log(level: .info, message: "PID \\(pid): Detected 'Force-Stop / Resume Conversation' state. Attempting to click.", pid: pid)
-                                
-                                let attempts = (automaticInterventionsSincePositiveActivity[pid] ?? 0) + 1
-                                newStatus = .recovering(type: .forceStop, attempt: attempts)
-                                newStatusMessage = "Recovering (Force-Stop)"
-                                instanceInfo[pid]?.status = newStatus
-                                instanceInfo[pid]?.statusMessage = newStatusMessage
+            if !isShowingPositiveWork && !newStatus.isRecovering() {
+                if Defaults[.enableCursorForceStoppedRecovery] {
+                    if let forceStopLocator = await locatorManager.getLocator(for: .forceStopResumeLink, pid: pid) {
+                        let response = await axorcist.queryElement(pid: pid, matching: forceStopLocator)
+                        if let _ = response.element { // Element found
+                            logger.info("PID \\(pid): Detected 'Force-Stop / Resume Conversation' state. Attempting to click.")
+                            await sessionLogger.log(level: .info, message: "PID \\(pid): Detected 'Force-Stop / Resume Conversation' state. Attempting to click.", pid: pid)
+                            
+                            let attempts = (automaticInterventionsSincePositiveActivity[pid] ?? 0) + 1
+                            newStatus = .recovering(type: .forceStop, attempt: attempts)
+                            newStatusMessage = "Clicked force-stop resume. Observing..."
+                            instanceInfo[pid] = CursorInstanceInfo(app: runningApp, status: newStatus, statusMessage: newStatusMessage)
 
-                                let performResponse = axorcist.handlePerformAction(for: String(pid), locator: forceStopLocator, actionName: AXorcistLib.kAXPressAction, actionValue: nil, isDebugLoggingEnabled: false, currentDebugLogs: &tempLogs)
-                                if performResponse.error == nil {
-                                    logger.info("PID \\(pid): Successfully clicked 'Force-Stop / Resume Conversation' element.")
-                                    await sessionLogger.log(level: .info, message: "PID \\(pid): Clicked 'Force-Stop / Resume Conversation' element.", pid: pid)
-                                    automaticInterventionsSincePositiveActivity[pid, default: 0] += 1
-                                    totalAutomaticInterventionsThisSession += 1
-                                    interventionMadeThisTick = true
-                                    connectionIssueResumeButtonClicks[pid] = 0 // Reset as per spec
-                                    await SoundManager.shared.playInterventionSound()
-                                    AppIconStateController.shared.flashIcon()
-                                    lastActivityTimestamp[pid] = Date()
-                                    isShowingPositiveWork = true // Assume this resolves the immediate issue
-                                } else {
-                                    let errorLogMessage = performResponse.error ?? "Unknown error"
-                                    logger.error("PID \\(pid): Failed to click 'Force-Stop / Resume Conversation' element. Error: \\(errorLogMessage)")
-                                    await sessionLogger.log(level: .error, message: "PID \\(pid): Failed to click 'Force-Stop / Resume Conversation'. Error: \\(errorLogMessage)", pid: pid)
-                                    newStatus = .error(reason: "Failed to click 'Force-Stop / Resume Conversation' element: \\(errorLogMessage)")
-                                    newStatusMessage = "Error (Failed Action)"
-                                }
+                            let performResponse = await axorcist.performAction(pid: pid, locator: forceStopLocator, actionName: AXorcistLib.kAXPressAction, actionValue: nil)
+                            if performResponse.success {
+                                logger.info("PID \\(pid): Successfully clicked 'Force-Stop / Resume Conversation' element.")
+                                await sessionLogger.log(level: .info, message: "PID \\(pid): Clicked 'Force-Stop / Resume Conversation' element.", pid: pid)
+                                automaticInterventionsSincePositiveActivity[pid, default: 0] += 1
+                                totalAutomaticInterventionsThisSession += 1
+                                pendingObservationForPID[pid] = (startTime: Date(), initialInterventionCount: automaticInterventionsSincePositiveActivity[pid, default: 0])
+                                await SoundManager.shared.playInterventionSound()
+                                AppIconStateController.shared.flashIcon()
+                                lastActivityTimestamp[pid] = Date()
+                                isShowingPositiveWork = true // Assume this resolves the immediate issue
+                                interventionMadeThisTick = true
+                            } else {
+                                logger.error("PID \\(pid): Failed to click 'Force-Stop / Resume Conversation' element. Error: \\(performResponse.error ?? "Unknown error")")
+                                await sessionLogger.log(level: .error, message: "PID \\(pid): Failed to click 'Force-Stop / Resume Conversation'. Error: \\(performResponse.error ?? "Unknown error")", pid: pid)
+                                newStatus = .error(reason: "Failed to click 'Force-Stop / Resume Conversation' element: \\(performResponse.error ?? "Unknown error")")
+                                newStatusMessage = "Error (Failed Action)"
+                                instanceInfo[pid] = CursorInstanceInfo(app: runningApp, status: newStatus, statusMessage: newStatusMessage)
                             }
                         } else if response.error != nil {
                             logger.debug("PID \(pid): 'forceStopResumeLink' query failed. Error: \(response.error ?? "Unknown Error")")
@@ -561,93 +502,78 @@ public class CursorMonitor: ObservableObject {
                 // F. Connection Issues Check
                 var shouldProceedToStuckDetection = false
 
-                if !isShowingPositiveWork, case .error(let reason) = newStatus, reason.contains("Connection Issue") { 
-                    if case .recovering = currentInfo.status {
-                        // Skip if already recovering
-                    } else {
-                        if !Defaults[.enableConnectionIssuesRecovery] {
-                            logger.debug("PID \\(pid): Connection issues recovery is disabled, skipping to stuck detection.")
-                            shouldProceedToStuckDetection = true
-                        }
-                        
-                        if !shouldProceedToStuckDetection {
-                            var detectedConnectionIssueFlagForIntervention = false
-                            if let connectionErrorTextLocator = locatorManager.getLocator(for: "connectionErrorIndicator") {
-                                let response = axorcist.handleQuery(for: String(pid), locator: connectionErrorTextLocator, isDebugLoggingEnabled: false, currentDebugLogs: &tempLogs)
-                                if let axData = response.data, response.error == nil {
-                                    let textContent = getTextFromAXElement(axData)
-                                    if CONNECTION_ISSUE_KEYWORDS.contains(where: { keyword in textContent.localizedCaseInsensitiveContains(keyword) }) {
-                                        detectedConnectionIssueFlagForIntervention = true
-                                        logger.warning("PID \\(pid): Confirmed connection issue for intervention: '\\(textContent)'.")
-                                        await sessionLogger.log(level: .warning, message: "PID \\(pid): Confirmed connection issue for intervention: '\\(textContent)'.", pid: pid)
-                                    }
+                if !isShowingPositiveWork && !newStatus.isRecovering() {
+                    if Defaults[.enableConnectionIssuesRecovery] {
+                        var detectedConnectionIssueFlagForIntervention = false
+                        if let connectionErrorTextLocator = await locatorManager.getLocator(for: .connectionErrorIndicator, pid: pid) {
+                            let response = await axorcist.queryElement(pid: pid, matching: connectionErrorTextLocator)
+                            if let axData = response.element {
+                                let textContent = getTextFromAXElement(axData)
+                                if CONNECTION_ISSUE_KEYWORDS.contains(where: { keyword in textContent.localizedCaseInsensitiveContains(keyword) }) {
+                                    detectedConnectionIssueFlagForIntervention = true
+                                    logger.warning("PID \\(pid): Confirmed connection issue for intervention: '\\(textContent)'.")
+                                    await sessionLogger.log(level: .warning, message: "PID \\(pid): Confirmed connection issue for intervention: '\\(textContent)'.", pid: pid)
                                 }
                             }
+                        }
 
-                            if detectedConnectionIssueFlagForIntervention {
-                                let maxRetries = Defaults[.maxConnectionIssueRetries]
-                                let currentRetries = connectionIssueResumeButtonClicks[pid, default: 0]
+                        if detectedConnectionIssueFlagForIntervention {
+                            let maxRetries = Defaults[.maxConnectionIssueRetries]
+                            let currentRetries = connectionIssueResumeButtonClicks[pid, default: 0]
 
-                                if currentRetries < maxRetries {
-                                    if let resumeButtonLocator = locatorManager.getLocator(for: "resumeConnectionButton") { 
-                                        let attemptCount = currentRetries + 1
-                                        logger.info("PID \\(pid): Attempting to click 'Resume' button for connection issue (attempt \\(attemptCount)/\\(maxRetries)).")
-                                        await sessionLogger.log(level: .info, message: "PID \\(pid): Attempting 'Resume' for connection (attempt \\(attemptCount)/\\(maxRetries)).", pid: pid)
-                                        
-                                        newStatus = .recovering(type: .connection, attempt: attemptCount)
-                                        newStatusMessage = "Recovering (Connection Attempt \\(attemptCount))"
-                                        instanceInfo[pid]?.status = newStatus
-                                        instanceInfo[pid]?.statusMessage = newStatusMessage
+                            if currentRetries < maxRetries {
+                                if let resumeButtonLocator = await locatorManager.getLocator(for: .resumeConnectionButton, pid: pid) {
+                                    let attemptCount = currentRetries + 1
+                                    logger.info("PID \\(pid): Attempting to click 'Resume' button for connection issue (attempt \\(attemptCount)/\\(maxRetries)).")
+                                    await sessionLogger.log(level: .info, message: "PID \\(pid): Attempting 'Resume' for connection (attempt \\(attemptCount)/\\(maxRetries)).", pid: pid)
+                                    
+                                    newStatus = .recovering(type: .connection, attempt: attemptCount)
+                                    newStatusMessage = "Attempted to resume connection. Observing..."
+                                    instanceInfo[pid] = CursorInstanceInfo(app: runningApp, status: newStatus, statusMessage: newStatusMessage)
 
-                                        let performResponse = axorcist.handlePerformAction(for: String(pid), locator: resumeButtonLocator, actionName: AXorcistLib.kAXPressAction, actionValue: nil, isDebugLoggingEnabled: false, currentDebugLogs: &tempLogs)
-                                        if performResponse.error == nil {
-                                            logger.info("PID \\(pid): Successfully clicked 'Resume' button for connection issue.")
-                                            await sessionLogger.log(level: .info, message: "PID \\(pid): Clicked 'Resume' for connection.", pid: pid)
-                                            connectionIssueResumeButtonClicks[pid, default: 0] += 1
-                                            automaticInterventionsSincePositiveActivity[pid, default: 0] += 1
-                                            totalAutomaticInterventionsThisSession += 1
-                                            interventionMadeThisTick = true
-                                            await SoundManager.shared.playInterventionSound()
-                                            AppIconStateController.shared.flashIcon()
-                                            lastActivityTimestamp[pid] = Date()
-                                            isShowingPositiveWork = true // Assume this resolves the immediate issue
-                                        } else {
-                                            let errorLogMessage = performResponse.error ?? "Unknown error"
-                                            logger.error("PID \\(pid): Failed to click 'Resume' button for connection issue. Error: \\(errorLogMessage)")
-                                            await sessionLogger.log(level: .error, message: "PID \\(pid): Failed 'Resume' click for connection. Error: \\(errorLogMessage)", pid: pid)
-                                            newStatus = .error(reason: "Failed to click 'Resume' button for connection issue: \\(errorLogMessage)")
-                                            newStatusMessage = "Error (Failed Action)"
-                                        }
+                                    let performResponse = await axorcist.performAction(pid: pid, locator: resumeButtonLocator, actionName: AXorcistLib.kAXPressAction, actionValue: nil)
+                                    if performResponse.success {
+                                        logger.info("PID \\(pid): Successfully clicked 'Resume' button for connection issue.")
+                                        await sessionLogger.log(level: .info, message: "PID \\(pid): Clicked 'Resume' for connection.", pid: pid)
+                                        connectionIssueResumeButtonClicks[pid, default: 0] += 1
+                                        automaticInterventionsSincePositiveActivity[pid, default: 0] += 1
+                                        totalAutomaticInterventionsThisSession += 1
+                                        pendingObservationForPID[pid] = (startTime: Date(), initialInterventionCount: automaticInterventionsSincePositiveActivity[pid, default: 0])
+                                        await SoundManager.shared.playInterventionSound()
+                                        AppIconStateController.shared.flashIcon()
+                                        lastActivityTimestamp[pid] = Date()
+                                        isShowingPositiveWork = true // Assume this resolves the immediate issue
+                                        interventionMadeThisTick = true
                                     } else {
-                                        logger.warning("PID \\(pid): Connection issue detected, but 'resumeConnectionButton' locator not found.")
-                                        await sessionLogger.log(level: .warning, message: "PID \\(pid): Connection issue, but 'resumeConnectionButton' locator missing.", pid: pid)
-                                        newStatus = .error(reason: "Connection Issue, but Resume locator missing")
-                                        newStatusMessage = "Error (Locator Missing)"
+                                        logger.error("PID \\(pid): Failed to click 'Resume' button for connection issue. Error: \\(performResponse.error ?? "Unknown error")")
+                                        await sessionLogger.log(level: .error, message: "PID \\(pid): Failed 'Resume' click for connection. Error: \\(performResponse.error ?? "Unknown error")", pid: pid)
+                                        newStatus = .error(reason: "Failed to click 'Resume' button for connection issue: \\(performResponse.error ?? "Unknown error")")
+                                        newStatusMessage = "Error (Failed Action)"
+                                        instanceInfo[pid] = CursorInstanceInfo(app: runningApp, status: newStatus, statusMessage: newStatusMessage)
                                     }
                                 } else {
-                                    logger.error("PID \\(pid): Max retries (\\(maxRetries)) for connection issue reached. Escalating to 'Cursor Stops' recovery.")
-                                    await sessionLogger.log(level: .error, message: "PID \\(pid): Max connection retries (\\(maxRetries)). Escalating to nudge.", pid: pid)
-                                    connectionIssueResumeButtonClicks[pid] = 0 
-                                    
-                                    let attempts = (automaticInterventionsSincePositiveActivity[pid] ?? 0) + 1
-                                    newStatus = .recovering(type: .stuck, attempt: attempts) 
-                                    newStatusMessage = "Recovering (Nudge after Connection Failures)"
-                                    instanceInfo[pid]?.status = newStatus
-                                    instanceInfo[pid]?.statusMessage = newStatusMessage
-                                    
-                                    await nudgeInstance(pid: pid)
-                                    if let updatedInfo = instanceInfo[pid] {
-                                        newStatus = updatedInfo.status
-                                        newStatusMessage = updatedInfo.statusMessage
-                                    }
-                                    interventionMadeThisTick = true 
-
-                                    if var updatedInfo = instanceInfo[pid] {
-                                        updatedInfo.status = newStatus // Ensure our local vars are what's in the map
-                                        updatedInfo.statusMessage = newStatusMessage
-                                        instanceInfo[pid] = updatedInfo
-                                    }
+                                    logger.warning("PID \\(pid): Connection issue detected, but 'resumeConnectionButton' locator not found.")
+                                    await sessionLogger.log(level: .warning, message: "PID \\(pid): Connection issue, but 'resumeConnectionButton' locator missing.", pid: pid)
+                                    newStatus = .error(reason: "Connection Issue, but Resume locator missing")
+                                    newStatusMessage = "Error (Locator Missing)"
+                                    instanceInfo[pid] = CursorInstanceInfo(app: runningApp, status: newStatus, statusMessage: newStatusMessage)
                                 }
+                            } else {
+                                logger.error("PID \\(pid): Max retries (\\(maxRetries)) for connection issue reached. Escalating to 'Cursor Stops' recovery.")
+                                await sessionLogger.log(level: .error, message: "PID \\(pid): Max connection retries (\\(maxRetries)). Escalating to nudge.", pid: pid)
+                                connectionIssueResumeButtonClicks[pid] = 0 
+                                
+                                let attempts = (automaticInterventionsSincePositiveActivity[pid] ?? 0) + 1
+                                newStatus = .recovering(type: .stuck, attempt: attempts) 
+                                newStatusMessage = "Recovering (Nudge after Connection Failures)"
+                                instanceInfo[pid] = CursorInstanceInfo(app: runningApp, status: newStatus, statusMessage: newStatusMessage)
+                                
+                                await nudgeInstance(pid: pid, app: runningApp)
+                                if let updatedInfo = instanceInfo[pid] {
+                                    newStatus = updatedInfo.status
+                                    newStatusMessage = updatedInfo.statusMessage
+                                }
+                                interventionMadeThisTick = true
                             }
                         }
                     }
@@ -657,30 +583,31 @@ public class CursorMonitor: ObservableObject {
                     // H. Cursor Stops / Stuck
                     var shouldProceedToEndOfChecks = false
 
-                    if !isShowingPositiveWork, case .idle = newStatus { 
-                        if case .recovering = currentInfo.status {
-                            // Skip if already recovering
-                        } else {
-                            if !Defaults[.enableCursorStopsRecovery] {
-                                logger.debug("PID \\(pid): Cursor stops recovery is disabled, skipping to end of checks.")
-                                shouldProceedToEndOfChecks = true
-                            }
-                            
-                            if !shouldProceedToEndOfChecks {
-                                let stuckTimeout = Defaults[.stuckDetectionTimeoutSeconds]
-                                if let lastActive = lastActivityTimestamp[pid],
-                                   Date().timeIntervalSince(lastActive) > stuckTimeout {
+                    if !isShowingPositiveWork && !newStatus.isRecovering() {
+                        if Defaults[.enableCursorStopsRecovery] {
+                            let stuckTimeout = Defaults[.stuckDetectionTimeoutSeconds]
+                            if let lastActive = lastActivityTimestamp[pid],
+                               Date().timeIntervalSince(lastActive) > stuckTimeout {
                                 logger.info("PID \\(pid) detected as stuck (idle for > \\(stuckTimeout)s). Triggering 'Cursor Stops' recovery.")
                                 await sessionLogger.log(level: .info, message: "PID \\(pid) detected as stuck (idle for > \\(stuckTimeout)s). Triggering recovery.", pid: pid)
                                 
-                                    let attempts = (automaticInterventionsSincePositiveActivity[pid] ?? 0) + 1
-                                    newStatus = .recovering(type: .stuck, attempt: attempts)
-                                    newStatusMessage = "Recovering (Stuck)"
-                                    instanceInfo[pid]?.status = newStatus 
-                                    instanceInfo[pid]?.statusMessage = newStatusMessage
-
-                                    await nudgeInstance(pid: pid) 
-                                    if let updatedInfo = instanceInfo[pid] {
+                                let attempts = (automaticInterventionsSincePositiveActivity[pid] ?? 0) + 1
+                                newStatus = .recovering(type: .stuck, attempt: attempts)
+                                newStatusMessage = "Recovering (Stuck - Nudging)"
+                                
+                                // Nudge instance will also start its own observation window if successful
+                                let nudgeSuccessful = await nudgeInstance(pid: pid, app: runningApp)
+                                if nudgeSuccessful {
+                                    interventionMadeThisTick = true
+                                    // Status and message are updated within nudgeInstance if successful
+                                    // Fetch them back if nudgeInstance modified them directly
+                                    if let updatedInfo = instanceInfo[pid] { // Reload info if nudge changed it
+                                        newStatus = updatedInfo.status
+                                        newStatusMessage = updatedInfo.statusMessage
+                                    }
+                                } else {
+                                    // Nudge failed, status already set by nudgeInstance
+                                    if let updatedInfo = instanceInfo[pid] { // Reload info if nudge changed it
                                         newStatus = updatedInfo.status
                                         newStatusMessage = updatedInfo.statusMessage
                                     }
@@ -692,16 +619,22 @@ public class CursorMonitor: ObservableObject {
             }
 
             // Persistent Failure Cycle Detection (Spec 2.3.7)
-            if interventionMadeThisTick && !isShowingPositiveWork {
-                self.consecutiveRecoveryFailures[pid, default: 0] += 1
-                logger.warning("PID \\(pid): Intervention performed, but no immediate positive work observed. Consecutive failures: \\(self.consecutiveRecoveryFailures[pid, default: 0]).")
-                await sessionLogger.log(level: .warning, message: "PID \\(pid): Intervention made, no immediate positive work. Consecutive failures: \\(self.consecutiveRecoveryFailures[pid, default: 0]).", pid: pid)
+            if interventionMadeThisTick {
+                if !isShowingPositiveWork {
+                    consecutiveRecoveryFailures[pid, default: 0] += 1
+                    logger.warning("PID \\(pid): Intervention performed, but no immediate positive work observed. Consecutive failures: \\(consecutiveRecoveryFailures[pid, default: 0]).")
+                    await sessionLogger.log(level: .warning, message: "PID \\(pid): Intervention made, no immediate positive work. Consecutive failures: \\(consecutiveRecoveryFailures[pid, default: 0]).", pid: pid)
+                }
+            }
+            
+            if isShowingPositiveWork {
+                consecutiveRecoveryFailures[pid] = 0
             }
 
             let maxFailures = Defaults[.maxConsecutiveRecoveryFailures]
-            if self.consecutiveRecoveryFailures[pid, default: 0] >= maxFailures {
-                logger.error("PID \\(pid) reached max consecutive recovery failures (\\(self.consecutiveRecoveryFailures[pid, default: 0])/\\(maxFailures)).")
-                await sessionLogger.log(level: .error, message: "PID \\(pid) reached max consecutive recovery failures (\\(self.consecutiveRecoveryFailures[pid, default: 0])/\\(maxFailures)).", pid: pid)
+            if consecutiveRecoveryFailures[pid, default: 0] >= maxFailures {
+                logger.error("PID \\(pid) reached max consecutive recovery failures (\\(consecutiveRecoveryFailures[pid, default: 0])/\\(maxFailures)).")
+                await sessionLogger.log(level: .error, message: "PID \\(pid) reached max consecutive recovery failures (\\(consecutiveRecoveryFailures[pid, default: 0])/\\(maxFailures)).", pid: pid)
                 newStatus = .unrecoverable(reason: "Max consecutive recovery failures (\\(maxFailures)) reached.")
                 newStatusMessage = "Unrecoverable (Persistent Failures)"
                 if Defaults[.sendNotificationOnPersistentError] {
@@ -715,8 +648,8 @@ public class CursorMonitor: ObservableObject {
             }
             
             if var infoToUpdate = instanceInfo[pid] {
-                infoToUpdate.status = newStatus
-                infoToUpdate.statusMessage = newStatusMessage
+                infoToUpdate.status = infoToUpdate.status
+                infoToUpdate.statusMessage = infoToUpdate.statusMessage
                 instanceInfo[pid] = infoToUpdate
             } else {
                  logger.warning("PID \\(pid) info was unexpectedly nil at end of tick. It might have terminated concurrently.")
@@ -790,71 +723,80 @@ public class CursorMonitor: ObservableObject {
         automaticInterventionsSincePositiveActivity[pid] = 0
         connectionIssueResumeButtonClicks[pid] = 0
         consecutiveRecoveryFailures[pid] = 0
+        pendingObservationForPID.removeValue(forKey: pid)
         info.status = .idle 
         info.statusMessage = "Idle (Resumed by User)"
         lastActivityTimestamp[pid] = Date() 
         instanceInfo[pid] = info
     }
 
-    public func nudgeInstance(pid: pid_t) async {
-        guard var infoToUpdate = instanceInfo[pid] else {
-            logger.warning("Attempted to nudge unknown PID: \\(pid)")
-            return
+    public func nudgeInstance(pid: pid_t, app: NSRunningApplication) async -> Bool {
+        guard let inputFieldLocator = await locatorManager.getLocator(for: .mainInputField, pid: pid) else {
+            logger.warning("PID \\(pid): Main input field locator not found. Cannot nudge.")
+            await sessionLogger.log(level: .warning, message: "Main input field locator not found. Cannot nudge.", pid: pid)
+            return false
         }
-        
-        logger.info("Nudging instance PID: \\(pid)")
-        await sessionLogger.log(level: .info, message: "User nudged PID \\(pid).", pid: pid)
 
-        var tempLogs: [String] = []
-        if let inputFieldLocator = locatorManager.getLocator(for: "mainInputField") {
-            let recoveryText = Defaults[.textForCursorStopsRecovery]
+        let textToEnter = Defaults[.textForCursorStopsRecovery]
+        let setValueResponse = await axorcist.setValue(pid: pid, matching: inputFieldLocator, value: textToEnter)
+        
+        var currentStatus: CursorInstanceStatus = .unknown
+        var currentStatusMessage = "Nudge status update pending..."
+        if var infoToUpdate = instanceInfo[pid] {
+            currentStatus = infoToUpdate.status
+            currentStatusMessage = infoToUpdate.statusMessage
+        }
+
+        if setValueResponse.success {
+            logger.info("PID \\(pid): Successfully set value in input field: '\\(textToEnter)'. Attempting to press Enter.")
+            await sessionLogger.log(level: .info, message: "Successfully set value for nudge: '\\(textToEnter)'.", pid: pid)
             
-            let setValueResponse = axorcist.handlePerformAction(for: String(pid), locator: inputFieldLocator, actionName: AXorcistLib.kAXValueAttribute, actionValue: AnyCodable(recoveryText), isDebugLoggingEnabled: false, currentDebugLogs: &tempLogs)
-            
-            if setValueResponse.error == nil {
-                let pressActionResponse = axorcist.handlePerformAction(for: String(pid), locator: inputFieldLocator, actionName: AXorcistLib.kAXPressAction, actionValue: nil, isDebugLoggingEnabled: false, currentDebugLogs: &tempLogs)
-                
-                if pressActionResponse.error == nil {
-                    logger.info("PID \\(pid): Successfully nudged by setting text and pressing Enter.")
-                    await sessionLogger.log(level: .info, message: "PID \\(pid): Nudge successful.", pid: pid)
-                    automaticInterventionsSincePositiveActivity[pid, default: 0] += 1
-                    totalAutomaticInterventionsThisSession += 1
-                    await SoundManager.shared.playInterventionSound()
-                    AppIconStateController.shared.flashIcon()
-                    automaticInterventionsSincePositiveActivity[pid] = 0 
-                    connectionIssueResumeButtonClicks[pid] = 0
-                    consecutiveRecoveryFailures[pid] = 0
-                    lastActivityTimestamp[pid] = Date() 
-                    
-                    infoToUpdate.status = .working(detail: "Nudged by User")
-                    infoToUpdate.statusMessage = "Working (Nudged)"
-                    instanceInfo[pid] = infoToUpdate
-                    
-                } else {
-                    let errorLogMessage = pressActionResponse.error ?? "Unknown"
-                    logger.error("PID \\(pid): Nudge failed (press action). Error: \\(errorLogMessage)")
-                    await sessionLogger.log(level: .error, message: "PID \\(pid): Nudge failed (press action). Error: \\(errorLogMessage)", pid: pid)
-                    
-                    infoToUpdate.status = .error(reason: "Nudge (Press) Failed: \\(errorLogMessage)")
-                    infoToUpdate.statusMessage = "Error (Nudge Failed)"
+            // Press Enter
+            let pressEnterResponse = await axorcist.pressKey(pid: pid, keyCode: 36) // 36 is Enter key code
+            if pressEnterResponse.success {
+                logger.info("PID \\(pid): Successfully pressed Enter after nudge.")
+                await sessionLogger.log(level: .info, message: "Successfully pressed Enter for nudge.", pid: pid)
+                automaticInterventionsSincePositiveActivity[pid, default: 0] += 1
+                totalAutomaticInterventionsThisSession += 1
+                // Start observation window
+                pendingObservationForPID[pid] = (startTime: Date(), initialInterventionCount: automaticInterventionsSincePositiveActivity[pid, default: 0])
+                lastActivityTimestamp[pid] = Date() // Consider this an activity
+                connectionIssueResumeButtonClicks[pid] = 0 // Reset this as per spec
+                if Defaults[.playSoundOnIntervention] { UserNotificationManager.shared.playSound(.success) }
+                if Defaults[.flashIconOnIntervention] { AppIconStateController.shared.flashIcon() }
+                currentStatus = .recovering(type: .nudge)
+                currentStatusMessage = "Nudged with text. Observing..."
+                if var infoToUpdate = instanceInfo[pid] {
+                    infoToUpdate.status = currentStatus
+                    infoToUpdate.statusMessage = currentStatusMessage
                     instanceInfo[pid] = infoToUpdate
                 }
+                return true
             } else {
-                let errorLogMessage = setValueResponse.error ?? "Unknown"
-                logger.error("PID \\(pid): Nudge failed (set value). Error: \\(errorLogMessage)")
-                await sessionLogger.log(level: .error, message: "PID \\(pid): Nudge failed (set value). Error: \\(errorLogMessage)", pid: pid)
-                
-                infoToUpdate.status = .error(reason: "Nudge (Set Value) Failed: \\(errorLogMessage)")
-                infoToUpdate.statusMessage = "Error (Nudge Failed)"
-                instanceInfo[pid] = infoToUpdate
+                let errorString = pressEnterResponse.error ?? "Unknown error"
+                logger.warning("PID \\(pid): Failed to press Enter after nudge: \\(errorString)")
+                await sessionLogger.log(level: .warning, message: "Failed to press Enter for nudge: \\(errorString)", pid: pid)
+                currentStatus = .error(reason: "Nudge (Press Enter) Failed: \\(errorString)")
+                currentStatusMessage = "Nudge failed (Enter key)."
+                if var infoToUpdate = instanceInfo[pid] {
+                    infoToUpdate.status = currentStatus
+                    infoToUpdate.statusMessage = currentStatusMessage
+                    instanceInfo[pid] = infoToUpdate
+                }
+                return false
             }
         } else {
-            logger.warning("PID \\(pid): Nudge failed. 'mainInputField' locator not found.")
-            await sessionLogger.log(level: .warning, message: "PID \\(pid): Nudge failed, main input field locator missing.", pid: pid)
-            
-            infoToUpdate.status = .error(reason: "Nudge Failed (Locator Missing)")
-            infoToUpdate.statusMessage = "Error (Nudge Failed)"
-            instanceInfo[pid] = infoToUpdate
+            let errorString = setValueResponse.error ?? "Unknown error"
+            logger.warning("PID \\(pid): Failed to set value in input field for nudge: \\(errorString)")
+            await sessionLogger.log(level: .warning, message: "Failed to set value for nudge: \\(errorString)", pid: pid)
+            currentStatus = .error(reason: "Nudge (Set Value) Failed: \\(errorString)")
+            currentStatusMessage = "Nudge failed (set text)."
+            if var infoToUpdate = instanceInfo[pid] {
+                infoToUpdate.status = currentStatus
+                infoToUpdate.statusMessage = currentStatusMessage
+                instanceInfo[pid] = infoToUpdate
+            }
+            return false
         }
     }
 
@@ -867,6 +809,7 @@ public class CursorMonitor: ObservableObject {
         for pid in instanceInfo.keys {
             await resumeInterventions(for: pid) 
             lastActivityTimestamp[pid] = Date() 
+            pendingObservationForPID.removeValue(forKey: pid)
         }
     }
 }

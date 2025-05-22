@@ -1,5 +1,5 @@
 import AppKit
-import AXorcist
+import AXorcistLib
 import Combine
 import Defaults
 // import HIServices // Removed as ApplicationServices should cover it
@@ -50,6 +50,7 @@ public class AppDelegate: NSObject, NSApplicationDelegate,
     var loginItemManager: LoginItemManager?
     var axApplicationObserver: AXApplicationObserver? // Observer for app launch/terminate
     var popover: NSPopover?
+    private var shortcutManager: GlobalShortcutManager?
 
     // View models and coordinators
     public var mainSettingsCoordinator: MainSettingsCoordinator?
@@ -109,8 +110,9 @@ public class AppDelegate: NSObject, NSApplicationDelegate,
 
         // Update initial status bar icon AFTER menuManager is set up
         if let statusButton = menuManager?.statusItem?.button {
-            statusButton.image = NSImage(named: AppIconStateController.shared.currentIconState.imageName)
-            statusButton.image?.isTemplate = true
+            let initialState = AppIconStateController.shared.currentIconState
+            statusButton.image = NSImage(named: initialState.imageName)
+            statusButton.image?.isTemplate = (initialState == .black || initialState == .gray) // Conditional template
         } else {
             logger.warning("menuManager.statusItem.button is nil, cannot set initial icon image.")
         }
@@ -121,6 +123,10 @@ public class AppDelegate: NSObject, NSApplicationDelegate,
         // Handle first launch or welcome screen logic
         handleFirstLaunchOrWelcomeScreen()
         
+        // Initialize and register global shortcut
+        shortcutManager = GlobalShortcutManager()
+        registerCurrentGlobalShortcut()
+        
         // Observe AppIconStateController state changes
         AppIconStateController.shared.$currentIconState
             .receive(on: DispatchQueue.main)
@@ -130,7 +136,8 @@ public class AppDelegate: NSObject, NSApplicationDelegate,
                 // Only update if not currently flashing, as flash has priority for the image
                 if !AppIconStateController.shared.isFlashing {
                     self.menuManager?.statusItem?.button?.image = NSImage(named: newState.imageName)
-                    self.menuManager?.statusItem?.button?.image?.isTemplate = true
+                    // Conditional template based on the new state
+                    self.menuManager?.statusItem?.button?.image?.isTemplate = (newState == .black || newState == .gray)
                 }
             }
             .store(in: &cancellables)
@@ -143,17 +150,15 @@ public class AppDelegate: NSObject, NSApplicationDelegate,
                 
                 if isFlashing {
                     self.logger.info("Icon flash started. Displaying flash_action icon.")
-                    // Store the pre-flash image if needed, or rely on currentIconState to restore
-                    // For simplicity, we will just set the flash image.
-                    // The other observer will set the correct one when isFlashing becomes false.
                     button.image = NSImage(named: "status_icon_flash_action") // Assumed asset name
-                    button.image?.isTemplate = true 
+                    button.image?.isTemplate = false // Flash icon is likely color, so not a template
                 } else {
                     self.logger.info("Icon flash ended. Restoring icon based on currentIconState.")
                     // Revert to the icon determined by the current persistent state
                     let currentPersistentState = AppIconStateController.shared.currentIconState
                     button.image = NSImage(named: currentPersistentState.imageName)
-                    button.image?.isTemplate = true
+                    // Conditional template based on the persistent state
+                    button.image?.isTemplate = (currentPersistentState == .black || currentPersistentState == .gray)
                 }
             }
             .store(in: &cancellables)
@@ -208,6 +213,9 @@ public class AppDelegate: NSObject, NSApplicationDelegate,
 
         // Stop the Cursor monitoring loop
         CursorMonitor.shared.stopMonitoringLoop()
+
+        // Unregister global shortcut
+        shortcutManager?.unregister()
 
         // Clean up menu manager
         menuManager?.cleanup()
@@ -280,11 +288,27 @@ public class AppDelegate: NSObject, NSApplicationDelegate,
         NSApp.activate(ignoringOtherApps: true) // Bring app to front
     }
 
-    func showWelcomeWindow() {
-        logger.info("Show welcome window requested")
+    private var aboutWindowController: NSWindowController?
 
-        // Post notification to show welcome window
-        NotificationCenter.default.post(name: .showWelcomeWindow, object: nil)
+    @objc func showAboutWindow() {
+        logger.info("Showing About Window.")
+        if aboutWindowController == nil {
+            let aboutView = AboutView()
+            let window = NSWindow(
+                contentRect: NSRect(x: 0, y: 0, width: 400, height: 400), // Match AboutView frame
+                styleMask: [.titled, .closable], // Non-resizable, closable
+                backing: .buffered,
+                defer: false
+            )
+            window.center()
+            window.title = "About CodeLooper"
+            window.isReleasedWhenClosed = false // We manage its lifecycle
+            window.contentView = NSHostingView(rootView: aboutView)
+            aboutWindowController = NSWindowController(window: window)
+        }
+        aboutWindowController?.showWindow(self)
+        NSApp.activate(ignoringOtherApps: true)
+        aboutWindowController?.window?.makeKeyAndOrderFront(nil)
     }
 
     // MARK: - App Initialization Methods
@@ -309,9 +333,9 @@ public class AppDelegate: NSObject, NSApplicationDelegate,
         loginItemManager = LoginItemManager.shared // Use shared instance for consistency
 
         // Setup AXorcist and AXApplicationObserver - these should be early
-        let axorcistInstance = AXorcist() // Create a single instance
+        let axorcistInstance = AXorcistLib.AXorcist() // Qualified with AXorcistLib
         axApplicationObserver = AXApplicationObserver(axorcist: axorcistInstance) // Pass the instance
-        logger.info("AXorcist and AXApplicationObserver initialized.")
+        logger.info("AXorcistLib and AXApplicationObserver initialized.")
 
         // Initialize CursorMonitor with the AXorcist instance
         _ = CursorMonitor.shared // Ensures shared instance is initialized, using the one from its static let
@@ -408,6 +432,39 @@ public class AppDelegate: NSObject, NSApplicationDelegate,
 
         // Add all observers to array for cleanup
         notificationObservers.append(contentsOf: [menuBarObserver, highlightMenuBarObserver])
+
+        // Observer for global shortcut changes from settings
+        let shortcutObserver = NotificationCenter.default.addObserver(
+            forName: .globalShortcutDidChange,
+            object: nil,
+            queue: .main // Operations will be scheduled on the main queue
+        ) { [weak self] notification in
+            // Ensure execution on the MainActor when calling a MainActor-isolated method
+            Task { @MainActor [weak self] in // Capture self weakly here too
+                self?.handleGlobalShortcutChange(notification: notification)
+            }
+        }
+        notificationObservers.append(shortcutObserver)
+        logger.info("Registered observer for .globalShortcutDidChange")
+        
+        // Observer for when monitoring state is changed BY the shortcut itself
+        let shortcutToggledMonitoringObserver = NotificationCenter.default.addObserver(
+            forName: .globalMonitoringStateChangedByShortcut,
+            object: nil,
+            queue: .main
+        ) { [weak self] notification in
+            // The Defaults[.isGlobalMonitoringEnabled] is already changed by the shortcut manager.
+            // This notification is mostly for logging or if any other UI needs to react specifically to the shortcut action.
+            if let newState = notification.object as? Bool {
+                self?.logger.info("Global monitoring state changed to \(newState) via shortcut.")
+                // Potentially update UI elements that don't directly observe Defaults[.isGlobalMonitoringEnabled]
+                // For example, if the menu bar icon text needed to change and wasn't using @Default.
+            } else {
+                self?.logger.info("Global monitoring state changed via shortcut (new state not provided in notification object).")
+            }
+        }
+        notificationObservers.append(shortcutToggledMonitoringObserver)
+        logger.info("Registered observer for .globalMonitoringStateChangedByShortcut")
     }
 
     private func setupHighlightMenuBarObserver() -> NSObjectProtocol {
@@ -417,9 +474,9 @@ public class AppDelegate: NSObject, NSApplicationDelegate,
             object: nil,
             queue: .main
         ) { [weak self] _ in
-            Task { @MainActor in
-                self?.logger.info("Highlighting menu bar icon based on notification")
-                self?.menuManager?.highlightMenuBarItem()
+            Task { @MainActor [weak self] in // Ensure self is captured weakly here as well
+                self?.logger.info("Highlighting menu bar icon based on notification (.highlightMenuBarIcon received)")
+                AppIconStateController.shared.flashIcon() // Corrected method name
             }
         }
     }
@@ -444,92 +501,101 @@ public class AppDelegate: NSObject, NSApplicationDelegate,
     }
 
     private func handleFirstLaunchOrWelcomeScreen() {
-        logger.info("Checking if we need to show welcome screen")
-
+        logger.info("Checking if welcome guide should be shown.")
         if !Defaults[.hasShownWelcomeGuide] {
-            logger.info("Showing welcome screen for the first time.")
-            showWelcomeGuide()
+            logger.info("Welcome guide has not been shown. Displaying now.")
+            showWelcomeWindow()
         } else {
-            // If welcome guide already shown, just check permissions silently or on an issue
-            checkAndPromptForAccessibilityIfNeeded(isInteractive: false)
+            logger.info("Welcome guide already shown. Checking accessibility permissions.")
+            // If welcome guide was shown, check permissions directly
+            // This is important if the app was quit before granting permissions after welcome.
+            checkAndPromptForAccessibilityPermissions()
         }
     }
 
-    @MainActor
-    private func showWelcomeGuide() {
-        if welcomeWindow == nil {
-            let welcomeView = WelcomeGuideView(isPresented: .constant(true)) // Binding needs to close the window
-            let hostingController = NSHostingController(rootView: welcomeView)
-            let window = NSWindow(contentViewController: hostingController)
-            window.title = "Welcome to CodeLooper"
-            window.styleMask = [.closable, .titled]
+    @objc func showWelcomeWindow() {
+        logger.info("Showing Welcome Window.")
+        if welcomeWindowController == nil {
+            let welcomeView = WelcomeGuideView { [weak self] in
+                self?.welcomeWindowController?.close()
+                self?.welcomeWindowController = nil // Release the window controller
+                self?.logger.info("Welcome guide 'Get Started' clicked. Proceeding to permission check.")
+                self?.checkAndPromptForAccessibilityPermissions()
+            }
+            let window = NSWindow(
+                contentRect: NSRect(x: 0, y: 0, width: 500, height: 650), // Match WelcomeGuideView frame
+                styleMask: [.titled, .closable], // Non-resizable, closable
+                backing: .buffered,
+                defer: false
+            )
             window.center()
-            self.welcomeWindow = window
-            
-            // Modify the binding to close the window
-            let newWelcomeView = WelcomeGuideView(isPresented: Binding(
-                get: { true }, // Window is presented if this func is called
-                set: { newValue, _ in 
-                    if !newValue {
-                        self.welcomeWindow?.close()
-                        self.welcomeWindow = nil // Release window
-                        Defaults[.hasShownWelcomeGuide] = true // Ensure flag is set
-                        // Proceed to permission check after welcome guide is closed
-                        self.checkAndPromptForAccessibilityIfNeeded(isInteractive: true)
-                    }
-                }
-            ))
-            self.welcomeWindow?.contentViewController = NSHostingController(rootView: newWelcomeView)
+            window.title = "Welcome to CodeLooper"
+            window.isReleasedWhenClosed = false // We manage its lifecycle
+            window.contentView = NSHostingView(rootView: welcomeView)
+            welcomeWindowController = NSWindowController(window: window)
         }
-        welcomeWindow?.makeKeyAndOrderFront(nil)
-        NSApp.activate(ignoringOtherApps: true)
+        welcomeWindowController?.showWindow(self)
+        NSApp.activate(ignoringOtherApps: true) // Bring app to front for the welcome guide
+        welcomeWindowController?.window?.makeKeyAndOrderFront(nil)
     }
 
-    // This method handles initial accessibility check and logging
-    @MainActor
-    private func checkAccessibilityPermissions() {
-        // let keyString = AppDelegate.axTrustedCheckOptionPromptKeyString // Commented out
-        // let options = [keyString: false] // Commented out
-        let accessibilityEnabled = AXIsProcessTrustedWithOptions(nil) // Pass nil for options
-        if accessibilityEnabled {
-            logger.info("Accessibility permissions are granted.")
-        } else {
-            // This is just a check, so log if not granted. Prompting is handled by checkAndPromptForAccessibilityIfNeeded.
-            logger.warning("Accessibility check: Permissions are NOT granted. AXorcist may not function.")
-        }
-    }
+    // MARK: - Accessibility Permissions
 
-    @MainActor
-    func checkAndPromptForAccessibilityIfNeeded(isInteractive: Bool) {
-        // let keyString = AppDelegate.axTrustedCheckOptionPromptKeyString // Commented out
-        // let options = [keyString: isInteractive] // Commented out
-        // For prompting, we ideally need the key. Since it's problematic, this will behave like a non-prompting check if nil is passed.
-        // If isInteractive is true, we might still want to show our own alert even if the system prompt doesn't appear due to missing key.
-        let isTrusted = AXIsProcessTrustedWithOptions(isInteractive ? nil : nil) // Effectively nil for options, placeholder for prompt logic
-
-        if !isTrusted {
-            if isInteractive {
-                logger.warning("Accessibility permissions are NOT granted. Prompting user.")
-                // The system prompt is handled by AXIsProcessTrustedWithOptions when prompt is true.
-                // We can show an additional alert explaining why we need it.
-                let alert = NSAlert()
-                alert.messageText = "Accessibility Permissions Required"
-                alert.informativeText = "CodeLooper uses Accessibility features to interact with other applications like Cursor. Please grant permissions in System Settings > Privacy & Security > Accessibility."
-                alert.addButton(withTitle: "Open System Settings")
-                alert.addButton(withTitle: "Cancel")
-                alert.alertStyle = .warning
-
-                if alert.runModal() == .alertFirstButtonReturn {
-                    // Open Accessibility settings
+    /// Checks accessibility permissions and prompts the user if needed.
+    /// This function is essential for AXorcist to operate correctly.
+    func checkAndPromptForAccessibilityPermissions(showPromptIfNeeded: Bool = true) {
+        logger.info("Checking accessibility permissions.")
+        var debugLogs: [String] = []
+        var permissionsGranted = false
+        do {
+            // Check without auto-prompting first using the new global function
+            try AXorcistLib.checkAccessibilityPermissions(isDebugLoggingEnabled: false, currentDebugLogs: &debugLogs)
+            permissionsGranted = true
+            logger.info("Accessibility permissions already granted.")
+            Task { await sessionLogger.log(level: .info, message: "Accessibility permissions granted.") }
+        } catch let error as AccessibilityError {
+            if case .notAuthorized = error, showPromptIfNeeded {
+                logger.warning("Accessibility permissions not granted. Will attempt to prompt. Error: \(error.localizedDescription)")
+                Task { await sessionLogger.log(level: .warning, message: "Accessibility permissions not granted, prompting. Error: \(error.localizedDescription)") }
+                debugLogs.removeAll() // Clear logs for the next call
+                
+                // Attempt to prompt the user
+                do {
+                    try AXorcistLib.checkAccessibilityPermissions(isDebugLoggingEnabled: false, currentDebugLogs: &debugLogs) // This call will prompt if not trusted
+                    permissionsGranted = true // If it doesn't throw, permissions were granted (or already were)
+                    logger.info("Accessibility permissions granted after prompt (or were already granted).")
+                    Task { await sessionLogger.log(level: .info, message: "Accessibility permissions granted after prompt.") }
+                } catch let promptError {
+                    logger.error("Failed to obtain accessibility permissions after prompt: \(promptError.localizedDescription)")
+                    Task { await sessionLogger.log(level: .error, message: "Failed to obtain accessibility permissions after prompt: \(promptError.localizedDescription)") }
+                    // As a fallback or alternative, construct the URL to guide the user
                     if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility") {
                         NSWorkspace.shared.open(url)
                     }
                 }
             } else {
-                logger.warning("Accessibility check (non-interactive): Permissions are NOT granted.")
+                // Handle other AccessibilityError cases or if showPromptIfNeeded is false
+                logger.error("Error checking accessibility permissions: \(error.localizedDescription)")
+                Task { await sessionLogger.log(level: .error, message: "Error checking accessibility permissions: \(error.localizedDescription)") }
+                if showPromptIfNeeded { // Still guide to settings for other errors if prompting was intended
+                    if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility") {
+                        NSWorkspace.shared.open(url)
+                    }
+                }
             }
-        } else {
-            logger.info("Accessibility permissions are granted.")
+        } catch {
+            // Catch any other non-AccessibilityError types
+            logger.error("An unexpected error occurred while checking accessibility permissions: \(error.localizedDescription)")
+            Task { await sessionLogger.log(level: .error, message: "Unexpected error checking accessibility permissions: \(error.localizedDescription)") }
+            if showPromptIfNeeded {
+                if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility") {
+                    NSWorkspace.shared.open(url)
+                }
+            }
+        }
+
+        if permissionsGranted {
+            // Perform any actions needed once permissions are confirmed
         }
     }
 
@@ -578,4 +644,27 @@ public class AppDelegate: NSObject, NSApplicationDelegate,
 
     // func setupAppleScriptSupport() { /* Placeholder removed, implemented in extension */ }
     // func cleanupAppleScriptSupport() { /* Placeholder removed, implemented in extension */ }
+
+    // MARK: - Notification Handlers
+    private func handleGlobalShortcutChange(notification: Notification) {
+        logger.info(".globalShortcutDidChange notification received.")
+        if let newShortcutString = notification.object as? String {
+            logger.info("New shortcut string from notification: '\(newShortcutString)'. Attempting to re-register.")
+            shortcutManager?.register(shortcut: newShortcutString.isEmpty ? nil : newShortcutString)
+        } else if notification.object == nil { // Handles case where shortcut is cleared (set to nil)
+             logger.info("Global shortcut cleared (nil). Attempting to unregister/register with nil.")
+            shortcutManager?.register(shortcut: nil)
+        } else {
+            logger.warning("Received .globalShortcutDidChange but the object was not a String or nil.")
+        }
+    }
+    
+    private func registerCurrentGlobalShortcut() {
+        let currentShortcut = MCPConfigManager.shared.getGlobalShortcut()
+        logger.info("Registering current global shortcut: '\(currentShortcut ?? "Not set")'")
+        shortcutManager?.register(shortcut: currentShortcut)
+    }
+
+    // MARK: - AXServices and Permissions Management
+
 }

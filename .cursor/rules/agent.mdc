@@ -31,7 +31,7 @@ This is the **CodeLooper** project, a Swift macOS menu bar application that prov
 ## Architecture
 
 - **Swift Package Manager (SPM)**: Primary dependency management and build system
-- **Tuist**: Project generation and workspace management
+- **Tuist**: Project generation and workspace management. Tuist uses a `Project.swift` manifest file to define the project structure, dependencies, and build settings. The main project configuration can be found in `Project.swift` at the root of the repository.
 - **SwiftUI + AppKit**: Hybrid UI approach with SwiftUI for modern components and AppKit for system integration
 - **AXorcist Integration**: Accessibility automation framework (git submodule)
 - **Swift 6.0**: Strict concurrency checking enabled

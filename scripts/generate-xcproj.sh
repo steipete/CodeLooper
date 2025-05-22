@@ -22,6 +22,28 @@
 
 set -e
 
+if ! command -v tuist &> /dev/null
+then
+    echo "Tuist not found. Attempting to install with Homebrew..."
+    if command -v brew &> /dev/null
+    then
+        brew install tuist
+        if ! command -v tuist &> /dev/null
+        then
+            echo "Failed to make tuist available after 'brew install tuist'."
+            echo "Please ensure Homebrew is correctly configured and 'tuist' is in your PATH."
+            exit 1
+        fi
+        echo "Tuist installed successfully via Homebrew."
+    else
+        echo "Homebrew (brew) command not found. Cannot install tuist automatically."
+        echo "Please install tuist manually."
+        exit 1
+    fi
+else
+    echo "Tuist found."
+fi
+
 # Change to the mac directory if needed
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
 MAC_DIR="$(dirname "$SCRIPT_DIR")"

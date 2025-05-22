@@ -82,7 +82,7 @@ log "Build completed successfully"
 
 # Define paths
 BUILD_DIR=".build/$BUILD_TYPE"
-EXECUTABLE_PATH="$BUILD_DIR/CodeLooper"
+EXECUTABLE_PATH="$BUILD_DIR/CodeLooper-Mac"
 
 # Check if the executable exists
 if [ ! -f "$EXECUTABLE_PATH" ]; then

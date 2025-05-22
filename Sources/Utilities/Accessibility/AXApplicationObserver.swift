@@ -1,14 +1,14 @@
-import AXorcist
+import AXorcistLib
 import Cocoa
 
 /// Observes application launch and termination events.
 class AXApplicationObserver {
-    private let axorcist: AXorcist? // AXorcist instance for accessibility interactions
+    private let axorcist: AXorcistLib.AXorcist?
     private var monitoredBundleIdentifiers: Set<String> = []
     private let notificationCenter = NSWorkspace.shared.notificationCenter
     // Logger instance will be added when integrating with main app
 
-    init(axorcist: AXorcist?) {
+    init(axorcist: AXorcistLib.AXorcist?) {
         self.axorcist = axorcist
         setupObservers()
     }
@@ -48,7 +48,7 @@ class AXApplicationObserver {
     private func applicationDidLaunch(notification: Notification) {
         guard let app = notification.userInfo?[NSWorkspace.applicationUserInfoKey] as? NSRunningApplication,
             let bundleIdentifier = app.bundleIdentifier,
-            let appName = app.localizedName else {
+            let _ = app.localizedName else {
             // Log error: Missing application information
             return
         }
@@ -71,7 +71,7 @@ class AXApplicationObserver {
     private func applicationDidTerminate(notification: Notification) {
         guard let app = notification.userInfo?[NSWorkspace.applicationUserInfoKey] as? NSRunningApplication,
             let bundleIdentifier = app.bundleIdentifier,
-            let appName = app.localizedName else {
+            let _ = app.localizedName else {
             // Log error: Missing application information
             return
         }

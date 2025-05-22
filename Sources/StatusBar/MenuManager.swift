@@ -1,4 +1,6 @@
 import AppKit
+import SwiftUI // Added for NSHostingController and MainPopoverView
+import Combine // Added for Combine framework elements
 import Defaults
 import Foundation
 import OSLog
@@ -12,6 +14,7 @@ protocol MenuManagerDelegate: AnyObject, Sendable {
     func toggleStartAtLogin()
     func toggleDebugMenu()
     func showAbout()
+    // func togglePopover() // No longer needed from delegate, handled internally
 }
 
 // MARK: - Menu Manager
@@ -20,95 +23,158 @@ protocol MenuManagerDelegate: AnyObject, Sendable {
 final class MenuManager {
     // MARK: - Properties
 
-    // Logger for this class, internal so extensions can access it
     let logger = Logger(subsystem: "ai.amantusmachina.codelooper", category: "MenuManager")
 
     var statusItem: NSStatusItem?
-    var progressIndicator: NSProgressIndicator?
+    // var progressIndicator: NSProgressIndicator? // Not used in current spec for popover
     weak var delegate: MenuManagerDelegate?
 
     // Managers for specialized functionality
-    var statusIconManager: StatusIconManager?
-    var menuBarIconManager: MenuBarIconManager?
+    // var statusIconManager: StatusIconManager? // Potentially simplify or remove if AppIconStateController handles all
+    var menuBarIconManager: MenuBarIconManager? // Keep for now, might be used for template image logic
+
+    private var popover: NSPopover
+    private var eventMonitor: EventMonitor? // For closing popover on outside click
+    private var cancellables = Set<AnyCancellable>()
 
     // MARK: - Initialization
 
     init(delegate: MenuManagerDelegate) {
         self.delegate = delegate
+        
+        // Initialize NSPopover BEFORE setupMenuBar, as button action will need it.
+        self.popover = NSPopover()
+        popover.contentSize = NSSize(width: 420, height: 550) // Match MainPopoverView frame
+        popover.behavior = .transient
+        popover.animates = true
+        popover.contentViewController = NSHostingController(rootView: MainPopoverView())
+
         setupMenuBar()
+
+        // Event monitor for popover dismissal - Initialized here as popover exists
+        eventMonitor = EventMonitor(mask: [.leftMouseDown, .rightMouseDown]) { [weak self] event in
+            if let self = self, self.popover.isShown {
+                self.closePopover(sender: event)
+            }
+        }
+        
+        // Visibility observation for statusItem
+        Defaults.publisher(.showInMenuBar)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] change in
+                self?.statusItem?.isVisible = change.newValue
+            }
+            .store(in: &cancellables)
+        
+        NotificationCenter.default.publisher(for: .menuBarVisibilityChanged)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] notification in
+                if let visible = notification.userInfo?["visible"] as? Bool {
+                    self?.statusItem?.isVisible = visible
+                }
+            }
+            .store(in: &cancellables)
     }
 
-    // MARK: - MenuBar Setup
+    // MARK: - MenuBar Setup & Popover Management
 
     func setupMenuBar() {
         logger.info("Creating status item in menu bar")
 
-        // Add a small delay to ensure the graphics context is fully initialized
-        // This avoids the CGContextGetBase_initialized assertion failure
         Task {
             try? await Task.sleep(for: .milliseconds(100))
 
-            // Initialize the status item with variable length (system default)
-            statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
+            statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength) // Use squareLength for icon-only
+            statusItem?.isVisible = Defaults[.showInMenuBar] // Set initial visibility
 
-            // Initialize the menu bar icon manager (handles dark/light mode automatically)
-            menuBarIconManager = MenuBarIconManager(statusItem: statusItem)
+            // menuBarIconManager might still be used for template image logic if needed,
+            // but primary icon name comes from AppIconStateController via AppDelegate.
+            // menuBarIconManager = MenuBarIconManager(statusItem: statusItem)
 
-            // Configure the status item button
             if let button = statusItem?.button {
-                // The icon will be set by the MenuBarIconManager
-                button.imagePosition = .imageOnly
-
-                // Set tooltip
+                button.action = #selector(togglePopover) // Action is to toggle popover
+                button.target = self
                 button.toolTip = Constants.appName
-
-                // Create menu
-                logger.info("Creating menu")
-                refreshMenu()
+                // Initial icon will be set by AppDelegate observing AppIconStateController
             } else {
                 logger.error("Failed to get status item button")
             }
+            // Menu is now secondary, can be set up to be shown on right-click or via a popover button if needed.
+            // For now, primary interaction is popover. Right-click for menu:
+            if let button = statusItem?.button {
+                 button.sendAction(on: [.leftMouseUp, .rightMouseUp]) // Ensure right click can also trigger actions
+            }
+            refreshMenu() // Keep menu for right-click or alternative access
+        }
+    }
+    
+    @objc private func togglePopover(_ sender: Any?) {
+        // If the event is a right-click, show the context menu, otherwise toggle popover.
+        // This makes the menu accessible again.
+        if let event = NSApp.currentEvent, event.type == .rightMouseUp {
+            statusItem?.menu = nil // Temporarily remove menu to allow button to show its own menu
+            statusItem?.popUpMenu(statusItem?.menu ?? NSMenu()) // Show it
+            // Re-assign the menu if it was programmatically built, or ensure it's always set for future right-clicks.
+            // For simplicity, we assume refreshMenu() keeps it updated if needed.
+            // Or, more robustly, store the built menu and re-assign it.
+            Task { await self.statusItem?.menu = buildApplicationMenu() }
+            return
+        }
+        
+        guard let button = statusItem?.button else { return }
+        if popover.isShown {
+            closePopover(sender: nil)
+        } else {
+            // Ensure any context menu is dismissed before showing popover
+            statusItem?.menu?.cancelTracking()
+            popover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
+            eventMonitor?.start()
+            button.isHighlighted = true
+        }
+    }
+
+    private func closePopover(sender: Any?) {
+        popover.performClose(sender)
+        eventMonitor?.stop()
+        if let button = statusItem?.button {
+            button.isHighlighted = false
         }
     }
 
     @MainActor
     func refreshMenu() {
-        guard let statusBar = statusItem, delegate != nil else {
-            logger.error("Status item or delegate is nil, can't refresh menu")
+        guard let statusBar = statusItem else { // Delegate check removed, menu is for fallback
+            logger.error("Status item is nil, can't refresh menu")
             return
         }
 
-        // Use the menu builder to create the menu
-        // Using explicit type to resolve ambiguity between Task { } and Task.init
         Task<Void, Never> {
             let menu = await buildApplicationMenu()
-
-            // Set menu to status item
-            statusBar.menu = menu
-            logger.info("Menu refreshed with improved organization")
+            statusBar.menu = menu // Set the menu for right-click
+            logger.info("Menu refreshed for right-click access")
         }
     }
 
-    /// Build the main application menu
     @MainActor
     private func buildApplicationMenu() async -> NSMenu {
         let menu = NSMenu()
 
-        // App title
-        let titleItem = NSMenuItem(title: Constants.appName, action: nil, keyEquivalent: "")
-        titleItem.isEnabled = false
-        menu.addItem(titleItem)
+        // App title is not conventional for status bar item menus
+        // menu.addItem(NSMenuItem(title: Constants.appName, action: nil, keyEquivalent: ""))
+        // menu.addItem(NSMenuItem.separator())
 
-        menu.addItem(NSMenuItem.separator())
+        // Popover Item - Or rely on left-click only
+        // let showAppItem = NSMenuItem(title: "Show CodeLooper", action: #selector(togglePopover(_:)), keyEquivalent: "")
+        // showAppItem.target = self
+        // menu.addItem(showAppItem)
+        // menu.addItem(NSMenuItem.separator())
 
-        // Settings
         let settingsItem = NSMenuItem(title: "Settings...", action: #selector(settingsClicked), keyEquivalent: ",")
         settingsItem.target = self
         menu.addItem(settingsItem)
 
         menu.addItem(NSMenuItem.separator())
 
-        // Start at Login
         let startAtLoginItem = NSMenuItem(
             title: "Start at Login",
             action: #selector(toggleStartAtLoginClicked),
@@ -118,7 +184,6 @@ final class MenuManager {
         startAtLoginItem.state = Defaults[.startAtLogin] ? .on : .off
         menu.addItem(startAtLoginItem)
 
-        // Debug menu (if enabled)
         if Defaults[.showDebugMenu] {
             menu.addItem(NSMenuItem.separator())
             let debugItem = NSMenuItem(
@@ -128,11 +193,19 @@ final class MenuManager {
             )
             debugItem.target = self
             menu.addItem(debugItem)
+            
+            // Add Show Log Window to debug menu
+            let showLogWindowItem = NSMenuItem(
+                title: "Show Session Log Window",
+                action: #selector(showLogWindowClicked),
+                keyEquivalent: ""
+            )
+            showLogWindowItem.target = self
+            menu.addItem(showLogWindowItem)
         }
 
         menu.addItem(NSMenuItem.separator())
 
-        // About
         let aboutItem = NSMenuItem(
             title: "About \(Constants.appName)",
             action: #selector(aboutClicked),
@@ -141,7 +214,6 @@ final class MenuManager {
         aboutItem.target = self
         menu.addItem(aboutItem)
 
-        // Quit
         let quitItem = NSMenuItem(
             title: "Quit \(Constants.appName)",
             action: #selector(quitClicked),
@@ -163,13 +235,13 @@ final class MenuManager {
     @objc
     private func toggleStartAtLoginClicked() {
         delegate?.toggleStartAtLogin()
-        refreshMenu() // Refresh to update checkmark
+        refreshMenu() 
     }
 
     @objc
     private func toggleDebugMenuClicked() {
         delegate?.toggleDebugMenu()
-        refreshMenu() // Refresh to show/hide debug items
+        refreshMenu() 
     }
 
     @objc
@@ -181,54 +253,60 @@ final class MenuManager {
     private func quitClicked() {
         NSApplication.shared.terminate(nil)
     }
+    
+    @objc
+    private func showLogWindowClicked() {
+        Task {
+            await SessionLogger.shared.showLogWindow()
+        }
+    }
 
-    /// Cleanup resources when the menu manager is no longer needed
     @MainActor
     func cleanup() {
-        // Clean up status item if it exists
         if let statusItem {
             logger.info("Cleaning up status item from menu bar")
             NSStatusBar.system.removeStatusItem(statusItem)
             self.statusItem = nil
         }
-
-        // Clean up icon-related resources
-        cleanupIconResources()
-
+        eventMonitor?.stop()
+        menuBarIconManager?.cleanup() // If menuBarIconManager is kept
         logger.info("Menu manager resources cleaned up")
     }
+    
+    // Cleanup for icon resources - if menuBarIconManager is removed or simplified.
+    // private func cleanupIconResources() { ... }
+}
 
-    // MARK: - Icon Management
+// Helper for monitoring outside clicks to close popover (already defined in deleted StatusBarController, ensure it's here or accessible)
+// For brevity, assuming EventMonitor is defined as previously shown, or moved to a shared utility file.
+// If not, it needs to be included here.
+public class EventMonitor {
+    private var monitor: Any?
+    private let mask: NSEvent.EventTypeMask
+    private let handler: (NSEvent?) -> Void
 
-    /// Clean up icon-related resources
-    @MainActor
-    private func cleanupIconResources() {
-        statusIconManager = nil
-        menuBarIconManager = nil
-        logger.debug("Icon resources cleaned up")
+    public init(mask: NSEvent.EventTypeMask, handler: @escaping (NSEvent?) -> Void) {
+        self.mask = mask
+        self.handler = handler
     }
 
-    /// Highlight the menu bar item briefly
-    @MainActor
-    func highlightMenuBarItem() {
-        guard let button = statusItem?.button else { return }
+    deinit {
+        stop()
+    }
 
-        // Flash the menu bar icon briefly
-        let originalAlpha = button.alphaValue
+    public func start() {
+        monitor = NSEvent.addGlobalMonitorForEvents(matching: mask, handler: handler)
+    }
 
-        NSAnimationContext.runAnimationGroup { context in
-            context.duration = 0.1
-            button.animator().alphaValue = 0.3
-        } completionHandler: {
-            NSAnimationContext.runAnimationGroup { context in
-                context.duration = 0.1
-                button.animator().alphaValue = originalAlpha
-            }
+    public func stop() {
+        if monitor != nil {
+            NSEvent.removeMonitor(monitor!)
+            monitor = nil
         }
     }
-
-    /// Get the menu bar icon manager
-    func getMenuBarIconManager() -> MenuBarIconManager? {
-        return menuBarIconManager
-    }
 }
+
+// Notification Name for menu bar visibility (already defined in deleted StatusBarController, ensure it's here or accessible)
+// extension Notification.Name {
+//    static let menuBarVisibilityChanged = Notification.Name("menuBarVisibilityChanged")
+// }

@@ -1,3 +1,4 @@
+#!/usr/bin/osascript
 --------------------------------------------------------------------------------
 -- terminator.scpt - v0.6.0 "T-1000"
 -- Instruct Cursor: Run the command `osascript .cursor/scripts/terminator.scpt`
@@ -12,15 +13,15 @@ property scriptInfoPrefix : "Terminator 🤖💥: "
 
 -- Core Timing Configuration
 property maxCommandWaitTime : 15.0 -- Increased from 10s for better reliability
-property pollIntervalForBusyCheck : 0.05 -- Reduced for more responsive checking
+property pollIntervalForBusyCheck : 0.1 -- Restored original timing
 property startupDelayForTerminal : 0.7
 property adaptiveDelayMultiplier : 1.0 -- Can be adjusted based on system performance
 
 -- Output Configuration
-property minTailLinesOnWrite : 15
-property defaultTailLines : 30
+property minTailLinesOnWrite : 100
+property defaultTailLines : 100
 property maxOutputCaptureRetries : 3
-property outputCaptureRetryDelay : 0.2
+property outputCaptureRetryDelay : 0.5 -- Increased for better output settling
 
 -- UI Configuration
 property tabTitlePrefix : "Terminator 🤖💥 "
@@ -376,7 +377,7 @@ on executeCommandInTerminal(shellCmd, targetTab, projectPathArg, originalUserShe
             end repeat
             
             if commandFinished then
-                delay 0.1 -- Brief pause for output to settle
+                delay 0.5 -- Allow time for output to settle in terminal buffer
                 set executionResult to executionResult & {success:true}
             else
                 set executionResult to executionResult & {success:false, timedOut:true}
@@ -641,40 +642,61 @@ on run argv
             end if
         end if
         
-        -- Execute command if needed
+        -- Execute command if needed (using original inline approach for reliability)
         set executionInfo to {success:true, timedOut:false, processInterrupted:false, errorMsg:""}
+        set commandTimedOut to false
+        
         if writeMode and shellCmd is not "" then
-            set executionInfo to my executeCommandInTerminal(shellCmd, targetTab, projectPath, originalUserShellCmd)
+            tell application id "com.apple.Terminal"
+                try
+                    do script shellCmd in targetTab
+                    set commandStartTime to current date
+                    set commandFinished to false
+                    repeat while ((current date) - commandStartTime) < maxCommandWaitTime
+                        if not (busy of targetTab) then
+                            set commandFinished to true
+                            exit repeat
+                        end if
+                        delay pollIntervalForBusyCheck
+                    end repeat
+                    if not commandFinished then set commandTimedOut to true
+                    if commandFinished then delay 0.2 -- Allow output to settle
+                on error errMsg
+                    set executionInfo to executionInfo & {success:false, errorMsg:errMsg}
+                end try
+            end tell
         end if
         
-        -- Capture output with enhanced retry logic
-        set captureInfo to my captureTerminalOutputWithRetry(targetTab, currentTailLines)
-        set bufferText to content of captureInfo
+        -- Capture output (using original direct approach)
+        set bufferText to ""
+        tell application id "com.apple.Terminal"
+            try
+                set bufferText to history of targetTab
+            on error errMsg
+                -- Fallback approach or error handling could go here
+            end try
+        end tell
+        
+        -- Generate status messages (simplified)
+        set appendedMessage to ""
+        if commandTimedOut then
+            set cmdForMsg to originalUserShellCmd
+            if projectPath is not "" and originalUserShellCmd is not "" then set cmdForMsg to originalUserShellCmd & " (in " & projectPath & ")"
+            if projectPath is not "" and originalUserShellCmd is "" then set cmdForMsg to "(cd " & projectPath & ")"
+            set appendedMessage to appendedMessage & linefeed & scriptInfoPrefix & "Command '" & cmdForMsg & "' may still be running. Returned after " & maxCommandWaitTime & "s timeout. ---"
+        end if
+        
+        if appendedMessage is not "" then
+            if bufferText is "" then
+                set bufferText to my trimWhitespaceOptimized(appendedMessage)
+            else
+                set bufferText to bufferText & appendedMessage
+            end if
+        end if
         
         -- Process and format output
         set tailedOutput to my tailBufferAS(bufferText, currentTailLines)
         set finalResult to my trimBlankLinesAS(tailedOutput)
-        
-        -- Generate enhanced status messages
-        set statusMessages to {}
-        if processInterrupted of executionInfo then
-            set statusMessages to statusMessages & {"Previous process was interrupted"}
-        end if
-        if timedOut of executionInfo then
-            set statusMessages to statusMessages & {"Command timed out after " & maxCommandWaitTime & "s"}
-        end if
-        if not (success of captureInfo) then
-            set statusMessages to statusMessages & {"Output capture required " & (attempts of captureInfo) & " attempts"}
-        end if
-        if (count of (warnings of captureInfo)) > 0 then
-            set statusMessages to statusMessages & (warnings of captureInfo)
-        end if
-        
-        -- Append status information if needed (only for non-empty results)
-        if (count of statusMessages) > 0 and finalResult is not "" then
-            set statusText to linefeed & scriptInfoPrefix & my joinList(statusMessages, "; ") & " ---"
-            set finalResult to finalResult & statusText
-        end if
         
         -- Return appropriate result
         if finalResult is "" then

@@ -7,7 +7,7 @@ import SwiftUI // Added SwiftUI for NSHostingView and LogSettingsView if it's Sw
 // LogLevel is now imported from LogLevel.swift
 // public enum LogLevel: String, Codable, CaseIterable, Sendable { ... } // REMOVED
 
-public struct LogEntry: Identifiable, Codable, Sendable {
+public struct LogEntry: Identifiable, Codable, Sendable, Equatable {
     public let id: UUID
     public let timestamp: Date
     public let level: LogLevel // Uses the existing LogLevel from LogLevel.swift
@@ -29,6 +29,12 @@ public struct LogEntry: Identifiable, Codable, Sendable {
     }
 }
 
+// MARK: - Equatable Conformance for LogEntry (if not already provided by Codable synthesis)
+// Explicitly adding for clarity and ensuring it meets requirements.
+public func == (lhs: LogEntry, rhs: LogEntry) -> Bool {
+    lhs.id == rhs.id
+}
+
 // To conform to ObservableObject, an actor needs to be careful about its published properties.
 // The mutations to @Published properties need to happen in a way that's safe with the actor's isolation.
 public actor SessionLogger: ObservableObject {
@@ -37,7 +43,6 @@ public actor SessionLogger: ObservableObject {
     private var logFileURL: URL?
     private var fileHandle: FileHandle?
     private var maxEntriesInMemory: Int // Changed to var to be set in init
-    @MainActor @Published private(set) var logWindowController: NSWindowController? = nil // For showing the log window
 
     // Making shared static let is a common pattern for actor singletons.
     public static let shared = SessionLogger()
@@ -45,6 +50,36 @@ public actor SessionLogger: ObservableObject {
     // Default initializer for the shared instance.
     private init(maxEntries: Int = 2000) { // Default to 2000 to match previous constant
         self.maxEntriesInMemory = maxEntries
+    }
+
+    // Window controller for the log view
+    // Keep a reference to prevent it from being deallocated prematurely
+    private var logWindowController: NSWindowController?
+
+    @MainActor // Ensure UI operations are on the main thread
+    public func showLogWindow() {
+        if logWindowController == nil {
+            // Assuming LogSettingsView is the view that displays logs.
+            // It might need access to self (SessionLogger) to display entries.
+            // If LogSettingsView is part of a larger SettingsView, this might need adjustment.
+            // For now, assume LogSettingsView can be presented on its own.
+            let logView = LogSettingsView() // This view needs access to the logger, typically via @EnvironmentObject or passed in.
+            
+            let window = NSWindow(
+                contentRect: NSRect(x: 0, y: 0, width: 800, height: 600),
+                styleMask: [.titled, .closable, .resizable, .miniaturizable],
+                backing: .buffered,
+                defer: false
+            )
+            window.center()
+            window.title = "Session Log"
+            window.contentView = NSHostingView(rootView: logView.environmentObject(self))
+            window.isReleasedWhenClosed = false // We manage its lifecycle
+            
+            logWindowController = NSWindowController(window: window)
+        }
+        logWindowController?.showWindow(nil)
+        NSApp.activate(ignoringOtherApps: true)
     }
 
     public func log(level: LogLevel, message: String, pid: pid_t? = nil) {
@@ -63,26 +98,6 @@ public actor SessionLogger: ObservableObject {
     // Provide a nonisolated way to access entries for observation if direct binding in SwiftUI isn't sufficient
     // or if other non-actor parts of the app need to observe it. However, @ObservedObject typically handles this.
     // For direct use with @ObservedObject or @StateObject, the @Published property is sufficient.
-
-    // Method to toggle or show the log window
-    @MainActor
-    public func showLogWindow() async {
-        if self.logWindowController == nil { // No await needed for @MainActor property from @MainActor func
-            let logView = LogSettingsView()
-            let window = NSWindow(
-                contentRect: NSRect(x: 0, y: 0, width: 600, height: 400),
-                styleMask: [.titled, .closable, .miniaturizable, .resizable],
-                backing: .buffered, defer: false)
-            window.center()
-            window.setFrameAutosaveName("SessionLogWindow")
-            window.contentView = NSHostingView(rootView: logView)
-            window.title = "Session Log"
-            // Direct assignment is fine now as both context and property are @MainActor
-            self.logWindowController = NSWindowController(window: window)
-        }
-        self.logWindowController?.showWindow(self) // No await needed for @MainActor property
-        self.logWindowController?.window?.makeKeyAndOrderFront(self) // No await needed
-    }
 
     deinit {
         // ... existing code ...
