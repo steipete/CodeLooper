@@ -16,6 +16,7 @@ This file provides guidance to AI assistants when working with code in this repo
 - Use AppleScript to find the bundle identifier for an app name
 - To run any terminal command, use `osascript .cursor/scripts/terminator.scpt`.
   Call it without arguments to understand syntax.
+- read_file, write_file, move_file all need absolute paths!
 
 ## Project Overview
 
