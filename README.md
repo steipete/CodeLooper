@@ -13,6 +13,7 @@ A native macOS menubar application for managing and upgrading Cursor IDE install
 - Launch at login functionality
 - Automatic tool management capabilities
 - Native macOS integration
+- CI/CD pipeline with GitHub Actions
 
 ## System Requirements
 
