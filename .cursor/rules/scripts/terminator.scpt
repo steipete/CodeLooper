@@ -1,7 +1,8 @@
 --------------------------------------------------------------------------------
 -- terminator.scpt - v0.6.0 "T-1000"
--- AppleScript: Enhanced Terminal automation with improved robustness, performance,
---              and user experience. Modular architecture with comprehensive error handling.
+-- Instruct Cursor: Run the command `osascript .cursor/scripts/terminator.scpt`
+-- Run any terminal command without blocking the loop.
+-- Call without arguments to understand syntax.
 --------------------------------------------------------------------------------
 
 --#region Enhanced Configuration System
@@ -569,6 +570,11 @@ on run argv
                 delay startupDelayForTerminal
             end if
         end tell
+        
+        -- Handle no arguments case (show usage)
+        if (count argv) < 1 then
+            return my usageTextEnhanced()
+        end if
         
         -- Parse and validate arguments
         set argData to my parseArgumentsEnhanced(argv)
