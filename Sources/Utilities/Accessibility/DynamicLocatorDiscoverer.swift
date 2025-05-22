@@ -1,4 +1,4 @@
-import AXorcistLib
+@preconcurrency import AXorcistLib
 import Foundation
 
 @MainActor

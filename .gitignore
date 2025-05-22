@@ -19,29 +19,55 @@ xcuserdata/
 
 ## Obj-C/Swift specific
 *.hmap
-
-## App packaging
 *.ipa
 *.dSYM.zip
 *.dSYM
+
+## App packaging
+*.app
+*.pkg
 
 ## Playgrounds
 timeline.xctimeline
 playground.xcworkspace
 
 # Swift Package Manager
-#
-# Add this line if you want to avoid checking in source code from Swift Package Manager dependencies.
-# Packages/
-# Package.pins
-# Package.resolved
-# *.xcodeproj
-#
-# Xcode automatically generates this directory with a .xcworkspacedata file and xcuserdata
-# hence it is not needed unless you have added a package configuration file to your project
-# .swiftpm
-
 .build/
+.swiftpm/
+DerivedData/
+# /*.xcodeproj  # We want to track the Xcode project
+xcuserdata/
+package.xcworkspace
+Package.resolved
+
+# Tuist
+Derived/
+Dependencies/
+
+# Xcode
+*.pbxuser
+!default.pbxuser
+*.mode1v3
+!default.mode1v3
+*.mode2v3
+!default.mode2v3
+*.perspectivev3
+!default.perspectivev3
+xcuserdata/
+*.moved-aside
+*.xccheckout
+*.xcscmblueprint
+
+# Other
+*.log
+build.log
+*.xcuserstate
+project.xcworkspace/
+.idea/
+*.swp
+*~
+.vscode/
+.cursor/
 
 # CocoaPods
 #

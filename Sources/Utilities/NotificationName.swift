@@ -28,7 +28,6 @@ public extension Notification.Name {
     static let debugModeChanged = Notification.Name("debugModeChanged")
     static let verboseLoggingChanged = Notification.Name("verboseLoggingChanged")
     static let menuBarVisibilityChanged = Notification.Name("menuBarVisibilityChanged")
-    static let globalShortcutDidChange = Notification.Name("globalShortcutDidChange")
 
     // Notification handling
     static let highlightMenuBarIcon = Notification.Name("highlightMenuBarIcon")

@@ -52,6 +52,30 @@ public enum CursorInstanceStatus: Equatable, Sendable, Hashable {
         case .paused: hasher.combine(6)
         }
     }
+
+    // Helper to check if the status is any kind of recovering
+    func isRecovering() -> Bool {
+        if case .recovering = self {
+            return true
+        }
+        return false
+    }
+
+    // Helper to check if the status is recovering with a specific type
+    func isRecovering(ofType type: RecoveryType) -> Bool {
+        if case .recovering(let currentType, _) = self {
+            return currentType == type
+        }
+        return false
+    }
+
+    // Helper to check if the status is recovering with any of the specified types
+    func isRecovering(ofAnyType types: [RecoveryType]) -> Bool {
+        if case .recovering(let currentType, _) = self {
+            return types.contains(currentType)
+        }
+        return false
+    }
 }
 
 // MARK: - Instance Information (Spec 2.2 & 3.3.B)

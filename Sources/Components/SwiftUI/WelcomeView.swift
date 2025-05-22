@@ -1,6 +1,8 @@
 import Defaults
 import OSLog
 import SwiftUI
+import AXorcistLib
+import ApplicationServices
 
 // MARK: - Welcome View
 
@@ -18,6 +20,8 @@ struct WelcomeView: View {
                 VStack(spacing: 0) {
                     if viewModel.currentStep == .welcome {
                         WelcomeStepView(viewModel: viewModel)
+                    } else if viewModel.currentStep == .accessibility {
+                        AccessibilityStepView(viewModel: viewModel)
                     } else if viewModel.currentStep == .settings {
                         SettingsStepView(viewModel: viewModel)
                     } else if viewModel.currentStep == .complete {
@@ -131,6 +135,118 @@ struct WelcomeStepView: View {
             }
         }
         .frame(maxWidth: .infinity)
+    }
+}
+
+// MARK: - Accessibility Step View
+
+struct AccessibilityStepView: View {
+    var viewModel: WelcomeViewModel
+    @State private var accessibilityStatusMessage: String = "Status: Unknown"
+    
+    var body: some View {
+        VStack(spacing: 0) {
+            Spacer()
+            
+            // Accessibility icon
+            ZStack {
+                Circle()
+                    .fill(Color.accentColor.opacity(0.1))
+                    .frame(width: 80, height: 80)
+                
+                Image(systemName: "universal.access")
+                    .font(.system(size: 40))
+                    .foregroundColor(Color.accentColor)
+            }
+            .padding(.bottom, 30)
+            
+            // Title and description
+            Text("Accessibility Permissions")
+                .font(.system(size: 28, weight: .bold))
+                .padding(.bottom, 12)
+            
+            Text("CodeLooper needs Accessibility permissions to monitor and interact with other applications like Cursor.")
+                .font(.system(size: 16))
+                .foregroundColor(.secondary)
+                .multilineTextAlignment(.center)
+                .padding(.horizontal, 60)
+                .padding(.bottom, 40)
+            
+            // Permission settings section
+            VStack(spacing: 20) {
+                // Open settings button
+                Button(
+                    action: {
+                        openAccessibilitySettings()
+                    },
+                    label: {
+                        Text("Open System Accessibility Settings")
+                            .font(.system(size: 16, weight: .medium))
+                            .foregroundColor(.white)
+                            .frame(maxWidth: .infinity)
+                            .frame(height: 46)
+                            .background(Color.accentColor)
+                            .cornerRadius(8)
+                    }
+                )
+                .buttonStyle(PlainButtonStyle())
+                .padding(.horizontal, 20)
+                
+                Text("After opening settings, find 'CodeLooper' in the Accessibility list and enable it.")
+                    .font(.system(size: 14))
+                    .foregroundColor(.secondary)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 20)
+                
+                // Status section
+                VStack(spacing: 12) {
+                    Text(accessibilityStatusMessage)
+                        .font(.system(size: 14, weight: .medium))
+                        .foregroundColor(accessibilityStatusMessage.contains("Granted") ? .green : .secondary)
+                    
+                    Button(
+                        action: {
+                            Task {
+                                await checkAccessibilityPermissions()
+                            }
+                        },
+                        label: {
+                            Text("Check Permissions")
+                                .font(.system(size: 14, weight: .medium))
+                                .foregroundColor(Color.accentColor)
+                                .padding(.horizontal, 16)
+                                .padding(.vertical, 8)
+                                .background(Color.accentColor.opacity(0.1))
+                                .cornerRadius(6)
+                        }
+                    )
+                    .buttonStyle(PlainButtonStyle())
+                }
+                .padding(.top, 10)
+            }
+            .padding(.vertical, 30)
+            .padding(.horizontal, 40)
+            .background(Color(.windowBackgroundColor).brightness(-0.03))
+            .cornerRadius(12)
+            .padding(.horizontal, 40)
+            
+            Spacer()
+        }
+    }
+    
+    private func openAccessibilitySettings() {
+        let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility")!
+        NSWorkspace.shared.open(url)
+    }
+    
+    @MainActor
+    private func checkAccessibilityPermissions() async {
+        let granted = AXIsProcessTrusted()
+        if granted {
+            accessibilityStatusMessage = "Status: Granted ✓"
+        } else {
+            accessibilityStatusMessage = "Status: Not Granted. Please enable in System Settings."
+        }
     }
 }
 

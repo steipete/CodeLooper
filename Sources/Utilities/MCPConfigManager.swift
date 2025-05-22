@@ -6,12 +6,10 @@ import Defaults // For accessing default values if needed
 // These can be expanded as needed based on the actual mcp.json format
 struct MCPRoot: Codable {
     var mcpServers: [String: MCPServerEntry]? // Dictionary of MCP server configurations
-    var globalShortcut: String? // Optional global shortcut string
 
     // Initialize with empty servers and no shortcut if creating a new file
-    init(mcpServers: [String : MCPServerEntry]? = [:], globalShortcut: String? = "") {
+    init(mcpServers: [String : MCPServerEntry]? = [:]) {
         self.mcpServers = mcpServers
-        self.globalShortcut = globalShortcut
     }
 }
 
@@ -107,29 +105,9 @@ class MCPConfigManager {
     func ensureMCPFileExists() {
         if !FileManager.default.fileExists(atPath: mcpFilePath.path) {
             logger.info("mcp.json does not exist, creating with default structure.")
-            let defaultConfig = MCPRoot(mcpServers: [:], globalShortcut: "")
+            let defaultConfig = MCPRoot(mcpServers: [:])
             _ = writeMCPConfig(defaultConfig)
         }
-    }
-
-    // MARK: - Global Shortcut Management
-
-    func getGlobalShortcut() -> String? {
-        let config = readMCPConfig()
-        return config?.globalShortcut
-    }
-
-    func setGlobalShortcut(_ shortcut: String?) -> Bool {
-        ensureMCPFileExists()
-        var currentConfig = readMCPConfig() ?? MCPRoot()
-        currentConfig.globalShortcut = shortcut
-        let success = writeMCPConfig(currentConfig)
-        if success {
-            logger.info("Set global shortcut to: \(shortcut ?? "nil")")
-        } else {
-            logger.error("Failed to write mcp.json when setting global shortcut.")
-        }
-        return success
     }
 
     // MARK: - File Operations (Spec 7.A.3)
@@ -141,7 +119,7 @@ class MCPConfigManager {
     func clearMCPFile() -> Bool {
         do {
             // Create a default empty MCPRoot structure
-            let defaultConfig = MCPRoot(mcpServers: [:], globalShortcut: "")
+            let defaultConfig = MCPRoot(mcpServers: [:])
             // Write this default structure to the file, effectively clearing it
             // while keeping it as valid JSON.
             let success = writeMCPConfig(defaultConfig)
@@ -167,18 +145,22 @@ class MCPConfigManager {
             currentConfig.mcpServers = [:]
         }
 
-        var entry = currentConfig.mcpServers?[mcpIdentifier] ?? MCPServerEntry(name: nameForEntry, enabled: enabled) // Default to new if not found
-        entry.name = nameForEntry // Ensure name is set/updated
-        entry.enabled = enabled
-        if enabled, entry.command == nil, let defaultCommand = defaultCommand {
-             entry.command = defaultCommand
+        if enabled {
+            var entry = currentConfig.mcpServers?[mcpIdentifier] ?? MCPServerEntry(name: nameForEntry, enabled: true) // Default to new if not found
+            entry.name = nameForEntry // Ensure name is set/updated
+            entry.enabled = true
+            if entry.command == nil, let defaultCommand = defaultCommand {
+                 entry.command = defaultCommand
+            }
+            currentConfig.mcpServers?[mcpIdentifier] = entry
+            logger.info("Set MCP \(mcpIdentifier) enabled state to true")
+        } else {
+            // If disabling, remove the entry as per Spec 3.3.D
+            currentConfig.mcpServers?.removeValue(forKey: mcpIdentifier)
+            logger.info("Set MCP \(mcpIdentifier) enabled state to false and removed entry from mcp.json")
         }
-        // If disabling, we might want to keep the command, or clear it based on exact requirements.
-        // For now, we keep it.
 
-        currentConfig.mcpServers?[mcpIdentifier] = entry
         _ = writeMCPConfig(currentConfig)
-        logger.info("Set MCP \(mcpIdentifier) enabled state to \(enabled)")
     }
 
     func getMCPStatus(mcpIdentifier: String) -> MCPFullStatus {

@@ -29,10 +29,6 @@ final class MenuManager {
     // var progressIndicator: NSProgressIndicator? // Not used in current spec for popover
     weak var delegate: MenuManagerDelegate?
 
-    // Managers for specialized functionality
-    // var statusIconManager: StatusIconManager? // Potentially simplify or remove if AppIconStateController handles all
-    var menuBarIconManager: MenuBarIconManager? // Keep for now, might be used for template image logic
-
     private var popover: NSPopover
     private var eventMonitor: EventMonitor? // For closing popover on outside click
     private var cancellables = Set<AnyCancellable>()
@@ -74,6 +70,15 @@ final class MenuManager {
                 }
             }
             .store(in: &cancellables)
+        
+        // Observe tint color changes from AppIconStateController
+        AppIconStateController.shared.$currentTintColor
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] newTintColor in
+                self?.statusItem?.button?.contentTintColor = newTintColor
+                self?.logger.info("Applied tint color to status item: \(String(describing: newTintColor))")
+            }
+            .store(in: &cancellables)
     }
 
     // MARK: - MenuBar Setup & Popover Management
@@ -87,18 +92,24 @@ final class MenuManager {
             statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength) // Use squareLength for icon-only
             statusItem?.isVisible = Defaults[.showInMenuBar] // Set initial visibility
 
-            // menuBarIconManager might still be used for template image logic if needed,
-            // but primary icon name comes from AppIconStateController via AppDelegate.
-            // menuBarIconManager = MenuBarIconManager(statusItem: statusItem)
-
             if let button = statusItem?.button {
+                // Set the template icon
+                button.image = NSImage(named: "MenuBarTemplateIcon")
+                button.image?.isTemplate = true
+                
+                // Set initial tint color from AppIconStateController
+                button.contentTintColor = AppIconStateController.shared.currentTintColor
+                
+                // Configure button properties
                 button.action = #selector(togglePopover) // Action is to toggle popover
                 button.target = self
                 button.toolTip = Constants.appName
-                // Initial icon will be set by AppDelegate observing AppIconStateController
+                
+                logger.info("Configured status item with template icon and initial tint color: \(String(describing: button.contentTintColor))")
             } else {
                 logger.error("Failed to get status item button")
             }
+            
             // Menu is now secondary, can be set up to be shown on right-click or via a popover button if needed.
             // For now, primary interaction is popover. Right-click for menu:
             if let button = statusItem?.button {
@@ -113,7 +124,7 @@ final class MenuManager {
         // This makes the menu accessible again.
         if let event = NSApp.currentEvent, event.type == .rightMouseUp {
             statusItem?.menu = nil // Temporarily remove menu to allow button to show its own menu
-            statusItem?.popUpMenu(statusItem?.menu ?? NSMenu()) // Show it
+            statusItem?.menu = statusItem?.menu ?? NSMenu() // Use menu property instead of deprecated popUpMenu
             // Re-assign the menu if it was programmatically built, or ensure it's always set for future right-clicks.
             // For simplicity, we assume refreshMenu() keeps it updated if needed.
             // Or, more robustly, store the built menu and re-assign it.
@@ -249,18 +260,6 @@ final class MenuManager {
         delegate?.showAbout()
     }
 
-    @objc
-    private func quitClicked() {
-        NSApplication.shared.terminate(nil)
-    }
-    
-    @objc
-    private func showLogWindowClicked() {
-        Task {
-            await SessionLogger.shared.showLogWindow()
-        }
-    }
-
     @MainActor
     func cleanup() {
         if let statusItem {
@@ -269,12 +268,23 @@ final class MenuManager {
             self.statusItem = nil
         }
         eventMonitor?.stop()
-        menuBarIconManager?.cleanup() // If menuBarIconManager is kept
         logger.info("Menu manager resources cleaned up")
     }
     
     // Cleanup for icon resources - if menuBarIconManager is removed or simplified.
     // private func cleanupIconResources() { ... }
+    
+    @objc
+    private func showLogWindowClicked() {
+        logger.info("Debug menu: Show Log Window clicked. Opening settings as Log view is a tab there.")
+        delegate?.showSettings()
+    }
+
+    @objc
+    private func quitClicked() {
+        logger.info("Quit menu item clicked. Terminating application.")
+        NSApp.terminate(nil)
+    }
 }
 
 // Helper for monitoring outside clicks to close popover (already defined in deleted StatusBarController, ensure it's here or accessible)

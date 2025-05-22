@@ -52,13 +52,12 @@ public actor SessionLogger: ObservableObject {
         self.maxEntriesInMemory = maxEntries
     }
 
-    // Window controller for the log view
-    // Keep a reference to prevent it from being deallocated prematurely
-    private var logWindowController: NSWindowController?
+    // Window controller for the log view - stored on MainActor since it's UI
+    @MainActor private static var logWindowController: NSWindowController?
 
     @MainActor // Ensure UI operations are on the main thread
     public func showLogWindow() {
-        if logWindowController == nil {
+        if Self.logWindowController == nil {
             // Assuming LogSettingsView is the view that displays logs.
             // It might need access to self (SessionLogger) to display entries.
             // If LogSettingsView is part of a larger SettingsView, this might need adjustment.
@@ -76,17 +75,19 @@ public actor SessionLogger: ObservableObject {
             window.contentView = NSHostingView(rootView: logView.environmentObject(self))
             window.isReleasedWhenClosed = false // We manage its lifecycle
             
-            logWindowController = NSWindowController(window: window)
+            Self.logWindowController = NSWindowController(window: window)
         }
-        logWindowController?.showWindow(nil)
+        Self.logWindowController?.showWindow(nil)
         NSApp.activate(ignoringOtherApps: true)
     }
 
     public func log(level: LogLevel, message: String, pid: pid_t? = nil) {
         let entry = LogEntry(level: level, message: message, instancePID: pid)
-        entries.insert(entry, at: 0) // Insert at the beginning for newest first
-        if entries.count > self.maxEntriesInMemory { // Used self.maxEntriesInMemory
-            entries.removeLast()
+        // Append new entries to the end (FIFO for storage)
+        entries.append(entry)
+        // If over limit, remove the oldest entry (from the front)
+        if entries.count > self.maxEntriesInMemory {
+            entries.removeFirst()
         }
     }
 
@@ -98,6 +99,11 @@ public actor SessionLogger: ObservableObject {
     // Provide a nonisolated way to access entries for observation if direct binding in SwiftUI isn't sufficient
     // or if other non-actor parts of the app need to observe it. However, @ObservedObject typically handles this.
     // For direct use with @ObservedObject or @StateObject, the @Published property is sufficient.
+
+    // Method to allow LogSettingsView to fetch entries for display
+    public nonisolated func getEntries() async -> [LogEntry] {
+        return await self.entries
+    }
 
     deinit {
         // ... existing code ...

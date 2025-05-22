@@ -21,6 +21,7 @@ extension Defaults.Keys {
     
     // --- General Behavior & Notifications (Spec 3.3.A / 3.3.E) ---
     static let playSoundOnIntervention = Key<Bool>("playSoundOnIntervention", default: true)
+    static let successfulInterventionSoundName = Key<String>("successfulInterventionSoundName", default: "Funk")
     static let sendNotificationOnPersistentError = Key<Bool>("sendNotificationOnPersistentError", default: true)
     
     // --- Text for "Cursor Stops" recovery (Spec 3.3.A) ---
@@ -110,4 +111,7 @@ extension Defaults.Keys {
 
     // --- AXorcist Locators (Advanced Settings - Spec 3.3.A / AdvancedSettingsView) ---
     static let sidebarActivityMaxDepth = Key<Int>("sidebarActivityMaxDepth", default: 1)
+
+    // --- Path for the MCP configuration file ---
+    static let mcpConfigFilePath = Key<String>("mcpConfigFilePath", default: "~/.cursor/mcp_config.json")
 }

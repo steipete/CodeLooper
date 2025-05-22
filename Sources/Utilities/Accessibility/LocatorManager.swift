@@ -90,7 +90,7 @@ public class LocatorManager {
 
     public func getLocator(for type: LocatorType, pid: pid_t? = nil) async -> AXorcistLib.Locator? {
         var jsonString: String?
-        let defaultsKeyName = type.rawValue // Assuming LocatorType rawValues match the string keys used before
+        let _ = type.rawValue // Unused variable
 
         // 1. Check UserDefaults for user override (JSON string)
         switch type {
@@ -127,7 +127,7 @@ public class LocatorManager {
         }
 
         // 3. Return bundled default
-        if let bundledLocator = defaultLocators[type] {
+        if defaultLocators[type] != nil {
             await SessionLogger.shared.log(level: .debug, message: "Using bundled default locator for \(type.rawValue).", pid: pid)
             // Attempt to use this locator once. If it fails, dynamic discovery might be tried next (implicitly by caller or explicitly here)
             // For now, just return it. Dynamic discovery is the next step if this doesn't work for the caller.
@@ -147,8 +147,7 @@ public class LocatorManager {
 
         if let currentPid = pid {
             await SessionLogger.shared.log(level: .info, message: "User/cached locator not found for \(type.rawValue). Attempting dynamic discovery for PID: \(currentPid).", pid: currentPid)
-            var debugLogs: [String] = []
-            if let discoveredLocator = await dynamicDiscoverer.discover(type: type, for: currentPid, axorcist: self.axorcistInstance, isDebugLoggingEnabled: true, currentDebugLogs: &debugLogs) {
+            if let discoveredLocator = await dynamicDiscoverer.discover(type: type, for: currentPid, axorcist: self.axorcistInstance) {
                 await SessionLogger.shared.log(level: .info, message: "Dynamic discovery successful for \(type.rawValue). Caching and returning.", pid: currentPid)
                 updateSessionCache(for: type, with: discoveredLocator) // Use type directly
                 return discoveredLocator
@@ -173,7 +172,7 @@ public class LocatorManager {
     }
 
     public func resetUserOverride(for type: LocatorType) {
-        let defaultsKeyName = type.rawValue
+        let _ = type.rawValue // Unused variable
         switch type {
         case .generatingIndicatorText: Defaults.reset(.locatorJSONGeneratingIndicatorText)
         case .sidebarActivityArea: Defaults.reset(.locatorJSONSidebarActivityArea)

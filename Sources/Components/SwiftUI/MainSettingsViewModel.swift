@@ -1,3 +1,4 @@
+import Combine
 import Defaults
 import Foundation
 import Observation
@@ -7,7 +8,7 @@ import SwiftUI
 /// ViewModel for the Settings view - simplified for CodeLooper
 @MainActor
 @Observable
-public final class MainSettingsViewModel {
+public final class MainSettingsViewModel: ObservableObject {
     // MARK: - Properties
 
     // Logger instance
@@ -29,7 +30,7 @@ public final class MainSettingsViewModel {
     var flashIconOnIntervention: Bool = Defaults[.flashIconOnIntervention]
 
     // Global Shortcut
-    var globalShortcutString: String = ""
+    // Removed: var globalShortcutString: String = ""
 
     // Computed property for showDebugMenu
     var showDebugMenu: Bool {
@@ -89,8 +90,8 @@ public final class MainSettingsViewModel {
     /// Initialize with required services
     public init(loginItemManager: LoginItemManager) {
         self.loginItemManager = loginItemManager
-        // Load initial global shortcut string
-        self.globalShortcutString = mcpConfigManager.getGlobalShortcut() ?? ""
+        // Load initial global shortcut string - REMOVED
+        // self.globalShortcutString = mcpConfigManager.getGlobalShortcut() ?? ""
         
         // These lines are now redundant as refreshAllMCPStatusMessages handles it.
         // xcodeBuildIncrementalBuilds = mcpConfigManager.getXcodeBuildIncrementalBuildsFlag()
@@ -225,6 +226,21 @@ public final class MainSettingsViewModel {
 
     func refreshMCPStatusMessage(for mcpIdentifier: String) {
         // Implementation of refreshMCPStatusMessage method
+    }
+    
+    /// Enable a specific MCP by its identifier
+    public func enableMCP(_ mcpIdentifier: String) {
+        switch mcpIdentifier {
+        case "claude-code":
+            isClaudeCodeEnabled = true
+        case "macos-automator":
+            isMacOSAutomatorEnabled = true
+        case "XcodeBuildMCP":
+            isXcodeBuildEnabled = true
+        default:
+            logger.warning("Attempted to enable unknown MCP: \(mcpIdentifier)")
+        }
+        refreshAllMCPStatusMessages()
     }
 
     // MARK: - Rule Set Management

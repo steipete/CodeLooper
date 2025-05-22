@@ -36,7 +36,6 @@
 		3C168575038B1A82AD370C07 /* DefaultsManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 729A0B35457D4688E40A04FB /* DefaultsManager.swift */; };
 		3D214C490F1537CC321FF79C /* WorkflowAutomation.applescript in Resources */ = {isa = PBXBuildFile; fileRef = 1016B172C33726EF79A053E0 /* WorkflowAutomation.applescript */; };
 		3EB93F9333F97BEB98D906BF /* MainMenu.nib in Resources */ = {isa = PBXBuildFile; fileRef = CC10D906EAF6E924567E3DB3 /* MainMenu.nib */; };
-		3FB7EC060D6D5C0E57768584 /* StatusIconManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D1CC5AA96CDEC37AC653522 /* StatusIconManager.swift */; };
 		42C11A0D1D15D0BB83EDBEA4 /* LoginItemManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = FE445F08ECA9AE0063E2AA49 /* LoginItemManager.swift */; };
 		4336D6897015ACCCB1061968 /* symbol.png in Resources */ = {isa = PBXBuildFile; fileRef = AA29E7678517AB755201385A /* symbol.png */; };
 		448BF52934BF1A3DE9A966A2 /* GeneralSettingsTab.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5B90EE899110CFF876B12F5C /* GeneralSettingsTab.swift */; };
@@ -80,8 +79,8 @@
 		BC30579A4846AAB81176742C /* UserInterface.swift in Sources */ = {isa = PBXBuildFile; fileRef = F91D875E3D9A2EC1874763B3 /* UserInterface.swift */; };
 		BC5AEC7BDDCBC1ACC553B63E /* MainSettingsCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6B5F39834CB3F899CE8C064C /* MainSettingsCoordinator.swift */; };
 		BDA9C21C437EE2BB5BDE4630 /* Sparkle in Frameworks */ = {isa = PBXBuildFile; productRef = ACF0DC933CEF5FED0549B6AD /* Sparkle */; };
+		BE1E2B0D4EF60BB8E67EE87B /* ShortcutNames.swift in Sources */ = {isa = PBXBuildFile; fileRef = 429F3143DECE0A4487E6973D /* ShortcutNames.swift */; };
 		BEC25C968C5A64F18A491E67 /* SharedUserInfo.swift in Sources */ = {isa = PBXBuildFile; fileRef = 80F621C4145AB08008EA4340 /* SharedUserInfo.swift */; };
-		C01755D8825036C6F7FE22A5 /* GlobalShortcutManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = E2A81999C1D6C537597CBF71 /* GlobalShortcutManager.swift */; };
 		C38FC68EC5B5ABC820F98C3A /* Defaults in Frameworks */ = {isa = PBXBuildFile; productRef = 5EC9776FF97D257EE8DCC72B /* Defaults */; };
 		C3A35BD57103BE6A0024863B /* WelcomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9DF4FBC48BDEA24BA56013AC /* WelcomeView.swift */; };
 		C4FDEDABAA93FCA10ECE36A3 /* AppDelegate+MenuManagerDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6126F9E683179961A17F0C74 /* AppDelegate+MenuManagerDelegate.swift */; };
@@ -146,6 +145,7 @@
 		34339A12627520D195994567 /* LogConfiguration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LogConfiguration.swift; sourceTree = "<group>"; };
 		3627917CAA03B1A93F5E99EA /* WelcomeWindowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WelcomeWindowView.swift; sourceTree = "<group>"; };
 		38B4AEAFFCFB7B07CF5F8A3D /* Constants.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Constants.swift; sourceTree = "<group>"; };
+		429F3143DECE0A4487E6973D /* ShortcutNames.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShortcutNames.swift; sourceTree = "<group>"; };
 		47BFE5F8FF03A80E28157AE6 /* NSImage+ResourceLoader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "NSImage+ResourceLoader.swift"; sourceTree = "<group>"; };
 		4CF963411BEA680C49738A53 /* AXApplicationObserver.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AXApplicationObserver.swift; sourceTree = "<group>"; };
 		4DB132BCA2278BD3DE926C89 /* InfoKey.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InfoKey.swift; sourceTree = "<group>"; };
@@ -169,7 +169,6 @@
 		7A2AAC76A058C92903902067 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		7A92381A60033FD16DC9AE63 /* WelcomeStep+Sendable.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "WelcomeStep+Sendable.swift"; sourceTree = "<group>"; };
 		7B425EA51475F4BEC7D5140A /* CursorMonitor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CursorMonitor.swift; sourceTree = "<group>"; };
-		7D1CC5AA96CDEC37AC653522 /* StatusIconManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatusIconManager.swift; sourceTree = "<group>"; };
 		80F621C4145AB08008EA4340 /* SharedUserInfo.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SharedUserInfo.swift; sourceTree = "<group>"; };
 		86D2A836363CA4B076AC653B /* TuistAssets+CodeLooper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "TuistAssets+CodeLooper.swift"; sourceTree = "<group>"; };
 		86E260B66207064C7D367FF1 /* MainSettingsViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainSettingsViewModel.swift; sourceTree = "<group>"; };
@@ -206,7 +205,6 @@
 		D5A01E3EDC3ABDDD848DFD80 /* WelcomeViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WelcomeViewModel.swift; sourceTree = "<group>"; };
 		D856361E5F41F3A253E8F52E /* UserAvatarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserAvatarView.swift; sourceTree = "<group>"; };
 		D8D75E06F92FADB6B0863FBA /* CursorInstanceModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CursorInstanceModels.swift; sourceTree = "<group>"; };
-		E2A81999C1D6C537597CBF71 /* GlobalShortcutManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlobalShortcutManager.swift; sourceTree = "<group>"; };
 		E39DB740414D201FEBD3F42C /* AppDelegate+AppleScript.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AppDelegate+AppleScript.swift"; sourceTree = "<group>"; };
 		E672E335245ABAAB0259FC9A /* symbol-light.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "symbol-light.png"; sourceTree = "<group>"; };
 		EBC9BE3938615FC8BF709BBE /* WelcomeWindowCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WelcomeWindowCoordinator.swift; sourceTree = "<group>"; };
@@ -368,7 +366,6 @@
 				F2A986804F8A12B8A58B92A2 /* MenuBarIconManager.swift */,
 				EFF0E89AC6C44C8478328EB5 /* MenuBarIconManager+Debug.swift */,
 				47BFE5F8FF03A80E28157AE6 /* NSImage+ResourceLoader.swift */,
-				7D1CC5AA96CDEC37AC653522 /* StatusIconManager.swift */,
 				8AEDA438357E9954BE03F165 /* StatusIconState.swift */,
 				0F76062C8A2C8BF8BE5EBD49 /* UploadCompletionFeedback.swift */,
 			);
@@ -436,7 +433,6 @@
 				3506B206F3338AD21F5DDAB1 /* Resources */,
 				38B4AEAFFCFB7B07CF5F8A3D /* Constants.swift */,
 				957E99A2BCBAC60FCCED14A0 /* ContinuationGuard.swift */,
-				E2A81999C1D6C537597CBF71 /* GlobalShortcutManager.swift */,
 				FE445F08ECA9AE0063E2AA49 /* LoginItemManager.swift */,
 				AB7C53CC004E9707E9ACCE6A /* MCPConfigManager.swift */,
 				F2735263696E5EA29D4C6F5A /* NotificationName.swift */,
@@ -491,6 +487,7 @@
 				A3D905820699319B1CDC9383 /* AppMain.swift */,
 				77BD422F9926B58B0FEF44C4 /* NotificationManager.swift */,
 				FEE054A119C16C0058C8AC17 /* ProgramEntry.swift */,
+				429F3143DECE0A4487E6973D /* ShortcutNames.swift */,
 				D55420A573BE5102A6E97F14 /* WelcomeGuideView.swift */,
 				EBC9BE3938615FC8BF709BBE /* WelcomeWindowCoordinator.swift */,
 				CCAF8B6DB0B277CAE7371C70 /* WindowPositionManager.swift */,
@@ -646,6 +643,7 @@
 				5431F805813CB204896FB813 /* AppMain.swift in Sources */,
 				6F8706A905A33CAE6099C572 /* NotificationManager.swift in Sources */,
 				E6F97BA181144DDF77ACDA56 /* ProgramEntry.swift in Sources */,
+				BE1E2B0D4EF60BB8E67EE87B /* ShortcutNames.swift in Sources */,
 				AB2E7E0511A16888212AE65C /* WelcomeGuideView.swift in Sources */,
 				AC86747DE4D2D8A2669E58A5 /* WelcomeWindowCoordinator.swift in Sources */,
 				13290A379685F6EF795F40A9 /* WindowPositionManager.swift in Sources */,
@@ -688,7 +686,6 @@
 				8F0314A4BCE80567A91812CD /* MenuBarIconManager+Debug.swift in Sources */,
 				3A6439CF81E6FB51ED68E030 /* MenuBarIconManager.swift in Sources */,
 				5DDDE5EC2D1C274D80731182 /* NSImage+ResourceLoader.swift in Sources */,
-				3FB7EC060D6D5C0E57768584 /* StatusIconManager.swift in Sources */,
 				211EC07BA59835AC61AEA74B /* StatusIconState.swift in Sources */,
 				2FD00A2FC1AF559BA0259DE1 /* UploadCompletionFeedback.swift in Sources */,
 				BA0F55DB128F625F76084822 /* CursorInstanceModels.swift in Sources */,
@@ -704,7 +701,6 @@
 				EA5012D1FD36D8FF398A8577 /* CustomObservation.swift in Sources */,
 				E219ED9DE7B48A17CDB17769 /* Task+Timeout.swift in Sources */,
 				C9E8E6A9360537846791A3BA /* WelcomeStep+Sendable.swift in Sources */,
-				C01755D8825036C6F7FE22A5 /* GlobalShortcutManager.swift in Sources */,
 				42C11A0D1D15D0BB83EDBEA4 /* LoginItemManager.swift in Sources */,
 				F77B9973A7EEA8B86F1ECE94 /* MCPConfigManager.swift in Sources */,
 				01501E8BC44212DF76572035 /* NotificationName.swift in Sources */,

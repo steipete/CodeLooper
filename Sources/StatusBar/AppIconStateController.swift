@@ -1,3 +1,4 @@
+import AppKit
 import Combine
 import Defaults
 import OSLog
@@ -10,15 +11,16 @@ enum AppIconState: Sendable { // Made Sendable
     case gray       // Monitoring disabled
     case yellow     // Recovering, no red
     case red        // Persistent Error/Unrecoverable
-    // case flash      // Briefly for successful intervention (handled by temporary image change)
-
-    var imageName: String {
+    // case flash      // Briefly for successful intervention (handled by temporary tint color change)
+    
+    /// Maps the icon state to its corresponding tint color
+    var tintColor: NSColor? {
         switch self {
-        case .green: return "status_icon_green"
-        case .black: return "status_icon_black"
-        case .gray: return "status_icon_gray"
-        case .yellow: return "status_icon_yellow"
-        case .red: return "status_icon_red"
+        case .green: return .systemGreen
+        case .black: return nil // Use default system appearance
+        case .gray: return .disabledControlTextColor
+        case .yellow: return .systemYellow
+        case .red: return .systemRed
         }
     }
 }
@@ -32,9 +34,11 @@ class AppIconStateController: ObservableObject {
     
     public static let shared = AppIconStateController() // Added shared instance
 
-    @Published private(set) var currentIconState: AppIconState = .gray
+    @Published private(set) var currentTintColor: NSColor? = nil
     @Published private(set) var isFlashing: Bool = false // New published property for flash state
     
+    private var currentIconState: AppIconState = .gray // Internal logical state
+    private var preFlashTintColor: NSColor? = nil // Store tint color before flash
     private var cursorMonitor: CursorMonitor?
     private var globalMonitoringEnabled: Bool = Defaults[.isGlobalMonitoringEnabled]
     private var cancellables = Set<AnyCancellable>()
@@ -43,6 +47,7 @@ class AppIconStateController: ObservableObject {
     private init() { // Made private for singleton
         Self.logger.info("AppIconStateController initialized.")
         currentIconState = globalMonitoringEnabled ? .black : .gray
+        currentTintColor = currentIconState.tintColor
     }
     
     func setup(cursorMonitor: CursorMonitor) {
@@ -59,10 +64,10 @@ class AppIconStateController: ObservableObject {
             }
             .store(in: &cancellables)
 
-        // Observe CursorMonitor's instanceInfo
-        cursorMonitor.$instanceInfo
+        // Observe CursorMonitor's monitoredInstances
+        cursorMonitor.$monitoredInstances
             .receive(on: DispatchQueue.main)
-            .sink { [weak self] _ in // We just need the trigger, will read instanceInfo directly
+            .sink { [weak self] _ in // We just need the trigger, will read monitoredInstances directly
                 guard let self = self else { return }
                 self.calculateAndApplyIconState()
             }
@@ -75,21 +80,42 @@ class AppIconStateController: ObservableObject {
     private func calculateAndApplyIconState() {
         guard let monitor = self.cursorMonitor else {
             currentIconState = globalMonitoringEnabled ? .black : .gray // Default if monitor not set up
-            Self.logger.debug("CursorMonitor not available, icon state: \\(currentIconState)")
+            let newTintColor = currentIconState.tintColor
+            // Only update tint if not flashing
+            if !isFlashing {
+                currentTintColor = newTintColor
+            } else {
+                preFlashTintColor = newTintColor
+            }
+            Self.logger.debug("CursorMonitor not available, tint color: \\(String(describing: newTintColor))")
             return
         }
 
         if !globalMonitoringEnabled {
             currentIconState = .gray
-            Self.logger.debug("Global monitoring disabled, icon state: .gray")
+            let newTintColor = currentIconState.tintColor
+            // Only update tint if not flashing
+            if !isFlashing {
+                currentTintColor = newTintColor
+            } else {
+                preFlashTintColor = newTintColor
+            }
+            Self.logger.debug("Global monitoring disabled, tint color: gray")
             return
         }
 
-        let instances = monitor.instanceInfo.values // Get collection of CursorInstanceInfo
+        let instances = monitor.monitoredInstances // Get array of MonitoredInstanceInfo
 
         if instances.isEmpty {
             currentIconState = .black // No instances, but monitoring is on
-            Self.logger.debug("Global monitoring enabled, no instances, icon state: .black")
+            let newTintColor = currentIconState.tintColor
+            // Only update tint if not flashing
+            if !isFlashing {
+                currentTintColor = newTintColor
+            } else {
+                preFlashTintColor = newTintColor
+            }
+            Self.logger.debug("Global monitoring enabled, no instances, tint color: \\(String(describing: newTintColor))")
             return
         }
 
@@ -99,21 +125,14 @@ class AppIconStateController: ObservableObject {
 
         for instance in instances {
             switch instance.status {
-            case .unrecoverable, .error: // Treat .error also as a potential red flag for icon state
+            case .pausedUnrecoverable:
                 // Spec 1.6 for Red: Persistent Error or Unrecoverable UI Element Not Found.
-                // Let's refine: .unrecoverable definitely makes it Red. .error might contribute to Yellow or Red depending on severity/persistence.
-                // For now, let's say .unrecoverable is Red. Simple .error might not change the global icon alone unless it becomes persistent.
-                // Persistent failure is handled by CursorMonitor setting status to .unrecoverable.
-                if case .unrecoverable = instance.status {
-                    hasRed = true
-                }
-            case .recovering:
+                hasRed = true
+            case .intervening, .observation:
                 hasYellow = true
-            case .working(let detail):
+            case .positiveWork:
                 // Spec 1.6 for Green: At least one monitored Cursor instance is in a "Generating..." state
-                if detail.lowercased().contains("generating") { // Check for "generating"
-                    hasGreen = true
-                }
+                hasGreen = true
             default:
                 break
             }
@@ -129,12 +148,21 @@ class AppIconStateController: ObservableObject {
         } else {
             currentIconState = .black // Default if no other specific state conditions met
         }
+        
+        let newTintColor = currentIconState.tintColor
+        // Only update tint if not flashing
+        if !isFlashing {
+            currentTintColor = newTintColor
+        } else {
+            preFlashTintColor = newTintColor
+        }
+        
         Self.logger.debug(
-            "Calculated icon state: \\(currentIconState) (Red: \\(hasRed), Yellow: \\(hasYellow), Green: \\(hasGreen))"
+            "Calculated state: \\(currentIconState) with tint: \\(String(describing: newTintColor)) (Red: \\(hasRed), Yellow: \\(hasYellow), Green: \\(hasGreen))"
         )
     }
     
-    public func flashIcon(durationSeconds: TimeInterval = 0.75) {
+    public func flashIcon(durationSeconds: TimeInterval = 0.3) {
         flashTask?.cancel() // Cancel any existing flash
 
         if currentIconState == .gray { // Don't flash if monitoring is off (or app is generally inactive)
@@ -142,22 +170,34 @@ class AppIconStateController: ObservableObject {
             return
         }
         
+        // Store current tint color before flash
+        preFlashTintColor = currentTintColor
         isFlashing = true
-        Self.logger.debug("Icon flash initiated (isFlashing = true).")
+        // Set flash tint color (use accent color or blue for visibility)
+        currentTintColor = .controlAccentColor
+        Self.logger.debug("Icon flash initiated with tint: \\(String(describing: currentTintColor)).")
 
         flashTask = Task { [weak self] in
             guard let self = self else { return }
             do {
                 try await Task.sleep(for: .seconds(durationSeconds))
                 if Task.isCancelled { return }
+                
+                // Restore previous tint color
                 self.isFlashing = false
-                Self.logger.debug("Icon flash ended (isFlashing = false).")
+                self.currentTintColor = self.preFlashTintColor
+                self.preFlashTintColor = nil
+                Self.logger.debug("Icon flash ended, restored tint: \\(String(describing: self.currentTintColor)).")
             } catch is CancellationError {
-                Self.logger.debug("Icon flash task cancelled. Ensuring isFlashing is false.")
-                self.isFlashing = false // Ensure it's reset if task is cancelled
+                Self.logger.debug("Icon flash task cancelled. Restoring tint.")
+                self.isFlashing = false
+                self.currentTintColor = self.preFlashTintColor
+                self.preFlashTintColor = nil
             } catch {
-                Self.logger.error("Error during icon flash sleep: \\(error). Ensuring isFlashing is false.")
-                self.isFlashing = false // Ensure it's reset on other errors
+                Self.logger.error("Error during icon flash sleep: \\(error). Restoring tint.")
+                self.isFlashing = false
+                self.currentTintColor = self.preFlashTintColor
+                self.preFlashTintColor = nil
             }
         }
     }

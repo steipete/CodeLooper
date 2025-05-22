@@ -1,6 +1,7 @@
 import AVFoundation
 import Defaults
 import OSLog
+import AppKit
 
 public actor SoundManager {
     private static let logger = Logger(
@@ -13,34 +14,79 @@ public actor SoundManager {
 
     private init() {}
 
-    public func playInterventionSound() async {
+    public func playSound(soundName: String) async {
         guard Defaults[.playSoundOnIntervention] else {
-            // Self.logger.debug("Play sound on intervention is disabled in settings.")
             return
         }
-
-        // Assuming the sound file is in the app bundle
-        guard let soundURL = Bundle.main.url(
-            forResource: "intervention_sound", 
-            withExtension: "aiff", 
+        
+        // Handle empty sound name
+        if soundName.isEmpty {
+            Self.logger.debug("Empty sound name provided, falling back to default system sound.")
+            await playDefaultSystemSound()
+            return
+        }
+        
+        // Check if soundName contains an extension
+        let hasExtension = soundName.contains(".")
+        
+        // First attempt: Try to play system sound if no extension
+        if !hasExtension {
+            Self.logger.debug("Attempting to play system sound: \(soundName)")
+            if let systemSound = NSSound(named: NSSound.Name(soundName)) {
+                systemSound.play()
+                Self.logger.debug("Successfully played system sound: \(soundName)")
+                return
+            } else {
+                Self.logger.debug("System sound \(soundName) not found, attempting to play bundled sound.")
+            }
+        }
+        
+        // Second attempt: Try to play from Resources/Sounds/ directory
+        let components = soundName.split(separator: ".", maxSplits: 1)
+        let fileName: String
+        let fileExtension: String
+        
+        if components.count == 2 {
+            fileName = String(components[0])
+            fileExtension = String(components[1])
+        } else {
+            // Default to .aiff if no extension provided
+            fileName = soundName
+            fileExtension = "aiff"
+        }
+        
+        Self.logger.debug("Attempting to play bundled sound: \(fileName).\(fileExtension)")
+        
+        if let soundURL = Bundle.main.url(
+            forResource: fileName, 
+            withExtension: fileExtension, 
             subdirectory: "Sounds"
-        ) else {
-            Self.logger.error("Intervention sound file (intervention_sound.aiff in Sounds/) not found in bundle.")
-            return
+        ) {
+            do {
+                audioPlayer = try AVAudioPlayer(contentsOf: soundURL)
+                audioPlayer?.prepareToPlay()
+                audioPlayer?.play()
+                Self.logger.debug("Playing bundled sound: \(fileName).\(fileExtension)")
+                return
+            } catch {
+                Self.logger.error("Could not play bundled sound \(fileName).\(fileExtension): \(error.localizedDescription)")
+            }
+        } else {
+            Self.logger.error("Bundled sound file (\(fileName).\(fileExtension) in Sounds/) not found.")
         }
-
-        do {
-            // Initialize the player each time to ensure it plays from the beginning
-            // and respects potential changes in system audio output.
-            audioPlayer = try AVAudioPlayer(contentsOf: soundURL)
-            audioPlayer?.prepareToPlay()
-            audioPlayer?.play()
-            Self.logger.debug("Playing intervention sound.")
-        } catch {
-            Self.logger.error("Could not play intervention sound: \\(error.localizedDescription)")
-        }
+        
+        // Fallback: Play default system sound
+        Self.logger.debug("Fallback: Playing default system sound.")
+        await playDefaultSystemSound()
     }
     
-    // Example of how to play other sounds if needed in the future
-    // public func playSound(named soundName: String, withExtension ext: String) { ... }
+    private func playDefaultSystemSound() async {
+        // Use the system "Glass" sound as a default notification sound
+        if let systemSound = NSSound(named: NSSound.Name("Glass")) {
+            systemSound.play()
+            Self.logger.debug("Playing default system sound (Glass).")
+        } else {
+            Self.logger.error("Could not play default system sound.")
+        }
+    }
 }

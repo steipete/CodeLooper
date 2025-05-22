@@ -1,0 +1,22 @@
+---
+description: CodeLooper Terminator Rule Set v1.0.0
+globs:
+  - "**/*.swift"
+  - "**/*.m"
+  - "**/*.mm"
+  - "**/*.h"
+alwaysApply: false
+---
+
+# CodeLooper Terminator Rules
+
+This rule set helps prevent infinite loops and provides safety mechanisms for code automation.
+
+## Safety Rules
+
+1. Always verify before making destructive changes
+2. Limit the scope of automated operations
+3. Include timeout mechanisms in loops
+4. Add circuit breakers for recursive operations
+
+## Version: 1.0.0

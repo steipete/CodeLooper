@@ -10,6 +10,7 @@ import os // Import os for os.Logger
 @preconcurrency import ServiceManagement
 import Sparkle
 import SwiftUI
+import KeyboardShortcuts // Added import
 
 // Ensure line 14, 15, 16 related to AppAXTrustedCheckOptionPromptKey_Raw_CFRef are DELETED
 // Ensure lines 60-66 related to static appAXTrustedCheckOptionPromptKeyString are DELETED
@@ -50,7 +51,6 @@ public class AppDelegate: NSObject, NSApplicationDelegate,
     var loginItemManager: LoginItemManager?
     var axApplicationObserver: AXApplicationObserver? // Observer for app launch/terminate
     var popover: NSPopover?
-    private var shortcutManager: GlobalShortcutManager?
 
     // View models and coordinators
     public var mainSettingsCoordinator: MainSettingsCoordinator?
@@ -110,9 +110,9 @@ public class AppDelegate: NSObject, NSApplicationDelegate,
 
         // Update initial status bar icon AFTER menuManager is set up
         if let statusButton = menuManager?.statusItem?.button {
-            let initialState = AppIconStateController.shared.currentIconState
-            statusButton.image = NSImage(named: initialState.imageName)
-            statusButton.image?.isTemplate = (initialState == .black || initialState == .gray) // Conditional template
+            statusButton.image = NSImage(named: "MenuBarTemplateIcon")
+            statusButton.image?.isTemplate = true
+            statusButton.contentTintColor = AppIconStateController.shared.currentTintColor
         } else {
             logger.warning("menuManager.statusItem.button is nil, cannot set initial icon image.")
         }
@@ -123,43 +123,13 @@ public class AppDelegate: NSObject, NSApplicationDelegate,
         // Handle first launch or welcome screen logic
         handleFirstLaunchOrWelcomeScreen()
         
-        // Initialize and register global shortcut
-        shortcutManager = GlobalShortcutManager()
-        registerCurrentGlobalShortcut()
         
-        // Observe AppIconStateController state changes
-        AppIconStateController.shared.$currentIconState
+        // Observe AppIconStateController tint color changes
+        AppIconStateController.shared.$currentTintColor
             .receive(on: DispatchQueue.main)
-            .sink { [weak self] newState in
-                guard let self = self else { return }
-                self.logger.info("App icon state changed to: \(String(describing: newState))")
-                // Only update if not currently flashing, as flash has priority for the image
-                if !AppIconStateController.shared.isFlashing {
-                    self.menuManager?.statusItem?.button?.image = NSImage(named: newState.imageName)
-                    // Conditional template based on the new state
-                    self.menuManager?.statusItem?.button?.image?.isTemplate = (newState == .black || newState == .gray)
-                }
-            }
-            .store(in: &cancellables)
-
-        // Observe AppIconStateController flash state
-        AppIconStateController.shared.$isFlashing
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] isFlashing in
-                guard let self = self, let button = self.menuManager?.statusItem?.button else { return }
-                
-                if isFlashing {
-                    self.logger.info("Icon flash started. Displaying flash_action icon.")
-                    button.image = NSImage(named: "status_icon_flash_action") // Assumed asset name
-                    button.image?.isTemplate = false // Flash icon is likely color, so not a template
-                } else {
-                    self.logger.info("Icon flash ended. Restoring icon based on currentIconState.")
-                    // Revert to the icon determined by the current persistent state
-                    let currentPersistentState = AppIconStateController.shared.currentIconState
-                    button.image = NSImage(named: currentPersistentState.imageName)
-                    // Conditional template based on the persistent state
-                    button.image?.isTemplate = (currentPersistentState == .black || currentPersistentState == .gray)
-                }
+            .sink { [weak self] newTintColor in
+                self?.menuManager?.statusItem?.button?.contentTintColor = newTintColor
+                self?.logger.info("Menu bar icon tint color updated.")
             }
             .store(in: &cancellables)
 
@@ -177,6 +147,13 @@ public class AppDelegate: NSObject, NSApplicationDelegate,
                 }
             }
             .store(in: &cancellables)
+
+        // Setup initial menu bar visibility
+
+        // Setup KeyboardShortcuts listener for toggling monitoring
+        KeyboardShortcuts.onKeyUp(for: .toggleMonitoring) { [weak self] in
+            self?.toggleMonitoringState()
+        }
 
         logger.info("Application startup completed successfully")
     }
@@ -214,8 +191,6 @@ public class AppDelegate: NSObject, NSApplicationDelegate,
         // Stop the Cursor monitoring loop
         CursorMonitor.shared.stopMonitoringLoop()
 
-        // Unregister global shortcut
-        shortcutManager?.unregister()
 
         // Clean up menu manager
         menuManager?.cleanup()
@@ -270,23 +245,6 @@ public class AppDelegate: NSObject, NSApplicationDelegate,
     }
 
     // MARK: - Window Management
-
-    func showSettingsWindow(_: Any?) {
-        logger.info("Show settings window requested")
-
-        if settingsWindow == nil {
-            let settingsView = SettingsView()
-            let hostingController = NSHostingController(rootView: settingsView)
-            let window = NSWindow(contentViewController: hostingController)
-            window.title = "CodeLooper Settings"
-            window.styleMask = [.closable, .titled, .miniaturizable]
-            window.isReleasedWhenClosed = false // Keep window instance around
-            window.center()
-            self.settingsWindow = window
-        }
-        settingsWindow?.makeKeyAndOrderFront(nil)
-        NSApp.activate(ignoringOtherApps: true) // Bring app to front
-    }
 
     private var aboutWindowController: NSWindowController?
 
@@ -433,38 +391,7 @@ public class AppDelegate: NSObject, NSApplicationDelegate,
         // Add all observers to array for cleanup
         notificationObservers.append(contentsOf: [menuBarObserver, highlightMenuBarObserver])
 
-        // Observer for global shortcut changes from settings
-        let shortcutObserver = NotificationCenter.default.addObserver(
-            forName: .globalShortcutDidChange,
-            object: nil,
-            queue: .main // Operations will be scheduled on the main queue
-        ) { [weak self] notification in
-            // Ensure execution on the MainActor when calling a MainActor-isolated method
-            Task { @MainActor [weak self] in // Capture self weakly here too
-                self?.handleGlobalShortcutChange(notification: notification)
-            }
-        }
-        notificationObservers.append(shortcutObserver)
-        logger.info("Registered observer for .globalShortcutDidChange")
-        
-        // Observer for when monitoring state is changed BY the shortcut itself
-        let shortcutToggledMonitoringObserver = NotificationCenter.default.addObserver(
-            forName: .globalMonitoringStateChangedByShortcut,
-            object: nil,
-            queue: .main
-        ) { [weak self] notification in
-            // The Defaults[.isGlobalMonitoringEnabled] is already changed by the shortcut manager.
-            // This notification is mostly for logging or if any other UI needs to react specifically to the shortcut action.
-            if let newState = notification.object as? Bool {
-                self?.logger.info("Global monitoring state changed to \(newState) via shortcut.")
-                // Potentially update UI elements that don't directly observe Defaults[.isGlobalMonitoringEnabled]
-                // For example, if the menu bar icon text needed to change and wasn't using @Default.
-            } else {
-                self?.logger.info("Global monitoring state changed via shortcut (new state not provided in notification object).")
-            }
-        }
-        notificationObservers.append(shortcutToggledMonitoringObserver)
-        logger.info("Registered observer for .globalMonitoringStateChangedByShortcut")
+        logger.info("Application startup completed successfully")
     }
 
     private func setupHighlightMenuBarObserver() -> NSObjectProtocol {
@@ -645,26 +572,14 @@ public class AppDelegate: NSObject, NSApplicationDelegate,
     // func setupAppleScriptSupport() { /* Placeholder removed, implemented in extension */ }
     // func cleanupAppleScriptSupport() { /* Placeholder removed, implemented in extension */ }
 
-    // MARK: - Notification Handlers
-    private func handleGlobalShortcutChange(notification: Notification) {
-        logger.info(".globalShortcutDidChange notification received.")
-        if let newShortcutString = notification.object as? String {
-            logger.info("New shortcut string from notification: '\(newShortcutString)'. Attempting to re-register.")
-            shortcutManager?.register(shortcut: newShortcutString.isEmpty ? nil : newShortcutString)
-        } else if notification.object == nil { // Handles case where shortcut is cleared (set to nil)
-             logger.info("Global shortcut cleared (nil). Attempting to unregister/register with nil.")
-            shortcutManager?.register(shortcut: nil)
-        } else {
-            logger.warning("Received .globalShortcutDidChange but the object was not a String or nil.")
-        }
-    }
-    
-    private func registerCurrentGlobalShortcut() {
-        let currentShortcut = MCPConfigManager.shared.getGlobalShortcut()
-        logger.info("Registering current global shortcut: '\(currentShortcut ?? "Not set")'")
-        shortcutManager?.register(shortcut: currentShortcut)
-    }
 
     // MARK: - AXServices and Permissions Management
 
+    // New method to toggle monitoring state
+    @objc private func toggleMonitoringState() {
+        Defaults[.isGlobalMonitoringEnabled].toggle()
+        let state = Defaults[.isGlobalMonitoringEnabled] ? "enabled" : "disabled"
+        logger.info("Global monitoring toggled via shortcut: \(state)")
+        menuManager?.refreshMenu() // Call refreshMenu to update menu items
+    }
 }

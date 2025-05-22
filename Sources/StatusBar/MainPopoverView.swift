@@ -1,24 +1,13 @@
 import SwiftUI
 import Defaults
-import AppKit // For NSImage
-
-// Ensure CursorInstanceInfo and CursorInstanceStatus are accessible
-// If they are in a different module without proper import, this won't compile.
-// Assuming they are part of the main app target or a correctly imported module.
+import AppKit
 
 struct MainPopoverView: View {
     @ObservedObject private var cursorMonitor = CursorMonitor.shared
-    @ObservedObject private var sessionLogger = SessionLogger.shared // For total interventions
     @Default(.isGlobalMonitoringEnabled) private var isGlobalMonitoringEnabled
 
-    // Accessing AppDelegate to show settings. This might need a more robust solution
-    // like a shared service or environment object for window management.
     private func openSettings() {
-        if let appDelegate = NSApp.delegate as? AppDelegate {
-            appDelegate.showSettingsWindow(nil)
-        } else {
-            print("Could not get AppDelegate to open settings.")
-        }
+        NotificationCenter.default.post(name: .openSettingsWindow, object: nil)
     }
 
     var body: some View {
@@ -40,16 +29,12 @@ struct MainPopoverView: View {
             footerView
                 .padding()
         }
-        .frame(width: 420, height: 550) // Adjusted size for better fit
-        .onAppear {
-            // Potentially refresh instances if needed, though Workspace notifications should handle it.
-            // cursorMonitor.refreshMonitoredInstances()
-        }
+        .frame(width: 450, height: 580)
     }
 
     private var headerView: some View {
         HStack {
-            Image("logo") // Assuming a logo asset named 'logo_popover'
+            Image("logo")
                 .resizable()
                 .aspectRatio(contentMode: .fit)
                 .frame(width: 32, height: 32)
@@ -63,7 +48,7 @@ struct MainPopoverView: View {
             
             Toggle("Monitor", isOn: $isGlobalMonitoringEnabled)
                 .labelsHidden()
-                .scaleEffect(0.8) // Smaller toggle
+                .scaleEffect(0.8)
                 .onChange(of: isGlobalMonitoringEnabled) { _, newValue in
                     if newValue {
                         cursorMonitor.startMonitoringLoop()
@@ -76,7 +61,7 @@ struct MainPopoverView: View {
 
     private var instanceListView: some View {
         Group {
-            if cursorMonitor.instanceInfo.isEmpty {
+            if cursorMonitor.monitoredInstances.isEmpty {
                 VStack {
                     Spacer()
                     Text("No running Cursor instances detected.")
@@ -89,127 +74,155 @@ struct MainPopoverView: View {
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
-                List {
-                    ForEach(cursorMonitor.instanceInfo.sorted(by: { $0.key < $1.key }), id: \.key) { pid, info in
-                        instanceRow(pid: pid, info: info)
-                            .padding(.vertical, 4)
+                ScrollView {
+                    VStack(spacing: 8) {
+                        ForEach(cursorMonitor.monitoredInstances) { info in
+                            instanceRow(info: info)
+                                .padding(.horizontal)
+                        }
                     }
+                    .padding(.vertical, 8)
                 }
-                .listStyle(.plain) // Removes default List styling for a cleaner look
             }
         }
     }
 
     @ViewBuilder
-    private func instanceRow(pid: pid_t, info: CursorInstanceInfo) -> some View {
-        VStack(alignment: .leading, spacing: 6) {
+    private func instanceRow(info: MonitoredInstanceInfo) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
             HStack {
-                statusIndicator(for: info.status)
+                statusIndicator(for: info.status, isActive: info.isActivelyMonitored)
                 
-                if let nsImage = info.app.icon {
-                     Image(nsImage: nsImage)
-                        .resizable()
-                        .frame(width: 20, height: 20)
-                } else {
-                    Image(systemName: "questionmark.app")
-                        .resizable()
-                        .frame(width: 20, height: 20)
-                }
+                Image(systemName: "app.badge")
+                    .resizable()
+                    .frame(width: 20, height: 20)
+                    .foregroundColor(.accentColor)
 
-                Text("\\(info.app.localizedName ?? "Cursor") (PID: \\(pid))")
+                Text(info.displayName)
                     .fontWeight(.medium)
+                
                 Spacer()
             }
             
-            Text(info.statusMessage)
-                .font(.caption)
-                .foregroundColor(.secondary)
-                .lineLimit(2)
-                .fixedSize(horizontal: false, vertical: true)
-
+            HStack {
+                Text(friendlyStatusDescription(for: info.status))
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+                
+                if info.interventionCount > 0 {
+                    Text("•")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                    
+                    Text("\(info.interventionCount) intervention\(info.interventionCount == 1 ? "" : "s")")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                }
+            }
 
             HStack(spacing: 10) {
-                Spacer() // Push buttons to the right
+                Spacer()
 
-                if shouldShowResumeButton(for: info.status) {
-                    Button("Resume Interventions") {
-                        Task {
-                            await cursorMonitor.resumeInterventions(for: pid)
-                        }
+                Button {
+                    if info.status == .pausedManually {
+                        cursorMonitor.resumeMonitoring(for: info.pid)
+                    } else {
+                        cursorMonitor.pauseMonitoring(for: info.pid)
                     }
-                    .buttonStyle(.bordered)
-                    .controlSize(.small)
-                }
-                
-                Button("Nudge Now") {
-                    Task {
-                        await cursorMonitor.nudgeInstance(pid: pid, app: info.app)
+                } label: {
+                    HStack(spacing: 4) {
+                        Image(systemName: info.status == .pausedManually ? "play.fill" : "pause.fill")
+                            .font(.caption)
+                        Text(info.status == .pausedManually ? "Resume" : "Pause")
                     }
                 }
-                .buttonStyle(.borderedProminent)
+                .buttonStyle(.bordered)
                 .controlSize(.small)
+                .disabled(info.status == .notRunning)
             }
             .padding(.top, 4)
         }
+        .padding(.vertical, 6)
+        .padding(.horizontal, 12)
+        .background(Color(NSColor.controlBackgroundColor))
+        .cornerRadius(8)
     }
     
     @ViewBuilder
-    private func statusIndicator(for status: CursorInstanceStatus) -> some View {
-        let (iconName, color) = iconAndColor(for: status)
+    private func statusIndicator(for status: DisplayStatus, isActive: Bool) -> some View {
+        let (iconName, color) = iconAndColor(for: status, isActive: isActive)
         Image(systemName: iconName)
             .foregroundColor(color)
-            .font(.title3) // Slightly larger indicator
+            .font(.title3)
             .frame(width: 24, alignment: .center)
     }
 
-    private func iconAndColor(for status: CursorInstanceStatus) -> (String, Color) {
+    private func iconAndColor(for status: DisplayStatus, isActive: Bool) -> (String, Color) {
         switch status {
         case .unknown:
             return ("questionmark.circle.fill", .gray)
+        case .active:
+            return isActive ? ("circle.fill", .blue) : ("circle", .gray)
+        case .positiveWork:
+            return ("checkmark.circle.fill", .green)
+        case .intervening:
+            return ("hand.raised.circle.fill", .orange)
+        case .observation:
+            return ("eye.circle.fill", .orange)
+        case .pausedManually:
+            return ("pause.circle.fill", .yellow)
+        case .pausedInterventionLimit:
+            return ("exclamationmark.circle.fill", .yellow)
+        case .pausedUnrecoverable:
+            return ("xmark.circle.fill", .red)
         case .idle:
             return ("moon.zzz.fill", .gray)
-        case .working(let detail):
-            if detail.lowercased().contains("generating") || detail.lowercased().contains("typing") {
-                 return ("paperplane.circle.fill", .green) // "Generating" or "Typing"
-            } else if detail.lowercased().contains("activity") {
-                return ("figure.walk.motion", .blue) // "Recent Activity"
-            }
-            return ("brain.head.profile", .purple) // Other "working"
-        case .recovering(let type, let attempt):
-            let baseIcon = "arrow.triangle.2.circlepath.circle.fill"
-            // Could use type or attempt to modify icon/color if needed
-            return (baseIcon, .orange)
-        case .paused:
-            return ("pause.circle.fill", .yellow)
-        case .error(let reason):
-             if reason.lowercased().contains("unrecoverable") || reason.lowercased().contains("persistent") {
-                 return ("xmark.octagon.fill", .red)
-             }
-            return ("exclamationmark.triangle.fill", .red)
-        case .unrecoverable:
-            return ("xmark.shield.fill", .red) // Distinct unrecoverable
+        case .notRunning:
+            return ("xmark.octagon.fill", .red)
         }
     }
 
-    private func shouldShowResumeButton(for status: CursorInstanceStatus) -> Bool {
+    private func friendlyStatusDescription(for status: DisplayStatus) -> String {
         switch status {
-        case .paused, .unrecoverable, .error:
-            // Show resume for paused, unrecoverable, and any error state.
-            return true
-        default:
-            return false
+        case .positiveWork:
+            return "Working ✅"
+        case .intervening:
+            return "Recovering (Intervention) 🛠️"
+        case .observation:
+            return "Observing Post-Intervention 👀"
+        case .pausedManually:
+            return "Paused (Manual) ⏸️"
+        case .pausedInterventionLimit:
+            return "Paused (Limit Reached) 🚫"
+        case .pausedUnrecoverable:
+            return "Error (Unrecoverable) 🆘"
+        case .idle:
+            return "Idle (Monitoring) ☕"
+        case .active:
+            return "Active (Monitoring) 🔍"
+        case .unknown:
+            return "Status Unknown 🤔"
+        case .notRunning:
+            return "Not Running ⏹️"
         }
     }
-
+    
     private var footerView: some View {
         HStack {
-            Text("Session Interventions: \\(cursorMonitor.totalAutomaticInterventionsThisSession)")
+            Text("Session Interventions: \(cursorMonitor.totalAutomaticInterventionsThisSession)")
                 .font(.caption)
                 .foregroundColor(.secondary)
             
             Spacer()
             
             Button {
+                // Resume any manually paused instances
+                for instance in cursorMonitor.monitoredInstances {
+                    if instance.status == .pausedManually {
+                        cursorMonitor.resumeMonitoring(for: instance.pid)
+                    }
+                }
+                // Reset all instances
                 Task {
                     await cursorMonitor.resetAllInstancesAndResume()
                 }
@@ -225,7 +238,7 @@ struct MainPopoverView: View {
             } label: {
                 Image(systemName: "gearshape.fill")
             }
-            .buttonStyle(.borderless) // Make it look like an icon button
+            .buttonStyle(.borderless)
             .controlSize(.small)
             .padding(.leading, 6)
         }
@@ -236,24 +249,8 @@ struct MainPopoverView: View {
 #if DEBUG
 struct MainPopoverView_Previews: PreviewProvider {
     static var previews: some View {
-        // Create mock data for preview
-        let mockMonitor = CursorMonitor.shared // Use shared for basic structure, override data for specific states
-        
-        // It's hard to mock NSRunningApplication directly in previews in a simple way.
-        // So, the preview might show an empty state unless the monitor is populated.
-        // For more complex previews, consider a mock CursorMonitor with predefined instanceInfo.
-
         MainPopoverView()
-            .onAppear {
-                // Example of how to add mock data if needed:
-                /*
-                let mockApp = NSRunningApplication() // This won't be a real Cursor app
-                let mockInfo1 = CursorInstanceInfo(app: mockApp, status: .working(detail: "Generating code..."), statusMessage: "Generating a new function for you.")
-                let mockInfo2 = CursorInstanceInfo(app: mockApp, status: .error(reason: "Connection timed out."), statusMessage: "Error: Could not connect to the server.")
-                mockMonitor.instanceInfo = [123: mockInfo1, 456: mockInfo2]
-                mockMonitor.totalAutomaticInterventionsThisSession = 5
-                 */
-            }
+            .frame(width: 450, height: 580)
     }
 }
 #endif 

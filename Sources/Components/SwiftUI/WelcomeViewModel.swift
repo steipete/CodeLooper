@@ -35,7 +35,12 @@ final class WelcomeViewModel: ObservableObject {
         // Special cases based on current step
         switch currentStep {
         case .welcome:
-            // From welcome, go to settings step
+            // From welcome, go to accessibility step
+            currentStep = .accessibility
+            logger.info("Moving to accessibility step")
+
+        case .accessibility:
+            // From accessibility, go to settings step
             currentStep = .settings
             logger.info("Moving to settings step")
 
@@ -51,8 +56,19 @@ final class WelcomeViewModel: ObservableObject {
     }
 
     func goToPreviousStep() {
-        if let prevStep = WelcomeStep(rawValue: currentStep.rawValue - 1) {
-            currentStep = prevStep
+        switch currentStep {
+        case .welcome:
+            // Already at first step
+            logger.info("Already at welcome step")
+        case .accessibility:
+            currentStep = .welcome
+            logger.info("Moving back to welcome step")
+        case .settings:
+            currentStep = .accessibility
+            logger.info("Moving back to accessibility step")
+        case .complete:
+            currentStep = .settings
+            logger.info("Moving back to settings step")
         }
     }
 
@@ -88,13 +104,16 @@ final class WelcomeViewModel: ObservableObject {
 
 enum WelcomeStep: Int, CaseIterable, CustomStringConvertible {
     case welcome = 0
-    case settings = 1
-    case complete = 2
+    case accessibility = 1
+    case settings = 2
+    case complete = 3
 
     var description: String {
         switch self {
         case .welcome:
             "Welcome"
+        case .accessibility:
+            "Accessibility"
         case .settings:
             "Settings"
         case .complete:

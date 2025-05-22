@@ -26,7 +26,7 @@ protocol AXElementHeuristic {
     ///   - pid: The process identifier of the target application.
     ///   - axorcist: An instance of AXorcist to perform queries.
     /// - Returns: An `AXorcistLib.Locator` if the element is successfully found and a locator can be constructed, otherwise `nil`.
-    func discover(for pid: pid_t, axorcist: AXorcist) async -> AXorcistLib.Locator?
+    @MainActor func discover(for pid: pid_t, axorcist: AXorcist) async -> AXorcistLib.Locator?
 }
 
 // MARK: - Generating Indicator Text Heuristic
@@ -34,74 +34,68 @@ protocol AXElementHeuristic {
 struct GeneratingIndicatorTextHeuristic: AXElementHeuristic {
     let locatorType: LocatorType = .generatingIndicatorText
 
-    func discover(for pid: pid_t, axorcist: AXorcist) async -> AXorcistLib.Locator? {
+    @MainActor func discover(for pid: pid_t, axorcist: AXorcist) async -> AXorcistLib.Locator? {
         // Strategy 1: Look for static text containing "generating" (case insensitive)
         let strategy1 = AXorcistLib.Locator(
             match_all: false,
-            criteria: ["role": AXorcistLib.AccessibilityConstants.kAXStaticTextRole],
+            criteria: ["role": kAXStaticTextRole],
             root_element_path_hint: nil,
             requireAction: nil,
             computed_name_contains: "generating"
         )
         
-        do {
-            let queryResponse1 = try await axorcist.query(
-                pid: Int(pid),
-                locator: strategy1,
-                isDebugLoggingEnabled: false,
-                currentDebugLogs: []
-            )
-            if queryResponse1.success, !queryResponse1.elements.isEmpty {
-                return strategy1
-            }
-        } catch {
-            // Continue to next strategy
+        var tempLogs: [String] = []
+        let queryResponse1 = axorcist.handleQuery(
+            for: nil,
+            locator: strategy1,
+            maxDepth: 10,
+            isDebugLoggingEnabled: true,
+            currentDebugLogs: &tempLogs
+        )
+        if queryResponse1.error == nil, let _ = queryResponse1.data {
+            return strategy1
         }
         
         // Strategy 2: Look for text containing "Generating response" or similar patterns
         let strategy2 = AXorcistLib.Locator(
             match_all: false,
-            criteria: ["role": AXorcistLib.AccessibilityConstants.kAXStaticTextRole],
+            criteria: ["role": kAXStaticTextRole],
             root_element_path_hint: nil,
             requireAction: nil,
             computed_name_contains: "Generating"
         )
         
-        do {
-            let queryResponse2 = try await axorcist.query(
-                pid: Int(pid),
-                locator: strategy2,
-                isDebugLoggingEnabled: false,
-                currentDebugLogs: []
-            )
-            if queryResponse2.success, !queryResponse2.elements.isEmpty {
-                return strategy2
-            }
-        } catch {
-            // Continue to next strategy
+        var tempLogs2: [String] = []
+        let queryResponse2 = axorcist.handleQuery(
+            for: nil,
+            locator: strategy2,
+            maxDepth: 10,
+            isDebugLoggingEnabled: true,
+            currentDebugLogs: &tempLogs2
+        )
+        if queryResponse2.error == nil, let _ = queryResponse2.data {
+            return strategy2
         }
         
         // Strategy 3: Look for progress indicators or activity indicators
         let strategy3 = AXorcistLib.Locator(
             match_all: false,
-            criteria: ["role": AXorcistLib.AccessibilityConstants.kAXProgressIndicatorRole],
+            criteria: ["role": kAXProgressIndicatorRole],
             root_element_path_hint: nil,
             requireAction: nil,
             computed_name_contains: nil
         )
         
-        do {
-            let queryResponse3 = try await axorcist.query(
-                pid: Int(pid),
-                locator: strategy3,
-                isDebugLoggingEnabled: false,
-                currentDebugLogs: []
-            )
-            if queryResponse3.success, !queryResponse3.elements.isEmpty {
-                return strategy3
-            }
-        } catch {
-            // Continue to next strategy
+        var tempLogs3: [String] = []
+        let queryResponse3 = axorcist.handleQuery(
+            for: nil,
+            locator: strategy3,
+            maxDepth: 10,
+            isDebugLoggingEnabled: true,
+            currentDebugLogs: &tempLogs3
+        )
+        if queryResponse3.error == nil, let _ = queryResponse3.data {
+            return strategy3
         }
         
         return nil
@@ -113,74 +107,68 @@ struct GeneratingIndicatorTextHeuristic: AXElementHeuristic {
 struct SidebarActivityAreaHeuristic: AXElementHeuristic {
     let locatorType: LocatorType = .sidebarActivityArea
 
-    func discover(for pid: pid_t, axorcist: AXorcist) async -> AXorcistLib.Locator? {
+    @MainActor func discover(for pid: pid_t, axorcist: AXorcist) async -> AXorcistLib.Locator? {
         // Strategy 1: Look for a scroll area in the main window (typical sidebar)
         let strategy1 = AXorcistLib.Locator(
             match_all: false,
-            criteria: ["role": AXorcistLib.AccessibilityConstants.kAXScrollAreaRole],
+            criteria: ["role": kAXScrollAreaRole],
             root_element_path_hint: ["AXApplication", "AXWindow"],
             requireAction: nil,
             computed_name_contains: nil
         )
         
-        do {
-            let queryResponse1 = try await axorcist.query(
-                pid: Int(pid),
-                locator: strategy1,
-                isDebugLoggingEnabled: false,
-                currentDebugLogs: []
-            )
-            if queryResponse1.success, !queryResponse1.elements.isEmpty {
-                return strategy1
-            }
-        } catch {
-            // Continue to next strategy
+        var tempLogs: [String] = []
+        let queryResponse1 = axorcist.handleQuery(
+            for: nil,
+            locator: strategy1,
+            maxDepth: 10,
+            isDebugLoggingEnabled: true,
+            currentDebugLogs: &tempLogs
+        )
+        if queryResponse1.error == nil, let _ = queryResponse1.data {
+            return strategy1
         }
         
         // Strategy 2: Look for a splitter group's scroll area (often the sidebar)
         let strategy2 = AXorcistLib.Locator(
             match_all: false,
-            criteria: ["role": AXorcistLib.AccessibilityConstants.kAXScrollAreaRole],
+            criteria: ["role": kAXScrollAreaRole],
             root_element_path_hint: ["AXApplication", "AXWindow", "AXSplitter"],
             requireAction: nil,
             computed_name_contains: nil
         )
         
-        do {
-            let queryResponse2 = try await axorcist.query(
-                pid: Int(pid),
-                locator: strategy2,
-                isDebugLoggingEnabled: false,
-                currentDebugLogs: []
-            )
-            if queryResponse2.success, !queryResponse2.elements.isEmpty {
-                return strategy2
-            }
-        } catch {
-            // Continue to next strategy
+        var tempLogs2: [String] = []
+        let queryResponse2 = axorcist.handleQuery(
+            for: nil,
+            locator: strategy2,
+            maxDepth: 10,
+            isDebugLoggingEnabled: true,
+            currentDebugLogs: &tempLogs2
+        )
+        if queryResponse2.error == nil, let _ = queryResponse2.data {
+            return strategy2
         }
         
         // Strategy 3: Look for any group that might represent a sidebar
         let strategy3 = AXorcistLib.Locator(
             match_all: false,
-            criteria: ["role": AXorcistLib.AccessibilityConstants.kAXGroupRole],
+            criteria: ["role": kAXGroupRole],
             root_element_path_hint: ["AXApplication", "AXWindow"],
             requireAction: nil,
             computed_name_contains: nil
         )
         
-        do {
-            let queryResponse3 = try await axorcist.query(
-                pid: Int(pid),
-                locator: strategy3,
-                isDebugLoggingEnabled: false,
-                currentDebugLogs: []
-            )
-            if queryResponse3.success, !queryResponse3.elements.isEmpty {
-                return strategy3
-            }
-        } catch {
-            // Continue to next strategy
+        var tempLogs3: [String] = []
+        let queryResponse3 = axorcist.handleQuery(
+            for: nil,
+            locator: strategy3,
+            maxDepth: 10,
+            isDebugLoggingEnabled: true,
+            currentDebugLogs: &tempLogs3
+        )
+        if queryResponse3.error == nil, let _ = queryResponse3.data {
+            return strategy3
         }
         
         return nil
@@ -192,74 +180,68 @@ struct SidebarActivityAreaHeuristic: AXElementHeuristic {
 struct ErrorMessagePopupHeuristic: AXElementHeuristic {
     let locatorType: LocatorType = .errorMessagePopup
 
-    func discover(for pid: pid_t, axorcist: AXorcist) async -> AXorcistLib.Locator? {
+    @MainActor func discover(for pid: pid_t, axorcist: AXorcist) async -> AXorcistLib.Locator? {
         // Strategy 1: Look for static text containing "error" (case insensitive)
         let strategy1 = AXorcistLib.Locator(
             match_all: false,
-            criteria: ["role": AXorcistLib.AccessibilityConstants.kAXStaticTextRole],
+            criteria: ["role": kAXStaticTextRole],
             root_element_path_hint: nil,
             requireAction: nil,
             computed_name_contains: "error"
         )
         
-        do {
-            let queryResponse1 = try await axorcist.query(
-                pid: Int(pid),
-                locator: strategy1,
-                isDebugLoggingEnabled: false,
-                currentDebugLogs: []
-            )
-            if queryResponse1.success, !queryResponse1.elements.isEmpty {
-                return strategy1
-            }
-        } catch {
-            // Continue to next strategy
+        var tempLogs: [String] = []
+        let queryResponse1 = axorcist.handleQuery(
+            for: nil,
+            locator: strategy1,
+            maxDepth: 10,
+            isDebugLoggingEnabled: true,
+            currentDebugLogs: &tempLogs
+        )
+        if queryResponse1.error == nil, let _ = queryResponse1.data {
+            return strategy1
         }
         
         // Strategy 2: Look for dialog boxes
         let strategy2 = AXorcistLib.Locator(
             match_all: false,
-            criteria: ["role": AXorcistLib.AccessibilityConstants.kAXDialogRole],
+            criteria: ["role": "AXDialog"],
             root_element_path_hint: nil,
             requireAction: nil,
             computed_name_contains: nil
         )
         
-        do {
-            let queryResponse2 = try await axorcist.query(
-                pid: Int(pid),
-                locator: strategy2,
-                isDebugLoggingEnabled: false,
-                currentDebugLogs: []
-            )
-            if queryResponse2.success, !queryResponse2.elements.isEmpty {
-                return strategy2
-            }
-        } catch {
-            // Continue to next strategy
+        var tempLogs2: [String] = []
+        let queryResponse2 = axorcist.handleQuery(
+            for: nil,
+            locator: strategy2,
+            maxDepth: 10,
+            isDebugLoggingEnabled: true,
+            currentDebugLogs: &tempLogs2
+        )
+        if queryResponse2.error == nil, let _ = queryResponse2.data {
+            return strategy2
         }
         
         // Strategy 3: Look for text containing "failed"
         let strategy3 = AXorcistLib.Locator(
             match_all: false,
-            criteria: ["role": AXorcistLib.AccessibilityConstants.kAXStaticTextRole],
+            criteria: ["role": kAXStaticTextRole],
             root_element_path_hint: nil,
             requireAction: nil,
             computed_name_contains: "failed"
         )
         
-        do {
-            let queryResponse3 = try await axorcist.query(
-                pid: Int(pid),
-                locator: strategy3,
-                isDebugLoggingEnabled: false,
-                currentDebugLogs: []
-            )
-            if queryResponse3.success, !queryResponse3.elements.isEmpty {
-                return strategy3
-            }
-        } catch {
-            // Continue to next strategy
+        var tempLogs3: [String] = []
+        let queryResponse3 = axorcist.handleQuery(
+            for: nil,
+            locator: strategy3,
+            maxDepth: 10,
+            isDebugLoggingEnabled: true,
+            currentDebugLogs: &tempLogs3
+        )
+        if queryResponse3.error == nil, let _ = queryResponse3.data {
+            return strategy3
         }
         
         return nil
@@ -271,58 +253,54 @@ struct ErrorMessagePopupHeuristic: AXElementHeuristic {
 struct StopGeneratingButtonHeuristic: AXElementHeuristic {
     let locatorType: LocatorType = .stopGeneratingButton
 
-    func discover(for pid: pid_t, axorcist: AXorcist) async -> AXorcistLib.Locator? {
+    @MainActor func discover(for pid: pid_t, axorcist: AXorcist) async -> AXorcistLib.Locator? {
         // Strategy 1: Look for button containing "Stop"
         let strategy1 = AXorcistLib.Locator(
             match_all: false,
-            criteria: ["role": AXorcistLib.AccessibilityConstants.kAXButtonRole],
+            criteria: ["role": kAXButtonRole],
             root_element_path_hint: nil,
             requireAction: nil,
             computed_name_contains: "Stop"
         )
         
-        do {
-            let queryResponse1 = try await axorcist.query(
-                pid: Int(pid),
-                locator: strategy1,
-                isDebugLoggingEnabled: false,
-                currentDebugLogs: []
-            )
-            if queryResponse1.success, !queryResponse1.elements.isEmpty {
-                return strategy1
-            }
-        } catch {
-            // Continue to next strategy
+        var tempLogs: [String] = []
+        let queryResponse1 = axorcist.handleQuery(
+            for: nil,
+            locator: strategy1,
+            maxDepth: 10,
+            isDebugLoggingEnabled: true,
+            currentDebugLogs: &tempLogs
+        )
+        if queryResponse1.error == nil, let _ = queryResponse1.data {
+            return strategy1
         }
         
         // Strategy 2: Look for button containing "Cancel"
         let strategy2 = AXorcistLib.Locator(
             match_all: false,
-            criteria: ["role": AXorcistLib.AccessibilityConstants.kAXButtonRole],
+            criteria: ["role": kAXButtonRole],
             root_element_path_hint: nil,
             requireAction: nil,
             computed_name_contains: "Cancel"
         )
         
-        do {
-            let queryResponse2 = try await axorcist.query(
-                pid: Int(pid),
-                locator: strategy2,
-                isDebugLoggingEnabled: false,
-                currentDebugLogs: []
-            )
-            if queryResponse2.success, !queryResponse2.elements.isEmpty {
-                return strategy2
-            }
-        } catch {
-            // Continue to next strategy
+        var tempLogs2: [String] = []
+        let queryResponse2 = axorcist.handleQuery(
+            for: nil,
+            locator: strategy2,
+            maxDepth: 10,
+            isDebugLoggingEnabled: true,
+            currentDebugLogs: &tempLogs2
+        )
+        if queryResponse2.error == nil, let _ = queryResponse2.data {
+            return strategy2
         }
         
         // Strategy 3: Look for any enabled button
         let strategy3 = AXorcistLib.Locator(
             match_all: false,
             criteria: [
-                "role": AXorcistLib.AccessibilityConstants.kAXButtonRole,
+                "role": kAXButtonRole,
                 "enabled": "true"
             ],
             root_element_path_hint: nil,
@@ -330,18 +308,16 @@ struct StopGeneratingButtonHeuristic: AXElementHeuristic {
             computed_name_contains: nil
         )
         
-        do {
-            let queryResponse3 = try await axorcist.query(
-                pid: Int(pid),
-                locator: strategy3,
-                isDebugLoggingEnabled: false,
-                currentDebugLogs: []
-            )
-            if queryResponse3.success, !queryResponse3.elements.isEmpty {
-                return strategy3
-            }
-        } catch {
-            // Continue to next strategy
+        var tempLogs3: [String] = []
+        let queryResponse3 = axorcist.handleQuery(
+            for: nil,
+            locator: strategy3,
+            maxDepth: 10,
+            isDebugLoggingEnabled: true,
+            currentDebugLogs: &tempLogs3
+        )
+        if queryResponse3.error == nil, let _ = queryResponse3.data {
+            return strategy3
         }
         
         return nil
@@ -353,74 +329,68 @@ struct StopGeneratingButtonHeuristic: AXElementHeuristic {
 struct ConnectionErrorIndicatorHeuristic: AXElementHeuristic {
     let locatorType: LocatorType = .connectionErrorIndicator
 
-    func discover(for pid: pid_t, axorcist: AXorcist) async -> AXorcistLib.Locator? {
+    @MainActor func discover(for pid: pid_t, axorcist: AXorcist) async -> AXorcistLib.Locator? {
         // Strategy 1: Look for text containing "offline"
         let strategy1 = AXorcistLib.Locator(
             match_all: false,
-            criteria: ["role": AXorcistLib.AccessibilityConstants.kAXStaticTextRole],
+            criteria: ["role": kAXStaticTextRole],
             root_element_path_hint: nil,
             requireAction: nil,
             computed_name_contains: "offline"
         )
         
-        do {
-            let queryResponse1 = try await axorcist.query(
-                pid: Int(pid),
-                locator: strategy1,
-                isDebugLoggingEnabled: false,
-                currentDebugLogs: []
-            )
-            if queryResponse1.success, !queryResponse1.elements.isEmpty {
-                return strategy1
-            }
-        } catch {
-            // Continue to next strategy
+        var tempLogs: [String] = []
+        let queryResponse1 = axorcist.handleQuery(
+            for: nil,
+            locator: strategy1,
+            maxDepth: 10,
+            isDebugLoggingEnabled: true,
+            currentDebugLogs: &tempLogs
+        )
+        if queryResponse1.error == nil, let _ = queryResponse1.data {
+            return strategy1
         }
         
         // Strategy 2: Look for text containing "connection"
         let strategy2 = AXorcistLib.Locator(
             match_all: false,
-            criteria: ["role": AXorcistLib.AccessibilityConstants.kAXStaticTextRole],
+            criteria: ["role": kAXStaticTextRole],
             root_element_path_hint: nil,
             requireAction: nil,
             computed_name_contains: "connection"
         )
         
-        do {
-            let queryResponse2 = try await axorcist.query(
-                pid: Int(pid),
-                locator: strategy2,
-                isDebugLoggingEnabled: false,
-                currentDebugLogs: []
-            )
-            if queryResponse2.success, !queryResponse2.elements.isEmpty {
-                return strategy2
-            }
-        } catch {
-            // Continue to next strategy
+        var tempLogs2: [String] = []
+        let queryResponse2 = axorcist.handleQuery(
+            for: nil,
+            locator: strategy2,
+            maxDepth: 10,
+            isDebugLoggingEnabled: true,
+            currentDebugLogs: &tempLogs2
+        )
+        if queryResponse2.error == nil, let _ = queryResponse2.data {
+            return strategy2
         }
         
         // Strategy 3: Look for text containing "network"
         let strategy3 = AXorcistLib.Locator(
             match_all: false,
-            criteria: ["role": AXorcistLib.AccessibilityConstants.kAXStaticTextRole],
+            criteria: ["role": kAXStaticTextRole],
             root_element_path_hint: nil,
             requireAction: nil,
             computed_name_contains: "network"
         )
         
-        do {
-            let queryResponse3 = try await axorcist.query(
-                pid: Int(pid),
-                locator: strategy3,
-                isDebugLoggingEnabled: false,
-                currentDebugLogs: []
-            )
-            if queryResponse3.success, !queryResponse3.elements.isEmpty {
-                return strategy3
-            }
-        } catch {
-            // Continue to next strategy
+        var tempLogs3: [String] = []
+        let queryResponse3 = axorcist.handleQuery(
+            for: nil,
+            locator: strategy3,
+            maxDepth: 10,
+            isDebugLoggingEnabled: true,
+            currentDebugLogs: &tempLogs3
+        )
+        if queryResponse3.error == nil, let _ = queryResponse3.data {
+            return strategy3
         }
         
         return nil
@@ -432,74 +402,68 @@ struct ConnectionErrorIndicatorHeuristic: AXElementHeuristic {
 struct ResumeConnectionButtonHeuristic: AXElementHeuristic {
     let locatorType: LocatorType = .resumeConnectionButton
 
-    func discover(for pid: pid_t, axorcist: AXorcist) async -> AXorcistLib.Locator? {
+    @MainActor func discover(for pid: pid_t, axorcist: AXorcist) async -> AXorcistLib.Locator? {
         // Strategy 1: Look for button containing "Resume"
         let strategy1 = AXorcistLib.Locator(
             match_all: false,
-            criteria: ["role": AXorcistLib.AccessibilityConstants.kAXButtonRole],
+            criteria: ["role": kAXButtonRole],
             root_element_path_hint: nil,
             requireAction: nil,
             computed_name_contains: "Resume"
         )
         
-        do {
-            let queryResponse1 = try await axorcist.query(
-                pid: Int(pid),
-                locator: strategy1,
-                isDebugLoggingEnabled: false,
-                currentDebugLogs: []
-            )
-            if queryResponse1.success, !queryResponse1.elements.isEmpty {
-                return strategy1
-            }
-        } catch {
-            // Continue to next strategy
+        var tempLogs: [String] = []
+        let queryResponse1 = axorcist.handleQuery(
+            for: nil,
+            locator: strategy1,
+            maxDepth: 10,
+            isDebugLoggingEnabled: true,
+            currentDebugLogs: &tempLogs
+        )
+        if queryResponse1.error == nil, let _ = queryResponse1.data {
+            return strategy1
         }
         
         // Strategy 2: Look for button containing "Reconnect"
         let strategy2 = AXorcistLib.Locator(
             match_all: false,
-            criteria: ["role": AXorcistLib.AccessibilityConstants.kAXButtonRole],
+            criteria: ["role": kAXButtonRole],
             root_element_path_hint: nil,
             requireAction: nil,
             computed_name_contains: "Reconnect"
         )
         
-        do {
-            let queryResponse2 = try await axorcist.query(
-                pid: Int(pid),
-                locator: strategy2,
-                isDebugLoggingEnabled: false,
-                currentDebugLogs: []
-            )
-            if queryResponse2.success, !queryResponse2.elements.isEmpty {
-                return strategy2
-            }
-        } catch {
-            // Continue to next strategy
+        var tempLogs2: [String] = []
+        let queryResponse2 = axorcist.handleQuery(
+            for: nil,
+            locator: strategy2,
+            maxDepth: 10,
+            isDebugLoggingEnabled: true,
+            currentDebugLogs: &tempLogs2
+        )
+        if queryResponse2.error == nil, let _ = queryResponse2.data {
+            return strategy2
         }
         
         // Strategy 3: Look for button containing "Retry"
         let strategy3 = AXorcistLib.Locator(
             match_all: false,
-            criteria: ["role": AXorcistLib.AccessibilityConstants.kAXButtonRole],
+            criteria: ["role": kAXButtonRole],
             root_element_path_hint: nil,
             requireAction: nil,
             computed_name_contains: "Retry"
         )
         
-        do {
-            let queryResponse3 = try await axorcist.query(
-                pid: Int(pid),
-                locator: strategy3,
-                isDebugLoggingEnabled: false,
-                currentDebugLogs: []
-            )
-            if queryResponse3.success, !queryResponse3.elements.isEmpty {
-                return strategy3
-            }
-        } catch {
-            // Continue to next strategy
+        var tempLogs3: [String] = []
+        let queryResponse3 = axorcist.handleQuery(
+            for: nil,
+            locator: strategy3,
+            maxDepth: 10,
+            isDebugLoggingEnabled: true,
+            currentDebugLogs: &tempLogs3
+        )
+        if queryResponse3.error == nil, let _ = queryResponse3.data {
+            return strategy3
         }
         
         return nil
@@ -511,74 +475,68 @@ struct ResumeConnectionButtonHeuristic: AXElementHeuristic {
 struct ForceStopResumeLinkHeuristic: AXElementHeuristic {
     let locatorType: LocatorType = .forceStopResumeLink
 
-    func discover(for pid: pid_t, axorcist: AXorcist) async -> AXorcistLib.Locator? {
+    @MainActor func discover(for pid: pid_t, axorcist: AXorcist) async -> AXorcistLib.Locator? {
         // Strategy 1: Look for link containing "Resume Conversation"
         let strategy1 = AXorcistLib.Locator(
             match_all: false,
-            criteria: ["role": AXorcistLib.AccessibilityConstants.kAXLinkRole],
+            criteria: ["role": kAXLinkRole],
             root_element_path_hint: nil,
             requireAction: nil,
             computed_name_contains: "Resume Conversation"
         )
         
-        do {
-            let queryResponse1 = try await axorcist.query(
-                pid: Int(pid),
-                locator: strategy1,
-                isDebugLoggingEnabled: false,
-                currentDebugLogs: []
-            )
-            if queryResponse1.success, !queryResponse1.elements.isEmpty {
-                return strategy1
-            }
-        } catch {
-            // Continue to next strategy
+        var tempLogs: [String] = []
+        let queryResponse1 = axorcist.handleQuery(
+            for: nil,
+            locator: strategy1,
+            maxDepth: 10,
+            isDebugLoggingEnabled: true,
+            currentDebugLogs: &tempLogs
+        )
+        if queryResponse1.error == nil, let _ = queryResponse1.data {
+            return strategy1
         }
         
         // Strategy 2: Look for button containing "Resume Conversation"
         let strategy2 = AXorcistLib.Locator(
             match_all: false,
-            criteria: ["role": AXorcistLib.AccessibilityConstants.kAXButtonRole],
+            criteria: ["role": kAXButtonRole],
             root_element_path_hint: nil,
             requireAction: nil,
             computed_name_contains: "Resume Conversation"
         )
         
-        do {
-            let queryResponse2 = try await axorcist.query(
-                pid: Int(pid),
-                locator: strategy2,
-                isDebugLoggingEnabled: false,
-                currentDebugLogs: []
-            )
-            if queryResponse2.success, !queryResponse2.elements.isEmpty {
-                return strategy2
-            }
-        } catch {
-            // Continue to next strategy
+        var tempLogs2: [String] = []
+        let queryResponse2 = axorcist.handleQuery(
+            for: nil,
+            locator: strategy2,
+            maxDepth: 10,
+            isDebugLoggingEnabled: true,
+            currentDebugLogs: &tempLogs2
+        )
+        if queryResponse2.error == nil, let _ = queryResponse2.data {
+            return strategy2
         }
         
         // Strategy 3: Look for any link containing "Resume"
         let strategy3 = AXorcistLib.Locator(
             match_all: false,
-            criteria: ["role": AXorcistLib.AccessibilityConstants.kAXLinkRole],
+            criteria: ["role": kAXLinkRole],
             root_element_path_hint: nil,
             requireAction: nil,
             computed_name_contains: "Resume"
         )
         
-        do {
-            let queryResponse3 = try await axorcist.query(
-                pid: Int(pid),
-                locator: strategy3,
-                isDebugLoggingEnabled: false,
-                currentDebugLogs: []
-            )
-            if queryResponse3.success, !queryResponse3.elements.isEmpty {
-                return strategy3
-            }
-        } catch {
-            // Continue to next strategy
+        var tempLogs3: [String] = []
+        let queryResponse3 = axorcist.handleQuery(
+            for: nil,
+            locator: strategy3,
+            maxDepth: 10,
+            isDebugLoggingEnabled: true,
+            currentDebugLogs: &tempLogs3
+        )
+        if queryResponse3.error == nil, let _ = queryResponse3.data {
+            return strategy3
         }
         
         return nil
@@ -590,12 +548,12 @@ struct ForceStopResumeLinkHeuristic: AXElementHeuristic {
 struct MainInputFieldHeuristic: AXElementHeuristic {
     let locatorType: LocatorType = .mainInputField
 
-    func discover(for pid: pid_t, axorcist: AXorcist) async -> AXorcistLib.Locator? {
+    @MainActor func discover(for pid: pid_t, axorcist: AXorcist) async -> AXorcistLib.Locator? {
         // Strategy 1: Look for focused text area in main window
         let strategy1 = AXorcistLib.Locator(
             match_all: false,
             criteria: [
-                "role": AXorcistLib.AccessibilityConstants.kAXTextAreaRole,
+                "role": kAXTextAreaRole,
                 "focused": "true"
             ],
             root_element_path_hint: ["AXApplication", "AXWindow"],
@@ -603,64 +561,58 @@ struct MainInputFieldHeuristic: AXElementHeuristic {
             computed_name_contains: nil
         )
         
-        do {
-            let queryResponse1 = try await axorcist.query(
-                pid: Int(pid),
-                locator: strategy1,
-                isDebugLoggingEnabled: false,
-                currentDebugLogs: []
-            )
-            if queryResponse1.success, !queryResponse1.elements.isEmpty {
-                return strategy1
-            }
-        } catch {
-            // Continue to next strategy
+        var tempLogs: [String] = []
+        let queryResponse1 = axorcist.handleQuery(
+            for: nil,
+            locator: strategy1,
+            maxDepth: 10,
+            isDebugLoggingEnabled: true,
+            currentDebugLogs: &tempLogs
+        )
+        if queryResponse1.error == nil, let _ = queryResponse1.data {
+            return strategy1
         }
         
         // Strategy 2: Look for text area containing "Chat with Cursor"
         let strategy2 = AXorcistLib.Locator(
             match_all: false,
-            criteria: ["role": AXorcistLib.AccessibilityConstants.kAXTextAreaRole],
+            criteria: ["role": kAXTextAreaRole],
             root_element_path_hint: nil,
             requireAction: nil,
             computed_name_contains: "Chat with Cursor"
         )
         
-        do {
-            let queryResponse2 = try await axorcist.query(
-                pid: Int(pid),
-                locator: strategy2,
-                isDebugLoggingEnabled: false,
-                currentDebugLogs: []
-            )
-            if queryResponse2.success, !queryResponse2.elements.isEmpty {
-                return strategy2
-            }
-        } catch {
-            // Continue to next strategy
+        var tempLogs2: [String] = []
+        let queryResponse2 = axorcist.handleQuery(
+            for: nil,
+            locator: strategy2,
+            maxDepth: 10,
+            isDebugLoggingEnabled: true,
+            currentDebugLogs: &tempLogs2
+        )
+        if queryResponse2.error == nil, let _ = queryResponse2.data {
+            return strategy2
         }
         
         // Strategy 3: Look for any focusable text area in main window
         let strategy3 = AXorcistLib.Locator(
             match_all: false,
-            criteria: ["role": AXorcistLib.AccessibilityConstants.kAXTextAreaRole],
+            criteria: ["role": kAXTextAreaRole],
             root_element_path_hint: ["AXApplication", "AXWindow"],
             requireAction: nil,
             computed_name_contains: nil
         )
         
-        do {
-            let queryResponse3 = try await axorcist.query(
-                pid: Int(pid),
-                locator: strategy3,
-                isDebugLoggingEnabled: false,
-                currentDebugLogs: []
-            )
-            if queryResponse3.success, !queryResponse3.elements.isEmpty {
-                return strategy3
-            }
-        } catch {
-            // Continue to next strategy
+        var tempLogs3: [String] = []
+        let queryResponse3 = axorcist.handleQuery(
+            for: nil,
+            locator: strategy3,
+            maxDepth: 10,
+            isDebugLoggingEnabled: true,
+            currentDebugLogs: &tempLogs3
+        )
+        if queryResponse3.error == nil, let _ = queryResponse3.data {
+            return strategy3
         }
         
         return nil
