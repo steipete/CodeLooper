@@ -83,15 +83,21 @@ struct MainPopoverView: View {
             HStack {
                 if case .paused = info.status {
                     Button("Resume Interventions") {
-                        cursorMonitor.resumeInterventions(for: info.pid)
+                        Task {
+                            await cursorMonitor.resumeInterventions(for: info.pid)
+                        }
                     }
                 } else if case .unrecoverable = info.status {
                     Button("Resume Interventions") {
-                        cursorMonitor.resumeInterventions(for: info.pid)
+                        Task {
+                            await cursorMonitor.resumeInterventions(for: info.pid)
+                        }
                     }
                 } else if case .error = info.status, info.statusMessage.contains("Persistent Error") {
                     Button("Resume Interventions") {
-                        cursorMonitor.resumeInterventions(for: info.pid)
+                        Task {
+                            await cursorMonitor.resumeInterventions(for: info.pid)
+                        }
                     }
                 }
                 

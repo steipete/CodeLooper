@@ -34,23 +34,23 @@ public class LocatorManager {
 
     // No longer async as it's on the same MainActor as callers like CursorMonitor
     public func getLocator(for elementName: String) -> Locator? {
-        var jsonString: String? = nil
+        var jsonString: String?
 
         // 1. Check UserDefaults for user override (JSON string)
         switch elementName {
-            case "generatingIndicatorText": jsonString = Defaults[.locatorJSON_generatingIndicatorText]
-            case "sidebarActivityArea": jsonString = Defaults[.locatorJSON_sidebarActivityArea]
-            case "errorMessagePopup": jsonString = Defaults[.locatorJSON_errorMessagePopup]
-            case "stopGeneratingButton": jsonString = Defaults[.locatorJSON_stopGeneratingButton]
-            case "connectionErrorIndicator": jsonString = Defaults[.locatorJSON_connectionErrorIndicator]
-            case "resumeConnectionButton": jsonString = Defaults[.locatorJSON_resumeConnectionButton]
-            case "forceStopResumeLink": jsonString = Defaults[.locatorJSON_forceStopResumeLink]
-            case "mainInputField": jsonString = Defaults[.locatorJSON_mainInputField]
-            default: break
+        case "generatingIndicatorText": jsonString = Defaults[.locatorJSONGeneratingIndicatorText]
+        case "sidebarActivityArea": jsonString = Defaults[.locatorJSONSidebarActivityArea]
+        case "errorMessagePopup": jsonString = Defaults[.locatorJSONErrorMessagePopup]
+        case "stopGeneratingButton": jsonString = Defaults[.locatorJSONStopGeneratingButton]
+        case "connectionErrorIndicator": jsonString = Defaults[.locatorJSONConnectionErrorIndicator]
+        case "resumeConnectionButton": jsonString = Defaults[.locatorJSONResumeConnectionButton]
+        case "forceStopResumeLink": jsonString = Defaults[.locatorJSONForceStopResumeLink]
+        case "mainInputField": jsonString = Defaults[.locatorJSONMainInputField]
+        default: break
         }
         
         if let str = jsonString, !str.isEmpty,
-           let jsonData = str.data(using: .utf8) {
+            let jsonData = str.data(using: .utf8) {
             do {
                 let userLocator = try JSONDecoder().decode(Locator.self, from: jsonData)
                 // Log success for debugging or diagnostics if needed
@@ -60,7 +60,8 @@ public class LocatorManager {
                 Task {
                     await SessionLogger.shared.log(
                         level: .error,
-                        message: "Failed to decode user-defined locator JSON for \(elementName): \(error.localizedDescription). JSON: \(str)"
+                        message: "Failed to decode user-defined locator JSON for \(elementName): " +
+                            "\(error.localizedDescription). JSON: \(str)"
                     )
                 }
             }
@@ -84,16 +85,21 @@ public class LocatorManager {
     public func resetUserOverride(for elementName: String) {
         // Defaults[userDefaultsKey(for: elementName)] = nil // Old way
         switch elementName {
-            case "generatingIndicatorText": Defaults.reset(.locatorJSON_generatingIndicatorText)
-            case "sidebarActivityArea": Defaults.reset(.locatorJSON_sidebarActivityArea)
-            case "errorMessagePopup": Defaults.reset(.locatorJSON_errorMessagePopup)
-            case "stopGeneratingButton": Defaults.reset(.locatorJSON_stopGeneratingButton)
-            case "connectionErrorIndicator": Defaults.reset(.locatorJSON_connectionErrorIndicator)
-            case "resumeConnectionButton": Defaults.reset(.locatorJSON_resumeConnectionButton)
-            case "forceStopResumeLink": Defaults.reset(.locatorJSON_forceStopResumeLink)
-            case "mainInputField": Defaults.reset(.locatorJSON_mainInputField)
-            default: 
-                Task { await SessionLogger.shared.log(level: .warn, message: "Attempted to reset unknown locator override: \(elementName)") }
+        case "generatingIndicatorText": Defaults.reset(.locatorJSONGeneratingIndicatorText)
+        case "sidebarActivityArea": Defaults.reset(.locatorJSONSidebarActivityArea)
+        case "errorMessagePopup": Defaults.reset(.locatorJSONErrorMessagePopup)
+        case "stopGeneratingButton": Defaults.reset(.locatorJSONStopGeneratingButton)
+        case "connectionErrorIndicator": Defaults.reset(.locatorJSONConnectionErrorIndicator)
+        case "resumeConnectionButton": Defaults.reset(.locatorJSONResumeConnectionButton)
+        case "forceStopResumeLink": Defaults.reset(.locatorJSONForceStopResumeLink)
+        case "mainInputField": Defaults.reset(.locatorJSONMainInputField)
+        default:
+            Task {
+                await SessionLogger.shared.log(
+                    level: .warn,
+                    message: "Attempted to reset unknown locator override: \(elementName)"
+                )
+            }
         }
         sessionCache.removeValue(forKey: elementName)
     }
@@ -101,14 +107,14 @@ public class LocatorManager {
     // No longer async
     public func resetAllUserOverrides() {
         Defaults.reset(
-            .locatorJSON_generatingIndicatorText,
-            .locatorJSON_sidebarActivityArea,
-            .locatorJSON_errorMessagePopup,
-            .locatorJSON_stopGeneratingButton,
-            .locatorJSON_connectionErrorIndicator,
-            .locatorJSON_resumeConnectionButton,
-            .locatorJSON_forceStopResumeLink,
-            .locatorJSON_mainInputField
+            .locatorJSONGeneratingIndicatorText,
+            .locatorJSONSidebarActivityArea,
+            .locatorJSONErrorMessagePopup,
+            .locatorJSONStopGeneratingButton,
+            .locatorJSONConnectionErrorIndicator,
+            .locatorJSONResumeConnectionButton,
+            .locatorJSONForceStopResumeLink,
+            .locatorJSONMainInputField
         )
         sessionCache.removeAll()
     }

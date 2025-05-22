@@ -5,6 +5,7 @@ import AXorcist
 import os
 import Defaults
 import SwiftUI
+import Foundation
 
 // Assuming AXApplicationObserver is in a place where it can be imported, or its relevant notifications are used.
 
@@ -493,8 +494,15 @@ public class CursorMonitor: ObservableObject {
 
             // Before general stuck check, handle specific error scenarios first
 
-            // Error Check: "Cursor Force-Stopped (Loop Limit)" (Spec 2.3.5.B)
+            // G. Cursor Force-Stopped / Not Responding
             if !isShowingPositiveWork, case .error = newStatus { // Only if not working and some error or idle state
+                if case .recovering = currentInfo.status {
+                    // Skip if already recovering
+                } else {
+                    if !Defaults[.enableCursorForceStoppedRecovery] {
+                        logger.debug("PID \(pid): Cursor Force-Stopped recovery is disabled, skipping to stuck detection.")
+                        goto StuckDetectionNotForceStopped
+                    }
                 if let forceStopLocator = await locatorManager.getLocator(for: "forceStopResumeLink") {
                     let response = await axorcist.handleQuery(for: String(pid), locator: forceStopLocator, isDebugLoggingEnabled: false, currentDebugLogs: &tempLogs)
                     if let axData = response.data, response.error == nil { // Element found
@@ -530,15 +538,26 @@ public class CursorMonitor: ObservableObject {
                                 newStatusMessage = "Error (Failed Action)"
                             }
                         }
-                    } else if response.error != nil {
-                        logger.debug("PID \(pid): 'forceStopResumeLink' query failed. Error: \(response.error!)")
+                        } else if response.error != nil {
+                            logger.debug("PID \(pid): 'forceStopResumeLink' query failed. Error: \(response.error!)")
+                        }
                     }
                 }
             }
+            
+            StuckDetectionNotForceStopped:
 
-            // Error Check: "Connection Issues" (Spec 2.3.5.A)
+            // F. Connection Issues Check
             if !isShowingPositiveWork, case .error(let reason) = newStatus, reason.contains("Connection Issue") { 
-                // This check relies on a previous step having set newStatus to .error with a specific reason.
+                if case .recovering = currentInfo.status {
+                    // Skip if already recovering
+                } else {
+                    if !Defaults[.enableConnectionIssuesRecovery] {
+                        logger.debug("PID \(pid): Connection issues recovery is disabled, skipping to stuck detection.")
+                        goto StuckDetection
+                    }
+                    
+                    // This check relies on a previous step having set newStatus to .error with a specific reason.
                 // Or, we can directly query for the connectionErrorIndicator here if not already done.
                 // Let's assume a prior check (like the one at line 383 in original code) has set the status if a connection error text was found.
                 // For robustness, let's re-check with the specific locator.
@@ -638,28 +657,41 @@ public class CursorMonitor: ObservableObject {
                 }
             }
             
-            // General Stuck/Idle Check (Spec 2.3.5.C)
+            StuckDetection:
+            
+            // H. Cursor Stops / Stuck
             if !isShowingPositiveWork && case .idle = newStatus { // Ensure not already handled or working
-                let stuckTimeout = Defaults[.stuckDetectionTimeoutSeconds]
-                if let lastActive = lastActivityTimestamp[pid],
-                   Date().timeIntervalSince(lastActive) > stuckTimeout {
+                if case .recovering = currentInfo.status {
+                    // Skip if already recovering
+                } else {
+                    if !Defaults[.enableCursorStopsRecovery] {
+                        logger.debug("PID \(pid): Cursor stops recovery is disabled, skipping to end of checks.")
+                        goto EndOfChecks
+                    }
+                    
+                    let stuckTimeout = Defaults[.stuckDetectionTimeoutSeconds]
+                    if let lastActive = lastActivityTimestamp[pid],
+                       Date().timeIntervalSince(lastActive) > stuckTimeout {
                     logger.info("PID \\(pid) detected as stuck (idle for > \\(stuckTimeout)s). Triggering 'Cursor Stops' recovery.")
                     await sessionLogger.log(level: .info, message: "PID \\(pid) detected as stuck (idle for > \\(stuckTimeout)s). Triggering recovery.", pid: pid)
                     
-                    let attempts = (automaticInterventionsSincePositiveActivity[pid] ?? 0) + 1
-                    newStatus = .recovering(type: .stuck, attempt: attempts)
-                    newStatusMessage = "Recovering (Stuck)"
-                    instanceInfo[pid]?.status = newStatus // Update status before await
-                    instanceInfo[pid]?.statusMessage = newStatusMessage
+                        let attempts = (automaticInterventionsSincePositiveActivity[pid] ?? 0) + 1
+                        newStatus = .recovering(type: .stuck, attempt: attempts)
+                        newStatusMessage = "Recovering (Stuck)"
+                        instanceInfo[pid]?.status = newStatus // Update status before await
+                        instanceInfo[pid]?.statusMessage = newStatusMessage
 
-                    await nudgeInstance(pid: pid) // This already updates counters, plays sound, flashes icon, and updates lastActivityTimestamp
-                    // Re-fetch status from nudgeInstance as it might have changed it directly
-                    if let updatedInfo = instanceInfo[pid] {
-                        newStatus = updatedInfo.status
-                        newStatusMessage = updatedInfo.statusMessage
+                        await nudgeInstance(pid: pid) // This already updates counters, plays sound, flashes icon, and updates lastActivityTimestamp
+                        // Re-fetch status from nudgeInstance as it might have changed it directly
+                        if let updatedInfo = instanceInfo[pid] {
+                            newStatus = updatedInfo.status
+                            newStatusMessage = updatedInfo.statusMessage
+                        }
                     }
                 }
             }
+            
+            EndOfChecks:
 
             // Persistent Failure Cycle Detection (Spec 2.3.7)
             // If an intervention was made this tick, but positive work was not observed in this same tick.
@@ -730,7 +762,7 @@ public class CursorMonitor: ObservableObject {
         for key in attributeKeysInOrder {
             if let axValue = element.attributes[key] {
                 if let stringValue = axValue.value.value as? String, !stringValue.isEmpty {
-                    components.append(stringValue.trimmingCharacters(in: .whitespacesAndNewlines))
+                    components.append(stringValue.trimmingCharacters(in: CharacterSet.whitespacesAndNewlines))
                 }
             }
         }
@@ -748,7 +780,7 @@ public class CursorMonitor: ObservableObject {
         return components.joined(separator: " | ") // Join with a separator
     }
 
-    public func resumeInterventions(for pid: pid_t) {
+    public func resumeInterventions(for pid: pid_t) async {
         guard var info = instanceInfo[pid] else {
             logger.warning("Attempted to resume interventions for unknown PID: \\(pid)")
             return
@@ -778,7 +810,7 @@ public class CursorMonitor: ObservableObject {
         if let inputFieldLocator = await locatorManager.getLocator(for: "mainInputField") {
             let recoveryText = Defaults[.textForCursorStopsRecovery]
             
-            let setValueResponse = await axorcist.handlePerformAction(for: String(pid), locator: inputFieldLocator, actionName: ApplicationServices.kAXSetValueAttribute, actionValue: AnyCodable(recoveryText), isDebugLoggingEnabled: false, currentDebugLogs: &tempLogs)
+            let setValueResponse = await axorcist.handlePerformAction(for: String(pid), locator: inputFieldLocator, actionName: String(kAXSetValueAttribute), actionValue: AnyCodable(recoveryText), isDebugLoggingEnabled: false, currentDebugLogs: &tempLogs)
             
             if setValueResponse.error == nil {
                 let pressActionResponse = await axorcist.handlePerformAction(for: String(pid), locator: inputFieldLocator, actionName: ApplicationServices.kAXPressAction, actionValue: nil, isDebugLoggingEnabled: false, currentDebugLogs: &tempLogs)
@@ -788,7 +820,7 @@ public class CursorMonitor: ObservableObject {
                     await sessionLogger.log(level: .info, message: "PID \\(pid): Nudge successful.", pid: pid)
                     automaticInterventionsSincePositiveActivity[pid, default: 0] += 1
                     totalAutomaticInterventionsThisSession += 1
-                    interventionMadeThisTick = true
+                    // interventionMadeThisTick = true // Not needed in nudgeInstance method
                     await SoundManager.shared.playInterventionSound()
                     AppIconStateController.shared.flashIcon()
                     automaticInterventionsSincePositiveActivity[pid] = 0 
@@ -801,8 +833,8 @@ public class CursorMonitor: ObservableObject {
                         instanceInfo[pid] = updatedInfo
                     }
                 } else {
-                    logger.error("PID \\(pid): Nudge failed (press action). Error: \\(pressActionResponse.error ?? "Unknown")")
-                    await sessionLogger.log(level: .error, message: "PID \\(pid): Nudge failed (press action). Error: \\(pressActionResponse.error ?? "Unknown")", pid: pid)
+                    logger.error("PID \\(pid): Nudge failed (press action). Error: \\(pressActionResponse.error ?? \"Unknown\")")
+                    await sessionLogger.log(level: .error, message: "PID \\(pid): Nudge failed (press action). Error: \\(pressActionResponse.error ?? \"Unknown\")", pid: pid)
                      if var updatedInfo = instanceInfo[pid] {
                         updatedInfo.status = .error(reason: "Nudge (Press) Failed")
                         updatedInfo.statusMessage = "Error (Nudge Failed)"
@@ -810,8 +842,8 @@ public class CursorMonitor: ObservableObject {
                     }
                 }
             } else {
-                logger.error("PID \\(pid): Nudge failed (set value). Error: \\(setValueResponse.error ?? "Unknown")")
-                await sessionLogger.log(level: .error, message: "PID \\(pid): Nudge failed (set value). Error: \\(setValueResponse.error ?? "Unknown")", pid: pid)
+                logger.error("PID \\(pid): Nudge failed (set value). Error: \\(setValueResponse.error ?? \"Unknown\")")
+                await sessionLogger.log(level: .error, message: "PID \\(pid): Nudge failed (set value). Error: \\(setValueResponse.error ?? \"Unknown\")", pid: pid)
                 if var updatedInfo = instanceInfo[pid] {
                     updatedInfo.status = .error(reason: "Nudge (Set Value) Failed")
                     updatedInfo.statusMessage = "Error (Nudge Failed)"
@@ -829,14 +861,14 @@ public class CursorMonitor: ObservableObject {
         }
     }
 
-    public func resetAllInstancesAndResume() {
+    public func resetAllInstancesAndResume() async {
         logger.info("Resetting all instance counters and resuming paused instances.")
-        Task { await sessionLogger.log(level: .info, message: "User reset all instance counters and resumed paused instances.") }
+        await sessionLogger.log(level: .info, message: "User reset all instance counters and resumed paused instances.")
         
         totalAutomaticInterventionsThisSession = 0 // Reset global counter
 
         for pid in instanceInfo.keys {
-            resumeInterventions(for: pid) // This already resets individual counters and sets status to idle
+            await resumeInterventions(for: pid) // This already resets individual counters and sets status to idle
             // Ensure lastActivityTimestamp is also reset if resumeInterventions doesn't do it aggressively enough for a full reset
             lastActivityTimestamp[pid] = Date() 
         }

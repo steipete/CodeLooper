@@ -5,8 +5,8 @@ import Defaults
 @preconcurrency import Foundation
 @preconcurrency import OSLog
 @preconcurrency import ServiceManagement
-import SwiftUI
 import Sparkle
+import SwiftUI
 
 // Import thread safety helpers
 @objc(AppDelegate)
@@ -68,7 +68,11 @@ public class AppDelegate: NSObject, NSApplicationDelegate,
 
         // Initialize Sparkle updater
         logger.info("Initializing Sparkle updater")
-        updaterController = SPUStandardUpdaterController(startingUpdater: true, updaterDelegate: nil, userDriverDelegate: nil)
+        updaterController = SPUStandardUpdaterController(
+            startingUpdater: true,
+            updaterDelegate: nil,
+            userDriverDelegate: nil
+        )
 
         // Setup AppIconStateController AFTER cursorMonitor is initialized
         AppIconStateController.shared.setup(cursorMonitor: CursorMonitor.shared)
@@ -351,7 +355,7 @@ public class AppDelegate: NSObject, NSApplicationDelegate,
         logger.info("Menu bar setup complete")
     }
 
-    @objc func togglePopover(_ sender: AnyObject?) {
+    func togglePopover(_ sender: AnyObject?) {
         guard let popover = self.popover else {
             logger.error("Toggle Popover: Popover is nil")
             return
@@ -469,13 +473,16 @@ public class AppDelegate: NSObject, NSApplicationDelegate,
                 // Guide user to settings
                 let alert = NSAlert()
                 alert.messageText = "Accessibility Access Needed"
-                alert.informativeText = "CodeLooper requires Accessibility permissions to supervise Cursor. Please enable CodeLooper in System Settings > Privacy & Security > Accessibility."
+                alert.informativeText = "CodeLooper requires Accessibility permissions to supervise Cursor. " +
+                    "Please enable CodeLooper in System Settings > Privacy & Security > Accessibility."
                 alert.addButton(withTitle: "Open System Settings")
                 alert.addButton(withTitle: "Later")
                 
                 let response = alert.runModal()
                 if response == .alertFirstButtonReturn {
-                    if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility") {
+                    if let url = URL(
+                        string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility"
+                    ) {
                         NSWorkspace.shared.open(url)
                     }
                 }
@@ -535,7 +542,7 @@ public class AppDelegate: NSObject, NSApplicationDelegate,
 
     // MARK: - Update Handling (Sparkle)
 
-    @objc func checkForUpdates() {
+    func checkForUpdates() {
         logger.info("Check for updates triggered manually.")
         updaterController?.checkForUpdates(nil)
     }
