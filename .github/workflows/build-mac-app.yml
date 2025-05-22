@@ -49,7 +49,7 @@ env:
 jobs:
   build_and_process_mac_app:
     name: Build, Sign & Optionally Notarize macOS CodeLooper App
-    runs-on: ghcr.io/cirruslabs/macos-runner:sequoia-xl
+    runs-on: macos-latest
     timeout-minutes: 60
 
     outputs:
@@ -96,7 +96,7 @@ jobs:
 
       - name: Cache Swift packages
         id: cache-spm
-        uses: cirruslabs/cache@v4
+        uses: actions/cache@v4
         with:
           path: |
             .build
@@ -109,7 +109,7 @@ jobs:
 
       - name: Cache build artifacts
         id: cache-build
-        uses: cirruslabs/cache@v4
+        uses: actions/cache@v4
         with:
           path: |
             binary
@@ -119,7 +119,7 @@ jobs:
             ${{ runner.os }}-binary-
 
       - name: Cache Xcode DerivedData
-        uses: cirruslabs/cache@v4
+        uses: actions/cache@v4
         with:
           path: |
             ~/Library/Developer/Xcode/DerivedData
