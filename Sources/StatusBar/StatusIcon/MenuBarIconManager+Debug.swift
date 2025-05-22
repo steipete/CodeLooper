@@ -6,7 +6,7 @@ import OSLog
 extension MenuBarIconManager {
     // Use a dedicated logger for debugging
     private var debugLogger: Logger {
-        Logger(subsystem: "com.friendshipai.mac", category: "MenuBarIconManager+Debug")
+        Logger(subsystem: "ai.amantusmachina.codelooper", category: "MenuBarIconManager+Debug")
     }
 
     /// Debug function to verify icon loading
@@ -90,7 +90,7 @@ extension MenuBarIconManager {
             "envelope",
             "gear",
             "bell",
-            "network",
+            "network"
         ]
 
         for symbolName in commonSymbols {

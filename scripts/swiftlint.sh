@@ -1,5 +1,5 @@
 #!/bin/bash
-# SwiftLint Script for FriendshipAI Mac App
+# SwiftLint Script for CodeLooper Mac App
 # This script provides a unified interface for running SwiftLint in different modes
 
 set -e
@@ -19,7 +19,7 @@ CONFIG_FILE=""       # Default to no explicit config file
 
 # Print usage information
 print_usage() {
-    echo "SwiftLint Script for FriendshipAI Mac App"
+    echo "SwiftLint Script for CodeLooper Mac App"
     echo ""
     echo "Usage: $0 [options] [file_or_directory]"
     echo ""
@@ -220,7 +220,7 @@ run_swiftlint() {
 
 # Main execution
 main() {
-    log "Starting SwiftLint for FriendshipAI Mac App"
+    log "Starting SwiftLint for CodeLooper Mac App"
     
     # Ensure SwiftLint is available
     ensure_swiftlint

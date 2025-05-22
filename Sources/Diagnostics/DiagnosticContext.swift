@@ -89,25 +89,25 @@ struct DiagnosticContext: Sendable {
     private mutating func processKeyValue(key: String, value: Any) {
         switch key {
         case "operation":
-            processStringValue(value, setter: { self.operation = $0 })
+            processStringValue(value) { self.operation = $0 }
         case "requestTime":
-            processTimeValue(value, setter: { self.requestTimeInterval = $0 })
+            processTimeValue(value) { self.requestTimeInterval = $0 }
         case "uploadTime":
-            processTimeValue(value, setter: { self.uploadTimeInterval = $0 })
+            processTimeValue(value) { self.uploadTimeInterval = $0 }
         case "syncTime":
-            processTimeValue(value, setter: { self.syncTimeInterval = $0 })
+            processTimeValue(value) { self.syncTimeInterval = $0 }
         case "reason":
-            processStringValue(value, setter: { self.reason = $0 })
+            processStringValue(value) { self.reason = $0 }
         case "exportType":
-            processStringValue(value, setter: { self.exportType = $0 })
+            processStringValue(value) { self.exportType = $0 }
         case "scheduleTime":
-            processTimeIntervalValue(value, setter: { self.scheduleTime = $0 })
+            processTimeIntervalValue(value) { self.scheduleTime = $0 }
         case "failTime":
-            processTimeValue(value, setter: { self.failTimeInterval = $0 })
+            processTimeValue(value) { self.failTimeInterval = $0 }
         case "timeoutInterval":
-            processTimeIntervalValue(value, setter: { self.timeoutInterval = $0 })
+            processTimeIntervalValue(value) { self.timeoutInterval = $0 }
         case "timeoutTimerValid":
-            processBoolValue(value, setter: { self.timeoutTimerValidInt = $0 ? 1 : 0 })
+            processBoolValue(value) { self.timeoutTimerValidInt = $0 ? 1 : 0 }
         default:
             // Store as string representation in the array
             customValuesList.append(key)

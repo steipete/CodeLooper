@@ -29,18 +29,18 @@ public enum InfoKey {
         public static let requiresForwardSecrecy = "NSRequiresForwardSecrecy"
         /// Exception domains dictionary key
         public static let exceptionDomains = "NSExceptionDomains"
+    }
 
-        /// Keys for exception domain configuration
-        public enum ExceptionDomain {
-            /// Allow insecure HTTP loads
-            public static let allowsInsecureHTTPLoads = "NSAllowsInsecureHTTPLoads"
-            /// Include subdomains
-            public static let includesSubdomains = "NSIncludesSubdomains"
-            /// Require forward secrecy
-            public static let requiresForwardSecrecy = "NSRequiresForwardSecrecy"
-            /// Minimum TLS version
-            public static let minimumTLSVersion = "NSMinimumTLSVersion"
-        }
+    /// Keys for exception domain configuration
+    public enum ExceptionDomain {
+        /// Allow insecure HTTP loads
+        public static let allowsInsecureHTTPLoads = "NSAllowsInsecureHTTPLoads"
+        /// Include subdomains
+        public static let includesSubdomains = "NSIncludesSubdomains"
+        /// Require forward secrecy
+        public static let requiresForwardSecrecy = "NSRequiresForwardSecrecy"
+        /// Minimum TLS version
+        public static let minimumTLSVersion = "NSMinimumTLSVersion"
     }
 
     /// Keys for app permissions

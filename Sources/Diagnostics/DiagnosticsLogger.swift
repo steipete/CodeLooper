@@ -22,7 +22,7 @@ actor DiagnosticsLogger {
     static let shared = DiagnosticsLogger()
 
     // Primary logger instance
-    private let logger = Logger(subsystem: "com.friendshipai.mac", category: "Diagnostics")
+    private let logger = Logger(subsystem: "ai.amantusmachina.codelooper", category: "Diagnostics")
 
     // Diagnostic state tracking - all state is actor-isolated
     private var operationCounts: [String: Int] = [:]
@@ -259,7 +259,7 @@ actor DiagnosticsLogger {
         let systemInfo = getSystemInfoSection()
 
         var report = """
-        === FriendshipAI Diagnostics Report ===
+        === CodeLooper Diagnostics Report ===
         Generated: \(formatter.string(from: Date()))
 
         \(systemInfo)
@@ -347,8 +347,8 @@ actor DiagnosticsLogger {
             do {
                 let attributes = try fileManager.attributesOfFileSystem(forPath: homeDirectory)
                 if let freeSize = attributes[.systemFreeSize] as? UInt64,
-                   let totalSize = attributes[.systemSize] as? UInt64
-                {
+                    let totalSize = attributes[.systemSize] as? UInt64 {
+
                     freeSpace = "\(freeSize / (1024 * 1024 * 1024)) GB" // Convert to GB
                     totalSpace = "\(totalSize / (1024 * 1024 * 1024)) GB" // Convert to GB
                 }
@@ -380,7 +380,7 @@ actor DiagnosticsLogger {
         Upload Interval: \(uploadInterval) seconds
 
         Note: Logs are available through Apple's Console.app 
-        (using Subsystem: \(Bundle.main.bundleIdentifier ?? "com.friendshipai.mac"))
+        (using Subsystem: \(Bundle.main.bundleIdentifier ?? "ai.amantusmachina.codelooper"))
         """
     }
 
@@ -407,7 +407,7 @@ actor DiagnosticsLogger {
             dateFormatter.dateFormat = "yyyyMMdd_HHmmss"
             let timestamp = dateFormatter.string(from: Date())
 
-            let reportURL = logDir.appendingPathComponent("FriendshipAI_DiagnosticReport_\(timestamp).txt")
+            let reportURL = logDir.appendingPathComponent("CodeLooper_DiagnosticReport_\(timestamp).txt")
 
             do {
                 try report.write(to: reportURL, atomically: true, encoding: .utf8)
@@ -434,7 +434,10 @@ actor DiagnosticsLogger {
     ///   - operation: The operation name to record
     ///   - context: Optional context data
     /// - Returns: A Task that will return the operation UUID when completed
-    nonisolated func safeRecordOperationStart(_ operation: String, context _: [String: Any]? = nil) -> Task<UUID, Never> {
+    nonisolated func safeRecordOperationStart(
+        _ operation: String,
+        context _: [String: Any]? = nil
+    ) -> Task<UUID, Never> {
         // Create a Task.detached to avoid capturing context
         // Task.detached creates a new task with no access to the current task's context
         Task {
@@ -556,42 +559,42 @@ extension String {
 }
 
 /*
- Example usage of the UUID-based operation tracking:
+Example usage of the UUID-based operation tracking:
 
- // 1. Start an operation and get its UUID
- let operationTask = DiagnosticsLogger.shared.safeRecordOperationStart(.uploadContacts)
+// 1. Start an operation and get its UUID
+let operationTask = DiagnosticsLogger.shared.safeRecordOperationStart(.uploadContacts)
 
- // 2. Perform the operation
- uploadContacts { result, error in
-     // 3. Record success or failure with the UUID
-     Task {
-         let operationId = await operationTask.value
+// 2. Perform the operation
+uploadContacts { result, error in
+    // 3. Record success or failure with the UUID
+    Task {
+        let operationId = await operationTask.value
 
-         if let error = error {
-             DiagnosticsLogger.shared.safeRecordOperationFailure(operationId, error: error)
-         } else {
-             DiagnosticsLogger.shared.safeRecordOperationSuccess(operationId)
-         }
-     }
- }
+        if let error = error {
+            DiagnosticsLogger.shared.safeRecordOperationFailure(operationId, error: error)
+        } else {
+            DiagnosticsLogger.shared.safeRecordOperationSuccess(operationId)
+        }
+    }
+}
 
- // Or for synchronous operations:
- Task {
-     // 1. Start an operation and get its UUID
-     let operationId = await DiagnosticsLogger.shared.recordOperationStart(.exportContacts)
+// Or for synchronous operations:
+Task {
+    // 1. Start an operation and get its UUID
+    let operationId = await DiagnosticsLogger.shared.recordOperationStart(.exportContacts)
 
-     do {
-         // 2. Perform the operation
-         try exportContacts()
+    do {
+        // 2. Perform the operation
+        try exportContacts()
 
-         // 3. Record success
-         DiagnosticsLogger.shared.recordOperationSuccess(operationId)
-     } catch {
-         // 3. Or record failure
-         DiagnosticsLogger.shared.recordOperationFailure(operationId, error: error)
-     }
- }
+        // 3. Record success
+        DiagnosticsLogger.shared.recordOperationSuccess(operationId)
+    } catch {
+        // 3. Or record failure
+        DiagnosticsLogger.shared.recordOperationFailure(operationId, error: error)
+    }
+}
 
- // This approach ensures that each operation instance is tracked independently,
- // even when multiple operations with the same name run concurrently.
- */
+// This approach ensures that each operation instance is tracked independently,
+// even when multiple operations with the same name run concurrently.
+*/

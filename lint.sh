@@ -4,7 +4,7 @@ set -e
 # Script to format and lint Swift code in the codebase
 # Now runs both SwiftFormat and SwiftLint for a complete code quality check
 
-echo "Running Swift format and lint on FriendshipAI macOS app..."
+echo "Running Swift format and lint on CodeLooper macOS app..."
 
 # Ensure we're in the right directory
 script_dir="$(dirname "$0")"

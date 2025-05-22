@@ -27,7 +27,8 @@ final class WindowPositionManager: NSObject {
     /// - Parameters:
     ///   - window: The window to move
     ///   - position: The new position (x, y coordinates)
-    @objc func moveWindow(_ window: NSWindow?, to position: NSPoint) {
+    @objc
+    func moveWindow(_ window: NSWindow?, to position: NSPoint) {
         guard let window = window else { return }
 
         let newFrame = NSRect(
@@ -42,7 +43,8 @@ final class WindowPositionManager: NSObject {
     /// - Parameters:
     ///   - window: The window to resize
     ///   - size: The new size (width, height)
-    @objc func resizeWindow(_ window: NSWindow?, to size: NSSize) {
+    @objc
+    func resizeWindow(_ window: NSWindow?, to size: NSSize) {
         guard let window = window else { return }
 
         let newFrame = NSRect(
@@ -57,14 +59,16 @@ final class WindowPositionManager: NSObject {
     /// - Parameters:
     ///   - window: The window to move and resize
     ///   - frame: The new frame (x, y, width, height)
-    @objc func setWindowFrame(_ window: NSWindow?, to frame: NSRect) {
+    @objc
+    func setWindowFrame(_ window: NSWindow?, to frame: NSRect) {
         guard let window = window else { return }
         window.setFrame(frame, display: true, animate: true)
     }
 
     /// Center a window on screen
     /// - Parameter window: The window to center
-    @objc func centerWindow(_ window: NSWindow?) {
+    @objc
+    func centerWindow(_ window: NSWindow?) {
         guard let window = window else { return }
         window.center()
     }
@@ -102,7 +106,7 @@ final class WindowPositionManager: NSObject {
                 "x": rect.origin.x,
                 "y": rect.origin.y,
                 "width": rect.size.width,
-                "height": rect.size.height,
+                "height": rect.size.height
             ]
         }
 
@@ -110,15 +114,17 @@ final class WindowPositionManager: NSObject {
     }
 
     private func loadSavedPositions() {
-        guard let savedData = UserDefaults.standard.dictionary(forKey: windowPositionsKey) as? [String: [String: CGFloat]] else {
+        guard let savedData = UserDefaults.standard.dictionary(forKey: windowPositionsKey)
+            as? [String: [String: CGFloat]]
+        else {
             return
         }
 
         savedWindowPositions = savedData.compactMapValues { dict -> NSRect? in
             guard let xPos = dict["x"],
-                  let yPos = dict["y"],
-                  let width = dict["width"],
-                  let height = dict["height"]
+                let yPos = dict["y"],
+                let width = dict["width"],
+                let height = dict["height"]
             else {
                 return nil
             }
@@ -132,14 +138,17 @@ final class WindowPositionManager: NSObject {
 
 extension WindowPositionManager {
     /// Get the main application window (welcome window or settings window)
-    @objc func mainWindow() -> NSWindow? {
+    @objc
+    func mainWindow() -> NSWindow? {
         // First check for welcome window
-        if let welcomeWindow = NSApp.windows.first(where: { $0.title.contains("Welcome") || $0.title.contains("Friendship") }) {
+        if let welcomeWindow = NSApp.windows.first(where: {
+            $0.title.contains("Welcome") || $0.title.contains("Friendship")
+        }) {
             return welcomeWindow
         }
 
         // Then check for settings window
-        return NSApp.windows.first(where: { $0.title.contains("Settings") || $0.title.contains("Preferences") })
+        return NSApp.windows.first { $0.title.contains("Settings") || $0.title.contains("Preferences") }
     }
 
     /// AppleScript command to move window to position

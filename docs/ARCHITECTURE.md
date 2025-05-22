@@ -1,10 +1,10 @@
-# FriendshipAI macOS App Architecture
+# CodeLooper macOS App Architecture
 
-This document outlines the architecture and organization of the FriendshipAI macOS application codebase.
+This document outlines the architecture and organization of the CodeLooper macOS application codebase.
 
 ## Core Architecture
 
-The FriendshipAI macOS app follows a modular architecture organized around features and clear separation of concerns. The app is transitioning from a traditional AppKit architecture to a more modern SwiftUI approach, making use of Swift's latest concurrency features.
+The CodeLooper macOS app follows a modular architecture organized around features and clear separation of concerns. The app is transitioning from a traditional AppKit architecture to a more modern SwiftUI approach, making use of Swift's latest concurrency features.
 
 ### Key Architectural Patterns
 

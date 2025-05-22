@@ -3,7 +3,7 @@ import OSLog
 
 /// LogLevel defines the different levels of logs in the application
 /// This provides a type-safe way to categorize logs by severity
-public enum LogLevel: Int, Comparable, Sendable {
+public enum LogLevel: Int, Comparable, Sendable, Codable, CaseIterable {
     case debug = 0
     case info = 1
     case notice = 2

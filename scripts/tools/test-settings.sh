@@ -7,7 +7,7 @@
 set -e
 
 echo "========================================="
-echo "Building FriendshipAI macOS app for testing"
+echo "Building CodeLooper macOS app for testing"
 echo "========================================="
 
 # Move to the mac directory
@@ -15,7 +15,7 @@ cd "$(dirname "$0")"
 
 # Build the app using swiftc directly
 echo "Building app..."
-swift build --product FriendshipAI
+swift build --product CodeLooper
 
 # Check if the build succeeded
 if [ $? -eq 0 ]; then
@@ -23,20 +23,20 @@ if [ $? -eq 0 ]; then
   
   # Kill any existing instances
   echo "Killing any existing instances..."
-  pkill -f FriendshipAI || true
+  pkill -f CodeLooper || true
   
   # Wait a moment for the app to close
   sleep 1
   
   # Run the app
   echo "Running app for testing..."
-  .build/debug/FriendshipAI &
+  .build/debug/CodeLooper &
   
   echo "App launched. You can test the settings menu now."
   echo "Press Ctrl+C when finished testing."
   
   # Wait for user to press Ctrl+C
-  trap "echo 'Stopping test...'; pkill -f FriendshipAI || true" INT
+  trap "echo 'Stopping test...'; pkill -f CodeLooper || true" INT
   wait
 else
   echo "Build failed."

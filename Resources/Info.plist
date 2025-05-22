@@ -24,10 +24,10 @@
 			<key>CFBundleTypeRole</key>
 			<string>Viewer</string>
 			<key>CFBundleURLName</key>
-			<string>ai.friendship.mac</string>
+			<string>ai.amantusmachina.codelooper</string>
 			<key>CFBundleURLSchemes</key>
 			<array>
-				<string>friendship-ai</string>
+				<string>codelooper</string>
 			</array>
 		</dict>
 	</array>
@@ -45,7 +45,7 @@
 		<true/>
 	</dict>
 	<key>NSContactsUsageDescription</key>
-	<string>This app requires access to your contacts to export them to FriendshipAI.</string>
+	<string>This app requires access to your contacts to export them to CodeLooper.</string>
 	<key>NSMainNibFile</key>
 	<string>MainMenu</string>
 	<key>NSMainStoryboardFile</key>

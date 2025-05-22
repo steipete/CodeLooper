@@ -1,9 +1,12 @@
 import AppKit
 import AXorcist
+import Combine
 import Defaults
 @preconcurrency import Foundation
 @preconcurrency import OSLog
 @preconcurrency import ServiceManagement
+import SwiftUI
+import Sparkle
 
 // Import thread safety helpers
 @objc(AppDelegate)
@@ -11,8 +14,8 @@ import Defaults
 @MainActor
 public class AppDelegate: NSObject, NSApplicationDelegate,
     @unchecked Sendable,
-    ObservableObject
-{
+    ObservableObject, MenuManagerDelegate {
+
     /// Shared singleton instance for global access
     public static var shared: AppDelegate {
         guard let delegate = NSApp.delegate as? AppDelegate else {
@@ -31,6 +34,8 @@ public class AppDelegate: NSObject, NSApplicationDelegate,
     // Services - initialized directly in AppDelegate
     var menuManager: MenuManager?
     var loginItemManager: LoginItemManager?
+    var axApplicationObserver: AXApplicationObserver? // Observer for app launch/terminate
+    var popover: NSPopover?
 
     // View models and coordinators
     public var mainSettingsCoordinator: MainSettingsCoordinator?
@@ -38,6 +43,14 @@ public class AppDelegate: NSObject, NSApplicationDelegate,
 
     // Observer tokens for proper notification cleanup
     @MainActor private var notificationObservers: [NSObjectProtocol] = []
+
+    // Core services
+    private let sessionLogger = SessionLogger.shared
+    private lazy var locatorManager = LocatorManager.shared
+    private var cancellables = Set<AnyCancellable>()
+    private var welcomeWindow: NSWindow?
+    private var settingsWindow: NSWindow?
+    private var updaterController: SPUStandardUpdaterController? // Sparkle updater controller
 
     // MARK: - App Lifecycle
 
@@ -49,17 +62,42 @@ public class AppDelegate: NSObject, NSApplicationDelegate,
         // Set up exception handling
         setupExceptionHandling()
 
-        // Initialize core services
+        // Initialize core services (axorcist, cursorMonitor will be initialized here)
         logger.info("Initializing core services")
         initializeServices()
+
+        // Initialize Sparkle updater
+        logger.info("Initializing Sparkle updater")
+        updaterController = SPUStandardUpdaterController(startingUpdater: true, updaterDelegate: nil, userDriverDelegate: nil)
+
+        // Setup AppIconStateController AFTER cursorMonitor is initialized
+        AppIconStateController.shared.setup(cursorMonitor: CursorMonitor.shared)
+
+        // Start the Cursor monitoring loop IF globally enabled (moved after cursorMonitor init)
+        if Defaults[.isGlobalMonitoringEnabled] {
+            logger.info("Global monitoring is enabled. Starting CursorMonitor loop.")
+            CursorMonitor.shared.startMonitoringLoop()
+        } else {
+            logger.info(
+                "Global monitoring is disabled. CursorMonitor loop not started initially."
+            )
+        }
 
         // Sync login item preference with system status
         syncLoginItemStatus()
 
         // Initialize the menu bar and UI
         logger.info("Setting up menu bar")
-        setupMenuBar()
+        setupMenuBar() // menuManager should be initialized here
 
+        // Update initial status bar icon AFTER menuManager is set up
+        if let statusButton = menuManager?.statusItem?.button {
+            statusButton.image = NSImage(named: AppIconStateController.shared.currentIconState.imageName)
+            statusButton.image?.isTemplate = true
+        } else {
+            logger.warning("menuManager.statusItem.button is nil, cannot set initial icon image.")
+        }
+        
         // Setup all notification observers
         setupNotificationObservers()
 
@@ -68,6 +106,58 @@ public class AppDelegate: NSObject, NSApplicationDelegate,
 
         // Handle first launch or welcome screen logic
         handleFirstLaunchOrWelcomeScreen()
+        
+        // Observe AppIconStateController state changes
+        AppIconStateController.shared.$currentIconState
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] newState in
+                guard let self = self else { return }
+                self.logger.info("App icon state changed to: \\(String(describing: newState))")
+                // Only update if not currently flashing, as flash has priority for the image
+                if !AppIconStateController.shared.isFlashing {
+                    self.menuManager?.statusItem?.button?.image = NSImage(named: newState.imageName)
+                    self.menuManager?.statusItem?.button?.image?.isTemplate = true
+                }
+            }
+            .store(in: &cancellables)
+
+        // Observe AppIconStateController flash state
+        AppIconStateController.shared.$isFlashing
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] isFlashing in
+                guard let self = self, let button = self.menuManager?.statusItem?.button else { return }
+                
+                if isFlashing {
+                    self.logger.info("Icon flash started. Displaying flash_action icon.")
+                    // Store the pre-flash image if needed, or rely on currentIconState to restore
+                    // For simplicity, we will just set the flash image.
+                    // The other observer will set the correct one when isFlashing becomes false.
+                    button.image = NSImage(named: "status_icon_flash_action") // Assumed asset name
+                    button.image?.isTemplate = true 
+                } else {
+                    self.logger.info("Icon flash ended. Restoring icon based on currentIconState.")
+                    // Revert to the icon determined by the current persistent state
+                    let currentPersistentState = AppIconStateController.shared.currentIconState
+                    button.image = NSImage(named: currentPersistentState.imageName)
+                    button.image?.isTemplate = true
+                }
+            }
+            .store(in: &cancellables)
+
+        // Observe global monitoring toggle (moved here)
+        Defaults.publisher(.isGlobalMonitoringEnabled)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] change in
+                guard let self = self else { return }
+                if change.newValue {
+                    self.logger.info("Global monitoring toggled ON. Starting CursorMonitor loop.")
+                    CursorMonitor.shared.startMonitoringLoop()
+                } else {
+                    self.logger.info("Global monitoring toggled OFF. Stopping CursorMonitor loop.")
+                    CursorMonitor.shared.stopMonitoringLoop()
+                }
+            }
+            .store(in: &cancellables)
 
         logger.info("Application startup completed successfully")
     }
@@ -76,34 +166,9 @@ public class AppDelegate: NSObject, NSApplicationDelegate,
     // This is an additional initializer to support SwiftUI app structure
     override public init() {
         super.init()
-
-        // Log startup
-        logger.info("AppDelegate initialized via SwiftUI lifecycle")
-
-        // Set up exception handling
-        setupExceptionHandling()
-
-        // Initialize core services
-        logger.info("Initializing core services")
-        initializeServices()
-
-        // Sync login item preference with system status
-        syncLoginItemStatus()
-
-        // Initialize the menu bar and UI
-        logger.info("Setting up menu bar")
-        setupMenuBar()
-
-        // Setup all notification observers
-        setupNotificationObservers()
-
-        // Setup AppleScript support
-        setupAppleScriptSupport()
-
-        // Handle first launch or welcome screen logic
-        handleFirstLaunchOrWelcomeScreen()
-
-        logger.info("Application startup completed successfully in SwiftUI lifecycle")
+        // Minimal setup here, most logic deferred to applicationDidFinishLaunching
+        // or specific methods called from there to avoid duplication.
+        logger.info("AppDelegate initialized via SwiftUI lifecycle (minimal init, see applicationDidFinishLaunching)")
     }
 
     // MARK: - Settings Setup
@@ -126,6 +191,9 @@ public class AppDelegate: NSObject, NSApplicationDelegate,
 
     public func applicationWillTerminate(_: Notification) {
         logger.info("Application is terminating")
+
+        // Stop the Cursor monitoring loop
+        CursorMonitor.shared.stopMonitoringLoop()
 
         // Clean up menu manager
         menuManager?.cleanup()
@@ -187,9 +255,18 @@ public class AppDelegate: NSObject, NSApplicationDelegate,
     func showSettingsWindow(_: Any?) {
         logger.info("Show settings window requested")
 
-        // Use the native Settings framework
-        logger.info("Using native Settings framework to open settings")
-        NotificationCenter.default.post(name: .openSettingsWindow, object: nil)
+        if settingsWindow == nil {
+            let settingsView = SettingsView()
+            let hostingController = NSHostingController(rootView: settingsView)
+            let window = NSWindow(contentViewController: hostingController)
+            window.title = "CodeLooper Settings"
+            window.styleMask = [.closable, .titled, .miniaturizable]
+            window.isReleasedWhenClosed = false // Keep window instance around
+            window.center()
+            self.settingsWindow = window
+        }
+        settingsWindow?.makeKeyAndOrderFront(nil)
+        NSApp.activate(ignoringOtherApps: true) // Bring app to front
     }
 
     func showWelcomeWindow() {
@@ -215,21 +292,18 @@ public class AppDelegate: NSObject, NSApplicationDelegate,
     }
 
     private func initializeServices() {
-        logger.info("Initializing core services")
+        logger.info("Initializing services")
 
-        // Initialize services directly in AppDelegate
-        loginItemManager = LoginItemManager.shared
+        // Login Item Manager - needs to be initialized early for settings
+        loginItemManager = LoginItemManager() // Assuming public init
+        logger.info("LoginItemManager initialized")
+        
+        // AXApplicationObserver - for general app monitoring if needed beyond Cursor
+        axApplicationObserver = AXApplicationObserver(axorcist: CursorMonitor.shared.axorcist)
+        logger.info("AXApplicationObserver initialized for Cursor.")
 
-        // Verify required services are initialized
-        guard loginItemManager != nil else {
-            logger.error("Failed to initialize one or more core services")
-            return
-        }
-
-        // Create the settings coordinator
-        setupSettingsCoordinator()
-
-        logger.info("Core services initialized successfully")
+        // CursorMonitor is now a shared instance
+        logger.info("Core services initialized.")
     }
 
     private func syncLoginItemStatus() {
@@ -243,18 +317,58 @@ public class AppDelegate: NSObject, NSApplicationDelegate,
 
     private func setupMenuBar() {
         logger.info("Setting up menu bar")
-        menuManager = MenuManager(delegate: self)
 
-        // Check if menu bar icon should be shown based on user preference
-        if !Defaults[.showInMenuBar] {
-            logger.info("Menu bar icon is set to hidden in preferences")
-            // If the status item exists but shouldn't be shown, remove it
-            if let statusItem = menuManager?.statusItem {
-                NSStatusBar.system.removeStatusItem(statusItem)
-                menuManager?.statusItem = nil
-            }
+        // Initialize MenuManager if it's not already (e.g., if restored)
+        if menuManager == nil {
+            menuManager = MenuManager(delegate: self)
         }
-        // Otherwise, MenuManager already calls setupMenuBar() in its initializer
+
+        // Ensure statusItem is created via MenuManager's init
+        // menuManager?.setupStatusItem() // This was correctly commented out, init handles it.
+
+        if let statusButton = menuManager?.statusItem?.button {
+            statusButton.action = #selector(togglePopover(_:))
+            statusButton.target = self // Ensure target is self for the action
+            logger.info("Status bar item action set to togglePopover")
+        } else {
+            logger.error("Status bar item button not found after setup. Cannot set action.")
+        }
+        
+        // Setup Popover
+        if popover == nil {
+            popover = NSPopover()
+            popover?.contentSize = NSSize(width: 380, height: 450) // As per MainPopoverView frame
+            popover?.behavior = .transient
+            popover?.animates = true
+            // Use a hosting controller for the SwiftUI view
+            popover?.contentViewController = NSHostingController(rootView: MainPopoverView())
+            logger.info("Popover initialized with MainPopoverView")
+        } else {
+            logger.info("Popover already exists")
+        }
+
+        menuManager?.refreshMenu() // Refresh menu items if needed after setup
+        logger.info("Menu bar setup complete")
+    }
+
+    @objc func togglePopover(_ sender: AnyObject?) {
+        guard let popover = self.popover else {
+            logger.error("Toggle Popover: Popover is nil")
+            return
+        }
+
+        if popover.isShown {
+            popover.performClose(sender)
+            logger.debug("Popover closed")
+        } else {
+            guard let button = menuManager?.statusItem?.button else {
+                logger.error("Toggle Popover: Status item button is nil, cannot show popover.")
+                return
+            }
+            popover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
+            logger.debug("Popover shown")
+            // Optional: popover.contentViewController?.view.window?.becomeKey()
+        }
     }
 
     private func setupNotificationObservers() {
@@ -292,8 +406,7 @@ public class AppDelegate: NSObject, NSApplicationDelegate,
             guard let self else { return }
 
             if let userInfo = notification.userInfo,
-               let isVisible = userInfo["visible"] as? Bool
-            {
+                let isVisible = userInfo["visible"] as? Bool {
                 // Use a Task to call the MainActor-isolated method
                 Task { @MainActor in
                     self.updateMenuBarVisibility(isVisible)
@@ -305,20 +418,100 @@ public class AppDelegate: NSObject, NSApplicationDelegate,
     private func handleFirstLaunchOrWelcomeScreen() {
         logger.info("Checking if we need to show welcome screen")
 
-        // Show welcome screen on first launch or if explicitly requested
-        if Defaults[.showWelcomeScreen] || Defaults[.isFirstLaunch] {
-            logger.info("Showing welcome screen")
-            Task { @MainActor in
-                // Reset the flags
-                Defaults[.showWelcomeScreen] = false
-                if Defaults[.isFirstLaunch] {
-                    Defaults[.isFirstLaunch] = false
-                }
-
-                // Show welcome window
-                self.showWelcomeWindow()
-            }
+        if !Defaults[.hasShownWelcomeGuide] {
+            logger.info("Showing welcome screen for the first time.")
+            showWelcomeGuide()
+        } else {
+            // If welcome guide already shown, just check permissions silently or on an issue
+            checkAndPromptForAccessibilityIfNeeded(isInteractive: false)
         }
+    }
+
+    @MainActor
+    private func showWelcomeGuide() {
+        if welcomeWindow == nil {
+            let welcomeView = WelcomeGuideView(isPresented: .constant(true)) // Binding needs to close the window
+            let hostingController = NSHostingController(rootView: welcomeView)
+            let window = NSWindow(contentViewController: hostingController)
+            window.title = "Welcome to CodeLooper"
+            window.styleMask = [.closable, .titled]
+            window.center()
+            self.welcomeWindow = window
+            
+            // Modify the binding to close the window
+            let newWelcomeView = WelcomeGuideView(isPresented: Binding(
+                get: { true }, // Window is presented if this func is called
+                set: { newValue, _ in 
+                    if !newValue {
+                        self.welcomeWindow?.close()
+                        self.welcomeWindow = nil // Release window
+                        Defaults[.hasShownWelcomeGuide] = true // Ensure flag is set
+                        // Proceed to permission check after welcome guide is closed
+                        self.checkAndPromptForAccessibilityIfNeeded(isInteractive: true)
+                    }
+                }
+            ))
+            self.welcomeWindow?.contentViewController = NSHostingController(rootView: newWelcomeView)
+        }
+        welcomeWindow?.makeKeyAndOrderFront(nil)
+        NSApp.activate(ignoringOtherApps: true)
+    }
+
+    @MainActor
+    func checkAndPromptForAccessibilityIfNeeded(isInteractive: Bool) {
+        let trustedCheckOptionPromptKey = kAXTrustedCheckOptionPrompt.takeUnretainedValue() as String
+        let options = [trustedCheckOptionPromptKey: isInteractive]
+        let isTrusted = AXIsProcessTrustedWithOptions(options as CFDictionary)
+
+        if !isTrusted {
+            logger.warning("Accessibility permissions not granted.")
+            if isInteractive {
+                // Guide user to settings
+                let alert = NSAlert()
+                alert.messageText = "Accessibility Access Needed"
+                alert.informativeText = "CodeLooper requires Accessibility permissions to supervise Cursor. Please enable CodeLooper in System Settings > Privacy & Security > Accessibility."
+                alert.addButton(withTitle: "Open System Settings")
+                alert.addButton(withTitle: "Later")
+                
+                let response = alert.runModal()
+                if response == .alertFirstButtonReturn {
+                    if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility") {
+                        NSWorkspace.shared.open(url)
+                    }
+                }
+            }
+        } else {
+            logger.info("Accessibility permissions are granted.")
+        }
+    }
+
+    // MARK: - MenuManagerDelegate Conformance
+
+    func showSettings() {
+        logger.info("MenuManagerDelegate: showSettings() called.")
+        self.showSettingsWindow(nil)
+    }
+
+    func toggleStartAtLogin() {
+        logger.info("MenuManagerDelegate: toggleStartAtLogin() called.")
+        // Toggle start at login using LoginItemManager
+        Defaults[.startAtLogin].toggle()
+        loginItemManager?.syncLoginItemWithPreference()
+        menuManager?.refreshMenu() // To update checkmark
+    }
+
+    func toggleDebugMenu() {
+        logger.info("MenuManagerDelegate: toggleDebugMenu() called.")
+        // Toggle debug menu visibility via Defaults
+        Defaults[.showDebugMenu].toggle()
+        menuManager?.refreshMenu() // To show/hide menu items
+    }
+
+    func showAbout() {
+        logger.info("MenuManagerDelegate: showAbout() called.")
+        // Show standard about panel
+        // For now, standard about panel
+        NSApp.orderFrontStandardAboutPanel(options: [:])
     }
 
     deinit {
@@ -338,5 +531,12 @@ public class AppDelegate: NSObject, NSApplicationDelegate,
         // Note: Each manager is responsible for cleaning up its own timers
 
         self.logger.info("AppDelegate deinit - resources cleaned up")
+    }
+
+    // MARK: - Update Handling (Sparkle)
+
+    @objc func checkForUpdates() {
+        logger.info("Check for updates triggered manually.")
+        updaterController?.checkForUpdates(nil)
     }
 }

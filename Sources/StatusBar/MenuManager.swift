@@ -109,7 +109,11 @@ final class MenuManager {
         menu.addItem(NSMenuItem.separator())
 
         // Start at Login
-        let startAtLoginItem = NSMenuItem(title: "Start at Login", action: #selector(toggleStartAtLoginClicked), keyEquivalent: "")
+        let startAtLoginItem = NSMenuItem(
+            title: "Start at Login",
+            action: #selector(toggleStartAtLoginClicked),
+            keyEquivalent: ""
+        )
         startAtLoginItem.target = self
         startAtLoginItem.state = Defaults[.startAtLogin] ? .on : .off
         menu.addItem(startAtLoginItem)
@@ -117,7 +121,11 @@ final class MenuManager {
         // Debug menu (if enabled)
         if Defaults[.showDebugMenu] {
             menu.addItem(NSMenuItem.separator())
-            let debugItem = NSMenuItem(title: "Toggle Debug Menu", action: #selector(toggleDebugMenuClicked), keyEquivalent: "")
+            let debugItem = NSMenuItem(
+                title: "Toggle Debug Menu",
+                action: #selector(toggleDebugMenuClicked),
+                keyEquivalent: ""
+            )
             debugItem.target = self
             menu.addItem(debugItem)
         }
@@ -125,12 +133,20 @@ final class MenuManager {
         menu.addItem(NSMenuItem.separator())
 
         // About
-        let aboutItem = NSMenuItem(title: "About \(Constants.appName)", action: #selector(aboutClicked), keyEquivalent: "")
+        let aboutItem = NSMenuItem(
+            title: "About \(Constants.appName)",
+            action: #selector(aboutClicked),
+            keyEquivalent: ""
+        )
         aboutItem.target = self
         menu.addItem(aboutItem)
 
         // Quit
-        let quitItem = NSMenuItem(title: "Quit \(Constants.appName)", action: #selector(quitClicked), keyEquivalent: "q")
+        let quitItem = NSMenuItem(
+            title: "Quit \(Constants.appName)",
+            action: #selector(quitClicked),
+            keyEquivalent: "q"
+        )
         quitItem.target = self
         menu.addItem(quitItem)
 
@@ -139,25 +155,30 @@ final class MenuManager {
 
     // MARK: - Menu Actions
 
-    @objc private func settingsClicked() {
+    @objc
+    private func settingsClicked() {
         delegate?.showSettings()
     }
 
-    @objc private func toggleStartAtLoginClicked() {
+    @objc
+    private func toggleStartAtLoginClicked() {
         delegate?.toggleStartAtLogin()
         refreshMenu() // Refresh to update checkmark
     }
 
-    @objc private func toggleDebugMenuClicked() {
+    @objc
+    private func toggleDebugMenuClicked() {
         delegate?.toggleDebugMenu()
         refreshMenu() // Refresh to show/hide debug items
     }
 
-    @objc private func aboutClicked() {
+    @objc
+    private func aboutClicked() {
         delegate?.showAbout()
     }
 
-    @objc private func quitClicked() {
+    @objc
+    private func quitClicked() {
         NSApplication.shared.terminate(nil)
     }
 

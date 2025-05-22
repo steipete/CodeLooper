@@ -13,7 +13,7 @@
 #
 # This script:
 # 1. Runs tuist generate to create the Xcode project
-# 2. Automatically patches the generated TuistPlists+FriendshipAI.swift file to:
+# 2. Automatically patches the generated TuistPlists+CodeLooper.swift file to:
 #    - Change [String: Any] to [String: Bool] for nsAppTransportSecurity
 #    - Change [[String: Any]] to [[String: String]] for cfBundleURLTypes
 #
@@ -33,7 +33,7 @@ tuist generate
 echo "Fixing Sendable compliance issues..."
 
 # Fixed path for the generated file
-TUIST_PLISTS_FILE="./Derived/Sources/TuistPlists+FriendshipAI.swift"
+TUIST_PLISTS_FILE="./Derived/Sources/TuistPlists+CodeLooper.swift"
 
 if [ -f "$TUIST_PLISTS_FILE" ]; then
     echo "Processing $TUIST_PLISTS_FILE..."
@@ -54,7 +54,7 @@ if [ -f "$TUIST_PLISTS_FILE" ]; then
         sed -i '' 's/cfBundleURLTypes: \[\[String: Any\]\]/cfBundleURLTypes: [[String: String]]/g' "$TUIST_PLISTS_FILE"
         
         # Convert array value to string for simpler typing
-        sed -i '' 's/\[\["CFBundleTypeRole": "Viewer", "CFBundleURLName": "com.friendshipai.auth", "CFBundleURLSchemes": \["friendship-ai"\]\]\]/[["CFBundleTypeRole": "Viewer", "CFBundleURLName": "com.friendshipai.auth", "CFBundleURLSchemes": "friendship-ai"]]/g' "$TUIST_PLISTS_FILE"
+        sed -i '' 's/\[\["CFBundleTypeRole": "Viewer", "CFBundleURLName": "com.friendshipai.auth", "CFBundleURLSchemes": \["friendship-ai"\]\]\]/[["CFBundleTypeRole": "Viewer", "CFBundleURLName": "ai.amantusmachina.codelooper", "CFBundleURLSchemes": "codelooper"]]/g' "$TUIST_PLISTS_FILE"
         
         echo "Fixed cfBundleURLTypes type with simpler [String: String] dictionary"
     fi
@@ -135,4 +135,4 @@ echo "Project configuration complete"
 
 echo "Project generation and Sendable fixes complete!"
 echo "You can now open the Xcode project:"
-echo "open FriendshipAI.xcworkspace"
+echo "open CodeLooper.xcworkspace"

@@ -1,0 +1,160 @@
+---
+description: Swift macOS development guidelines and best practices for CodeLooper
+globs: ["**/*.swift"]
+alwaysApply: true
+---
+
+# Swift macOS Development Guidelines for CodeLooper
+
+This document provides guidance for AI assistants when working with the CodeLooper Swift macOS application.
+
+## Project Overview
+
+CodeLooper is a Swift macOS menu bar application that provides automation and workflow enhancement capabilities. The project uses:
+
+- **Swift Package Manager (SPM)** for dependency management
+- **SwiftUI** for modern UI components
+- **AppKit** for traditional macOS functionality
+- **AXorcist** accessibility framework integration
+- **Swift 6.0** with strict concurrency checking
+
+## Architecture Overview
+
+- **Application Layer** (`Sources/Application/`): Core app lifecycle, delegates, and coordination
+- **Components** (`Sources/Components/`): SwiftUI views, alerts, and UI components
+- **Diagnostics** (`Sources/Diagnostics/`): Logging, error handling, and debugging
+- **Settings** (`Sources/Settings/`): User preferences and configuration
+- **StatusBar** (`Sources/StatusBar/`): Menu bar interface and icon management
+- **Utilities** (`Sources/Utilities/`): Helper functions, extensions, and shared utilities
+
+## Code Quality Standards
+
+### SwiftLint Configuration
+- Use the project's `.swiftlint.yml` configuration
+- **CRITICAL**: Preserve explicit `self.` references for Swift 6 concurrency compliance
+- The `redundant_self` rule is disabled to maintain capture semantics
+- Run `./run-swiftlint.sh` to check compliance
+
+### Swift 6 Concurrency
+- Use `@MainActor` for UI-related code
+- Add explicit `self.` in closures to satisfy capture semantics
+- Handle `Sendable` conformance properly
+- Use structured concurrency (`async`/`await`) over callbacks
+
+### Naming Conventions
+- Use descriptive variable names (avoid single letters like `i`, `x`, `y`)
+- Function names should be clear and self-documenting
+- Follow Swift API design guidelines
+
+## Common Development Commands
+
+```bash
+# Build the project
+swift build
+
+# Run SwiftLint
+./run-swiftlint.sh
+
+# Run SwiftFormat
+./run-swiftformat.sh
+
+# Generate Xcode project (via Tuist)
+./scripts/generate-xcproj.sh
+
+# Open in Xcode
+./scripts/open-xcode.sh
+
+# Run the application
+./scripts/run-app.sh
+```
+
+## Accessibility Integration
+
+The project integrates with **AXorcist** for macOS accessibility automation:
+
+- Located in `AXorcist/` submodule
+- Provides UI element querying and interaction
+- Requires accessibility permissions
+- Use `axorc` command-line tool for testing
+
+## File Organization Guidelines
+
+### New Swift Files
+- Place in appropriate source directory based on functionality
+- Use clear, descriptive file names
+- Include proper import statements
+- Follow existing code organization patterns
+
+### Extensions
+- Place utility extensions in `Sources/Utilities/Extensions/`
+- Keep extensions focused on single responsibilities
+- Use `// MARK:` comments for organization
+
+### SwiftUI Components
+- Place in `Sources/Components/SwiftUI/`
+- Use `@MainActor` for view models
+- Follow SwiftUI best practices for state management
+
+## Debugging and Logging
+
+### Diagnostic System
+- Use the project's `Logger` class for consistent logging
+- Different log levels: `debug`, `info`, `warning`, `error`
+- Category-based logging via `LogCategory`
+- File-based logging available via `FileLogger`
+
+### Debug Patterns
+```swift
+import Diagnostics
+
+// Use the logger
+private let logger = Logger(category: .application)
+
+// Log with context
+logger.info("Starting application setup")
+logger.error("Failed to initialize: \(error)")
+```
+
+## Security Considerations
+
+- Never commit API keys or secrets
+- Use macOS Keychain for sensitive data
+- Validate all user inputs
+- Follow principle of least privilege for permissions
+
+## Performance Guidelines
+
+- Use lazy initialization where appropriate
+- Avoid blocking the main thread
+- Use background queues for heavy operations
+- Profile memory usage in Instruments
+
+## Testing Strategy
+
+- Unit tests should go in `Tests/`
+- Use XCTest framework
+- Mock external dependencies
+- Test accessibility features with AXorcist tools
+
+## Agent Operational Guidelines
+
+### When Working on This Project
+1. **Always check SwiftLint** after making changes
+2. **Preserve `self.` references** in closures for Swift 6 compliance
+3. **Use TodoWrite tool** to track complex tasks
+4. **Read existing code** to understand patterns before implementing
+5. **Check for similar implementations** in the codebase first
+
+### Common Patterns to Follow
+- Use `@MainActor` for UI code
+- Implement proper error handling with `Result` types
+- Use structured concurrency over completion handlers
+- Follow the existing diagnostic logging patterns
+
+### Before Submitting Changes
+1. Run SwiftLint: `./run-swiftlint.sh`
+2. Run SwiftFormat: `./run-swiftformat.sh`
+3. Verify build: `swift build`
+4. Test functionality manually if UI changes
+
+This guide ensures consistent, high-quality Swift code that follows the project's established patterns and requirements.

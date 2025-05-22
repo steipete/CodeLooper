@@ -1,5 +1,5 @@
 #!/bin/bash
-# SwiftLint Script for FriendshipAI Mac App
+# SwiftLint Script for CodeLooper Mac App
 # This script is a wrapper that delegates to the implementation in scripts/swiftlint.sh
 
 set -e

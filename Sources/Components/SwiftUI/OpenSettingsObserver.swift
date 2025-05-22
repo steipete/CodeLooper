@@ -7,7 +7,8 @@ struct OpenSettingsObserver: ViewModifier {
     private let logger = Logger(subsystem: Constants.bundleIdentifier, category: "OpenSettingsObserver")
 
     // Access to open settings via environment
-    @Environment(\.openSettings) private var openSettings
+    @Environment(\.openSettings)
+    private var openSettings
 
     // Store notification observer token
     @State private var notificationToken: NSObjectProtocol?

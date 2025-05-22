@@ -1,0 +1,17 @@
+# SwiftFormat configuration for CodeLooper
+# Preserve explicit self references for Swift 6 concurrency compliance
+
+--swiftversion 6.0
+--disable redundantSelf
+--indentation 4
+--maxwidth 120
+--enable organizeDeclarations
+--enable sortImports
+--enable trailingCommas
+--enable unusedArguments
+--enable redundantType
+--enable spaceAroundOperators
+--enable spaceInsideBrackets
+--enable spaceInsideParens
+--enable spaceAroundBraces
+--enable linebreakAtEndOfFile

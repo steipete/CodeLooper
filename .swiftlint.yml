@@ -4,22 +4,21 @@ excluded:
   - .build
   - build
   - Dependencies
-  - '**/*.bak' # Exclude all .bak files using pattern instead of specific paths
-  - '**/*~' # Common temp file pattern
+  - AXorcist
+  - '**/*.bak'
+  - '**/*~'
   - '**/.DS_Store'
 
-# Same rules as in main .swiftlint.yml
 disabled_rules:
   - trailing_whitespace
   - unused_optional_binding
   - cyclomatic_complexity
 
-# Set this to make explicit self optional to avoid build errors
+# Configure explicit_self to allow it in closures for Swift 6 concurrency
 explicit_self:
-  severity: warning # Changed from error to warning to avoid build failures
-  mode: allexcept_leavers # Allow implicit self in escaping closures to avoid capture issues
+  severity: warning
+  mode: allexcept_leavers
 
-# Include all the opt-in rules from main configuration
 opt_in_rules:
   - array_init
   - attributes
@@ -34,6 +33,7 @@ opt_in_rules:
   - empty_count
   - empty_string
   - enum_case_associated_values_count
+  - explicit_self
   - fatal_error_message
   - file_name
   - first_where
@@ -64,7 +64,6 @@ opt_in_rules:
   - unneeded_parentheses_in_closure_argument
   - yoda_condition
 
-# Same rule configurations as in main .swiftlint.yml
 line_length:
   warning: 120
   error: 150

@@ -1,6 +1,6 @@
-# FriendshipAI Mac App Scripts
+# CodeLooper Mac App Scripts
 
-This directory contains scripts for building, linting, formatting, and managing the FriendshipAI Mac application.
+This directory contains scripts for building, linting, formatting, and managing the CodeLooper Mac application.
 
 ## Script Organization
 

@@ -1,5 +1,5 @@
 #!/bin/bash
-# open-xcode.sh - Opens the FriendshipAI Mac app in Xcode
+# open-xcode.sh - Opens the CodeLooper Mac app in Xcode
 #
 # This script resolves dependencies if needed and opens the Swift Package Manager
 # workspace in Xcode for development and debugging.
@@ -16,7 +16,7 @@ log() {
     echo "[$(date "+%Y-%m-%d %H:%M:%S")] $1"
 }
 
-log "Opening FriendshipAI Mac app in Xcode"
+log "Opening CodeLooper Mac app in Xcode"
 
 # Resolve dependencies if needed
 if [ ! -d ".swiftpm" ]; then

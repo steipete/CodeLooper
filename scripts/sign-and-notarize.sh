@@ -1,5 +1,5 @@
 #!/bin/bash
-# sign-and-notarize.sh - Comprehensive code signing and notarization script for FriendshipAI Mac app
+# sign-and-notarize.sh - Comprehensive code signing and notarization script for CodeLooper Mac app
 # 
 # This script handles the full process of:
 # 1. Code signing with hardened runtime
@@ -23,10 +23,10 @@ APP_DIR="$(cd "$SCRIPT_DIR/.." &> /dev/null && pwd)"
 cd "$APP_DIR" || { echo "Error: Failed to change directory to $APP_DIR"; exit 1; }
 
 # Initialize variables with defaults
-BUNDLE_DIR="binary/FriendshipAI.app"
+BUNDLE_DIR="binary/CodeLooper.app"
 APP_BUNDLE_PATH="$APP_DIR/$BUNDLE_DIR"
-ZIP_PATH="$APP_DIR/binary/FriendshipAI-notarize.zip"
-FINAL_ZIP_PATH="$APP_DIR/binary/FriendshipAI-notarized.zip"
+ZIP_PATH="$APP_DIR/binary/CodeLooper-notarize.zip"
+FINAL_ZIP_PATH="$APP_DIR/binary/CodeLooper-notarized.zip"
 MAX_RETRIES=3
 RETRY_DELAY=30
 AUTH_METHOD="password" # Can be "password" or "api-key"
@@ -75,7 +75,7 @@ success() {
 
 # Print usage information
 print_usage() {
-    echo "Sign and Notarize Script for FriendshipAI Mac App"
+    echo "Sign and Notarize Script for CodeLooper Mac App"
     echo ""
     echo "Usage: $0 [options]"
     echo ""
@@ -371,7 +371,7 @@ get_altool_auth_args() {
 
 # Function to perform code signing
 perform_signing() {
-    log "Starting code signing process for FriendshipAI Mac app..."
+    log "Starting code signing process for CodeLooper Mac app..."
     
     # Check if the app bundle exists
     if [ ! -d "$APP_BUNDLE_PATH" ]; then
@@ -390,8 +390,8 @@ perform_signing() {
     log "Creating entitlements file with hardened runtime enabled..."
     
     # Check if the app has a real entitlements file
-    ENTITLEMENTS_FILE="$APP_DIR/FriendshipAI/FriendshipAI.entitlements"
-    TMP_ENTITLEMENTS="/tmp/FriendshipAI_entitlements.plist"
+    ENTITLEMENTS_FILE="$APP_DIR/CodeLooper/CodeLooper.entitlements"
+    TMP_ENTITLEMENTS="/tmp/CodeLooper_entitlements.plist"
     
     if [ -f "$ENTITLEMENTS_FILE" ]; then
         log "Using entitlements from $ENTITLEMENTS_FILE and adding hardened runtime"
@@ -467,7 +467,7 @@ EOF
     
     # Sign the main executable
     log "Signing main executable..."
-    if ! retry_operation "codesign --force --options runtime --entitlements \"$TMP_ENTITLEMENTS\" --sign \"${APPLE_IDENTITY:--}\" \"$APP_BUNDLE_PATH/Contents/MacOS/FriendshipAI\"" "Sign main executable"; then
+    if ! retry_operation "codesign --force --options runtime --entitlements \"$TMP_ENTITLEMENTS\" --sign \"${APPLE_IDENTITY:--}\" \"$APP_BUNDLE_PATH/Contents/MacOS/CodeLooper\"" "Sign main executable"; then
         warning "Failed to sign main executable, but will continue with bundle signing..."
     fi
     
@@ -510,7 +510,7 @@ EOF
 
 # Function to perform app notarization
 perform_notarization() {
-    log "Starting notarization process for FriendshipAI Mac app..."
+    log "Starting notarization process for CodeLooper Mac app..."
     
     # Check if code signing before notarization is desired
     if [ "$DO_SIGNING" = false ] && [ "$FORCE_RESIGN" = true ]; then
@@ -690,7 +690,7 @@ perform_notarization() {
         # Legacy altool approach
         AUTH_ARGS=$(get_altool_auth_args)
         
-        SUBMIT_CMD="xcrun altool --notarize-app --primary-bundle-id \"com.friendshipai.mac\" --file \"$ZIP_PATH\" $AUTH_ARGS"
+        SUBMIT_CMD="xcrun altool --notarize-app --primary-bundle-id \"ai.amantusmachina.codelooper\" --file \"$ZIP_PATH\" $AUTH_ARGS"
         if [ "$VERBOSE" = "true" ]; then
             log "Running command: $SUBMIT_CMD"
         fi
@@ -789,7 +789,7 @@ perform_notarization() {
 }
 
 # Main execution starts here
-log "Starting sign and notarize script for FriendshipAI Mac app..."
+log "Starting sign and notarize script for CodeLooper Mac app..."
 
 # Read credentials from all possible sources
 read_credentials "$@"

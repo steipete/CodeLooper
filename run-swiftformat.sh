@@ -1,5 +1,5 @@
 #!/bin/bash
-# SwiftFormat Script for FriendshipAI Mac App
+# SwiftFormat Script for CodeLooper Mac App
 # This script is a wrapper that delegates to the implementation in scripts/swiftformat.sh
 
 set -e

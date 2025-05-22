@@ -22,7 +22,7 @@ public func forceTriggerWelcomeScreen() {
     Defaults[.isFirstLaunch] = true
 
     // Log the action
-    let logger = Logger(subsystem: "com.friendshipai.mac", category: "WelcomeScreen")
+    let logger = Logger(subsystem: "ai.amantusmachina.codelooper", category: "WelcomeScreen")
     logger.info("Setting flags and posting notification to show welcome window")
 
     // Post notification to show welcome window from main actor

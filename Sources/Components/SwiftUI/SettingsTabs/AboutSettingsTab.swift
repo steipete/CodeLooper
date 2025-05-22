@@ -32,7 +32,10 @@ struct AboutSettingsTab: View {
                 .padding(.top, 5)
 
                 // App Description
-                Text("CodeLooper is your coding companion for macOS, helping you be more productive with your development workflow.")
+                Text("""
+                CodeLooper is your coding companion for macOS, helping you be more productive \
+                with your development workflow.
+                """)
                     .multilineTextAlignment(.center)
                     .frame(maxWidth: 400)
                     .padding(.horizontal)
@@ -58,7 +61,8 @@ struct AboutSettingsTab: View {
                 .padding(.top, 2)
 
                 // Copyright
-                Text("© \(Calendar.current.component(.year, from: Date())) CodeLooper Contributors. All rights reserved.")
+                let year = Calendar.current.component(.year, from: Date())
+                Text("© \(year) CodeLooper Contributors. All rights reserved.")
                     .font(.footnote)
                     .foregroundColor(.secondary)
                     .padding(.top, 5)

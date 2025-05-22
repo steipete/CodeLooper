@@ -9,7 +9,7 @@ set -e
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 PROJECT_ROOT="$SCRIPT_DIR/.."
 SOURCE_LOGO="$PROJECT_ROOT/Resources/logo.png"
-OUTPUT_DIR="$PROJECT_ROOT/FriendshipAI/Assets.xcassets/AppIcon.appiconset"
+OUTPUT_DIR="$PROJECT_ROOT/CodeLooper/Assets.xcassets/AppIcon.appiconset"
 
 # Check if source logo exists
 if [ ! -f "$SOURCE_LOGO" ]; then

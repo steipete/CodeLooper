@@ -18,7 +18,7 @@
 
 ## Technology Stack
 
-The FriendshipAI macOS application utilizes modern Apple technologies:
+The CodeLooper macOS application utilizes modern Apple technologies:
 
 ### UI Frameworks
 

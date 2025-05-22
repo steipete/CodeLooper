@@ -1,13 +1,13 @@
-name: FriendshipAI
+name: CodeLooper
 options:
-  bundleIdPrefix: ai.friendship
+  bundleIdPrefix: ai.amantusmachina
   deploymentTarget:
     macOS: '14.0'
 packages:
-  FriendshipAI:
+  CodeLooper:
     path: .
 targets:
-  FriendshipAI:
+  CodeLooper:
     type: application
     platform: macOS
     sources:
@@ -23,9 +23,9 @@ targets:
     settings:
       base:
         # Basic settings
-        INFOPLIST_FILE: FriendshipAI/Info.plist
+        INFOPLIST_FILE: CodeLooper/Info.plist
         MACOSX_DEPLOYMENT_TARGET: '14.0'
-        PRODUCT_BUNDLE_IDENTIFIER: ai.friendship.mac
+        PRODUCT_BUNDLE_IDENTIFIER: ai.amantusmachina.codelooper
 
         # Swift concurrency settings
         SWIFT_STRICT_CONCURRENCY: complete
@@ -37,13 +37,13 @@ targets:
         ALWAYS_SEARCH_USER_PATHS: NO
         GCC_PRECOMPILE_PREFIX_HEADER: NO
     dependencies:
-      - package: FriendshipAI
+      - package: CodeLooper
     info:
-      path: FriendshipAI/Info.plist
+      path: CodeLooper/Info.plist
       properties:
-        CFBundleName: FriendshipAI
-        CFBundleDisplayName: FriendshipAI
-        CFBundleIdentifier: ai.friendship.mac
+        CFBundleName: CodeLooper
+        CFBundleDisplayName: CodeLooper
+        CFBundleIdentifier: ai.amantusmachina.codelooper
         CFBundleVersion: 1.0
         CFBundleShortVersionString: 1.0
         LSApplicationCategoryType: public.app-category.productivity

@@ -6,10 +6,10 @@ import OSLog
 import SwiftUI
 
 /**
- * Coordinator to manage the welcome window.
- * This component handles showing and hiding the welcome window,
- * which may be triggered from various parts of the app.
- */
+    Coordinator to manage the welcome window.
+    This component handles showing and hiding the welcome window,
+    which may be triggered from various parts of the app.
+*/
 @MainActor
 class WelcomeWindowCoordinator: NSObject {
     // MARK: - Properties
@@ -109,7 +109,7 @@ class WelcomeWindowCoordinator: NSObject {
 extension WelcomeWindowCoordinator: NSWindowDelegate {
     func windowWillClose(_ notification: Notification) {
         guard let window = notification.object as? NSWindow,
-              window === welcomeWindow else { return }
+            window === welcomeWindow else { return }
 
         welcomeWindow = nil
         logger.info("Welcome window closed")

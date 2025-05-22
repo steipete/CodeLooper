@@ -1,6 +1,6 @@
-# FriendshipAI macOS Documentation
+# CodeLooper macOS Documentation
 
-This directory contains comprehensive documentation for the FriendshipAI macOS application.
+This directory contains comprehensive documentation for the CodeLooper macOS application.
 
 ## Documentation Index
 
@@ -21,13 +21,13 @@ This directory contains comprehensive documentation for the FriendshipAI macOS a
 - [SwiftUI App Conversion](SWIFTUI-APP-CONVERSION.md) - SwiftUI lifecycle adoption
 - [Scripts Documentation](SCRIPTS/README.md) - Build, lint, and utility scripts
 
-## About FriendshipAI macOS App
+## About CodeLooper macOS App
 
-The FriendshipAI macOS app is a native menubar application that securely syncs your contacts with the FriendshipAI service. It runs in the background, providing easy access to sync status and settings through a menu bar icon.
+The CodeLooper macOS app is a native menubar application that securely syncs your contacts with the CodeLooper service. It runs in the background, providing easy access to sync status and settings through a menu bar icon.
 
 ### Key Features
 
-- **Contact Export & Sync**: Securely exports contacts from macOS Contacts app and syncs with FriendshipAI
+- **Contact Export & Sync**: Securely exports contacts from macOS Contacts app and syncs with CodeLooper
 - **Menu Bar Integration**: Lightweight, unobtrusive menu bar app for status and control
 - **Automatic Background Sync**: Configurable sync frequency with battery-aware operation
 - **Secure Authentication**: OAuth-based secure authentication with Keychain integration
@@ -74,4 +74,4 @@ The app uses Apple's swift-log framework for structured logging with multiple lo
 
 ## License
 
-Copyright © FriendshipAI, Inc. All rights reserved.
+Copyright © CodeLooper, Inc. All rights reserved.

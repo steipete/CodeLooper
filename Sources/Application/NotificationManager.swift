@@ -3,9 +3,9 @@ import OSLog
 import UserNotifications
 
 /**
- * Centralized manager for handling system notifications.
- * This class encapsulates all notification-related functionality.
- */
+    Centralized manager for handling system notifications.
+    This class encapsulates all notification-related functionality.
+*/
 @MainActor
 class NotificationManager {
     // MARK: - Singleton

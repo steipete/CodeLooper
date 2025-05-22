@@ -1,6 +1,6 @@
 # SwiftUI App Conversion Guide
 
-This document describes the approach used to modernize the FriendshipAI macOS app by adopting the SwiftUI App lifecycle while maintaining compatibility with the existing AppKit-based code.
+This document describes the approach used to modernize the CodeLooper macOS app by adopting the SwiftUI App lifecycle while maintaining compatibility with the existing AppKit-based code.
 
 ## Overview
 
@@ -64,7 +64,7 @@ The code detects which lifecycle is active using class inspection:
 ```swift
 var isSwiftUILifecycle: Bool {
     return NSApplication.shared.delegate is AppDelegate &&
-           NSClassFromString("_TtC16FriendshipAI7AppMain") != nil
+           NSClassFromString("_TtC16CodeLooper7AppMain") != nil
 }
 ```
 

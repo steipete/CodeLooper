@@ -1,6 +1,6 @@
-# Building the FriendshipAI macOS App
+# Building the CodeLooper macOS App
 
-This document provides comprehensive instructions for building the FriendshipAI macOS application.
+This document provides comprehensive instructions for building the CodeLooper macOS application.
 
 ## Table of Contents
 
@@ -63,8 +63,8 @@ If you need more control over the build process, you can build the macOS app dir
 #### Step 1: Clone the Repository
 
 ```bash
-git clone https://github.com/your-org/FriendshipAI.git
-cd FriendshipAI
+git clone https://github.com/your-org/CodeLooper.git
+cd CodeLooper
 ```
 
 #### Step 2: Set Up Environment Variables
@@ -153,7 +153,7 @@ The build process follows these steps:
 - Only performs full cleanup when `--clean` is explicitly requested
 - Uses complete concurrency checking for strict Swift concurrency safety
 - Includes multiple fallback strategies to recover from build failures
-- Creates the final application bundle in `binary/FriendshipAI.app`
+- Creates the final application bundle in `binary/CodeLooper.app`
 - Targets macOS 14.0 with the latest development tools
 
 ## Authentication Flow
@@ -162,13 +162,13 @@ The macOS app uses ASWebAuthenticationSession with a custom URL scheme for authe
 
 1. App opens web auth session to `/api/auth/desktop?client=macos`
 2. User authenticates via Supabase in a web browser
-3. After successful authentication, the web app redirects to `friendship-ai://auth?token=xxx`
+3. After successful authentication, the web app redirects to `codelooper://auth?token=xxx`
 4. The macOS app receives this callback and extracts the token
 5. Token is stored in the macOS Keychain for persistent authentication
 
 ## Versioning
 
-The FriendshipAI macOS app follows a `YY.MM.PATCH` versioning scheme:
+The CodeLooper macOS app follows a `YY.MM.PATCH` versioning scheme:
 
 - `YY`: Two-digit year (e.g., 24 for 2024)
 - `MM`: Month (1-12)

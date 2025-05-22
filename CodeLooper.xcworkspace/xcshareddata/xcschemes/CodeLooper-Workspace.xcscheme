@@ -15,9 +15,9 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "B756FC18DD40222C1EE737E0"
-               BuildableName = "FriendshipAI.app"
-               BlueprintName = "FriendshipAI"
-               ReferencedContainer = "container:FriendshipAI.xcodeproj">
+               BuildableName = "CodeLooper.app"
+               BlueprintName = "CodeLooper"
+               ReferencedContainer = "container:CodeLooper.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
       </BuildActionEntries>
@@ -45,9 +45,9 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "B756FC18DD40222C1EE737E0"
-            BuildableName = "FriendshipAI.app"
-            BlueprintName = "FriendshipAI"
-            ReferencedContainer = "container:FriendshipAI.xcodeproj">
+            BuildableName = "CodeLooper.app"
+            BlueprintName = "CodeLooper"
+            ReferencedContainer = "container:CodeLooper.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
    </LaunchAction>
@@ -62,9 +62,9 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "B756FC18DD40222C1EE737E0"
-            BuildableName = "FriendshipAI.app"
-            BlueprintName = "FriendshipAI"
-            ReferencedContainer = "container:FriendshipAI.xcodeproj">
+            BuildableName = "CodeLooper.app"
+            BlueprintName = "CodeLooper"
+            ReferencedContainer = "container:CodeLooper.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
    </ProfileAction>

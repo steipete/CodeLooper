@@ -2,7 +2,10 @@ import Foundation
 import OSLog
 
 // Create a public logger instance for general use
-public let logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "com.friendshipai.mac", category: "Default")
+public let logger = Logger(
+    subsystem: Bundle.main.bundleIdentifier ?? "ai.amantusmachina.codelooper",
+    category: "Default"
+)
 
 // Skip overrides, just use the Swift System.Logger directly
 // The warnings about "no 'async' operations occur within 'await' expression" are actually fine, we are just carefully

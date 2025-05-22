@@ -6,13 +6,13 @@ import OSLog
 import SwiftUI
 
 /**
- * SwiftUI entry point for the FriendshipAI application.
- * This is the modern recommended approach for macOS app structure.
- * Uses an adapter pattern to interface with existing AppKit-based code.
- */
+    SwiftUI entry point for the CodeLooper application.
+    This is the modern recommended approach for macOS app structure.
+    Uses an adapter pattern to interface with existing AppKit-based code.
+*/
 @main
 struct AppMain: App {
-    private let logger = Logger(subsystem: "com.friendshipai.mac", category: "AppMain")
+    private let logger = Logger(subsystem: "ai.amantusmachina.codelooper", category: "AppMain")
 
     // AppDelegate remains the core controller but is now managed by SwiftUI lifecycle
     @NSApplicationDelegateAdaptor(AppDelegate.self)
@@ -34,7 +34,7 @@ struct AppMain: App {
 
         // For a struct initializer, we need to avoid async calls that capture self
         // Ensure single instance logic is applied without capturing self
-        let appIdentifier = "com.friendshipai.mac.instance"
+        let appIdentifier = "ai.amantusmachina.codelooper.instance"
         let isDebug = ProcessInfo.processInfo.environment["XPC_SERVICE_NAME"]?.contains("Xcode") == true ||
             ProcessInfo.processInfo.environment["XCODE_RUNNING_FOR_PREVIEWS"] == "1"
         let appLogger = logger // Capture logger before passing to Task
@@ -63,7 +63,7 @@ struct AppMain: App {
     }
 
     var body: some Scene {
-        WindowGroup("FriendshipAI") {
+        WindowGroup("CodeLooper") {
             // Use a ContentView that routes to other views based on state
             EmptyView()
                 .frame(width: 0, height: 0)
@@ -140,8 +140,8 @@ private func checkForExistingInstance(appIdentifier: String) async -> Bool {
     ) { notification in
         // Check if this is from another process by looking at the process ID
         if let senderPID = notification.userInfo?["pid"] as? Int,
-           senderPID != ourProcessID
-        {
+            senderPID != ourProcessID {
+
             Task {
                 await instanceTracker.markInstanceExists()
                 logger.info("Received response from existing instance (PID: \(senderPID))")
@@ -183,10 +183,10 @@ private func setupInstanceListener(appIdentifier: String) {
         queue: .main
     ) { notification in
         if let senderInfo = notification.userInfo,
-           let action = senderInfo["action"] as? String,
-           let senderPID = senderInfo["pid"] as? Int,
-           senderPID != ourProcessID
-        {
+            let action = senderInfo["action"] as? String,
+            let senderPID = senderInfo["pid"] as? Int,
+            senderPID != ourProcessID {
+
             switch action {
             case "check":
                 // Respond to the notification to signal we are running

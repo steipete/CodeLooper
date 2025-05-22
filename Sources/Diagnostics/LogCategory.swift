@@ -28,6 +28,11 @@ public enum LogCategory: String, CaseIterable {
     // Default category for uncategorized logs
     case `default` = "Default"
 
+    // Added for MCPConfigManager
+    case mcpConfiguration
+    case appLifecycle
+    case unknown
+
     /// Get a formatted name suitable for display
     public var displayName: String {
         rawValue

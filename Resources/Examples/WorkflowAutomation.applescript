@@ -1,8 +1,8 @@
--- FriendshipAI Workflow Automation Example
+-- CodeLooper Workflow Automation Example
 -- This script demonstrates how to automate common workflows
 
--- Make sure FriendshipAI is running
-tell application "FriendshipAI"
+-- Make sure CodeLooper is running
+tell application "CodeLooper"
     activate
 end tell
 
@@ -10,7 +10,7 @@ end tell
 delay 1
 
 -- Start a complete workflow
-tell application "FriendshipAI"
+tell application "CodeLooper"
     -- First, position and size the window nicely
     move window to 50 and 50
     resize window to 1000 and 700
@@ -55,4 +55,4 @@ tell application "FriendshipAI"
 end tell
 
 -- Display a notification when completed
-display notification "Workflow automation completed" with title "FriendshipAI"
+display notification "Workflow automation completed" with title "CodeLooper"

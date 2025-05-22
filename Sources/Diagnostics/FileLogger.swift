@@ -64,7 +64,7 @@ actor FileLogger {
             return nil
         }
 
-        let logDir = appSupportDir.appendingPathComponent("FriendshipAI/Logs")
+        let logDir = appSupportDir.appendingPathComponent("CodeLooper/Logs")
 
         // Ensure the directory exists
         do {

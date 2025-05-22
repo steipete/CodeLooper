@@ -5,15 +5,15 @@ import OSLog
 import SwiftUI
 
 /**
- * Application-wide environment state model for SwiftUI.
- *
- * This class serves as a central state container that provides access to various
- * app-wide state and services through the SwiftUI environment. It implements the
- * ObservableObject protocol to provide reactive updates to SwiftUI views.
- *
- * This class directly manages theme state and dispatches notification events
- * to keep the system appearance in sync with the selected theme.
- */
+    Application-wide environment state model for SwiftUI.
+
+    This class serves as a central state container that provides access to various
+    app-wide state and services through the SwiftUI environment. It implements the
+    ObservableObject protocol to provide reactive updates to SwiftUI views.
+
+    This class directly manages theme state and dispatches notification events
+    to keep the system appearance in sync with the selected theme.
+*/
 @MainActor
 class AppEnvironment: ObservableObject {
     private let logger = Logger(subsystem: Constants.bundleIdentifier, category: "AppEnvironment")

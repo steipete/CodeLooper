@@ -75,7 +75,9 @@ struct GeneralSettingsTab: View {
                                 .font(.footnote)
                                 .foregroundColor(.secondary)
 
-                            Text("Version: \(Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0.0")")
+                            let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ??
+                                "1.0.0"
+                            Text("Version: \(version)")
                                 .font(.footnote)
                                 .foregroundColor(.secondary)
                         }

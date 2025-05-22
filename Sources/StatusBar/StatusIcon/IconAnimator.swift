@@ -8,7 +8,7 @@ class IconAnimator {
     // MARK: - Properties
 
     /// Logger for this class
-    private let logger = Logger(subsystem: "com.friendshipai.mac", category: "IconAnimator")
+    private let logger = Logger(subsystem: "ai.amantusmachina.codelooper", category: "IconAnimator")
 
     /// Weak reference to status item to avoid reference cycles
     private weak var statusItem: NSStatusItem?
@@ -177,13 +177,17 @@ class IconAnimator {
     ///   - count: Number of frames to generate
     ///   - dotColor: Custom color for the animation dots. If nil, will automatically use appropriate color for current appearance
     /// - Returns: Array of animation frames
-    static func createSyncingAnimationFrames(baseImage: NSImage, count: Int = 8, dotColor: NSColor? = nil) -> [NSImage] {
+    static func createSyncingAnimationFrames(
+        baseImage: NSImage,
+        count: Int = 8,
+        dotColor: NSColor? = nil
+    ) -> [NSImage] {
         var frames: [NSImage] = []
         let size = baseImage.size
 
         // Ensure we have a valid base image with the right size
         if baseImage.size.width < 1 || baseImage.size.height < 1 {
-            let logger = Logger(subsystem: "com.friendshipai.mac", category: "IconAnimator")
+            let logger = Logger(subsystem: "ai.amantusmachina.codelooper", category: "IconAnimator")
             logger.error("Invalid base image size: \(String(describing: baseImage.size))")
             return [baseImage] // Return just the base image to avoid crashes
         }

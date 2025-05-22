@@ -69,9 +69,9 @@ fi
 # Function to get binary path - checks multiple locations
 get_binary_path() {
     local binary_paths=(
-        "$MAC_DIR/binary/FriendshipAI.app/Contents/MacOS/FriendshipAI"
-        "$CI_ARTIFACTS_DIR/FriendshipAI.app/Contents/MacOS/FriendshipAI"
-        "$CI_ARTIFACTS_DIR/*/Contents/MacOS/FriendshipAI"
+        "$MAC_DIR/binary/CodeLooper.app/Contents/MacOS/CodeLooper"
+        "$CI_ARTIFACTS_DIR/CodeLooper.app/Contents/MacOS/CodeLooper"
+        "$CI_ARTIFACTS_DIR/*/Contents/MacOS/CodeLooper"
     )
     
     for path_pattern in "${binary_paths[@]}"; do
@@ -99,13 +99,13 @@ get_binary_path() {
 # Function to get app bundle path
 get_app_bundle_path() {
     local app_bundle_paths=(
-        "$MAC_DIR/binary/FriendshipAI.app"
-        "$REPO_ROOT/artifacts/FriendshipAI.app"
-        "$CI_ARTIFACTS_DIR/FriendshipAI.app"
-        "$CI_ARTIFACTS_DIR/*/FriendshipAI.app"
-        "$CI_ARTIFACTS_DIR/FriendshipAI-macOS-*"
-        "$(pwd)/mac/binary/FriendshipAI.app"
-        "$(pwd)/artifacts/FriendshipAI.app"
+        "$MAC_DIR/binary/CodeLooper.app"
+        "$REPO_ROOT/artifacts/CodeLooper.app"
+        "$CI_ARTIFACTS_DIR/CodeLooper.app"
+        "$CI_ARTIFACTS_DIR/*/CodeLooper.app"
+        "$CI_ARTIFACTS_DIR/CodeLooper-macOS-*"
+        "$(pwd)/mac/binary/CodeLooper.app"
+        "$(pwd)/artifacts/CodeLooper.app"
     )
     
     for path_pattern in "${app_bundle_paths[@]}"; do
@@ -231,7 +231,7 @@ main() {
             DOWNLOAD_LINK="${ARTIFACT_URL}"
         elif [[ -n "${GITHUB_ACTIONS:-}" ]]; then
             # Create a direct download link to the artifacts
-            REPO_NAME="${GITHUB_REPOSITORY:-friendship-ai/FriendshipAI}"
+            REPO_NAME="${GITHUB_REPOSITORY:-codelooper/CodeLooper}"
             RUN_ID="${GITHUB_RUN_ID:-latest}"
             DOWNLOAD_LINK="https://github.com/${REPO_NAME}/actions/runs/${RUN_ID}/artifacts"
             
@@ -262,7 +262,7 @@ main() {
             NOTARIZATION_SOURCE="environment"
             echo "Using environment sign_type=${sign_type}, marking as notarized"
         # Next check ZIP file name as a strong indicator
-        elif [[ -f "$MAC_DIR/binary/FriendshipAI-notarized.zip" ]]; then
+        elif [[ -f "$MAC_DIR/binary/CodeLooper-notarized.zip" ]]; then
             IS_NOTARIZED=true
             NOTARIZATION_SOURCE="notarized zip file"
             echo "Found notarized ZIP file, marking as notarized"
@@ -295,10 +295,10 @@ main() {
             fi
 
             # Check for notarization zip file
-            if [[ -f "$MAC_DIR/binary/FriendshipAI-notarized.zip" ]]; then
-                echo "Found notarized ZIP file: $MAC_DIR/binary/FriendshipAI-notarized.zip"
+            if [[ -f "$MAC_DIR/binary/CodeLooper-notarized.zip" ]]; then
+                echo "Found notarized ZIP file: $MAC_DIR/binary/CodeLooper-notarized.zip"
             else
-                echo "No notarized ZIP file found at: $MAC_DIR/binary/FriendshipAI-notarized.zip"
+                echo "No notarized ZIP file found at: $MAC_DIR/binary/CodeLooper-notarized.zip"
             fi
         fi
         
@@ -333,7 +333,7 @@ main() {
         
         # Get build ID and run information for troubleshooting
         BUILD_ID="${GITHUB_RUN_ID:-local}"
-        BUILD_URL="https://github.com/${GITHUB_REPOSITORY:-friendship-ai/FriendshipAI}/actions/runs/${GITHUB_RUN_ID:-}"
+        BUILD_URL="https://github.com/${GITHUB_REPOSITORY:-codelooper/CodeLooper}/actions/runs/${GITHUB_RUN_ID:-}"
         if [[ "$BUILD_ID" == "local" ]]; then
             BUILD_INFO="Local build (no CI information available)"
         else
@@ -355,7 +355,7 @@ main() {
         ZIP_PATH=""
         for dir in "${SEARCH_DIRS[@]}"; do
             if [[ -d "$dir" ]]; then
-                found_zip=$(find "$dir" -name "FriendshipAI-*.zip" 2>/dev/null | head -n 1)
+                found_zip=$(find "$dir" -name "CodeLooper-*.zip" 2>/dev/null | head -n 1)
                 if [[ -n "$found_zip" ]]; then
                     ZIP_PATH="$found_zip"
                     ZIP_NAME=$(basename "$ZIP_PATH")
@@ -414,7 +414,7 @@ EOF
         # Create error comment content
         TIMESTAMP=$(date "+%Y-%m-%d %H:%M:%S")
         BUILD_ID="${GITHUB_RUN_ID:-local}"
-        BUILD_URL="https://github.com/${GITHUB_REPOSITORY:-friendship-ai/FriendshipAI}/actions/runs/${GITHUB_RUN_ID:-}"
+        BUILD_URL="https://github.com/${GITHUB_REPOSITORY:-codelooper/CodeLooper}/actions/runs/${GITHUB_RUN_ID:-}"
 
         if [[ "$BUILD_ID" == "local" ]]; then
             BUILD_INFO="Local build (no CI information available)"
@@ -435,7 +435,7 @@ EOF
         elif [[ -n "${ARTIFACT_URL:-}" ]]; then
             DOWNLOAD_LINK="${ARTIFACT_URL}"
         elif [[ -n "${GITHUB_ACTIONS:-}" ]]; then
-            REPO_NAME="${GITHUB_REPOSITORY:-friendship-ai/FriendshipAI}"
+            REPO_NAME="${GITHUB_REPOSITORY:-codelooper/CodeLooper}"
             RUN_ID="${GITHUB_RUN_ID:-latest}"
             DOWNLOAD_LINK="https://github.com/${REPO_NAME}/actions/runs/${RUN_ID}/artifacts"
         else

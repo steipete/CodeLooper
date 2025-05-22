@@ -4,7 +4,7 @@
 
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 RESOURCES_DIR="${SCRIPT_DIR}/Resources"
-OUTPUT_DIR="${SCRIPT_DIR}/.build/debug/FriendshipAI-Mac_FriendshipAI-Mac.bundle/Contents/Resources"
+OUTPUT_DIR="${SCRIPT_DIR}/.build/debug/CodeLooper-Mac_CodeLooper-Mac.bundle/Contents/Resources"
 
 # Ensure Resources directory exists
 mkdir -p "${RESOURCES_DIR}"

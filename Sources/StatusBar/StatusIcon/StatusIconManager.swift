@@ -10,7 +10,7 @@ class StatusIconManager {
     // MARK: - Properties
 
     private weak var menuManager: MenuManager?
-    private var logger = Logger(subsystem: "com.friendshipai.mac", category: "StatusIconManager")
+    private var logger = Logger(subsystem: "ai.amantusmachina.codelooper", category: "StatusIconManager")
 
     // Track current state
     private var currentState: StatusIconState = .idle
@@ -128,7 +128,7 @@ class StatusIconManager {
     /// Sets the menu bar icon using a system symbol as a fallback option
     func useSystemSymbolIcon() {
         guard let statusItem = menuManager?.statusItem,
-              let button = statusItem.button
+            let button = statusItem.button
         else {
             logger.warning("Status item button is nil, can't update with system symbol")
             return

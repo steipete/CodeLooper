@@ -43,17 +43,17 @@ public enum StatusIconState: String, Sendable, Hashable, CaseIterable {
     public var tooltipText: String {
         switch self {
         case .idle:
-            "FriendshipAI"
+            "CodeLooper"
         case .syncing:
-            "FriendshipAI - Syncing Contacts..."
+            "CodeLooper - Syncing Contacts..."
         case .error:
-            "FriendshipAI - Sync Error"
+            "CodeLooper - Sync Error"
         case .success:
-            "FriendshipAI - Sync Successful"
+            "CodeLooper - Sync Successful"
         case .authenticated:
-            "FriendshipAI - Signed In"
+            "CodeLooper - Signed In"
         case .unauthenticated:
-            "FriendshipAI - Signed Out"
+            "CodeLooper - Signed Out"
         }
     }
 

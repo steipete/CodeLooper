@@ -1,6 +1,6 @@
 # Mac App Distribution Guide
 
-This document explains the process for building, signing, notarizing and distributing the FriendshipAI Mac app.
+This document explains the process for building, signing, notarizing and distributing the CodeLooper Mac app.
 
 ## Overview
 
@@ -72,15 +72,15 @@ If you encounter issues during the signing or notarization process:
 3. **Distribution issues**:
    - Verify that the notarization was stapled to the app
    - Test the app by downloading it from a web browser to ensure Gatekeeper recognizes it
-   - Use `xcrun stapler validate /path/to/FriendshipAI.app` to verify stapling
+   - Use `xcrun stapler validate /path/to/CodeLooper.app` to verify stapling
 
 ## Distributable Files
 
 The script creates the following files in the `mac/binary/` directory:
 
-- `FriendshipAI.app`: The signed and (optionally) notarized app bundle
-- `FriendshipAI-notarized.zip`: The notarized ZIP archive (if notarization was performed)
-- `FriendshipAI.zip`: A signed but not notarized ZIP archive (if notarization was skipped)
+- `CodeLooper.app`: The signed and (optionally) notarized app bundle
+- `CodeLooper-notarized.zip`: The notarized ZIP archive (if notarization was performed)
+- `CodeLooper.zip`: A signed but not notarized ZIP archive (if notarization was skipped)
 
 The DMG creation is handled separately by the `create-dmg.sh` script in CI.
 EOF < /dev/null

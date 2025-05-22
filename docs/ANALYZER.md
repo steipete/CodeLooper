@@ -2,7 +2,7 @@
 
 ## Code Quality Enforcement
 
-The FriendshipAI macOS app utilizes strict code analysis settings to maintain high code quality and prevent common issues. These settings are enforced through a combination of compiler warnings, SwiftLint rules, and code review processes.
+The CodeLooper macOS app utilizes strict code analysis settings to maintain high code quality and prevent common issues. These settings are enforced through a combination of compiler warnings, SwiftLint rules, and code review processes.
 
 ## Compiler Warning Configuration
 

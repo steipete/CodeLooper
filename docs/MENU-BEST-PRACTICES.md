@@ -1,6 +1,6 @@
 # macOS Menu Implementation Best Practices
 
-This document outlines best practices for implementing menus in macOS applications, with specific focus on the FriendshipAI macOS app.
+This document outlines best practices for implementing menus in macOS applications, with specific focus on the CodeLooper macOS app.
 
 ## Target-Action Implementation for NSMenuItem
 
@@ -63,7 +63,7 @@ This document outlines best practices for implementing menus in macOS applicatio
 
    - Actions that are specifically tied to the menu controller
    - Custom functionality not in standard responder chain
-   - **This is the case for most of our menu items in FriendshipAI**
+   - **This is the case for most of our menu items in CodeLooper**
 
 2. **Benefits:**
    - Direct routing of actions to specific handlers
@@ -146,9 +146,9 @@ This document outlines best practices for implementing menus in macOS applicatio
    startAtLoginItem.state = Defaults[.startAtLogin] ? .on : .off
    ```
 
-## Implementation in FriendshipAI
+## Implementation in CodeLooper
 
-To ensure all menu items in the FriendshipAI macOS app have proper targets:
+To ensure all menu items in the CodeLooper macOS app have proper targets:
 
 1. **Modify Menu Creation:**
 

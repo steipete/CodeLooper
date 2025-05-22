@@ -1,5 +1,5 @@
 #!/bin/bash
-# SwiftFormat Implementation Script for FriendshipAI Mac App
+# SwiftFormat Implementation Script for CodeLooper Mac App
 # Core implementation for running SwiftFormat that is called by wrapper scripts
 
 set -e
@@ -17,7 +17,7 @@ CONFIG="$APP_DIR/.swiftformat"    # Config file path
 
 # Print usage information
 print_usage() {
-    echo "SwiftFormat Implementation Script for FriendshipAI Mac App"
+    echo "SwiftFormat Implementation Script for CodeLooper Mac App"
     echo ""
     echo "Usage: $0 [options] [file_or_directory]"
     echo ""
@@ -172,7 +172,7 @@ run_swiftformat() {
 
 # Main execution
 main() {
-    log "Starting SwiftFormat for FriendshipAI Mac App"
+    log "Starting SwiftFormat for CodeLooper Mac App"
     
     # Detect if we're running in CI
     if [ -n "${CI:-}" ] || [ -n "${GITHUB_ACTIONS:-}" ]; then

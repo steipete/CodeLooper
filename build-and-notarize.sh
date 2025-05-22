@@ -1,5 +1,5 @@
 #!/bin/bash
-# build-and-notarize.sh - Combined script to build, sign, and notarize the FriendshipAI Mac app
+# build-and-notarize.sh - Combined script to build, sign, and notarize the CodeLooper Mac app
 # This script provides a single command to go from source code to notarized app
 
 set -euo pipefail
@@ -67,7 +67,7 @@ done
 # Show help if requested
 if [ "$SHOW_HELP" = true ]; then
     cat << EOF
-FriendshipAI Mac App Build and Notarization Script
+CodeLooper Mac App Build and Notarization Script
 
 Usage: $(basename "$0") [options]
 
@@ -97,7 +97,7 @@ fi
 # Track start time for reporting
 START_TIME=$(date +%s)
 
-log "Starting FriendshipAI Mac app build and notarization process..."
+log "Starting CodeLooper Mac app build and notarization process..."
 
 # Set identity if provided
 if [ -n "$SIGN_IDENTITY" ]; then
@@ -107,7 +107,7 @@ fi
 
 # Step 1: Build the app
 if [ "$SKIP_BUILD" = false ]; then
-    log "Building FriendshipAI Mac app..."
+    log "Building CodeLooper Mac app..."
     if [ "$VERBOSE" = true ]; then
         ./build.sh
     else
@@ -178,7 +178,7 @@ SECONDS=$((ELAPSED % 60))
 
 success "Build and notarization process completed in ${MINUTES}m ${SECONDS}s"
 log "Summary:"
-log "- App bundle: binary/FriendshipAI.app"
-log "- Distributable ZIP: binary/FriendshipAI-notarized.zip"
+log "- App bundle: binary/CodeLooper.app"
+log "- Distributable ZIP: binary/CodeLooper-notarized.zip"
 log ""
 log "The app is now ready for distribution!"

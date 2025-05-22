@@ -17,7 +17,7 @@ extension NSImage {
             // Add direct path to Resources directory
             Bundle.main.bundlePath + "/Resources/\(name).\(fileExtension)",
             // For development builds, try a more explicit path
-            Bundle.main.bundlePath + "/mac/Resources/\(name).\(fileExtension)",
+            Bundle.main.bundlePath + "/mac/Resources/\(name).\(fileExtension)"
         ]
 
         // Add the resourceURL path if available
@@ -43,7 +43,7 @@ extension NSImage {
                     image.isTemplate = true
 
                     // Explicitly add accessibility description
-                    image.accessibilityDescription = "FriendshipAI Menu Icon"
+                    image.accessibilityDescription = "CodeLooper Menu Icon"
                 }
                 return image
             }

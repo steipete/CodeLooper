@@ -1,5 +1,5 @@
 #!/bin/bash
-# create-dmg.sh - Creates a distributable DMG for the FriendshipAI Mac app
+# create-dmg.sh - Creates a distributable DMG for the CodeLooper Mac app
 # This script creates a professional DMG file with background image and correct placement
 
 set -eo pipefail
@@ -14,13 +14,13 @@ print_usage() {
     echo "  --app-path      Required. Path to the .app bundle to package."
     echo "  --output-dir    Required. Directory where the DMG will be created."
     echo "  --app-version   Required. Version string (e.g., 1.0.0-b123) for DMG naming."
-    echo "  --volume-name   Optional. Name for the mounted DMG volume (default: 'FriendshipAI Installer')."
+    echo "  --volume-name   Optional. Name for the mounted DMG volume (default: 'CodeLooper Installer')."
 }
 
 APP_BUNDLE_PATH=""
 OUTPUT_DIR=""
 APP_VERSION=""
-VOLUME_NAME="FriendshipAI Installer"
+VOLUME_NAME="CodeLooper Installer"
 
 # Parse arguments
 while [[ $# -gt 0 ]]; do

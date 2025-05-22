@@ -17,6 +17,7 @@ let project = Project(
         .remote(url: "https://github.com/siteline/SwiftUI-Introspect.git", requirement: .upToNextMajor(from: "0.9.0")),
         .remote(url: "https://github.com/apple/swift-log.git", requirement: .upToNextMajor(from: "1.5.0")),
         .remote(url: "https://github.com/sindresorhus/LaunchAtLogin", requirement: .upToNextMajor(from: "5.0.0")),
+        .local(path: "AXorcist")
     ],
     settings: .settings(
         base: [
@@ -61,7 +62,8 @@ let project = Project(
                 .package(product: "Defaults"),
                 .package(product: "LaunchAtLogin"),
                 .package(product: "SwiftUIIntrospect"),
-                .package(product: "Logging")
+                .package(product: "Logging"),
+                .package(product: "AXorcist")
             ],
             settings: .settings(
                 base: [

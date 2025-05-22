@@ -2,6 +2,6 @@
 <Workspace
    version = "1.0">
    <FileRef
-      location = "group:FriendshipAI.xcodeproj">
+      location = "group:CodeLooper.xcodeproj">
    </FileRef>
 </Workspace>

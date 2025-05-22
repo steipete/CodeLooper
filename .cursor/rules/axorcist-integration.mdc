@@ -1,0 +1,235 @@
+---
+description: AXorcist accessibility framework integration guidelines
+globs: ["**/AXorcist/**", "**/*AX*.swift"]
+alwaysApply: false
+---
+
+# AXorcist Integration Guidelines
+
+This document outlines best practices for working with the AXorcist accessibility framework integrated into CodeLooper.
+
+## AXorcist Overview
+
+**AXorcist** is a Swift accessibility framework that provides:
+- JSON-based interface to macOS Accessibility API
+- Command-line tool (`axorc`) for UI automation
+- Swift library for accessibility interactions
+- Support for UI element querying and actions
+
+## Project Integration
+
+### Location and Structure
+- **Submodule**: `AXorcist/` (git submodule)
+- **CLI Tool**: `AXorcist/.build/debug/axorc`
+- **Library**: Swift Package Manager dependency
+- **Tests**: `AXorcist/Tests/AXorcistTests/`
+
+### Key Components
+
+#### Core AXorcist Library (`AXorcist/Sources/AXorcist/`)
+- `AXorcist.swift`: Main class and command handlers
+- `Core/Models.swift`: Data models (`CommandEnvelope`, `Locator`, etc.)
+- `Core/Element.swift`: `AXElement` wrapper around `AXUIElement`
+- `Search/ElementSearch.swift`: UI element location logic
+- `Core/AccessibilityPermissions.swift`: Permission handling
+
+#### Command-Line Tool (`axorc`)
+- Entry point: `AXorcist/Sources/axorc/main.swift`
+- JSON input/output for automation scripts
+- Supports stdin, file, or direct argument input
+
+## Command Types and Usage
+
+### Basic Commands
+
+#### Ping Test
+```json
+{
+    "command_id": "test_ping",
+    "command": "ping"
+}
+```
+
+#### Get Focused Element
+```json
+{
+    "command_id": "get_focused",
+    "command": "getFocusedElement",
+    "application": "com.apple.TextEdit"
+}
+```
+
+#### Query Elements
+```json
+{
+    "command_id": "find_button",
+    "command": "query",
+    "application": "com.apple.TextEdit",
+    "locator": {
+        "criteria": {
+            "AXRole": "AXButton",
+            "AXTitle": "Save"
+        }
+    }
+}
+```
+
+#### Perform Actions
+```json
+{
+    "command_id": "click_button",
+    "command": "performAction",
+    "application": "com.apple.TextEdit",
+    "locator": {
+        "criteria": {
+            "AXRole": "AXButton", 
+            "AXTitle": "Save"
+        }
+    },
+    "action_name": "AXPress"
+}
+```
+
+### Advanced Features
+
+#### Batch Operations
+```json
+{
+    "command_id": "batch_test",
+    "command": "batch",
+    "sub_commands": [
+        {
+            "command_id": "step1",
+            "command": "query",
+            "application": "com.apple.TextEdit",
+            "locator": {"criteria": {"AXRole": "AXWindow"}}
+        },
+        {
+            "command_id": "step2", 
+            "command": "performAction",
+            "locator": {"criteria": {"AXRole": "AXButton"}},
+            "action_name": "AXPress"
+        }
+    ]
+}
+```
+
+## Development Guidelines
+
+### Building AXorcist
+```bash
+cd AXorcist/
+swift build
+# Binary available at: .build/debug/axorc
+```
+
+### Testing AXorcist
+```bash
+# Run tests
+cd AXorcist/
+./run_tests.sh
+
+# Manual testing
+./.build/debug/axorc --debug '{"command_id":"test","command":"ping"}'
+```
+
+### Integration with CodeLooper
+
+#### Swift Code Integration
+```swift
+import AXorcist
+
+// Use AXorcist library in Swift code
+let axorcist = AXorcist()
+// ... accessibility operations
+```
+
+#### Command-Line Usage
+```swift
+// Execute axorc from Swift code
+let process = Process()
+process.executableURL = URL(fileURLWithPath: "/path/to/axorc")
+process.arguments = ["--debug", jsonCommand]
+// ... process execution
+```
+
+## Common Patterns
+
+### Element Location Strategies
+
+#### Simple Criteria Matching
+```json
+"locator": {
+    "criteria": {
+        "AXRole": "AXButton",
+        "AXTitle": "OK"
+    }
+}
+```
+
+#### Path-Based Navigation
+```json
+"locator": {
+    "root_element_path_hint": ["window[1]"],
+    "criteria": {
+        "AXRole": "AXTextArea"
+    }
+}
+```
+
+#### Complex Matching
+```json
+"locator": {
+    "criteria": {
+        "AXRole": "AXButton"
+    },
+    "requireAction": "AXPress",
+    "computed_name_contains": "Save"
+}
+```
+
+## Debugging and Troubleshooting
+
+### Enable Debug Logging
+```json
+{
+    "debug_logging": true,
+    "output_format": "verbose"
+}
+```
+
+### Common Issues
+
+#### Permission Problems
+- Ensure Terminal/IDE has Accessibility permissions
+- Check `AccessibilityPermissions.checkAccessibilityPermissions()`
+
+#### Element Not Found
+- Use Accessibility Inspector to verify element structure
+- Try broader criteria first, then narrow down
+- Check if app UI has loaded completely
+
+#### Threading Issues
+- AXorcist uses `@MainActor` for accessibility calls
+- Ensure proper async/await usage in Swift integration
+
+### Useful Tools
+- **Accessibility Inspector**: Xcode > Open Developer Tool
+- **Console.app**: View system accessibility logs
+- **Activity Monitor**: Check for permission dialogs
+
+## Security Considerations
+
+- AXorcist requires Accessibility permissions
+- Only grant to trusted processes
+- Validate all JSON input when using programmatically
+- Be cautious with batch operations on sensitive apps
+
+## Performance Tips
+
+- Use specific locators to reduce search time
+- Batch multiple operations when possible
+- Cache element references when appropriate
+- Use `max_elements` to limit large queries
+
+This integration guide ensures effective and safe use of AXorcist within the CodeLooper project.

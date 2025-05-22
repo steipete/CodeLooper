@@ -1,6 +1,6 @@
 # External Dependencies
 
-This document provides details about the external dependencies used in the FriendshipAI macOS application.
+This document provides details about the external dependencies used in the CodeLooper macOS application.
 
 ## Table of Contents
 
@@ -14,7 +14,7 @@ This document provides details about the external dependencies used in the Frien
 
 ## Overview
 
-The FriendshipAI macOS app uses several carefully selected dependencies to enhance functionality, improve code quality, and provide better user experience. All dependencies are managed via Swift Package Manager (SPM) and defined in `Package.swift`.
+The CodeLooper macOS app uses several carefully selected dependencies to enhance functionality, improve code quality, and provide better user experience. All dependencies are managed via Swift Package Manager (SPM) and defined in `Package.swift`.
 
 ## SwiftLint
 
@@ -246,7 +246,7 @@ dependencies: [
     .package(url: "https://github.com/example/new-dependency.git", from: "1.0.0")
 ],
 targets: [
-    .target(name: "FriendshipAI", dependencies: ["NewDependency"])
+    .target(name: "CodeLooper", dependencies: ["NewDependency"])
 ]
 
 // 2. Create a wrapper class to abstract the dependency

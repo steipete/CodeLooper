@@ -6,7 +6,8 @@ import SwiftUI
 // MARK: - Welcome View Model
 
 @MainActor
-@Observable final class WelcomeViewModel: ObservableObject {
+@Observable
+final class WelcomeViewModel: ObservableObject {
     private let logger = Logger(subsystem: "ai.amantusmachina.codelooper", category: "WelcomeViewModel")
     var currentStep: WelcomeStep = .welcome
 

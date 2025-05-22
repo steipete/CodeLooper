@@ -23,7 +23,8 @@ extension AppDelegate {
     }
 
     /// Handle Apple events
-    @objc func handleAppleEvent(_ event: NSAppleEventDescriptor, withReplyEvent _: NSAppleEventDescriptor) {
+    @objc
+    func handleAppleEvent(_ event: NSAppleEventDescriptor, withReplyEvent _: NSAppleEventDescriptor) {
         logger.info("Received Apple event: \(event.eventClass) / \(event.eventID)")
 
         // Handle specific event types as needed
@@ -54,7 +55,8 @@ extension AppDelegate {
 @MainActor
 extension AppDelegate {
     /// Get the main application window for scripting
-    @objc func scriptableMainWindow() -> NSWindow? {
+    @objc
+    func scriptableMainWindow() -> NSWindow? {
         // Try to get the welcome window first
         if let welcomeWindow = welcomeWindowController?.window {
             return welcomeWindow

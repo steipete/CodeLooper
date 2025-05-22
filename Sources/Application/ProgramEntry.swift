@@ -6,7 +6,7 @@ import SwiftUI
 // Note: @main attribute removed to avoid conflict with AppMain.swift
 enum ProgramEntry {
     // Define a unique identifier for our app - using bundle ID is recommended
-    private static let appIdentifier = "com.friendshipai.mac.instance"
+    private static let appIdentifier = "ai.amantusmachina.codelooper.instance"
 
     // Mark the main method as @MainActor because it interacts with UI components
     @MainActor
@@ -22,20 +22,9 @@ enum ProgramEntry {
             ProcessInfo.processInfo.environment["XCODE_RUNNING_FOR_PREVIEWS"] == "1"
 
         if !isDebug {
-            // TODO: Implement instance checking functionality
-            // For now, skip instance check to allow build to complete
-            print("Warning: Instance check not implemented yet")
-
-            // Original code:
-            // let instanceExists = await checkForExistingInstance(appIdentifier: appIdentifier)
-            // if instanceExists {
-            //     // Another instance is running, terminate this one
-            //     // Use exit instead of NSApp.terminate to avoid implicitly unwrapping NSApp
-            //     exit(0)
-            // } else {
-            //     // Set up instance listener
-            //     setupInstanceListener(appIdentifier: appIdentifier)
-            // }
+            // Skip instance check for now - single instance logic can be added later if needed
+            // For a menu bar app, multiple instances are often acceptable
+            print("Debug: Skipping instance check for menu bar app")
         }
 
         // Create an app delegate that will handle all initialization

@@ -1,6 +1,6 @@
 # Notification System
 
-This document describes the notification naming convention and usage patterns in the FriendshipAI macOS app.
+This document describes the notification naming convention and usage patterns in the CodeLooper macOS app.
 
 ## Notification Naming Convention
 
@@ -13,7 +13,7 @@ bundleIdentifier.notificationName
 For example:
 
 ```swift
-com.friendshipai.mac.userLoggedIn
+ai.amantusmachina.codelooper.userLoggedIn
 ```
 
 ### Benefits of this Convention

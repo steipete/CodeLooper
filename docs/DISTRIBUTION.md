@@ -1,6 +1,6 @@
-# FriendshipAI Mac App Distribution Guide
+# CodeLooper Mac App Distribution Guide
 
-This document explains how to build, code sign, notarize, and distribute the FriendshipAI Mac application.
+This document explains how to build, code sign, notarize, and distribute the CodeLooper Mac application.
 
 ## Prerequisites
 
@@ -140,10 +140,10 @@ To verify app signing and notarization:
 
 ```bash
 # Verify signing
-codesign --verify --verbose=2 binary/FriendshipAI.app
+codesign --verify --verbose=2 binary/CodeLooper.app
 
 # Verify notarization stapling
-stapler validate binary/FriendshipAI.app
+stapler validate binary/CodeLooper.app
 ```
 
 ## Notes

@@ -1,6 +1,6 @@
-# FriendshipAI AppleScript Support
+# CodeLooper AppleScript Support
 
-FriendshipAI supports automation through AppleScript, allowing you to control window positioning, trigger actions, and automate workflows.
+CodeLooper supports automation through AppleScript, allowing you to control window positioning, trigger actions, and automate workflows.
 
 ## Available Commands
 
@@ -35,7 +35,7 @@ FriendshipAI supports automation through AppleScript, allowing you to control wi
 ## Example Usage
 
 ```applescript
-tell application "FriendshipAI"
+tell application "CodeLooper"
     -- Show the settings window
     show settings window for scripting
 
@@ -55,7 +55,7 @@ end tell
 
 ## Tips for Use
 
-1. Make sure FriendshipAI is running before executing scripts.
+1. Make sure CodeLooper is running before executing scripts.
 2. Include small delays (`delay 0.5`) between commands to allow the UI to update.
 3. Use a script editor with dictionary support to explore all available commands.
 4. Window positions are saved to user defaults and persist between application restarts.

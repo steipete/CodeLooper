@@ -1,12 +1,12 @@
-# FriendshipAI Mac App Scripts
+# CodeLooper Mac App Scripts
 
-This document provides an overview of scripts used for building, testing, and maintaining the FriendshipAI Mac application.
+This document provides an overview of scripts used for building, testing, and maintaining the CodeLooper Mac application.
 
 ## Build Scripts
 
 ### build.sh
 
-Main build script that handles building the FriendshipAI Mac application with Swift Package Manager.
+Main build script that handles building the CodeLooper Mac application with Swift Package Manager.
 
 **Usage:**
 
@@ -108,7 +108,7 @@ This script is located in the main mac directory and is called by the build scri
 
 ### open-xcode.sh
 
-Opens the FriendshipAI Mac app in Xcode.
+Opens the CodeLooper Mac app in Xcode.
 
 **Usage:**
 
@@ -118,7 +118,7 @@ Opens the FriendshipAI Mac app in Xcode.
 
 ### run-app.sh
 
-Builds and runs the FriendshipAI Mac app directly from the build directory.
+Builds and runs the CodeLooper Mac app directly from the build directory.
 
 **Usage:**
 

@@ -138,8 +138,8 @@ public final class LogManager {
         let formattedMessage
 
             // Show more context for debug logs
-            = if level == .debug
-        {
+            = if level == .debug {
+
             "\(prefix)\(message) [\(filename):\(line) \(function)]"
         } else {
             "\(prefix)\(message) [\(filename):\(line)]"

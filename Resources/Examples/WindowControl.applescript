@@ -1,8 +1,8 @@
--- Sample AppleScript for FriendshipAI Window Control
+-- Sample AppleScript for CodeLooper Window Control
 -- This script demonstrates various window manipulation commands
 
--- Make sure FriendshipAI is running
-tell application "FriendshipAI"
+-- Make sure CodeLooper is running
+tell application "CodeLooper"
     activate
 end tell
 
@@ -10,7 +10,7 @@ end tell
 delay 1
 
 -- Basic window control commands
-tell application "FriendshipAI"
+tell application "CodeLooper"
     -- Center the main window
     center window
     delay 1
@@ -37,4 +37,4 @@ tell application "FriendshipAI"
 end tell
 
 -- Show a notification when the script has completed
-display notification "Window control script completed" with title "FriendshipAI"
+display notification "Window control script completed" with title "CodeLooper"

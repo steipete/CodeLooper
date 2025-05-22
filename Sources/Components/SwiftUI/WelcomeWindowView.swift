@@ -4,9 +4,9 @@ import OSLog
 import SwiftUI
 
 /**
- * Welcome window adapter for the new SwiftUI lifecycle.
- * This wrapper helps manage the welcome window using pure SwiftUI APIs.
- */
+    Welcome window adapter for the new SwiftUI lifecycle.
+    This wrapper helps manage the welcome window using pure SwiftUI APIs.
+*/
 struct WelcomeWindowView: View {
     private let logger = Logger(subsystem: Constants.bundleIdentifier, category: "WelcomeWindowView")
 
@@ -90,7 +90,7 @@ struct WelcomeScene: Scene {
     @EnvironmentObject var appEnvironment: AppEnvironment
 
     var body: some Scene {
-        Window("Welcome to FriendshipAI", id: "welcome") {
+        Window("Welcome to CodeLooper", id: "welcome") {
             WelcomeWindowView(
                 loginItemManager: loginItemManager
             )

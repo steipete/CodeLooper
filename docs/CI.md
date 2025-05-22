@@ -1,6 +1,6 @@
-# Continuous Integration for FriendshipAI macOS App
+# Continuous Integration for CodeLooper macOS App
 
-This document covers the CI/CD systems and processes used for building, testing, and distributing the FriendshipAI macOS application.
+This document covers the CI/CD systems and processes used for building, testing, and distributing the CodeLooper macOS application.
 
 ## Table of Contents
 

@@ -4,9 +4,9 @@ import OSLog
 import SwiftUI
 
 /**
- * Main settings view for FriendshipAI using the native macOS Settings framework.
- * This view uses TabView to organize settings by category for a consistent macOS experience.
- */
+    Main settings view for CodeLooper using the native macOS Settings framework.
+    This view uses TabView to organize settings by category for a consistent macOS experience.
+*/
 struct SettingsView: View {
     private let logger = Logger(subsystem: Constants.bundleIdentifier, category: "SettingsView")
 

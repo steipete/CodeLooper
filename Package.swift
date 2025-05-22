@@ -19,6 +19,8 @@ let package = Package(
         .package(url: "https://github.com/sindresorhus/LaunchAtLogin", .upToNextMajor(from: "5.0.0")),
         // Accessibility utilities
         .package(path: "AXorcist"),
+        // Auto-updater
+        .package(url: "https://github.com/sparkle-project/Sparkle.git", .upToNextMajor(from: "2.0.0")),
         // Development-only dependencies
         .package(url: "https://github.com/cpisciotta/xcbeautify", from: "2.28.0")
     ],
@@ -30,7 +32,8 @@ let package = Package(
                 "LaunchAtLogin",
                 .product(name: "SwiftUIIntrospect", package: "SwiftUI-Introspect"),
                 .product(name: "Logging", package: "swift-log"),
-                .product(name: "AXorcist", package: "AXorcist")
+                .product(name: "AXorcist", package: "AXorcist"),
+                .product(name: "Sparkle", package: "Sparkle")
             ],
             path: "Sources",
             resources: [

@@ -1,6 +1,6 @@
 # Mac App Notarization Workflow
 
-This document explains the Mac app notarization workflow for FriendshipAI, including how we've consolidated the process to prevent double-zipping issues.
+This document explains the Mac app notarization workflow for CodeLooper, including how we've consolidated the process to prevent double-zipping issues.
 
 > **Important**: We now use a consolidated script `sign-and-notarize.sh` instead of separate scripts. See [DISTRIBUTION-UPDATED.md](./DISTRIBUTION-UPDATED.md) for detailed usage information.
 

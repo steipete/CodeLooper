@@ -34,7 +34,7 @@
 		38C7065FEF4C17AA5007667C /* AlertPresenter.swift in Sources */ = {isa = PBXBuildFile; fileRef = CF35206ECA01480240519598 /* AlertPresenter.swift */; };
 		38C9CF65D10BE7270DA3B708 /* KeychainManager+AuthToken.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC3DAE919D8BD829C55B753B /* KeychainManager+AuthToken.swift */; };
 		3E35487DC3836FE2C743D599 /* ContactsUploader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 465C02CA7F99474039EBF98A /* ContactsUploader.swift */; };
-		40ECAC36FD4D1841E61B4ADD /* TuistBundle+FriendshipAI.swift in Sources */ = {isa = PBXBuildFile; fileRef = 73343391D6FAC859B203E560 /* TuistBundle+FriendshipAI.swift */; };
+		40ECAC36FD4D1841E61B4ADD /* TuistBundle+CodeLooper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 73343391D6FAC859B203E560 /* TuistBundle+CodeLooper.swift */; };
 		42A890A045C65C6BE31A49F0 /* logo.png in Resources */ = {isa = PBXBuildFile; fileRef = 9CEB58B0CA91507AF8FE77CB /* logo.png */; };
 		42BB8E4070BB4B91765851FE /* InfoKey.swift in Sources */ = {isa = PBXBuildFile; fileRef = 085BF5ACFEF4A5FD098FED62 /* InfoKey.swift */; };
 		438E919CD1A7776D65172100 /* ContactsPermissionExplanationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2E74E4C368311B021E2C5944 /* ContactsPermissionExplanationView.swift */; };
@@ -79,7 +79,7 @@
 		A69225DCBEF9F9A6B528DA04 /* MenuManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD3746CA41C567904A1E528B /* MenuManager.swift */; };
 		A73095D4D2C3E37E43CC90A5 /* DefaultsManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1FC1AE87222D05403DDE00A6 /* DefaultsManager.swift */; };
 		A77AC59A23C24D2DD6E1976A /* LaunchAtLogin in Frameworks */ = {isa = PBXBuildFile; productRef = 221B1B5FBABFED7E2DD3BD31 /* LaunchAtLogin */; };
-		A7CD20E90892CD25A40E5E8C /* TuistAssets+FriendshipAI.swift in Sources */ = {isa = PBXBuildFile; fileRef = F3C3CB1DD11DCB67187E4526 /* TuistAssets+FriendshipAI.swift */; };
+		A7CD20E90892CD25A40E5E8C /* TuistAssets+CodeLooper.swift in Sources */ = {isa = PBXBuildFile; fileRef = F3C3CB1DD11DCB67187E4526 /* TuistAssets+CodeLooper.swift */; };
 		A825637435924D00D775B350 /* MainSettingsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67597E610913D28F366730DC /* MainSettingsViewModel.swift */; };
 		AC4270F6C4B89A01B832475D /* AppMain.swift in Sources */ = {isa = PBXBuildFile; fileRef = BDA06C355C89D925B5C65F3C /* AppMain.swift */; };
 		B19C71381A34E7C48EFCC86C /* PermissionsManager+Helpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = 01C1AA22C3E19DCDED3D6AF9 /* PermissionsManager+Helpers.swift */; };
@@ -95,7 +95,7 @@
 		C44933716D37E5304C23C075 /* PermissionsManager+Contacts.swift in Sources */ = {isa = PBXBuildFile; fileRef = E623E8FF784E98DF84D20AAD /* PermissionsManager+Contacts.swift */; };
 		C6A7A553A9301BCEE5A3C226 /* FileLogger.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC6775551DBB4055E6DBA828 /* FileLogger.swift */; };
 		C822C4E6159BC0611E6E7B33 /* ContactStatsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F77ADEC3DD5687675212564A /* ContactStatsView.swift */; };
-		C82EB778C2537EBD3B027C2E /* TuistPlists+FriendshipAI.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7AC0128602F8F6D18FF5ECC6 /* TuistPlists+FriendshipAI.swift */; };
+		C82EB778C2537EBD3B027C2E /* TuistPlists+CodeLooper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7AC0128602F8F6D18FF5ECC6 /* TuistPlists+CodeLooper.swift */; };
 		C83FE14E76AA74DE8253C8EA /* ContinuationGuard.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD8D407E7E6A01AEACF43E9F /* ContinuationGuard.swift */; };
 		CC6A14C3862056D8A03758D4 /* Defaults in Frameworks */ = {isa = PBXBuildFile; productRef = A5DC3E7A352621740EAAA965 /* Defaults */; };
 		CF282343B1FDB57B854D4838 /* AppDelegate+ErrorHandling.swift in Sources */ = {isa = PBXBuildFile; fileRef = A37F10E9D1369885011AE571 /* AppDelegate+ErrorHandling.swift */; };
@@ -190,12 +190,12 @@
 		6A95663B1541AA9DB67E5A70 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/Main.storyboard; sourceTree = "<group>"; };
 		700D313399B24C05C96F5199 /* AuthenticationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthenticationService.swift; sourceTree = "<group>"; };
 		72229BF17CBA3A2C0F829A58 /* WelcomeWindowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WelcomeWindowView.swift; sourceTree = "<group>"; };
-		73343391D6FAC859B203E560 /* TuistBundle+FriendshipAI.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "TuistBundle+FriendshipAI.swift"; sourceTree = "<group>"; };
+		73343391D6FAC859B203E560 /* TuistBundle+CodeLooper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "TuistBundle+CodeLooper.swift"; sourceTree = "<group>"; };
 		7420CC631A153CAC79F65F5A /* UploadManager+Scheduling.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "UploadManager+Scheduling.swift"; sourceTree = "<group>"; };
 		774998B2363FB7847E36AF60 /* PermissionsManager+Notifications.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "PermissionsManager+Notifications.swift"; sourceTree = "<group>"; };
 		78405AD55E52BE101B2995B5 /* ProgramEntry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProgramEntry.swift; sourceTree = "<group>"; };
 		7855E726FE665E93A69BF784 /* DebugUtilities.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DebugUtilities.swift; sourceTree = "<group>"; };
-		7AC0128602F8F6D18FF5ECC6 /* TuistPlists+FriendshipAI.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "TuistPlists+FriendshipAI.swift"; sourceTree = "<group>"; };
+		7AC0128602F8F6D18FF5ECC6 /* TuistPlists+CodeLooper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "TuistPlists+CodeLooper.swift"; sourceTree = "<group>"; };
 		832AC1AF3B533E6675282429 /* PermissionsManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PermissionsManager.swift; sourceTree = "<group>"; };
 		84ABFDDA496B4589F69CB420 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		8757178339AA2F038FCAFE11 /* AppDelegate+Authentication.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AppDelegate+Authentication.swift"; sourceTree = "<group>"; };
@@ -228,7 +228,7 @@
 		CC6775551DBB4055E6DBA828 /* FileLogger.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileLogger.swift; sourceTree = "<group>"; };
 		CF35206ECA01480240519598 /* AlertPresenter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AlertPresenter.swift; sourceTree = "<group>"; };
 		D0FEE77C9622A6EA7B894D5D /* symbol.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = symbol.png; sourceTree = "<group>"; };
-		D26C6AD0998CEB5CEA365202 /* FriendshipAI.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = FriendshipAI.entitlements; sourceTree = "<group>"; };
+		D26C6AD0998CEB5CEA365202 /* CodeLooper.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = CodeLooper.entitlements; sourceTree = "<group>"; };
 		D4C15DB8EC2AA50D14B3F8A5 /* StatsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatsView.swift; sourceTree = "<group>"; };
 		D5FFCB5C9769FB34E5D92674 /* AppFixer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppFixer.swift; sourceTree = "<group>"; };
 		D82BE5DA9C86A166EC7BA7BD /* SharedUserInfo.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SharedUserInfo.swift; sourceTree = "<group>"; };
@@ -244,8 +244,8 @@
 		E6D38F9C212CFFBA98EACAAE /* AlertPresenting.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AlertPresenting.swift; sourceTree = "<group>"; };
 		E87F7FA1D45724800DA6AFC6 /* ResourceLoader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ResourceLoader.swift; sourceTree = "<group>"; };
 		F175C00C0522D5EB2099FD7E /* AppEnvironment.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppEnvironment.swift; sourceTree = "<group>"; };
-		F3C3CB1DD11DCB67187E4526 /* TuistAssets+FriendshipAI.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "TuistAssets+FriendshipAI.swift"; sourceTree = "<group>"; };
-		F47D756EFC697B638F96392C /* FriendshipAI.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = FriendshipAI.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		F3C3CB1DD11DCB67187E4526 /* TuistAssets+CodeLooper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "TuistAssets+CodeLooper.swift"; sourceTree = "<group>"; };
+		F47D756EFC697B638F96392C /* CodeLooper.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = CodeLooper.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		F5764890DE9473025547849C /* Operations.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Operations.swift; sourceTree = "<group>"; };
 		F77ADEC3DD5687675212564A /* ContactStatsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContactStatsView.swift; sourceTree = "<group>"; };
 		FC1E312E107ADF3F0A51E498 /* SymbolGenerator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SymbolGenerator.swift; sourceTree = "<group>"; };
@@ -345,15 +345,15 @@
 			path = Sources;
 			sourceTree = "<group>";
 		};
-		37CB1DA282E75EDF3A951593 /* FriendshipAI */ = {
+		37CB1DA282E75EDF3A951593 /* CodeLooper */ = {
 			isa = PBXGroup;
 			children = (
 				382C43B6BF5D946ECDACD127 /* Main.storyboard */,
 				84ABFDDA496B4589F69CB420 /* Assets.xcassets */,
-				D26C6AD0998CEB5CEA365202 /* FriendshipAI.entitlements */,
+				D26C6AD0998CEB5CEA365202 /* CodeLooper.entitlements */,
 				5306BA6D4146B58182F22A27 /* Info.plist */,
 			);
-			path = FriendshipAI;
+			path = CodeLooper;
 			sourceTree = "<group>";
 		};
 		38277A10BE86B2BBD13C82F7 /* Components */ = {
@@ -369,7 +369,7 @@
 		4B4E364C16BFF196A4E76239 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				F47D756EFC697B638F96392C /* FriendshipAI.app */,
+				F47D756EFC697B638F96392C /* CodeLooper.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -395,9 +395,9 @@
 		64A420D0E134C438A690AB79 /* Sources */ = {
 			isa = PBXGroup;
 			children = (
-				F3C3CB1DD11DCB67187E4526 /* TuistAssets+FriendshipAI.swift */,
-				73343391D6FAC859B203E560 /* TuistBundle+FriendshipAI.swift */,
-				7AC0128602F8F6D18FF5ECC6 /* TuistPlists+FriendshipAI.swift */,
+				F3C3CB1DD11DCB67187E4526 /* TuistAssets+CodeLooper.swift */,
+				73343391D6FAC859B203E560 /* TuistBundle+CodeLooper.swift */,
+				7AC0128602F8F6D18FF5ECC6 /* TuistPlists+CodeLooper.swift */,
 			);
 			path = Sources;
 			sourceTree = "<group>";
@@ -577,7 +577,7 @@
 			isa = PBXGroup;
 			children = (
 				23A8E9B21F11287696266015 /* Derived */,
-				37CB1DA282E75EDF3A951593 /* FriendshipAI */,
+				37CB1DA282E75EDF3A951593 /* CodeLooper */,
 				C52758CC5194EED2AA258FB4 /* Resources */,
 				31C8747F31BF577B54EBDFC6 /* Sources */,
 			);
@@ -634,9 +634,9 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		B756FC18DD40222C1EE737E0 /* FriendshipAI */ = {
+		B756FC18DD40222C1EE737E0 /* CodeLooper */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = AE052E2622BD59A73CCF7B04 /* Build configuration list for PBXNativeTarget "FriendshipAI" */;
+			buildConfigurationList = AE052E2622BD59A73CCF7B04 /* Build configuration list for PBXNativeTarget "CodeLooper" */;
 			buildPhases = (
 				8647D9C1A21AFA5C9253C6E9 /* Sources */,
 				9E37F0269E4032A6CE5EC2E0 /* Resources */,
@@ -647,7 +647,7 @@
 			);
 			dependencies = (
 			);
-			name = FriendshipAI;
+			name = CodeLooper;
 			packageProductDependencies = (
 				42BC03AA8D817D10C241A2D5 /* KeyboardShortcuts */,
 				A5DC3E7A352621740EAAA965 /* Defaults */,
@@ -657,8 +657,8 @@
 				0B6EA8AD0129F1F14E8E5335 /* ArgumentParser */,
 				211EE6CC84D472DA746818DC /* KeychainAccess */,
 			);
-			productName = FriendshipAI;
-			productReference = F47D756EFC697B638F96392C /* FriendshipAI.app */;
+			productName = CodeLooper;
+			productReference = F47D756EFC697B638F96392C /* CodeLooper.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
@@ -672,7 +672,7 @@
 				TargetAttributes = {
 				};
 			};
-			buildConfigurationList = 671F76BE5FC21E17798A6AF4 /* Build configuration list for PBXProject "FriendshipAI" */;
+			buildConfigurationList = 671F76BE5FC21E17798A6AF4 /* Build configuration list for PBXProject "CodeLooper" */;
 			compatibilityVersion = "Xcode 14.0";
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
@@ -694,7 +694,7 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				B756FC18DD40222C1EE737E0 /* FriendshipAI */,
+				B756FC18DD40222C1EE737E0 /* CodeLooper */,
 			);
 		};
 /* End PBXProject section */
@@ -723,9 +723,9 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				A7CD20E90892CD25A40E5E8C /* TuistAssets+FriendshipAI.swift in Sources */,
-				40ECAC36FD4D1841E61B4ADD /* TuistBundle+FriendshipAI.swift in Sources */,
-				C82EB778C2537EBD3B027C2E /* TuistPlists+FriendshipAI.swift in Sources */,
+				A7CD20E90892CD25A40E5E8C /* TuistAssets+CodeLooper.swift in Sources */,
+				40ECAC36FD4D1841E61B4ADD /* TuistBundle+CodeLooper.swift in Sources */,
+				C82EB778C2537EBD3B027C2E /* TuistPlists+CodeLooper.swift in Sources */,
 				CF282343B1FDB57B854D4838 /* AppDelegate+ErrorHandling.swift in Sources */,
 				9B8AD5F68B9436C839083EA2 /* AppDelegate+MenuManagerDelegate.swift in Sources */,
 				510F7767B8DC0ACE481680F4 /* AppDelegate+Settings.swift in Sources */,
@@ -847,12 +847,12 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-				CODE_SIGN_ENTITLEMENTS = FriendshipAI/FriendshipAI.entitlements;
+				CODE_SIGN_ENTITLEMENTS = CodeLooper/CodeLooper.entitlements;
 				CODE_SIGN_IDENTITY = "-";
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
 				ENABLE_PREVIEWS = YES;
-				INFOPLIST_FILE = FriendshipAI/Info.plist;
+				INFOPLIST_FILE = CodeLooper/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",
@@ -860,7 +860,7 @@
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = ai.friendship.mac;
-				PRODUCT_NAME = FriendshipAI;
+				PRODUCT_NAME = CodeLooper;
 				SDKROOT = macosx;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = (
 					"$(inherited)",
@@ -1009,12 +1009,12 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-				CODE_SIGN_ENTITLEMENTS = FriendshipAI/FriendshipAI.entitlements;
+				CODE_SIGN_ENTITLEMENTS = CodeLooper/CodeLooper.entitlements;
 				CODE_SIGN_IDENTITY = "-";
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
 				ENABLE_PREVIEWS = YES;
-				INFOPLIST_FILE = FriendshipAI/Info.plist;
+				INFOPLIST_FILE = CodeLooper/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",
@@ -1022,7 +1022,7 @@
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = ai.friendship.mac;
-				PRODUCT_NAME = FriendshipAI;
+				PRODUCT_NAME = CodeLooper;
 				SDKROOT = macosx;
 				SWIFT_COMPILATION_MODE = wholemodule;
 				SWIFT_OPTIMIZATION_LEVEL = "-Owholemodule";
@@ -1032,7 +1032,7 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		671F76BE5FC21E17798A6AF4 /* Build configuration list for PBXProject "FriendshipAI" */ = {
+		671F76BE5FC21E17798A6AF4 /* Build configuration list for PBXProject "CodeLooper" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				31C696C6A33A2A8939D08AEA /* Debug */,
@@ -1041,7 +1041,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		AE052E2622BD59A73CCF7B04 /* Build configuration list for PBXNativeTarget "FriendshipAI" */ = {
+		AE052E2622BD59A73CCF7B04 /* Build configuration list for PBXNativeTarget "CodeLooper" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				1E6D1A0AD1E0436D38192805 /* Debug */,

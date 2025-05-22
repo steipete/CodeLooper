@@ -10,18 +10,18 @@ public final class ResourceLoader: Sendable {
     }
 
     // Get a value from the NSAppTransportSecurity dictionary with specific type
-    public static func getAppTransportSecurityBoolValue(for key: String) -> Bool? {
+    public static func getAppTransportSecurityBoolValue(for key: String) -> Bool {
         guard let atsDict = Bundle.main.infoDictionary?[InfoKey.NSAppTransportSecurity.key] as? [String: Bool] else {
-            return nil
+            return false
         }
-        return atsDict[key]
+        return atsDict[key] ?? false
     }
 
     // Get URL scheme from Info.plist
     public static func getURLScheme() -> String? {
         guard let urlTypes = Bundle.main.infoDictionary?[InfoKey.Bundle.urlTypes] as? [[String: String]],
-              let firstUrlType = urlTypes.first,
-              let scheme = firstUrlType[InfoKey.CFBundleURL.schemes]
+            let firstUrlType = urlTypes.first,
+            let scheme = firstUrlType[InfoKey.CFBundleURL.schemes]
         else {
             return nil
         }
@@ -54,7 +54,7 @@ public final class ResourceLoader: Sendable {
     /// Check if arbitrary network loads are allowed in the app
     /// - Returns: Boolean indicating if NSAllowsArbitraryLoads is enabled
     public static func allowsArbitraryNetworkLoads() -> Bool {
-        getAppTransportSecurityBoolValue(for: InfoKey.NSAppTransportSecurity.allowsArbitraryLoads) ?? false
+        getAppTransportSecurityBoolValue(for: InfoKey.NSAppTransportSecurity.allowsArbitraryLoads)
     }
 }
 
@@ -74,7 +74,7 @@ public extension ResourceLoader {
             // Add direct path to Resources directory
             Bundle.main.bundlePath + "/Resources/\(name).\(fileExtension)",
             // For development builds, try a more explicit path
-            Bundle.main.bundlePath + "/mac/Resources/\(name).\(fileExtension)",
+            Bundle.main.bundlePath + "/mac/Resources/\(name).\(fileExtension)"
         ]
 
         // Add the resourceURL path if available
@@ -101,7 +101,7 @@ public extension ResourceLoader {
                     image.isTemplate = true
 
                     // Explicitly add accessibility description
-                    image.accessibilityDescription = "FriendshipAI Menu Icon"
+                    image.accessibilityDescription = "CodeLooper Menu Icon"
 
                     print("Successfully loaded menu bar icon: \(name) from path: \(path)")
                 }
@@ -127,6 +127,6 @@ public extension Constants {
             NSImage.loadResourceImage(named: "symbol") ??
             NSImage.loadResourceImage(named: "logo")
 
-        return logoImage ?? NSImage(systemSymbolName: "circle.dashed", accessibilityDescription: "FriendshipAI")
+        return logoImage ?? NSImage(systemSymbolName: "circle.dashed", accessibilityDescription: "CodeLooper")
     }
 }
