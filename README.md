@@ -1,7 +1,7 @@
 # CodeLooper
 
 <p align="center">
-  <img src="Resources/logo.png" alt="CodeLooper Logo" width="128" height="128">
+  <img src="assets/banner.png" alt="CodeLooper Banner">
 </p>
 
 A native macOS menubar application for managing and upgrading Cursor IDE installations and related development tools.
