@@ -52,13 +52,13 @@ public actor UserNotificationManager {
     ///   - title: The notification title
     ///   - body: The notification body text
     ///   - subtitle: Optional subtitle for the notification
-    ///   - sound: Optional sound to play (defaults to .default if nil)
+    ///   - soundName: Optional name of the sound file to play (e.g., "Blow.aiff"). "default" for default sound, nil for no sound.
     public func sendNotification(
         identifier: String = UUID().uuidString,
         title: String,
         body: String,
         subtitle: String? = nil,
-        sound: UNNotificationSound? = .default
+        soundName: String? = "default"
     ) async {
         let authorizationStatus = await UNUserNotificationCenter.getSafeAuthorizationStatus()
         
@@ -75,8 +75,19 @@ public actor UserNotificationManager {
             content.subtitle = subtitle
         }
         
-        if let sound = sound {
-            content.sound = sound
+        // Construct UNNotificationSound from soundName
+        if let name = soundName {
+            if name.lowercased() == "default" {
+                content.sound = UNNotificationSound.default
+            } else if !name.isEmpty {
+                content.sound = UNNotificationSound(named: UNNotificationSoundName(rawValue: name))
+            } else {
+                // Explicitly empty name might mean no sound, or treat as an error/default.
+                // For now, treating empty string as no sound (same as nil soundName if not for "default" special case)
+                content.sound = nil
+            }
+        } else {
+            content.sound = nil // No sound if soundName is nil
         }
         
         let request = UNNotificationRequest(identifier: identifier, content: content, trigger: nil)

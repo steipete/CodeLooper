@@ -1,29 +1,28 @@
-import AXorcist // Use the actual AXorcist module
+import AXorcistLib // Use the library product
 import Defaults // For UserDefaults access
 import Foundation
 
-// AXorcist.Locator should be directly usable as `Locator` after import.
+// AXorcistLib.Locator should be directly usable as `Locator` after import.
 
 @MainActor // Changed from actor to @MainActor class
 public class LocatorManager {
     public static let shared = LocatorManager()
 
     // Default locators - these will need to be populated with actual Locator instances
-    // based on AXorcist.Locator's definition and the specific elements to target.
-    // For now, an empty dictionary to avoid compilation errors with unknown initializers.
-    private let defaultLocators: [String: Locator] = [
-        "generatingIndicatorText": Locator(), // Text: "Generating", "Thinking", "Processing"
-        "sidebarActivityArea": Locator(),     // Primary sidebar element
-        "errorMessagePopup": Locator(),       // General error/stuck message pop-up (e.g. for kAXValueAttribute checks)
-        "stopGeneratingButton": Locator(),    // Button to stop generation if stuck
-        "connectionErrorIndicator": Locator(),// Text indicating connection issue
-        "resumeConnectionButton": Locator(),  // Button: "Resume" for connection issues
-        "forceStopResumeLink": Locator(),     // Element: "resume the conversation" for force-stop
-        "mainInputField": Locator()           // Main chat input field
+    // based on AXorcistLib.Locator's definition and the specific elements to target.
+    private let defaultLocators: [String: AXorcistLib.Locator] = [
+        "generatingIndicatorText": AXorcistLib.Locator(),
+        "sidebarActivityArea": AXorcistLib.Locator(),
+        "errorMessagePopup": AXorcistLib.Locator(),
+        "stopGeneratingButton": AXorcistLib.Locator(),
+        "connectionErrorIndicator": AXorcistLib.Locator(),
+        "resumeConnectionButton": AXorcistLib.Locator(),
+        "forceStopResumeLink": AXorcistLib.Locator(),
+        "mainInputField": AXorcistLib.Locator()
     ]
 
     // Session cache for successfully used/discovered locators
-    private var sessionCache: [String: Locator] = [:]
+    private var sessionCache: [String: AXorcistLib.Locator] = [:]
 
     // UserDefaults keys are now statically defined in DefaultsKeys.swift
     // private func userDefaultsKey(for elementName: String) -> Defaults.Key<String?> {
@@ -33,7 +32,7 @@ public class LocatorManager {
     private init() {}
 
     // No longer async as it's on the same MainActor as callers like CursorMonitor
-    public func getLocator(for elementName: String) -> Locator? {
+    public func getLocator(for elementName: String) -> AXorcistLib.Locator? {
         var jsonString: String?
 
         // 1. Check UserDefaults for user override (JSON string)
@@ -52,7 +51,7 @@ public class LocatorManager {
         if let str = jsonString, !str.isEmpty,
             let jsonData = str.data(using: .utf8) {
             do {
-                let userLocator = try JSONDecoder().decode(Locator.self, from: jsonData)
+                let userLocator = try JSONDecoder().decode(AXorcistLib.Locator.self, from: jsonData)
                 // Log success for debugging or diagnostics if needed
                 // SessionLogger.shared.log(level: .debug, message: "Successfully decoded user locator for \(elementName)")
                 return userLocator
@@ -77,7 +76,7 @@ public class LocatorManager {
     }
 
     // No longer async
-    public func updateSessionCache(for elementName: String, with locator: Locator) {
+    public func updateSessionCache(for elementName: String, with locator: AXorcistLib.Locator) {
         sessionCache[elementName] = locator
     }
 

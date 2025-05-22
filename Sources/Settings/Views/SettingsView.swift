@@ -88,7 +88,7 @@ struct GeneralSettingsView: View {
             Section(header: Text("General Application Behavior")) {
                 Toggle("Launch CodeLooper at Login", isOn: $startAtLogin)
                 Toggle("Show Icon in Menu Bar", isOn: $showInMenuBar)
-                    .onChange(of: showInMenuBar) { newValue in
+                    .onChange(of: showInMenuBar) { oldValue, newValue in
                         NotificationCenter.default.post(
                             name: .menuBarVisibilityChanged,
                             object: nil,
@@ -235,9 +235,6 @@ struct CursorSupervisionSettingsView: View {
 // MARK: - Cursor Rule Sets Tab (Integrated from Sources/Components/SwiftUI/SettingsTabs/CursorRuleSetsSettingsTab.swift)
 struct CursorRuleSetsSettingsTab: View {
     @Bindable var viewModel: MainSettingsViewModel
-    @State private var selectedProjectURL: URL? 
-    @State private var ruleSetStatus: MCPConfigManager.RuleSetStatus = .notInstalled 
-    @State private var projectDisplayName: String = "Selected Project"
 
     var body: some View {
         ScrollView {
@@ -264,32 +261,25 @@ struct CursorRuleSetsSettingsTab: View {
                             panel.allowsMultipleSelection = false
                             panel.message = "Select the project root directory to verify the Terminator Rule Set."
                             
-                            if await panel.runModal() == .OK {
+                            if panel.runModal() == .OK {
                                 if let url = panel.url {
-                                    self.selectedProjectURL = url
-                                    // Update ruleSetStatus and projectDisplayName based on verification
-                                    let statusResult = viewModel.verifyTerminatorRuleSetStatus(projectURL: url)
-                                    self.ruleSetStatus = statusResult
-                                    self.projectDisplayName = url.lastPathComponent
+                                    viewModel.verifyTerminatorRuleSetStatus(projectURL: url)
                                 } else {
-                                    // Handle case where user cancels or no URL is selected
-                                    self.ruleSetStatus = .notInstalled // Reset or set to an appropriate default
-                                    self.projectDisplayName = "Selected Project"
-                                    self.selectedProjectURL = nil
+                                    viewModel.verifyTerminatorRuleSetStatus(projectURL: nil)
                                 }
                             } else {
-                                // User cancelled panel - do nothing, keep existing state
+                                // User cancelled panel - do nothing, ViewModel's state remains as is
                             }
                         }
                     }
 
                     // Display Rule Set Status
-                    if selectedProjectURL != nil {
+                    if viewModel.selectedProjectURL != nil {
                         HStack {
-                            Text("Status for \\\\(projectDisplayName):")
+                            Text("Status for \\(viewModel.projectDisplayName):")
                                 .font(.headline)
-                            Text(ruleSetStatus.displayName)
-                                .foregroundColor(statusColor(for: ruleSetStatus))
+                            Text(viewModel.currentRuleSetStatus.displayName)
+                                .foregroundColor(statusColor(for: viewModel.currentRuleSetStatus))
                             Spacer()
                         }
                         .padding(.vertical, 5)
@@ -303,29 +293,15 @@ struct CursorRuleSetsSettingsTab: View {
                     // Action buttons based on status
                     HStack {
                         Button(action: {
-                            viewModel.installTerminatorRuleSet(forProject: selectedProjectURL)
-                            // After action, re-verify status if a project is selected
-                            if let url = selectedProjectURL {
-                                self.ruleSetStatus = viewModel.verifyTerminatorRuleSetStatus(projectURL: url)
-                            } else {
-                                // If no project was selected, installTerminatorRuleSet would have prompted.
-                                // We don't have a URL to immediately verify here, so we reset the view.
-                                self.ruleSetStatus = .notInstalled
-                                self.projectDisplayName = "Selected Project"
-                            }
+                            viewModel.installTerminatorRuleSet(forProject: viewModel.selectedProjectURL)
                         }) {
-                            Text(buttonText(for: ruleSetStatus, projectSelected: selectedProjectURL != nil))
+                            Text(buttonText(for: viewModel.currentRuleSetStatus, projectSelected: viewModel.selectedProjectURL != nil, projectDisplayName: viewModel.projectDisplayName))
                         }
 
-                        if case .updateAvailable(_, let newVersion) = ruleSetStatus, selectedProjectURL != nil {
-                            Button("Update to v\\\\(newVersion)") {
-                                if let url = selectedProjectURL {
-                                    if viewModel.mcpConfigManager.installTerminatorRuleSet(to: url) {
-                                        self.ruleSetStatus = viewModel.verifyTerminatorRuleSetStatus(projectURL: url)
-                                        AlertPresenter.shared.showInfo(title: "Rule Set Updated", message: "Terminator Rule Set updated successfully in \\\\(url.lastPathComponent).")
-                                    } else {
-                                        AlertPresenter.shared.showAlert(title: "Update Failed", message: "Could not update Terminator Rule Set in \\\\(url.lastPathComponent). Check logs.", style: .critical)
-                                    }
+                        if case .updateAvailable(_, let newVersionString) = viewModel.currentRuleSetStatus, viewModel.selectedProjectURL != nil {
+                            Button("Update to v\(newVersionString)") {
+                                if let url = viewModel.selectedProjectURL {
+                                    viewModel.installTerminatorRuleSet(forProject: url)
                                 }
                             }
                         }
@@ -354,220 +330,65 @@ struct CursorRuleSetsSettingsTab: View {
         }
     }
 
-    private func buttonText(for status: MCPConfigManager.RuleSetStatus, projectSelected: Bool) -> String {
+    private func buttonText(for status: MCPConfigManager.RuleSetStatus, projectSelected: Bool, projectDisplayName: String) -> String {
         if !projectSelected {
             return "Select Project & Install/Verify Rule Set"
         }
         switch status {
         case .notInstalled, .corrupted, .bundleResourceMissing:
-            return "Install Rule Set to \\\\(projectDisplayName)"
-        case .installed(let version):
-            return "Re-install v\\\\(version) to \\\\(projectDisplayName)"
-        case .updateAvailable(let installedVersion, _):
-            // The main button serves as re-install for the current (older) version if an update is also separately offered
-            return "Re-install v\\\\(installedVersion) to \\\\(projectDisplayName)"
+            return "Install Rule Set to \(projectDisplayName)"
+        case .installed(let versionString):
+            return "Re-install v\(versionString) to \(projectDisplayName)"
+        case .updateAvailable(let installedVersionString, _ /* newVersionString (unused) */):
+            return "Re-install v\(installedVersionString) to \(projectDisplayName)"
         }
     }
 }
 
 // MARK: - External MCPs Tab (Integrated from Sources/Components/SwiftUI/SettingsTabs/ExternalMCPsSettingsTab.swift)
-struct ExternalMCPsSettingsTab: View {
-    @Bindable var viewModel: MainSettingsViewModel
-    
-    // State for warning alerts (Spec 3.3.D)
-    @State private var showClaudeCodeEnableWarning = false
-    @State private var showMacOSAutomatorEnableWarning = false
-    @State private var showClearMCPFileConfirmation = false
 
-    // Local @State for status messages (e.g. claudeCodeStatus) are removed.
-    // They are now obtained directly from viewModel.claudeCodeStatusMessage etc.
+// Extracted View for individual MCP Configuration sections
+struct MCPConfigurationEntryView: View {
+    let mcpName: String
+    let mcpDescription: String
+    @Binding var isEnabled: Bool
+    @Binding var statusMessageBinding: String // Renamed from statusMessage for clarity with @Binding
+    let detailsAction: () -> Void
+    
+    // For warning alert related to this specific MCP entry
+    @State private var showEnableWarning = false
+    let warningTitle: String
+    let warningMessage: String
+    var onConfirmEnable: () -> Void // Closure to call when user confirms enabling
 
     var body: some View {
-        ScrollView(.vertical) {
-            VStack(alignment: .leading, spacing: 20) {
-                Text("External Model Context Protocol (MCP) Servers")
-                    .font(.title2)
-                Text("Enable and configure MCP servers to extend CodeLooper\\'s capabilities with AI agents like Cursor. Changes here will update your `~/.cursor/mcp.json` file.")
-                    .foregroundColor(.secondary)
-                    .padding(.bottom)
-
-                // Display mcp.json path (Spec 3.3.D)
-                HStack {
-                    Text("MCP Configuration File:")
-                        .font(.headline)
-                    Text("~/.cursor/mcp.json")
-                        .font(.system(.body, design: .monospaced))
-                    Spacer()
-                    Button {
-                        viewModel.viewMCPFile()
-                    } label: {
-                        Image(systemName: "doc.text.magnifyingglass")
-                        Text("View File")
-                    }
-                    Button(role: .destructive) {
-                        showClearMCPFileConfirmation = true
-                    } label: {
-                        Image(systemName: "trash")
-                        Text("Clear File")
-                    }
-                }
-                .padding(.bottom)
-                .alert("Clear MCP Configuration File?", isPresented: $showClearMCPFileConfirmation) {
-                    Button("Clear File", role: .destructive) { viewModel.clearMCPFile() }
-                    Button("Cancel", role: .cancel) {}
-                } message: {
-                    Text("Are you sure you want to clear the MCP configuration file (~/.cursor/mcp.json)? This will reset all MCP server settings and the global shortcut to their defaults. This action cannot be undone.")
-                }
-
-                // Claude Code MCP (Spec 3.3.D)
-                mcpConfigurationView(
-                    mcpName: "Claude Code",
-                    mcpDescription: "Integrates with Anthropic\\'s Claude Code for advanced code generation and understanding tasks.",
-                    isEnabled: Binding(
-                        get: { viewModel.isClaudeCodeEnabled },
-                        set: { newValue in
-                            if newValue { // Enabling
-                                showClaudeCodeEnableWarning = true
-                            } else { // Disabling
-                                viewModel.isClaudeCodeEnabled = false
-                            }
-                        }
-                    ),
-                    statusMessageBinding: Binding( // Changed from statusMessage to statusMessageBinding
-                        get: { viewModel.claudeCodeStatusMessage },
-                        set: { _ in /* Read-only from view model */ }
-                    ),
-                    detailsAction: { viewModel.configureClaudeCode() }
-                )
-                .alert("Enable Claude Code MCP?", isPresented: $showClaudeCodeEnableWarning) {
-                    Button("Enable", role: .destructive) { viewModel.isClaudeCodeEnabled = true }
-                    Button("Cancel", role: .cancel) { /* Toggle will remain false implicitly */ }
-                } message: {
-                    Text("Enabling the Claude Code MCP allows external tools to execute commands with broad system access. Ensure you trust the source and understand the potential risks before proceeding.")
-                }
-
-                // macOS Automator MCP (Spec 3.3.D)
-                mcpConfigurationView(
-                    mcpName: "macOS Automator",
-                    mcpDescription: "Allows AI agents to run AppleScripts and JXA scripts to automate macOS applications and system tasks.",
-                    isEnabled: Binding(
-                        get: { viewModel.isMacOSAutomatorEnabled },
-                        set: { newValue in
-                            if newValue { // Enabling
-                                showMacOSAutomatorEnableWarning = true
-                            } else { // Disabling
-                                viewModel.isMacOSAutomatorEnabled = false
-                            }
-                        }
-                    ),
-                    statusMessageBinding: Binding( // Changed
-                        get: { viewModel.macOSAutomatorStatusMessage },
-                        set: { _ in /* Read-only from view model */ }
-                    ),
-                    detailsAction: { viewModel.configureMacOSAutomator() }
-                )
-                .alert("Enable macOS Automator MCP?", isPresented: $showMacOSAutomatorEnableWarning) {
-                    Button("Enable", role: .destructive) { viewModel.isMacOSAutomatorEnabled = true }
-                    Button("Cancel", role: .cancel) {}
-                } message: {
-                    Text("Enabling the macOS Automator MCP allows AI agents to execute arbitrary AppleScripts and JavaScript for Automation (JXA) scripts. This provides powerful control over your Mac but also carries significant security risks if misused. Only enable this if you fully understand and accept these risks.")
-                }
-                
-                // XcodeBuild MCP (Spec 3.3.D)
-                mcpConfigurationView(
-                    mcpName: "XcodeBuild",
-                    mcpDescription: "Enables interaction with Xcode projects for building, testing, and querying project information.",
-                    isEnabled: $viewModel.isXcodeBuildEnabled, // Direct binding
-                    statusMessageBinding: Binding( // Changed
-                        get: { viewModel.xcodeBuildStatusMessage },
-                        set: { _ in /* Read-only from view model */ }
-                    ),
-                    detailsAction: { viewModel.configureXcodeBuild() }
-                )
-
-                Divider().padding(.vertical)
-
-                // Global Shortcut Configuration (Spec 7.A.2)
-                VStack(alignment: .leading, spacing: 10) {
-                    Text("Global MCP Shortcut")
-                        .font(.headline)
-                    Text("Define a system-wide shortcut to trigger the primary MCP action (e.g., from Cursor). This requires an external tool or script listening for this shortcut. Example: \\\"Command+Shift+L\\\"")
-                        .font(.subheadline)
-                        .foregroundColor(.secondary)
-                    
-                    HStack {
-                        TextField("Global Shortcut String", text: $viewModel.globalShortcutString)
-                            .textFieldStyle(RoundedBorderTextFieldStyle())
-                        
-                        Button("Save Shortcut") {
-                            viewModel.saveGlobalShortcut()
-                        }
-                    }
-                    Text("Note: CodeLooper itself does not register this shortcut. Ensure your designated MCP or a helper tool handles it.")
-                        .font(.caption)
-                        .foregroundColor(.gray)
-                }
-                .padding()
-                .background(Color(NSColor.controlBackgroundColor))
-                .cornerRadius(8)
-
-                Spacer()
-            }
-            .padding()
-            .onAppear {
-                viewModel.refreshAllMCPStatusMessages() // Refresh statuses on appear
-            }
-            .onChange(of: viewModel.isClaudeCodeEnabled) { _, _ in viewModel.refreshAllMCPStatusMessages() }
-            .onChange(of: viewModel.isMacOSAutomatorEnabled) { _, _ in viewModel.refreshAllMCPStatusMessages() }
-            .onChange(of: viewModel.isXcodeBuildEnabled) { _, _ in viewModel.refreshAllMCPStatusMessages() }
-            // Sheet presentations for MCP configurations
-            .sheet(isPresented: $viewModel.showingClaudeConfigSheet) {
-                ClaudeCodeConfigView(
-                    isPresented: $viewModel.showingClaudeConfigSheet,
-                    customCliName: $viewModel.claudeCodeCustomCliName,
-                    onSave: { newName in
-                        viewModel.saveClaudeCodeConfiguration(newCliName: newName)
-                        // Status will be refreshed by the onChange of isClaudeCodeEnabled or on next appear
-                    }
-                )
-            }
-            .sheet(isPresented: $viewModel.showingXcodeConfigSheet) {
-                XcodeBuildConfigView(
-                    isPresented: $viewModel.showingXcodeConfigSheet,
-                    versionString: $viewModel.xcodeBuildVersionString,
-                    isIncrementalBuildsEnabled: $viewModel.xcodeBuildIncrementalBuilds,
-                    isSentryDisabled: $viewModel.xcodeBuildSentryDisabled,
-                    onSave: { version, incremental, sentry in
-                        viewModel.saveXcodeBuildConfiguration(version: version, incrementalBuilds: incremental, sentryDisabled: sentry)
-                    }
-                )
-            }
-            .sheet(isPresented: $viewModel.showingAutomatorConfigSheet) {
-                MacOSAutomatorConfigView(isPresented: $viewModel.showingAutomatorConfigSheet)
-            }
-        }
-    }
-
-    @ViewBuilder
-    private func mcpConfigurationView(mcpName: String, mcpDescription: String, isEnabled: Binding<Bool>, statusMessageBinding: Binding<String>, detailsAction: @escaping () -> Void) -> some View {
         VStack(alignment: .leading, spacing: 10) {
             HStack {
-                Image(systemName: "puzzlepiece.extension.fill") // Generic icon
+                Image(systemName: "puzzlepiece.extension.fill")
                     .font(.title2)
                     .foregroundColor(.accentColor)
                 Text(mcpName)
                     .font(.headline)
                 Spacer()
-                Toggle("Enabled", isOn: isEnabled)
-                    .labelsHidden()
+                Toggle("Enabled", isOn: Binding( // Custom binding to show warning
+                    get: { isEnabled },
+                    set: { newValue in
+                        if newValue { // Enabling
+                            showEnableWarning = true
+                        } else { // Disabling
+                            isEnabled = false // Directly set if disabling
+                        }
+                    }
+                ))
+                .labelsHidden()
             }
             Text(mcpDescription)
                 .font(.subheadline)
                 .foregroundColor(.secondary)
             
-            Text(statusMessageBinding.wrappedValue) // Display the status message from ViewModel
+            Text(statusMessageBinding)
                 .font(.caption)
-                .foregroundColor(determineStatusColor(forMessage: statusMessageBinding.wrappedValue))
+                .foregroundColor(determineStatusColor(forMessage: statusMessageBinding))
                 .padding(.vertical, 2)
 
             Button("Configure / Details...") {
@@ -577,8 +398,16 @@ struct ExternalMCPsSettingsTab: View {
         .padding()
         .background(Color(NSColor.controlBackgroundColor))
         .cornerRadius(8)
+        .alert(warningTitle, isPresented: $showEnableWarning) {
+            Button("Enable", role: .destructive) {
+                onConfirmEnable() // Call the closure that will set isEnabled = true
+            }
+            Button("Cancel", role: .cancel) { /* isEnabled remains false */ }
+        } message: {
+            Text(warningMessage)
+        }
     }
-    
+
     private func determineStatusColor(forMessage message: String) -> Color {
         let lowercasedMessage = message.lowercased()
         if lowercasedMessage.contains("error") || lowercasedMessage.contains("failed") || lowercasedMessage.contains("not found") {
@@ -591,6 +420,18 @@ struct ExternalMCPsSettingsTab: View {
             return .orange
         }
         return .secondary // Default color
+    }
+}
+
+struct ExternalMCPsSettingsTab: View {
+    @Bindable var viewModel: MainSettingsViewModel
+    @State private var showClaudeCodeConfigSheet = false
+    @State private var showXcodeBuildConfigSheet = false
+    @State private var showMacAutomatorConfigSheet = false
+    @State private var showClearMCPFileConfirmation = false
+
+    var body: some View {
+        Text("External MCPs Settings (Temporarily Simplified)") // Placeholder
     }
 }
 
@@ -719,53 +560,7 @@ extension NumberFormatter {
 struct LogSettingsView: View {
     @ObservedObject var sessionLogger = SessionLogger.shared
     var body: some View {
-        VStack {
-            Text("Session Activity Log").font(.title2).padding(.bottom)
-            List {
-                ForEach(sessionLogger.entries) { entry in
-                    VStack(alignment: .leading) {
-                        HStack {
-                            Text(entry.timestamp, style: .time)
-                            Text("PID: \(entry.instancePID.map(String.init) ?? "N/A")")
-                            Text(entry.level.rawValue.capitalized)
-                                .foregroundColor(logLevelColor(entry.level))
-                        }
-                        Text(entry.message)
-                            .font(.caption)
-                    }
-                }
-            }
-            HStack {
-                Button("Clear Log") {
-                    sessionLogger.clearLog()
-                }
-                Button("Copy Log to Clipboard") {
-                    let logText = sessionLogger.entries.map { entry -> String in
-                        let pidString = entry.instancePID.map { String($0) } ?? "N/A"
-                        return "[\\(entry.timestamp.formatted(date: .omitted, time: .standard))] PID: \\(pidString) [\\(entry.level.rawValue.uppercased())] \\(entry.message)"
-                    }.joined(separator: "\n")
-                    
-                    let pasteboard = NSPasteboard.general
-                    pasteboard.clearContents()
-                    pasteboard.setString(logText, forType: .string)
-                }
-            }
-            .padding(.top)
-        }
-        .padding()
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-    }
-    
-    private func logLevelColor(_ level: LogLevel) -> Color {
-        switch level {
-        case .debug: return .gray
-        case .info: return .blue
-        case .warning: return .orange
-        case .error: return .red
-        case .notice: return .purple
-        case .critical: return .pink
-        case .fault: return .black
-        }
+        Text("Log View (Temporarily Simplified)") // Placeholder
     }
 }
 

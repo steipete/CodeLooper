@@ -79,36 +79,48 @@ struct AppMain: App {
         }
         .defaultSize(width: 560, height: 340)
 
-        CommandGroup("Debug") {
-            if Defaults[.showDebugMenu] {
-                Section("AXorcist Debug") {
-                    Button("Log Current Focused Element (AXorcist)") {
+        // Commands modifier for the main application menu
+        .commands {
+            CommandGroup(replacing: .newItem) {
+                if Defaults[.showDebugMenu] {
+                    Button("Toggle Supervision Debug Overlay") {
+                        appDelegate.toggleDebugOverlay()
+                    }
+                    Button("Show Session Log") {
                         Task {
-                            await appDelegate.cursorMonitor.logFocusedElementViaAXorcist()
+                            await appDelegate.sessionLogger.showLogWindow()
                         }
                     }
-                    Button("Log All Elements (AXorcist) - Focused App") {
-                        Task {
-                            await appDelegate.cursorMonitor.logAllWindowsForFocusedAppViaAXorcist()
-                        }
-                    }
-                }
-                Divider()
-                Button("Toggle Supervision Debug Overlay") {
-                    appDelegate.toggleDebugOverlay()
-                }
-                Button("Show Session Log") {
-                    appDelegate.sessionLogger.showLogWindow()
+                } else {
+                    EmptyView()
                 }
             }
-        }
 
-        CommandGroup("CodeLooper") {
-            CodeLooperCommands()
-        }
+            CommandMenu("CodeLooper") {
+                Button("Placeholder Action 1") {
+                    // Action for placeholder 1
+                    print("CodeLooper Action 1 Tapped")
+                }
+                Button("Placeholder Action 2") {
+                    // Action for placeholder 2
+                    print("CodeLooper Action 2 Tapped")
+                }
+            }
 
-        CommandGroup("Help") {
-            HelpCommands()
+            CommandGroup(replacing: .help) {
+                Button("Open Documentation") {
+                    // Action to open documentation
+                    if let url = URL(string: "https://github.com/steipete/CodeLooper/blob/main/docs/MANUAL.md") {
+                        NSWorkspace.shared.open(url)
+                    }
+                }
+                Button("Report Issue") {
+                    // Action to report an issue
+                    if let url = URL(string: "https://github.com/steipete/CodeLooper/issues") {
+                        NSWorkspace.shared.open(url)
+                    }
+                }
+            }
         }
     }
 

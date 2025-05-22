@@ -53,10 +53,11 @@ public final class MainSettingsViewModel {
     var xcodeBuildIncrementalBuilds: Bool = false
     var xcodeBuildSentryDisabled: Bool = false
 
-    // Rule Set Properties - @Observable handles changes, so @State is removed.
+    // Rule Set Properties - @Observable handles changes
     var projectDisplayName: String = "Selected Project"
     var ruleSetStatusMessage: String = "Verify or Install Rule Set"
     var selectedProjectURL: URL? = nil
+    var currentRuleSetStatus: MCPConfigManager.RuleSetStatus = .notInstalled
 
     // Status for individual MCPs (raw boolean enabled/disabled)
     // These are now computed properties based on mcpConfigManager
@@ -224,5 +225,75 @@ public final class MainSettingsViewModel {
 
     func refreshMCPStatusMessage(for mcpIdentifier: String) {
         // Implementation of refreshMCPStatusMessage method
+    }
+
+    // MARK: - Rule Set Management
+
+    public func verifyTerminatorRuleSetStatus(projectURL: URL?) {
+        guard let url = projectURL else {
+            logger.info("No project URL provided for rule set status verification.")
+            self.selectedProjectURL = nil
+            self.projectDisplayName = "Selected Project"
+            self.currentRuleSetStatus = .notInstalled
+            self.ruleSetStatusMessage = "Select a project to verify."
+            return
+        }
+        logger.info("Verifying Terminator Rule Set status for project: \(url.path)")
+        let status = mcpConfigManager.verifyTerminatorRuleSet(at: url)
+        
+        self.selectedProjectURL = url
+        self.projectDisplayName = url.lastPathComponent
+        self.currentRuleSetStatus = status
+        self.ruleSetStatusMessage = status.displayName
+        
+        logger.info("Rule set status for \(url.lastPathComponent): \(status.displayName)")
+    }
+
+    public func installTerminatorRuleSet(forProject projectURL: URL?) {
+        let resolvedURL: URL?
+        if projectURL == nil {
+            resolvedURL = promptForProjectDirectory(title: "Select Project for Terminator Rule Set Installation")
+        } else {
+            resolvedURL = projectURL
+        }
+
+        guard let url = resolvedURL else {
+            logger.info("Terminator Rule Set installation cancelled or no directory selected.")
+            // Update status to reflect no project is selected if a prompt was cancelled
+            if projectURL == nil { // Only if we prompted and got nothing
+                self.selectedProjectURL = nil
+                self.projectDisplayName = "Selected Project"
+                self.currentRuleSetStatus = .notInstalled
+                self.ruleSetStatusMessage = "Select a project to install."
+            }
+            return
+        }
+
+        logger.info("Attempting to install Terminator Rule Set to: \(url.path)")
+        if mcpConfigManager.installTerminatorRuleSet(to: url) {
+            logger.info("Terminator Rule Set installed successfully to \(url.lastPathComponent).")
+            AlertPresenter.shared.showInfo(title: "Installation Successful", message: "Terminator Rule Set installed successfully in \(url.lastPathComponent).")
+        } else {
+            logger.error("Failed to install Terminator Rule Set to \(url.lastPathComponent).")
+            AlertPresenter.shared.showAlert(title: "Installation Failed", message: "Could not install Terminator Rule Set in \(url.lastPathComponent). Check application logs for details.", style: .critical)
+        }
+        // After attempting installation, always re-verify the status for the affected URL.
+        verifyTerminatorRuleSetStatus(projectURL: url)
+    }
+
+    // Helper to prompt for directory (could be in a utility class too)
+    @MainActor // NSOpenPanel must be used on the main actor
+    private func promptForProjectDirectory(title: String) -> URL? {
+        let panel = NSOpenPanel()
+        panel.canChooseFiles = false
+        panel.canChooseDirectories = true
+        panel.allowsMultipleSelection = false
+        panel.message = title
+        
+        // Running modal synchronously is fine here as it's a user-driven action.
+        if panel.runModal() == .OK {
+            return panel.url
+        }
+        return nil
     }
 }

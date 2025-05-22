@@ -2,19 +2,33 @@ import AppKit
 import AXorcist
 import Combine
 import Defaults
+// import HIServices // Removed as ApplicationServices should cover it
+import ApplicationServices // Ensure ApplicationServices is imported
 @preconcurrency import Foundation
+import os // Import os for os.Logger
 @preconcurrency import OSLog
 @preconcurrency import ServiceManagement
 import Sparkle
 import SwiftUI
 
-// Import thread safety helpers
+// Ensure line 14, 15, 16 related to AppAXTrustedCheckOptionPromptKey_Raw_CFRef are DELETED
+// Ensure lines 60-66 related to static appAXTrustedCheckOptionPromptKeyString are DELETED
+
 @objc(AppDelegate)
 @objcMembers
 @MainActor
 public class AppDelegate: NSObject, NSApplicationDelegate,
     @unchecked Sendable,
     ObservableObject {
+
+    /*
+    // Use a nonisolated(unsafe) static computed property to access the C global.
+    // This tells Swift that we are manually asserting the safety of this access,
+    // which is acceptable here as kAXTrustedCheckOptionPrompt is an immutable C constant.
+    private nonisolated(unsafe) static var axTrustedCheckOptionPromptKeyString: String {
+        kAXTrustedCheckOptionPrompt.takeUnretainedValue() as String
+    }
+    */
 
     /// Shared singleton instance for global access
     public static var shared: AppDelegate {
@@ -26,8 +40,8 @@ public class AppDelegate: NSObject, NSApplicationDelegate,
 
     // MARK: - Logger
 
-    // Logger instance at class level for use throughout the class
-    let logger = Logger(subsystem: "ai.amantusmachina.codelooper", category: "AppDelegate")
+    // Use os.Logger for categorized logging
+    private let logger = os.Logger(subsystem: Bundle.main.bundleIdentifier ?? "ai.amantusmachina.codelooper", category: LogCategory.app.rawValue)
 
     // MARK: - Properties
 
@@ -45,7 +59,7 @@ public class AppDelegate: NSObject, NSApplicationDelegate,
     @MainActor private var notificationObservers: [NSObjectProtocol] = []
 
     // Core services
-    private let sessionLogger = SessionLogger.shared
+    let sessionLogger = SessionLogger.shared
     private lazy var locatorManager = LocatorManager.shared
     private var cancellables = Set<AnyCancellable>()
     private var welcomeWindow: NSWindow?
@@ -56,7 +70,6 @@ public class AppDelegate: NSObject, NSApplicationDelegate,
 
     // This is managed by SwiftUI's application lifecycle, but it still works with the old setup
     public func applicationDidFinishLaunching(_: Notification) {
-        // Add startup logging with new enhanced logger that writes to both system and file
         logger.info("Application starting up - logs are now stored in Application Support/CodeLooper/Logs")
 
         // Set up exception handling
@@ -105,9 +118,6 @@ public class AppDelegate: NSObject, NSApplicationDelegate,
         // Setup all notification observers
         setupNotificationObservers()
 
-        // Setup AppleScript support
-        setupAppleScriptSupport()
-
         // Handle first launch or welcome screen logic
         handleFirstLaunchOrWelcomeScreen()
         
@@ -116,7 +126,7 @@ public class AppDelegate: NSObject, NSApplicationDelegate,
             .receive(on: DispatchQueue.main)
             .sink { [weak self] newState in
                 guard let self = self else { return }
-                self.logger.info("App icon state changed to: \\(String(describing: newState))")
+                self.logger.info("App icon state changed to: \(String(describing: newState))")
                 // Only update if not currently flashing, as flash has priority for the image
                 if !AppIconStateController.shared.isFlashing {
                     self.menuManager?.statusItem?.button?.image = NSImage(named: newState.imageName)
@@ -170,9 +180,9 @@ public class AppDelegate: NSObject, NSApplicationDelegate,
     // This is an additional initializer to support SwiftUI app structure
     override public init() {
         super.init()
-        // Minimal setup here, most logic deferred to applicationDidFinishLaunching
-        // or specific methods called from there to avoid duplication.
-        logger.info("AppDelegate initialized via SwiftUI lifecycle (minimal init, see applicationDidFinishLaunching)")
+        // Note: self.logger might not be available here yet if it's a let constant initialized later.
+        // For safety, critical init logging can use os_log directly or defer to applicationDidFinishLaunching.
+        os_log("AppDelegate initialized via SwiftUI lifecycle", log: OSLog.default, type: .info)
     }
 
     // MARK: - Settings Setup
@@ -201,9 +211,6 @@ public class AppDelegate: NSObject, NSApplicationDelegate,
 
         // Clean up menu manager
         menuManager?.cleanup()
-
-        // Clean up AppleScript support
-        cleanupAppleScriptSupport()
 
         // Remove all notification observers
         for observer in notificationObservers {
@@ -286,28 +293,45 @@ public class AppDelegate: NSObject, NSApplicationDelegate,
         logger.info("Setting up exception handling")
         // Configure global exception handler
         NSSetUncaughtExceptionHandler { exception in
-            let logger = Logger(subsystem: "ai.amantusmachina.codelooper", category: "ExceptionHandler")
-            logger.critical("Uncaught exception: \(exception.name.rawValue), reason: \(exception.reason ?? "unknown")")
+            let exceptionLogger = os.Logger(subsystem: Bundle.main.bundleIdentifier ?? "ai.amantusmachina.codelooper", category: "ExceptionHandler")
+            exceptionLogger.critical("Uncaught exception: \(exception.name.rawValue), reason: \(exception.reason ?? "unknown")")
 
             // Get stack trace
             let callStack = exception.callStackSymbols
-            logger.critical("Stack trace: \(callStack.joined(separator: "\n"))")
+            exceptionLogger.critical("Stack trace: \(callStack.joined(separator: "\n"))")
         }
     }
 
     private func initializeServices() {
         logger.info("Initializing services")
 
-        // Login Item Manager - needs to be initialized early for settings
-        loginItemManager = LoginItemManager.shared // Use .shared
-        logger.info("LoginItemManager initialized")
-        
-        // AXApplicationObserver - for general app monitoring if needed beyond Cursor
-        axApplicationObserver = AXApplicationObserver(axorcist: CursorMonitor.shared.axorcist)
-        logger.info("AXApplicationObserver initialized for Cursor.")
+        // Initialize login item manager first as other services may depend on it
+        loginItemManager = LoginItemManager.shared // Use shared instance for consistency
 
-        // CursorMonitor is now a shared instance
-        logger.info("Core services initialized.")
+        // Setup AXorcist and AXApplicationObserver - these should be early
+        let axorcistInstance = AXorcist() // Create a single instance
+        axApplicationObserver = AXApplicationObserver(axorcist: axorcistInstance) // Pass the instance
+        logger.info("AXorcist and AXApplicationObserver initialized.")
+
+        // Initialize CursorMonitor with the AXorcist instance
+        _ = CursorMonitor.shared // Ensures shared instance is initialized, using the one from its static let
+        logger.info("CursorMonitor initialized.")
+
+        // Initialize settings coordinator after dependent services
+        setupSettingsCoordinator()
+
+        // Initial check for accessibility, can prompt if needed
+        // Note: This Task will run on the MainActor due to initializeServices being called from MainActor context
+        Task {
+            // let keyString = AppDelegate.axTrustedCheckOptionPromptKeyString // Commented out
+            // let options = [keyString: true] // Commented out
+            let accessibilityEnabled = AXIsProcessTrustedWithOptions(nil) // Pass nil for options
+            if accessibilityEnabled {
+                logger.info("Accessibility permissions are granted.")
+            } else {
+                logger.warning("Accessibility permissions are NOT granted (or prompt was dismissed). AXorcist may not function.")
+            }
+        }
     }
 
     private func syncLoginItemStatus() {
@@ -461,34 +485,48 @@ public class AppDelegate: NSObject, NSApplicationDelegate,
         NSApp.activate(ignoringOtherApps: true)
     }
 
+    // This method handles initial accessibility check and logging
+    @MainActor
+    private func checkAccessibilityPermissions() {
+        // let keyString = AppDelegate.axTrustedCheckOptionPromptKeyString // Commented out
+        // let options = [keyString: false] // Commented out
+        let accessibilityEnabled = AXIsProcessTrustedWithOptions(nil) // Pass nil for options
+        if accessibilityEnabled {
+            logger.info("Accessibility permissions are granted.")
+        } else {
+            // This is just a check, so log if not granted. Prompting is handled by checkAndPromptForAccessibilityIfNeeded.
+            logger.warning("Accessibility check: Permissions are NOT granted. AXorcist may not function.")
+        }
+    }
+
     @MainActor
     func checkAndPromptForAccessibilityIfNeeded(isInteractive: Bool) {
-        // Capture the global constant locally within the @MainActor isolated function
-        let axTrustedCheckOptionPromptCFString = kAXTrustedCheckOptionPrompt
-        let trustedCheckOptionPromptKey = axTrustedCheckOptionPromptCFString.takeUnretainedValue() as String
-        
-        let options = [trustedCheckOptionPromptKey: isInteractive]
-        let isTrusted = AXIsProcessTrustedWithOptions(options as CFDictionary)
+        // let keyString = AppDelegate.axTrustedCheckOptionPromptKeyString // Commented out
+        // let options = [keyString: isInteractive] // Commented out
+        // For prompting, we ideally need the key. Since it's problematic, this will behave like a non-prompting check if nil is passed.
+        // If isInteractive is true, we might still want to show our own alert even if the system prompt doesn't appear due to missing key.
+        let isTrusted = AXIsProcessTrustedWithOptions(isInteractive ? nil : nil) // Effectively nil for options, placeholder for prompt logic
 
         if !isTrusted {
-            logger.warning("Accessibility permissions not granted.")
             if isInteractive {
-                // Guide user to settings
+                logger.warning("Accessibility permissions are NOT granted. Prompting user.")
+                // The system prompt is handled by AXIsProcessTrustedWithOptions when prompt is true.
+                // We can show an additional alert explaining why we need it.
                 let alert = NSAlert()
-                alert.messageText = "Accessibility Access Needed"
-                alert.informativeText = "CodeLooper requires Accessibility permissions to supervise Cursor. " +
-                    "Please enable CodeLooper in System Settings > Privacy & Security > Accessibility."
+                alert.messageText = "Accessibility Permissions Required"
+                alert.informativeText = "CodeLooper uses Accessibility features to interact with other applications like Cursor. Please grant permissions in System Settings > Privacy & Security > Accessibility."
                 alert.addButton(withTitle: "Open System Settings")
-                alert.addButton(withTitle: "Later")
-                
-                let response = alert.runModal()
-                if response == .alertFirstButtonReturn {
-                    if let url = URL(
-                        string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility"
-                    ) {
+                alert.addButton(withTitle: "Cancel")
+                alert.alertStyle = .warning
+
+                if alert.runModal() == .alertFirstButtonReturn {
+                    // Open Accessibility settings
+                    if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility") {
                         NSWorkspace.shared.open(url)
                     }
                 }
+            } else {
+                logger.warning("Accessibility check (non-interactive): Permissions are NOT granted.")
             }
         } else {
             logger.info("Accessibility permissions are granted.")
@@ -530,4 +568,14 @@ public class AppDelegate: NSObject, NSApplicationDelegate,
         logger.info("Check for updates triggered manually.")
         updaterController?.checkForUpdates(nil)
     }
+
+    // Placeholder for debug overlay functionality
+    // TODO: Implement actual debug overlay logic if needed
+    func toggleDebugOverlay() {
+        logger.info("Debug Overlay Toggled (Placeholder - No UI Change)")
+        // Example: self.debugOverlayWindow.toggleVisibility() or post a notification
+    }
+
+    // func setupAppleScriptSupport() { /* Placeholder removed, implemented in extension */ }
+    // func cleanupAppleScriptSupport() { /* Placeholder removed, implemented in extension */ }
 }

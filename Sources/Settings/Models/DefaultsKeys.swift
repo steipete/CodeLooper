@@ -64,7 +64,7 @@ extension Defaults.Keys {
     static let debugModeEnabled = Key<Bool>("debugModeEnabled", default: false)
     static let showCopyCounter = Key<Bool>("showCopyCounter", default: false)
     static let showPasteCounter = Key<Bool>("showPasteCounter", default: false)
-    static let showTotalInterventions = Key<Bool>("showTotalInterventions", default: false)
+    static let showTotalInterventions = Key<Bool>("showTotalInterventions", default: true)
     static let flashIconOnIntervention = Key<Bool>("flashIconOnIntervention", default: true)
 
     // --- Updates (Sparkle - Spec 3.3.A) ---
@@ -109,4 +109,5 @@ extension Defaults.Keys {
     static let verboseLogging = Key<Bool>("verboseLogging", default: false)
 
     // --- AXorcist Locators (Advanced Settings - Spec 3.3.A / AdvancedSettingsView) ---
+    static let sidebarActivityMaxDepth = Key<Int>("sidebarActivityMaxDepth", default: 1)
 }

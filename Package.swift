@@ -32,7 +32,7 @@ let package = Package(
                 "LaunchAtLogin",
                 .product(name: "SwiftUIIntrospect", package: "SwiftUI-Introspect"),
                 .product(name: "Logging", package: "swift-log"),
-                .product(name: "AXorcist", package: "AXorcist"),
+                .product(name: "AXorcistLib", package: "AXorcist"),
                 .product(name: "Sparkle", package: "Sparkle")
             ],
             path: "Sources",
