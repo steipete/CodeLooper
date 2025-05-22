@@ -82,14 +82,31 @@ final class WelcomeViewModel: ObservableObject {
         logger.info("Updated startAtLogin setting to: \(enabled)")
     }
 
+    // MARK: - Accessibility Handling
+
+    func handleOpenAccessibilitySettingsAndPrompt() {
+        logger.info("Handling open accessibility settings and prompt.")
+        // First, try to trigger the system prompt via AppDelegate's existing logic
+        AppDelegate.shared.checkAndPromptForAccessibilityPermissions(showPromptIfNeeded: true)
+
+        // Then, open the system settings pane as before
+        if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility") {
+            NSWorkspace.shared.open(url)
+            logger.info("Opened System Settings to Accessibility pane.")
+        } else {
+            logger.error("Could not create URL for Accessibility settings.")
+        }
+    }
+
     // MARK: - Completion
 
     func finishOnboarding() {
         // Mark onboarding as complete and reset first launch flag
         Defaults[.hasCompletedOnboarding] = true
         Defaults[.isFirstLaunch] = false
+        Defaults[.hasShownWelcomeGuide] = true
 
-        logger.info("Onboarding completed, hasCompletedOnboarding set to true, isFirstLaunch set to false")
+        logger.info("Onboarding completed, hasCompletedOnboarding set to true, isFirstLaunch set to false, hasShownWelcomeGuide set to true")
 
         // Trigger the delegate's completion callback
         onCompletionCallback?()

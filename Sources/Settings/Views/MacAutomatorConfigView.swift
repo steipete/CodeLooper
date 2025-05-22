@@ -29,12 +29,8 @@ struct MacAutomatorConfigView: View {
                 .padding(.horizontal)
 
             Button("Open User Scripts Directory") {
-                if let url = FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent(".cursor/scripts", isDirectory: true) {
-                    NSWorkspace.shared.open(url)
-                } else {
-                    // Handle error: could not construct URL
-                    print("Error: Could not construct URL for .cursor/scripts directory")
-                }
+                let url = FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent(".cursor/scripts", isDirectory: true)
+                NSWorkspace.shared.open(url)
             }
             .padding(.top)
             

@@ -8,6 +8,7 @@ let dependencies = Package.Dependencies(
             .remote(url: "https://github.com/sindresorhus/LaunchAtLogin", requirement: .upToNextMajor(from: "5.0.2")),
             .remote(url: "https://github.com/siteline/SwiftUI-Introspect.git", requirement: .upToNextMajor(from: "0.12.0")),
             .remote(url: "https://github.com/apple/swift-log.git", requirement: .upToNextMajor(from: "1.6.3")),
+            .remote(url: "https://github.com/sindresorhus/KeyboardShortcuts", requirement: .upToNextMajor(from: "2.0.0")),
         ],
         baseSettings: .settings(
             configurations: [

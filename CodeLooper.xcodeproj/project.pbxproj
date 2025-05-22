@@ -18,8 +18,8 @@
 		13ED50F2F28C4EEF3532770A /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = A5C24E574EF09764A411D6C4 /* Main.storyboard */; };
 		15EF9B2323CD1EA9F609E2E0 /* ResourceLoader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8CD814F1C33969075035D23E /* ResourceLoader.swift */; };
 		17C433793C3D84617597EA53 /* DynamicLocatorDiscoverer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 16D1B5B9949C8968D7A0F2F2 /* DynamicLocatorDiscoverer.swift */; };
-		186F71DCB81607622A95C64E /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 20C20E17591E0CA5334EEB0F /* SettingsView.swift */; };
 		1BCD35C418A009821B5CA7CE /* AppDelegate+AppleScript.swift in Sources */ = {isa = PBXBuildFile; fileRef = E39DB740414D201FEBD3F42C /* AppDelegate+AppleScript.swift */; };
+		1DB5FDCEBD999A62720CA066 /* SettingsPanesContainerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 99EEFF4BEB03587B91DC3B8F /* SettingsPanesContainerView.swift */; };
 		1EB3DAF90502B431C374B95C /* CursorMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B425EA51475F4BEC7D5140A /* CursorMonitor.swift */; };
 		211EC07BA59835AC61AEA74B /* StatusIconState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8AEDA438357E9954BE03F165 /* StatusIconState.swift */; };
 		22B7B31E0FF8772DB23A7BED /* MainPopoverView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1EFADA1713C359300C3593C1 /* MainPopoverView.swift */; };
@@ -31,16 +31,15 @@
 		2E31D0C9CDE66FDA592DB52A /* LogLevel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 590FE71833D8A3A3DFB21388 /* LogLevel.swift */; };
 		2E9F8879A48D4AF242B32AB1 /* RadioButtonRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2B6278C5464E1B76A5CFCB11 /* RadioButtonRow.swift */; };
 		2FD00A2FC1AF559BA0259DE1 /* UploadCompletionFeedback.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0F76062C8A2C8BF8BE5EBD49 /* UploadCompletionFeedback.swift */; };
+		38FF90E01CFF033181A8A1EB /* KeyboardShortcuts in Frameworks */ = {isa = PBXBuildFile; productRef = 40627E5CA183F2FF0E4024E6 /* KeyboardShortcuts */; };
 		3A6439CF81E6FB51ED68E030 /* MenuBarIconManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2A986804F8A12B8A58B92A2 /* MenuBarIconManager.swift */; };
 		3BF2B3804B75479641439A06 /* StatsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2A2EFD0769BAEA511922A2C3 /* StatsView.swift */; };
 		3C168575038B1A82AD370C07 /* DefaultsManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 729A0B35457D4688E40A04FB /* DefaultsManager.swift */; };
-		3D214C490F1537CC321FF79C /* WorkflowAutomation.applescript in Resources */ = {isa = PBXBuildFile; fileRef = 1016B172C33726EF79A053E0 /* WorkflowAutomation.applescript */; };
 		3EB93F9333F97BEB98D906BF /* MainMenu.nib in Resources */ = {isa = PBXBuildFile; fileRef = CC10D906EAF6E924567E3DB3 /* MainMenu.nib */; };
 		42C11A0D1D15D0BB83EDBEA4 /* LoginItemManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = FE445F08ECA9AE0063E2AA49 /* LoginItemManager.swift */; };
 		4336D6897015ACCCB1061968 /* symbol.png in Resources */ = {isa = PBXBuildFile; fileRef = AA29E7678517AB755201385A /* symbol.png */; };
 		448BF52934BF1A3DE9A966A2 /* GeneralSettingsTab.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5B90EE899110CFF876B12F5C /* GeneralSettingsTab.swift */; };
 		47A31CF8E335731EBD786992 /* Logger.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8E52466D111E8481176D7608 /* Logger.swift */; };
-		5431F805813CB204896FB813 /* AppMain.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3D905820699319B1CDC9383 /* AppMain.swift */; };
 		5885F3752C9613EEB9DF2B4B /* DiagnosticsLogger.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC0C0DAFE0042888816F08B5 /* DiagnosticsLogger.swift */; };
 		5DDDE5EC2D1C274D80731182 /* NSImage+ResourceLoader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47BFE5F8FF03A80E28157AE6 /* NSImage+ResourceLoader.swift */; };
 		5F65C66CD4D3D45F8E03C8CD /* TuistPlists+CodeLooper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 09EE41D476B9E1DDF4BB3C41 /* TuistPlists+CodeLooper.swift */; };
@@ -53,6 +52,9 @@
 		735D2D6D1511CF02F0974F0E /* ContinuationGuard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 957E99A2BCBAC60FCCED14A0 /* ContinuationGuard.swift */; };
 		7966667DD781154A9E50A0A5 /* FileLogger.swift in Sources */ = {isa = PBXBuildFile; fileRef = 70CB63C0A4B720286208438E /* FileLogger.swift */; };
 		79B9287BC986F655FA0D18E3 /* Constants.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38B4AEAFFCFB7B07CF5F8A3D /* Constants.swift */; };
+		7FB1DA236DAF99E5DAC30AA5 /* MacAutomatorConfigView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB5EF7A23F3B58EB51CBF50C /* MacAutomatorConfigView.swift */; };
+		803867F724A632B98DDE1631 /* LogSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7FC1B35DF6546A73EF154B3C /* LogSettingsView.swift */; };
+		844CE43E8F91643C896C901D /* CodeLooperApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = DF792AF940019971173C3D04 /* CodeLooperApp.swift */; };
 		856F80481D0CF9A6B22998A1 /* Operations.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCB26FA3F63E3E25AAC37895 /* Operations.swift */; };
 		88C757EEB61ED4E2C954E8B9 /* AXApplicationObserver.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CF963411BEA680C49738A53 /* AXApplicationObserver.swift */; };
 		8BE6DF345987452B5C70A0F8 /* SwiftUIIntrospect in Frameworks */ = {isa = PBXBuildFile; productRef = 35EC1BE62E99DC3A9B3F78F2 /* SwiftUIIntrospect */; };
@@ -69,6 +71,7 @@
 		AB2E7E0511A16888212AE65C /* WelcomeGuideView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D55420A573BE5102A6E97F14 /* WelcomeGuideView.swift */; };
 		AC442D50BB1BFF315156E4D1 /* InfoKey.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4DB132BCA2278BD3DE926C89 /* InfoKey.swift */; };
 		AC86747DE4D2D8A2669E58A5 /* WelcomeWindowCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = EBC9BE3938615FC8BF709BBE /* WelcomeWindowCoordinator.swift */; };
+		ACB6FD93CD3B40826016F770 /* terminator.scpt in Resources */ = {isa = PBXBuildFile; fileRef = DC2AAE330BB05D9CA71FCFB3 /* terminator.scpt */; };
 		AE0B126099035C9EC60FDF68 /* ElementHeuristic.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9386E52AE43115F927B9F46E /* ElementHeuristic.swift */; };
 		B1A0FBBB30C116CAA5CF7255 /* AdvancedSettingsTab.swift in Sources */ = {isa = PBXBuildFile; fileRef = ED99E5C6403C18B582D9F473 /* AdvancedSettingsTab.swift */; };
 		B3E5C470B686C17E153AB004 /* AppEnvironment.swift in Sources */ = {isa = PBXBuildFile; fileRef = A78799854F3184746818B6C8 /* AppEnvironment.swift */; };
@@ -80,6 +83,7 @@
 		BC5AEC7BDDCBC1ACC553B63E /* MainSettingsCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6B5F39834CB3F899CE8C064C /* MainSettingsCoordinator.swift */; };
 		BDA9C21C437EE2BB5BDE4630 /* Sparkle in Frameworks */ = {isa = PBXBuildFile; productRef = ACF0DC933CEF5FED0549B6AD /* Sparkle */; };
 		BE1E2B0D4EF60BB8E67EE87B /* ShortcutNames.swift in Sources */ = {isa = PBXBuildFile; fileRef = 429F3143DECE0A4487E6973D /* ShortcutNames.swift */; };
+		BEA8E437B90E47F214BEA68C /* MonitoredInstance.swift in Sources */ = {isa = PBXBuildFile; fileRef = 90A1E59EC95A4931C96D3D81 /* MonitoredInstance.swift */; };
 		BEC25C968C5A64F18A491E67 /* SharedUserInfo.swift in Sources */ = {isa = PBXBuildFile; fileRef = 80F621C4145AB08008EA4340 /* SharedUserInfo.swift */; };
 		C38FC68EC5B5ABC820F98C3A /* Defaults in Frameworks */ = {isa = PBXBuildFile; productRef = 5EC9776FF97D257EE8DCC72B /* Defaults */; };
 		C3A35BD57103BE6A0024863B /* WelcomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9DF4FBC48BDEA24BA56013AC /* WelcomeView.swift */; };
@@ -89,20 +93,25 @@
 		C9E8E6A9360537846791A3BA /* WelcomeStep+Sendable.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A92381A60033FD16DC9AE63 /* WelcomeStep+Sendable.swift */; };
 		CB33BAB501D1924C0BD4F7DB /* MacOSAutomatorConfigView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 76F24870919EA7083C92D456 /* MacOSAutomatorConfigView.swift */; };
 		CD10B171C48F5F90AF812BE2 /* LogCategory.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0C3551D2B56218B60003051 /* LogCategory.swift */; };
+		CDFFB6450F84F08A20126A3A /* codelooper_terminator_rule.mdc in Resources */ = {isa = PBXBuildFile; fileRef = 1377EBAAAD24B7A2D66638F4 /* codelooper_terminator_rule.mdc */; };
 		CFA48B0C2F2A226CFCF63C89 /* WelcomeWindowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3627917CAA03B1A93F5E99EA /* WelcomeWindowView.swift */; };
 		D36F6415E23A47171C215BB9 /* AboutView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 55726BE7EF05884876CA0408 /* AboutView.swift */; };
+		D47685B3180D379449B090DF /* GeneralSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3C69CC949209A6B0F3D95D5C /* GeneralSettingsView.swift */; };
+		D7FFC051B18C352044F2F117 /* CursorSupervisionSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5BD9EF679B7DBA11587C4CB /* CursorSupervisionSettingsView.swift */; };
 		DE48FA5991B2B8014A28B837 /* LogManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 07D9EB121FEFC8BC7547D1F2 /* LogManager.swift */; };
+		DEDB0493943E70A7906C2638 /* XcodeBuildConfigView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 11B22B91FDE5D7C57D8C8330 /* XcodeBuildConfigView.swift */; };
+		DF279AF8DF13DAB70CCA1E3D /* AdvancedSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 59AF93DA0CFACAFC2421E6F7 /* AdvancedSettingsView.swift */; };
 		E219ED9DE7B48A17CDB17769 /* Task+Timeout.swift in Sources */ = {isa = PBXBuildFile; fileRef = D38E89BF0F0DB36C2E7D658B /* Task+Timeout.swift */; };
 		E6F97BA181144DDF77ACDA56 /* ProgramEntry.swift in Sources */ = {isa = PBXBuildFile; fileRef = FEE054A119C16C0058C8AC17 /* ProgramEntry.swift */; };
-		E8A821AFB6123E49ACACFF86 /* WindowControl.applescript in Resources */ = {isa = PBXBuildFile; fileRef = A993DE505880EFD6575145A0 /* WindowControl.applescript */; };
 		E8D96FAA47286A50222A8E62 /* DefaultsKeys.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51FC857EE374CA0BDF9C759A /* DefaultsKeys.swift */; };
+		E9027FB959A9D70C0CFDB9D4 /* ExternalMCPsSettingsTab.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9965BF9A674918B31A6F3318 /* ExternalMCPsSettingsTab.swift */; };
 		EA5012D1FD36D8FF398A8577 /* CustomObservation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6C1EE04870CCBE096DCED567 /* CustomObservation.swift */; };
 		EB1A07B5BD013FEF94A72FF0 /* CodeLooper.sdef in Resources */ = {isa = PBXBuildFile; fileRef = 1E072564F6C7363162D5F526 /* CodeLooper.sdef */; };
 		EC007E2B27D262FA76FD5573 /* ClaudeCodeConfigView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9B648992B100A3B714E042F2 /* ClaudeCodeConfigView.swift */; };
 		F19CC45E055866D75AE03FAE /* Logging in Frameworks */ = {isa = PBXBuildFile; productRef = 6D5DC3C3E8500359BA1743CA /* Logging */; };
-		F232F463E19F5E0CA14F2130 /* XcodeBuildConfigView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1C4977C34494A374C0B79B7B /* XcodeBuildConfigView.swift */; };
 		F2BF45CB229B5E11283F78A6 /* MainSettingsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 86E260B66207064C7D367FF1 /* MainSettingsViewModel.swift */; };
 		F77B9973A7EEA8B86F1ECE94 /* MCPConfigManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB7C53CC004E9707E9ACCE6A /* MCPConfigManager.swift */; };
+		FB3842EFE37A8B93969EB41D /* CursorRuleSetsSettingsTab.swift in Sources */ = {isa = PBXBuildFile; fileRef = DF784FAEDC4E39AC967E75B9 /* CursorRuleSetsSettingsTab.swift */; };
 		FEA48230B190D98CAC2EB8ED /* WelcomeViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = D5A01E3EDC3ABDDD848DFD80 /* WelcomeViewModel.swift */; };
 /* End PBXBuildFile section */
 
@@ -129,13 +138,12 @@
 		07D9EB121FEFC8BC7547D1F2 /* LogManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LogManager.swift; sourceTree = "<group>"; };
 		09EE41D476B9E1DDF4BB3C41 /* TuistPlists+CodeLooper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "TuistPlists+CodeLooper.swift"; sourceTree = "<group>"; };
 		0F76062C8A2C8BF8BE5EBD49 /* UploadCompletionFeedback.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UploadCompletionFeedback.swift; sourceTree = "<group>"; };
-		1016B172C33726EF79A053E0 /* WorkflowAutomation.applescript */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.applescript; path = WorkflowAutomation.applescript; sourceTree = "<group>"; };
+		11B22B91FDE5D7C57D8C8330 /* XcodeBuildConfigView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = XcodeBuildConfigView.swift; sourceTree = "<group>"; };
+		1377EBAAAD24B7A2D66638F4 /* codelooper_terminator_rule.mdc */ = {isa = PBXFileReference; path = codelooper_terminator_rule.mdc; sourceTree = "<group>"; };
 		16D1B5B9949C8968D7A0F2F2 /* DynamicLocatorDiscoverer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DynamicLocatorDiscoverer.swift; sourceTree = "<group>"; };
-		1C4977C34494A374C0B79B7B /* XcodeBuildConfigView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = XcodeBuildConfigView.swift; sourceTree = "<group>"; };
 		1E072564F6C7363162D5F526 /* CodeLooper.sdef */ = {isa = PBXFileReference; path = CodeLooper.sdef; sourceTree = "<group>"; };
 		1EFADA1713C359300C3593C1 /* MainPopoverView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainPopoverView.swift; sourceTree = "<group>"; };
 		207EB2A9F3EC919ADDDDDD0B /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
-		20C20E17591E0CA5334EEB0F /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		2A0DD407C2C7AAB9208F2D71 /* AlertPresenter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AlertPresenter.swift; sourceTree = "<group>"; };
 		2A2EFD0769BAEA511922A2C3 /* StatsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatsView.swift; sourceTree = "<group>"; };
 		2AD92CB35284AE402359E7F3 /* menu-bar-icon.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "menu-bar-icon.png"; sourceTree = "<group>"; };
@@ -145,6 +153,7 @@
 		34339A12627520D195994567 /* LogConfiguration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LogConfiguration.swift; sourceTree = "<group>"; };
 		3627917CAA03B1A93F5E99EA /* WelcomeWindowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WelcomeWindowView.swift; sourceTree = "<group>"; };
 		38B4AEAFFCFB7B07CF5F8A3D /* Constants.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Constants.swift; sourceTree = "<group>"; };
+		3C69CC949209A6B0F3D95D5C /* GeneralSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GeneralSettingsView.swift; sourceTree = "<group>"; };
 		429F3143DECE0A4487E6973D /* ShortcutNames.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShortcutNames.swift; sourceTree = "<group>"; };
 		47BFE5F8FF03A80E28157AE6 /* NSImage+ResourceLoader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "NSImage+ResourceLoader.swift"; sourceTree = "<group>"; };
 		4CF963411BEA680C49738A53 /* AXApplicationObserver.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AXApplicationObserver.swift; sourceTree = "<group>"; };
@@ -153,6 +162,7 @@
 		51FC857EE374CA0BDF9C759A /* DefaultsKeys.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DefaultsKeys.swift; sourceTree = "<group>"; };
 		55726BE7EF05884876CA0408 /* AboutView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AboutView.swift; sourceTree = "<group>"; };
 		590FE71833D8A3A3DFB21388 /* LogLevel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LogLevel.swift; sourceTree = "<group>"; };
+		59AF93DA0CFACAFC2421E6F7 /* AdvancedSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdvancedSettingsView.swift; sourceTree = "<group>"; };
 		5A7BA47E47C6D7E4B47B351B /* CNContactStore+Sendable.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "CNContactStore+Sendable.swift"; sourceTree = "<group>"; };
 		5B90EE899110CFF876B12F5C /* GeneralSettingsTab.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GeneralSettingsTab.swift; sourceTree = "<group>"; };
 		606FD31E5CDAD9A2D805242B /* AXorcist */ = {isa = PBXFileReference; lastKnownFileType = folder; name = AXorcist; path = AXorcist; sourceTree = "<group>"; };
@@ -169,6 +179,7 @@
 		7A2AAC76A058C92903902067 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		7A92381A60033FD16DC9AE63 /* WelcomeStep+Sendable.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "WelcomeStep+Sendable.swift"; sourceTree = "<group>"; };
 		7B425EA51475F4BEC7D5140A /* CursorMonitor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CursorMonitor.swift; sourceTree = "<group>"; };
+		7FC1B35DF6546A73EF154B3C /* LogSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LogSettingsView.swift; sourceTree = "<group>"; };
 		80F621C4145AB08008EA4340 /* SharedUserInfo.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SharedUserInfo.swift; sourceTree = "<group>"; };
 		86D2A836363CA4B076AC653B /* TuistAssets+CodeLooper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "TuistAssets+CodeLooper.swift"; sourceTree = "<group>"; };
 		86E260B66207064C7D367FF1 /* MainSettingsViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainSettingsViewModel.swift; sourceTree = "<group>"; };
@@ -176,20 +187,22 @@
 		8BB499FA597CE3DA1BAAE20B /* WelcomeScreenToggle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WelcomeScreenToggle.swift; sourceTree = "<group>"; };
 		8CD814F1C33969075035D23E /* ResourceLoader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ResourceLoader.swift; sourceTree = "<group>"; };
 		8E52466D111E8481176D7608 /* Logger.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Logger.swift; sourceTree = "<group>"; };
+		90A1E59EC95A4931C96D3D81 /* MonitoredInstance.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MonitoredInstance.swift; sourceTree = "<group>"; };
 		9386E52AE43115F927B9F46E /* ElementHeuristic.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ElementHeuristic.swift; sourceTree = "<group>"; };
 		93AC4CF1C997DD2788D389DF /* AboutSettingsTab.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AboutSettingsTab.swift; sourceTree = "<group>"; };
 		93B6B22145EE684039699F7F /* symbol-dark.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "symbol-dark.png"; sourceTree = "<group>"; };
 		957E99A2BCBAC60FCCED14A0 /* ContinuationGuard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContinuationGuard.swift; sourceTree = "<group>"; };
+		9965BF9A674918B31A6F3318 /* ExternalMCPsSettingsTab.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExternalMCPsSettingsTab.swift; sourceTree = "<group>"; };
+		99EEFF4BEB03587B91DC3B8F /* SettingsPanesContainerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsPanesContainerView.swift; sourceTree = "<group>"; };
 		9B648992B100A3B714E042F2 /* ClaudeCodeConfigView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClaudeCodeConfigView.swift; sourceTree = "<group>"; };
 		9DF4FBC48BDEA24BA56013AC /* WelcomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WelcomeView.swift; sourceTree = "<group>"; };
 		A0C3551D2B56218B60003051 /* LogCategory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LogCategory.swift; sourceTree = "<group>"; };
-		A3D905820699319B1CDC9383 /* AppMain.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppMain.swift; sourceTree = "<group>"; };
 		A41F428C85C054807ABDB786 /* AppIconStateController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppIconStateController.swift; sourceTree = "<group>"; };
 		A78799854F3184746818B6C8 /* AppEnvironment.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppEnvironment.swift; sourceTree = "<group>"; };
 		A81EBBDD92B0209BC89FB02F /* IconAnimator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IconAnimator.swift; sourceTree = "<group>"; };
 		A89A61E85E7F94A82B8EB883 /* SettingsSection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsSection.swift; sourceTree = "<group>"; };
-		A993DE505880EFD6575145A0 /* WindowControl.applescript */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.applescript; path = WindowControl.applescript; sourceTree = "<group>"; };
 		AA29E7678517AB755201385A /* symbol.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = symbol.png; sourceTree = "<group>"; };
+		AB5EF7A23F3B58EB51CBF50C /* MacAutomatorConfigView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MacAutomatorConfigView.swift; sourceTree = "<group>"; };
 		AB7C53CC004E9707E9ACCE6A /* MCPConfigManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MCPConfigManager.swift; sourceTree = "<group>"; };
 		ABE5B4B85B8DFCC5EE38B60D /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
 		AC0C0DAFE0042888816F08B5 /* DiagnosticsLogger.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiagnosticsLogger.swift; sourceTree = "<group>"; };
@@ -205,6 +218,9 @@
 		D5A01E3EDC3ABDDD848DFD80 /* WelcomeViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WelcomeViewModel.swift; sourceTree = "<group>"; };
 		D856361E5F41F3A253E8F52E /* UserAvatarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserAvatarView.swift; sourceTree = "<group>"; };
 		D8D75E06F92FADB6B0863FBA /* CursorInstanceModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CursorInstanceModels.swift; sourceTree = "<group>"; };
+		DC2AAE330BB05D9CA71FCFB3 /* terminator.scpt */ = {isa = PBXFileReference; path = terminator.scpt; sourceTree = "<group>"; };
+		DF784FAEDC4E39AC967E75B9 /* CursorRuleSetsSettingsTab.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CursorRuleSetsSettingsTab.swift; sourceTree = "<group>"; };
+		DF792AF940019971173C3D04 /* CodeLooperApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodeLooperApp.swift; sourceTree = "<group>"; };
 		E39DB740414D201FEBD3F42C /* AppDelegate+AppleScript.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AppDelegate+AppleScript.swift"; sourceTree = "<group>"; };
 		E672E335245ABAAB0259FC9A /* symbol-light.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "symbol-light.png"; sourceTree = "<group>"; };
 		EBC9BE3938615FC8BF709BBE /* WelcomeWindowCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WelcomeWindowCoordinator.swift; sourceTree = "<group>"; };
@@ -212,6 +228,7 @@
 		EFF0E89AC6C44C8478328EB5 /* MenuBarIconManager+Debug.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "MenuBarIconManager+Debug.swift"; sourceTree = "<group>"; };
 		F2735263696E5EA29D4C6F5A /* NotificationName.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationName.swift; sourceTree = "<group>"; };
 		F2A986804F8A12B8A58B92A2 /* MenuBarIconManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuBarIconManager.swift; sourceTree = "<group>"; };
+		F5BD9EF679B7DBA11587C4CB /* CursorSupervisionSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CursorSupervisionSettingsView.swift; sourceTree = "<group>"; };
 		F91D875E3D9A2EC1874763B3 /* UserInterface.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserInterface.swift; sourceTree = "<group>"; };
 		FE445F08ECA9AE0063E2AA49 /* LoginItemManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginItemManager.swift; sourceTree = "<group>"; };
 		FEE054A119C16C0058C8AC17 /* ProgramEntry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProgramEntry.swift; sourceTree = "<group>"; };
@@ -228,6 +245,7 @@
 				F19CC45E055866D75AE03FAE /* Logging in Frameworks */,
 				A23B565C8A05C2C3CEF183C1 /* AXorcistLib in Frameworks */,
 				BDA9C21C437EE2BB5BDE4630 /* Sparkle in Frameworks */,
+				38FF90E01CFF033181A8A1EB /* KeyboardShortcuts in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -253,6 +271,7 @@
 				8E52466D111E8481176D7608 /* Logger.swift */,
 				590FE71833D8A3A3DFB21388 /* LogLevel.swift */,
 				07D9EB121FEFC8BC7547D1F2 /* LogManager.swift */,
+				7FC1B35DF6546A73EF154B3C /* LogSettingsView.swift */,
 				AF84978ED668053955A7191A /* SessionLogger.swift */,
 			);
 			path = Diagnostics;
@@ -272,6 +291,7 @@
 		0B77C24D61B30E42E1A9FAAA /* Supervision */ = {
 			isa = PBXGroup;
 			children = (
+				E1B46238C32C74DEAF36578E /* Models */,
 				D8D75E06F92FADB6B0863FBA /* CursorInstanceModels.swift */,
 				7B425EA51475F4BEC7D5140A /* CursorMonitor.swift */,
 			);
@@ -292,8 +312,6 @@
 			isa = PBXGroup;
 			children = (
 				ABE5B4B85B8DFCC5EE38B60D /* README.md */,
-				A993DE505880EFD6575145A0 /* WindowControl.applescript */,
-				1016B172C33726EF79A053E0 /* WorkflowAutomation.applescript */,
 			);
 			path = Examples;
 			sourceTree = "<group>";
@@ -320,9 +338,16 @@
 		1FAEC26E0CD4AA051827B216 /* Views */ = {
 			isa = PBXGroup;
 			children = (
-				20C20E17591E0CA5334EEB0F /* SettingsView.swift */,
+				59AF93DA0CFACAFC2421E6F7 /* AdvancedSettingsView.swift */,
+				DF784FAEDC4E39AC967E75B9 /* CursorRuleSetsSettingsTab.swift */,
+				F5BD9EF679B7DBA11587C4CB /* CursorSupervisionSettingsView.swift */,
+				9965BF9A674918B31A6F3318 /* ExternalMCPsSettingsTab.swift */,
+				3C69CC949209A6B0F3D95D5C /* GeneralSettingsView.swift */,
+				AB5EF7A23F3B58EB51CBF50C /* MacAutomatorConfigView.swift */,
+				99EEFF4BEB03587B91DC3B8F /* SettingsPanesContainerView.swift */,
 				2A2EFD0769BAEA511922A2C3 /* StatsView.swift */,
 				D856361E5F41F3A253E8F52E /* UserAvatarView.swift */,
+				11B22B91FDE5D7C57D8C8330 /* XcodeBuildConfigView.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -409,7 +434,6 @@
 				9B648992B100A3B714E042F2 /* ClaudeCodeConfigView.swift */,
 				5B90EE899110CFF876B12F5C /* GeneralSettingsTab.swift */,
 				76F24870919EA7083C92D456 /* MacOSAutomatorConfigView.swift */,
-				1C4977C34494A374C0B79B7B /* XcodeBuildConfigView.swift */,
 			);
 			path = SettingsTabs;
 			sourceTree = "<group>";
@@ -465,6 +489,7 @@
 			isa = PBXGroup;
 			children = (
 				0EA2100DB84735D78612DE28 /* Examples */,
+				1377EBAAAD24B7A2D66638F4 /* codelooper_terminator_rule.mdc */,
 				1E072564F6C7363162D5F526 /* CodeLooper.sdef */,
 				207EB2A9F3EC919ADDDDDD0B /* Info.plist */,
 				CC10D906EAF6E924567E3DB3 /* MainMenu.nib */,
@@ -472,6 +497,7 @@
 				93B6B22145EE684039699F7F /* symbol-dark.png */,
 				E672E335245ABAAB0259FC9A /* symbol-light.png */,
 				AA29E7678517AB755201385A /* symbol.png */,
+				DC2AAE330BB05D9CA71FCFB3 /* terminator.scpt */,
 			);
 			path = Resources;
 			sourceTree = "<group>";
@@ -484,7 +510,7 @@
 				E39DB740414D201FEBD3F42C /* AppDelegate+AppleScript.swift */,
 				6126F9E683179961A17F0C74 /* AppDelegate+MenuManagerDelegate.swift */,
 				A78799854F3184746818B6C8 /* AppEnvironment.swift */,
-				A3D905820699319B1CDC9383 /* AppMain.swift */,
+				DF792AF940019971173C3D04 /* CodeLooperApp.swift */,
 				77BD422F9926B58B0FEF44C4 /* NotificationManager.swift */,
 				FEE054A119C16C0058C8AC17 /* ProgramEntry.swift */,
 				429F3143DECE0A4487E6973D /* ShortcutNames.swift */,
@@ -504,6 +530,14 @@
 				4A895A35C15F11CFE47AD309 /* Sources */,
 			);
 			name = Project;
+			sourceTree = "<group>";
+		};
+		E1B46238C32C74DEAF36578E /* Models */ = {
+			isa = PBXGroup;
+			children = (
+				90A1E59EC95A4931C96D3D81 /* MonitoredInstance.swift */,
+			);
+			path = Models;
 			sourceTree = "<group>";
 		};
 		F2994A5F2071D45E56C0EA42 /* Extensions */ = {
@@ -563,6 +597,7 @@
 				6D5DC3C3E8500359BA1743CA /* Logging */,
 				BB14900E5435392E9D4A7C0C /* AXorcistLib */,
 				ACF0DC933CEF5FED0549B6AD /* Sparkle */,
+				40627E5CA183F2FF0E4024E6 /* KeyboardShortcuts */,
 			);
 			productName = CodeLooper;
 			productReference = 72CAF9D1E03CFD28069B089F /* CodeLooper.app */;
@@ -591,6 +626,7 @@
 			packageReferences = (
 				A9F285E059E774EA69CFE3E4 /* XCRemoteSwiftPackageReference "swift-log" */,
 				F977A8B24E9041EEA9D06982 /* XCRemoteSwiftPackageReference "Defaults" */,
+				06BB1D02BB1753D2B3E2EF52 /* XCRemoteSwiftPackageReference "KeyboardShortcuts" */,
 				0E03DC693D5E087D24CDDBB3 /* XCRemoteSwiftPackageReference "LaunchAtLogin" */,
 				56A4A40657C281F3F49F82F0 /* XCRemoteSwiftPackageReference "SwiftUI-Introspect" */,
 				EDE305AEB8660A29D02A09E9 /* XCRemoteSwiftPackageReference "Sparkle" */,
@@ -614,14 +650,14 @@
 				13ED50F2F28C4EEF3532770A /* Main.storyboard in Resources */,
 				EB1A07B5BD013FEF94A72FF0 /* CodeLooper.sdef in Resources */,
 				0CD8B311C960B813A171DA03 /* README.md in Resources */,
-				E8A821AFB6123E49ACACFF86 /* WindowControl.applescript in Resources */,
-				3D214C490F1537CC321FF79C /* WorkflowAutomation.applescript in Resources */,
 				B762E680C8D4C44EFD5E1A18 /* Info.plist in Resources */,
 				3EB93F9333F97BEB98D906BF /* MainMenu.nib in Resources */,
+				CDFFB6450F84F08A20126A3A /* codelooper_terminator_rule.mdc in Resources */,
 				22DED59B6714D4A222EFD1FC /* menu-bar-icon.png in Resources */,
 				C90197A1C9EA4C308C1A2DEE /* symbol-dark.png in Resources */,
 				A3CB8195EAEFE3ADA25182CC /* symbol-light.png in Resources */,
 				4336D6897015ACCCB1061968 /* symbol.png in Resources */,
+				ACB6FD93CD3B40826016F770 /* terminator.scpt in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -640,7 +676,7 @@
 				C4FDEDABAA93FCA10ECE36A3 /* AppDelegate+MenuManagerDelegate.swift in Sources */,
 				60329453329B37E5AF93170D /* AppDelegate.swift in Sources */,
 				B3E5C470B686C17E153AB004 /* AppEnvironment.swift in Sources */,
-				5431F805813CB204896FB813 /* AppMain.swift in Sources */,
+				844CE43E8F91643C896C901D /* CodeLooperApp.swift in Sources */,
 				6F8706A905A33CAE6099C572 /* NotificationManager.swift in Sources */,
 				E6F97BA181144DDF77ACDA56 /* ProgramEntry.swift in Sources */,
 				BE1E2B0D4EF60BB8E67EE87B /* ShortcutNames.swift in Sources */,
@@ -658,7 +694,6 @@
 				EC007E2B27D262FA76FD5573 /* ClaudeCodeConfigView.swift in Sources */,
 				448BF52934BF1A3DE9A966A2 /* GeneralSettingsTab.swift in Sources */,
 				CB33BAB501D1924C0BD4F7DB /* MacOSAutomatorConfigView.swift in Sources */,
-				F232F463E19F5E0CA14F2130 /* XcodeBuildConfigView.swift in Sources */,
 				A5D3EE25DF8EF0F87EE4068E /* WelcomeScreenToggle.swift in Sources */,
 				C3A35BD57103BE6A0024863B /* WelcomeView.swift in Sources */,
 				FEA48230B190D98CAC2EB8ED /* WelcomeViewModel.swift in Sources */,
@@ -671,14 +706,22 @@
 				61409D0116033AF22C0F7682 /* LogConfiguration.swift in Sources */,
 				2E31D0C9CDE66FDA592DB52A /* LogLevel.swift in Sources */,
 				DE48FA5991B2B8014A28B837 /* LogManager.swift in Sources */,
+				803867F724A632B98DDE1631 /* LogSettingsView.swift in Sources */,
 				47A31CF8E335731EBD786992 /* Logger.swift in Sources */,
 				2D7504C3FD8BB70F4D844481 /* SessionLogger.swift in Sources */,
 				BC5AEC7BDDCBC1ACC553B63E /* MainSettingsCoordinator.swift in Sources */,
 				E8D96FAA47286A50222A8E62 /* DefaultsKeys.swift in Sources */,
 				3C168575038B1A82AD370C07 /* DefaultsManager.swift in Sources */,
-				186F71DCB81607622A95C64E /* SettingsView.swift in Sources */,
+				DF279AF8DF13DAB70CCA1E3D /* AdvancedSettingsView.swift in Sources */,
+				FB3842EFE37A8B93969EB41D /* CursorRuleSetsSettingsTab.swift in Sources */,
+				D7FFC051B18C352044F2F117 /* CursorSupervisionSettingsView.swift in Sources */,
+				E9027FB959A9D70C0CFDB9D4 /* ExternalMCPsSettingsTab.swift in Sources */,
+				D47685B3180D379449B090DF /* GeneralSettingsView.swift in Sources */,
+				7FB1DA236DAF99E5DAC30AA5 /* MacAutomatorConfigView.swift in Sources */,
+				1DB5FDCEBD999A62720CA066 /* SettingsPanesContainerView.swift in Sources */,
 				3BF2B3804B75479641439A06 /* StatsView.swift in Sources */,
 				A5D275145E9F31929BA6CA11 /* UserAvatarView.swift in Sources */,
+				DEDB0493943E70A7906C2638 /* XcodeBuildConfigView.swift in Sources */,
 				B68985D0E3F44198769DFBA8 /* AppIconStateController.swift in Sources */,
 				22B7B31E0FF8772DB23A7BED /* MainPopoverView.swift in Sources */,
 				67A565A96A9DDA1A75D03525 /* MenuManager.swift in Sources */,
@@ -690,6 +733,7 @@
 				2FD00A2FC1AF559BA0259DE1 /* UploadCompletionFeedback.swift in Sources */,
 				BA0F55DB128F625F76084822 /* CursorInstanceModels.swift in Sources */,
 				1EB3DAF90502B431C374B95C /* CursorMonitor.swift in Sources */,
+				BEA8E437B90E47F214BEA68C /* MonitoredInstance.swift in Sources */,
 				88C757EEB61ED4E2C954E8B9 /* AXApplicationObserver.swift in Sources */,
 				17C433793C3D84617597EA53 /* DynamicLocatorDiscoverer.swift in Sources */,
 				AE0B126099035C9EC60FDF68 /* ElementHeuristic.swift in Sources */,
@@ -946,6 +990,14 @@
 /* End XCLocalSwiftPackageReference section */
 
 /* Begin XCRemoteSwiftPackageReference section */
+		06BB1D02BB1753D2B3E2EF52 /* XCRemoteSwiftPackageReference "KeyboardShortcuts" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/sindresorhus/KeyboardShortcuts";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 2.0.0;
+			};
+		};
 		0E03DC693D5E087D24CDDBB3 /* XCRemoteSwiftPackageReference "LaunchAtLogin" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/sindresorhus/LaunchAtLogin";
@@ -992,6 +1044,10 @@
 		35EC1BE62E99DC3A9B3F78F2 /* SwiftUIIntrospect */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = SwiftUIIntrospect;
+		};
+		40627E5CA183F2FF0E4024E6 /* KeyboardShortcuts */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = KeyboardShortcuts;
 		};
 		5EC9776FF97D257EE8DCC72B /* Defaults */ = {
 			isa = XCSwiftPackageProductDependency;

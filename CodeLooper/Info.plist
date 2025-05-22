@@ -51,5 +51,13 @@
 	<string>CodeLooper.sdef</string>
 	<key>NSAppleScriptEnabled</key>
 	<true/>
+
+	<!-- Sparkle Update Framework Configuration -->
+	<key>SUFeedURL</key>
+	<string>YOUR_APPCAST_URL_HERE</string> <!-- TODO: Replace with actual appcast URL -->
+	<key>SUPublicEDKey</key>
+	<string>YOUR_SPARKLE_PUBLIC_ED_KEY_HERE</string> <!-- TODO: Replace with actual public EdDSA key -->
+	<key>SUEnableAutomaticChecks</key>
+	<true/> <!-- This can be overridden by user preferences -->
 </dict>
 </plist>

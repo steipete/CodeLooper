@@ -1,4 +1,4 @@
-import Defaults
+@preconcurrency import Defaults
 import Foundation
 
 extension Defaults.Keys {

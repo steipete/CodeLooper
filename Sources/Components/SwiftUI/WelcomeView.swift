@@ -18,6 +18,13 @@ struct WelcomeView: View {
 
                 // Content
                 VStack(spacing: 0) {
+                    // Header for current step (optional, could be nice)
+                    Text(viewModel.currentStep.description)
+                        .font(.title2.weight(.semibold))
+                        .padding(.top, 20)
+                        .padding(.bottom, 10)
+                        .opacity(viewModel.currentStep == .welcome ? 0 : 1) // Hide for initial welcome step
+
                     if viewModel.currentStep == .welcome {
                         WelcomeStepView(viewModel: viewModel)
                     } else if viewModel.currentStep == .accessibility {
@@ -31,13 +38,14 @@ struct WelcomeView: View {
                     // Footer with navigation for non-complete steps
                     if viewModel.currentStep != .complete {
                         FooterView(viewModel: viewModel)
+                            .padding(.bottom, 20) // Add some bottom padding for the footer
                     }
                 }
+                .padding(.horizontal, 20) // Add horizontal padding to the main VStack
                 .frame(
-                    width: UserInterfaceConstants.constants.settingsWindowSize.width,
-                    height: UserInterfaceConstants.constants.settingsWindowSize.height
+                    width: geometry.size.width, // Use full geometry width
+                    height: geometry.size.height // Use full geometry height
                 )
-                .position(x: geometry.size.width / 2, y: geometry.size.height / 2) // Center in window
             }
         }
     }
@@ -49,92 +57,83 @@ struct WelcomeStepView: View {
     var viewModel: WelcomeViewModel
 
     var body: some View {
-        VStack(spacing: 0) {
+        VStack(spacing: 20) { // Increased main spacing
             // Logo and header area
-            VStack(spacing: 20) {
+            VStack(spacing: 15) { // Adjusted spacing
                 Image("logo")
                     .resizable()
                     .aspectRatio(contentMode: .fit)
-                    .frame(width: 80, height: 80)
-                    .padding(.top, 40)
+                    .frame(width: 70, height: 70) // Slightly smaller logo
+                    .padding(.top, 20) // Reduced top padding
 
                 Text("Welcome to CodeLooper")
-                    .font(.system(size: 24, weight: .bold))
+                    .font(.title.weight(.bold)) // Larger font
                     .foregroundColor(.primary)
 
-                Text("Your coding companion for macOS")
-                    .font(.system(size: 16))
+                Text("Your intelligent assistant for macOS automation and workflow enhancement.") // Slightly more descriptive
+                    .font(.headline.weight(.regular))
                     .foregroundColor(.secondary)
                     .multilineTextAlignment(.center)
-                    .padding(.horizontal, 20)
-                    .padding(.bottom, 40)
+                    .padding(.horizontal, 30) // Ensure text wraps nicely
             }
+            .padding(.bottom, 20)
 
             // Main content area with features
-            VStack(spacing: 30) {
+            VStack(alignment: .leading, spacing: 25) { // Adjusted spacing, alignment
                 FeatureRow(
-                    iconName: "rectangle.on.rectangle.angled",
-                    title: "Code assistance",
-                    description: "Get help with your coding tasks and projects"
+                    iconName: "sparkles.rectangle.stack", // More relevant icon
+                    title: "Automated Workflow Assistance",
+                    description: "CodeLooper monitors and assists with repetitive tasks."
                 )
 
                 FeatureRow(
-                    iconName: "gearshape.2",
-                    title: "System integration",
-                    description: "Works seamlessly with your macOS workflow"
+                    iconName: "keyboard.badge.eye", // More relevant icon
+                    title: "Cursor Supervision Engine",
+                    description: "Keeps an eye on Cursor instances to ensure smooth operation."
                 )
 
                 FeatureRow(
-                    iconName: "lock.shield",
-                    title: "Privacy focused",
-                    description: "Your code stays on your machine"
+                    iconName: "lock.shield.fill", // Using filled variant
+                    title: "Privacy First",
+                    description: "All processing happens locally on your Mac."
                 )
             }
-            .padding(.vertical, 30)
+            .padding(.vertical, 25) // Adjusted padding
             .padding(.horizontal, 20)
-            .background(Color(.windowBackgroundColor).brightness(-0.03))
 
-            Spacer(minLength: 0)
+            Spacer(minLength: 20) // Ensure some space
 
             // Bottom button area
             VStack(spacing: 15) {
-                Button(
-                    action: {
-                        viewModel.goToNextStep()
-                    },
-                    label: {
-                        Text("Get Started")
-                            .font(.system(size: 16, weight: .medium))
-                            .foregroundColor(.white)
-                            .frame(maxWidth: .infinity)
-                            .frame(height: 46)
-                            .background(Color.accentColor)
-                            .cornerRadius(8)
-                    }
-                )
-                .buttonStyle(PlainButtonStyle())
-                .padding(.horizontal, 40)
-                .padding(.top, 20)
+                Button {
+                    viewModel.goToNextStep()
+                } label: {
+                    Text("Get Started")
+                        .fontWeight(.medium)
+                        .frame(maxWidth: 220) // Set a max width for the button
+                        .padding()
+                        .background(Color.accentColor)
+                        .foregroundColor(.white)
+                        .cornerRadius(10)
+                }
+                .buttonStyle(.plain) // Use plain to allow custom background
+                .padding(.top, 10)
 
                 HStack(spacing: 4) {
                     Text("Need help?")
-                        .font(.system(size: 13))
+                        .font(.callout)
                         .foregroundColor(.secondary)
 
-                    Text("Visit our GitHub")
-                        .font(.system(size: 13))
+                    Link("Visit our GitHub", destination: URL(string: "https://github.com/steipete/CodeLooper")!) // Updated link
+                        .font(.callout)
                         .foregroundColor(Color.accentColor)
                         .underline()
-                        .onTapGesture {
-                            if let url = URL(string: "https://github.com/codelooper/codelooper") {
-                                NSWorkspace.shared.open(url)
-                            }
-                        }
                 }
-                .padding(.bottom, 20)
+                .padding(.bottom, 10) // Reduced bottom padding
             }
         }
-        .frame(maxWidth: .infinity)
+        .padding(.bottom, 10) // Padding for the whole step view
+        .frame(maxWidth: .infinity, maxHeight: .infinity) // Allow it to fill available space
     }
 }
 
@@ -145,92 +144,95 @@ struct AccessibilityStepView: View {
     @State private var accessibilityStatusMessage: String = "Status: Unknown"
     
     var body: some View {
-        VStack(spacing: 0) {
-            Spacer()
+        VStack(spacing: 20) { // Consistent spacing
+            Spacer(minLength: 10) // Add a little space at the top
             
             // Accessibility icon
             ZStack {
                 Circle()
                     .fill(Color.accentColor.opacity(0.1))
-                    .frame(width: 80, height: 80)
+                    .frame(width: 70, height: 70) // Slightly smaller icon
                 
-                Image(systemName: "universal.access")
-                    .font(.system(size: 40))
+                Image(systemName: "figure.hand.tap.computer") // More descriptive icon
+                    .font(.system(size: 36))
                     .foregroundColor(Color.accentColor)
             }
-            .padding(.bottom, 30)
+            .padding(.bottom, 20)
             
-            // Title and description
-            Text("Accessibility Permissions")
-                .font(.system(size: 28, weight: .bold))
-                .padding(.bottom, 12)
+            // Title and description (using .title3 for consistency with other potential step titles)
+            // Title is now handled by the parent WelcomeView if the new structure is kept.
+            // Text("Accessibility Permissions")
+            // .font(.title3.weight(.semibold))
+            // .padding(.bottom, 8)
             
-            Text("CodeLooper needs Accessibility permissions to monitor and interact with other applications like Cursor.")
-                .font(.system(size: 16))
+            Text("CodeLooper needs Accessibility permissions to monitor and interact with other applications on your behalf. This is essential for its core functionality.")
+                .font(.headline.weight(.regular))
                 .foregroundColor(.secondary)
                 .multilineTextAlignment(.center)
-                .padding(.horizontal, 60)
-                .padding(.bottom, 40)
+                .padding(.horizontal, 40) // Adjusted padding
+                .padding(.bottom, 30)
             
             // Permission settings section
-            VStack(spacing: 20) {
+            VStack(spacing: 15) { // Adjusted spacing
                 // Open settings button
-                Button(
-                    action: {
-                        openAccessibilitySettings()
-                    },
-                    label: {
+                Button {
+                    viewModel.handleOpenAccessibilitySettingsAndPrompt()
+                } label: {
+                    HStack {
+                        Image(systemName: "gearshape.fill")
                         Text("Open System Accessibility Settings")
-                            .font(.system(size: 16, weight: .medium))
-                            .foregroundColor(.white)
-                            .frame(maxWidth: .infinity)
-                            .frame(height: 46)
-                            .background(Color.accentColor)
-                            .cornerRadius(8)
                     }
-                )
-                .buttonStyle(PlainButtonStyle())
-                .padding(.horizontal, 20)
+                    .fontWeight(.medium)
+                    .frame(maxWidth: 300) // Consistent button width
+                    .padding()
+                    .background(Color.accentColor)
+                    .foregroundColor(.white)
+                    .cornerRadius(10)
+                }
+                .buttonStyle(.plain)
+                .keyboardShortcut(.defaultAction)
                 
-                Text("After opening settings, find 'CodeLooper' in the Accessibility list and enable it.")
-                    .font(.system(size: 14))
-                    .foregroundColor(.secondary)
+                Text("After opening settings, find CodeLooper in the list and enable the switch.")
+                    .font(.caption)
+                    .foregroundColor(.gray)
                     .multilineTextAlignment(.center)
                     .padding(.horizontal, 20)
                 
                 // Status section
-                VStack(spacing: 12) {
+                VStack(spacing: 10) { // Adjusted spacing
                     Text(accessibilityStatusMessage)
-                        .font(.system(size: 14, weight: .medium))
-                        .foregroundColor(accessibilityStatusMessage.contains("Granted") ? .green : .secondary)
+                        .font(.callout.weight(.medium))
+                        .foregroundColor(accessibilityStatusMessage.contains("Granted") ? .green : (accessibilityStatusMessage.contains("Not Granted") ? .orange : .secondary))
+                        .onAppear { Task { await checkAccessibilityPermissions() } } // Check on appear
                     
-                    Button(
-                        action: {
-                            Task {
-                                await checkAccessibilityPermissions()
-                            }
-                        },
-                        label: {
-                            Text("Check Permissions")
-                                .font(.system(size: 14, weight: .medium))
-                                .foregroundColor(Color.accentColor)
-                                .padding(.horizontal, 16)
-                                .padding(.vertical, 8)
-                                .background(Color.accentColor.opacity(0.1))
-                                .cornerRadius(6)
+                    Button {
+                        Task {
+                            await checkAccessibilityPermissions()
                         }
-                    )
-                    .buttonStyle(PlainButtonStyle())
+                    } label: {
+                        Text("Re-check Permissions")
+                            .font(.caption.weight(.medium))
+                            // .foregroundColor(Color.accentColor)
+                            // .padding(.horizontal, 12)
+                            // .padding(.vertical, 6)
+                            // .background(Color.accentColor.opacity(0.1))
+                            // .cornerRadius(6)
+                    }
+                    // .buttonStyle(PlainButtonStyle()) // Using default link style now
                 }
-                .padding(.top, 10)
+                .padding(.top, 5)
             }
-            .padding(.vertical, 30)
-            .padding(.horizontal, 40)
-            .background(Color(.windowBackgroundColor).brightness(-0.03))
-            .cornerRadius(12)
-            .padding(.horizontal, 40)
+            .padding(.vertical, 20) // Adjusted padding
+            .padding(.horizontal, 30)
+            // .background(Color(.windowBackgroundColor).brightness(-0.03)) // Removing background
+            // .cornerRadius(12) // Removing corner radius
+            .padding(.horizontal, 20)
             
-            Spacer()
+            Spacer(minLength: 10)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .onAppear { // Initial check when the view appears
+            Task { await checkAccessibilityPermissions() }
         }
     }
     
@@ -256,57 +258,58 @@ struct SettingsStepView: View {
     var viewModel: WelcomeViewModel
 
     var body: some View {
-        VStack(spacing: 0) {
-            Spacer()
+        VStack(spacing: 20) { // Consistent spacing
+            Spacer(minLength: 10)
 
             // Settings icon
             ZStack {
                 Circle()
                     .fill(Color.accentColor.opacity(0.1))
-                    .frame(width: 80, height: 80)
+                    .frame(width: 70, height: 70) // Slightly smaller icon
 
-                Image(systemName: "gearshape.2")
-                    .font(.system(size: 40))
+                Image(systemName: "slider.horizontal.3") // More fitting icon
+                    .font(.system(size: 36))
                     .foregroundColor(Color.accentColor)
             }
-            .padding(.bottom, 30)
+            .padding(.bottom, 20)
 
             // Title and description
-            Text("Configure Settings")
-                .font(.system(size: 28, weight: .bold))
-                .padding(.bottom, 12)
+            // Title is now handled by the parent WelcomeView if the new structure is kept.
+            // Text("Configure Settings")
+            // .font(.title3.weight(.semibold))
+            // .padding(.bottom, 8)
 
-            Text("Customize how CodeLooper works for you.")
-                .font(.system(size: 16))
+            Text("Customize CodeLooper to fit your workflow. You can change these settings later.")
+                .font(.headline.weight(.regular))
                 .foregroundColor(.secondary)
                 .multilineTextAlignment(.center)
-                .padding(.horizontal, 60)
-                .padding(.bottom, 40)
+                .padding(.horizontal, 40)
+                .padding(.bottom, 30)
 
             // Settings options
             VStack(spacing: 20) {
                 // Start at login option
-                VStack(spacing: 8) {
-                    Toggle("Start at login", isOn: Binding(
-                        get: { viewModel.startAtLogin },
-                        set: { viewModel.updateStartAtLogin($0) }
-                    ))
-                    .toggleStyle(SwitchToggleStyle(tint: Color.accentColor))
-                    .padding(.horizontal, 20)
+                Toggle("Launch CodeLooper automatically at Login", isOn: Binding(
+                    get: { viewModel.startAtLogin },
+                    set: { viewModel.updateStartAtLogin($0) }
+                ))
+                .toggleStyle(SwitchToggleStyle(tint: Color.accentColor))
+                .padding(.horizontal, 20) // Padding for the toggle row
 
-                    Text("Launch CodeLooper automatically when you log in")
-                        .font(.system(size: 12))
-                        .foregroundColor(.secondary)
-                        .padding(.horizontal, 20)
-                }
-                .padding(.vertical, 20)
-                .background(Color(.windowBackgroundColor).brightness(-0.03))
-                .cornerRadius(12)
+                // Potentially add another key setting here if desired for the welcome flow
+                // For example, a shortcut recorder if it's critical for first use.
+                // KeyboardShortcuts.Recorder("Toggle Monitoring Shortcut:", name: .toggleMonitoring)
+                // .padding(.horizontal, 20)
             }
-            .padding(.horizontal, 40)
+            .padding(.vertical, 20)
+            .padding(.horizontal, 20)
+            // .background(Color(.windowBackgroundColor).brightness(-0.03)) // Removing background
+            // .cornerRadius(12) // Removing corner radius
+            .frame(maxWidth: 400) // Constrain width of this section
 
-            Spacer()
+            Spacer(minLength: 10)
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 }
 
@@ -356,90 +359,96 @@ struct CompletionStepView: View {
     var viewModel: WelcomeViewModel
 
     var body: some View {
-        VStack(spacing: 0) {
+        VStack(spacing: 20) { // Consistent spacing
+            Spacer(minLength: 10)
             // Header
-            VStack(spacing: 20) {
-                Image("logo")
+            VStack(spacing: 15) { // Adjusted spacing
+                Image("logo") // Keep logo for brand reinforcement
                     .resizable()
                     .aspectRatio(contentMode: .fit)
-                    .frame(width: 80, height: 80)
-                    .padding(.top, 40)
+                    .frame(width: 70, height: 70)
+                    .padding(.top, 20)
 
-                Text("All Set! 🎉")
-                    .font(.system(size: 24, weight: .bold))
-                    .foregroundColor(.primary)
+                // Title is now handled by the parent WelcomeView if the new structure is kept.
+                // Text("All Set! 🎉")
+                // .font(.title3.weight(.semibold))
+                // .padding(.bottom, 8)
 
-                Text("CodeLooper is now configured and ready to help with your coding tasks")
-                    .font(.system(size: 16))
+                Text("CodeLooper is now configured and ready to assist you!")
+                    .font(.headline.weight(.regular))
                     .foregroundColor(.secondary)
                     .multilineTextAlignment(.center)
-                    .padding(.horizontal, 60)
-                    .padding(.bottom, 30)
+                    .padding(.horizontal, 40)
+                    .padding(.bottom, 20)
             }
 
             // Main content with success message
-            VStack(spacing: 30) {
-                VStack(spacing: 25) {
+            VStack(spacing: 25) { // Adjusted spacing
+                VStack(spacing: 20) { // Adjusted spacing
                     // Success icon
                     ZStack {
                         Circle()
-                            .fill(Color.green)
-                            .frame(width: 120, height: 120)
+                            .fill(Color.green.opacity(0.8))
+                            .frame(width: 90, height: 90) // Slightly smaller
 
-                        Image(systemName: "checkmark")
+                        Image(systemName: "checkmark.circle.fill") // Using a filled system icon
                             .resizable()
                             .aspectRatio(contentMode: .fit)
-                            .frame(width: 60)
+                            .frame(width: 50) // Adjusted size
                             .foregroundColor(.white)
                     }
-                    .padding(.top, 20)
+                    .padding(.top, 10)
 
                     // Success info
-                    VStack(spacing: 16) {
-                        Text("The app will run in your menu bar")
-                            .font(.system(size: 16, weight: .medium))
+                    VStack(spacing: 12) { // Adjusted spacing
+                        Text("CodeLooper will run quietly in your menu bar.")
+                            .font(.callout.weight(.medium))
                             .foregroundColor(.primary)
 
-                        Text("You can access CodeLooper's features from the menu bar icon at any time")
-                            .font(.system(size: 14))
+                        Text("Access its features and settings from the menu bar icon at any time.")
+                            .font(.caption)
                             .foregroundColor(.secondary)
                             .multilineTextAlignment(.center)
-                            .padding(.horizontal, 20)
+                            .padding(.horizontal, 30)
                     }
 
                     // Start at login reminder
                     if viewModel.startAtLogin {
-                        Text("✓ CodeLooper will start automatically at login")
-                            .font(.system(size: 14))
-                            .foregroundColor(.green)
-                            .padding(.top, 10)
+                        HStack {
+                            Image(systemName: "checkmark.seal.fill")
+                                .foregroundColor(.green)
+                            Text("CodeLooper will start automatically at login.")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                        }
+                        .padding(.top, 5)
                     }
                 }
-                .padding(40)
-                .background(Color(.windowBackgroundColor).brightness(-0.03))
-                .cornerRadius(12)
+                .padding(30) // Adjusted padding
+                // .background(Color(.windowBackgroundColor).brightness(-0.03)) // Removing background
+                // .cornerRadius(12) // Removing corner radius
+                .frame(maxWidth: 400)
             }
-            .padding(.horizontal, 40)
+            .padding(.horizontal, 20)
 
-            Spacer(minLength: 0)
+            Spacer(minLength: 20)
 
             // Get started button
-            Button(
-                action: {
-                    viewModel.finishOnboarding()
-                },
-                label: {
-                    Text("Start Using CodeLooper")
-                        .font(.system(size: 16, weight: .medium))
-                        .foregroundColor(.white)
-                        .frame(width: 200, height: 46)
-                        .background(Color.accentColor)
-                        .cornerRadius(8)
-                }
-            )
-            .buttonStyle(PlainButtonStyle())
-            .padding(.bottom, 30)
+            Button {
+                viewModel.finishOnboarding()
+            } label: {
+                Text("Start Using CodeLooper")
+                    .fontWeight(.medium)
+                    .frame(maxWidth: 250) // Consistent button width
+                    .padding()
+                    .background(Color.accentColor)
+                    .foregroundColor(.white)
+                    .cornerRadius(10)
+            }
+            .buttonStyle(.plain)
+            .padding(.bottom, 20)
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 }
 

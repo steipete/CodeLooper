@@ -59,7 +59,7 @@ public class CursorMonitor: ObservableObject {
     @MainActor private var appLaunchObserver: AnyCancellable?
     @MainActor private var appTerminateObserver: AnyCancellable?
     private var monitoringTask: Task<Void, Never>?
-    private var isMonitoringActive: Bool = false
+    var isMonitoringActive: Bool = false // Changed from private to internal (default)
 
     public init(axorcist: AXorcistLib.AXorcist, sessionLogger: SessionLogger, locatorManager: LocatorManager) {
         self.axorcist = axorcist
@@ -473,7 +473,7 @@ public class CursorMonitor: ObservableObject {
                             automaticInterventionsSincePositiveActivity[pid, default: 0] += 1
                             totalAutomaticInterventionsThisSession += 1
                             // Store the count *before* this increment
-                            pendingObservationForPID[pid] = (startTime: Date(), initialInterventionCountWhenObservationStarted: automaticInterventionsSincePositiveActivity[pid, default: 0] -1)
+                            pendingObservationForPID[pid] = (startTime: Date(), initialInterventionCountWhenObservationStarted: (automaticInterventionsSincePositiveActivity[pid, default: 0]) - 1)
                             updateInstanceDisplayInfo(for: pid, newStatus: .observation)
                             if Defaults[.playSoundOnIntervention] {
                                 await SoundManager.shared.playSound(soundName: Defaults[.successfulInterventionSoundName])
@@ -597,7 +597,7 @@ public class CursorMonitor: ObservableObject {
                                 automaticInterventionsSincePositiveActivity[pid, default: 0] += 1
                                 totalAutomaticInterventionsThisSession += 1
                                 // Store the count *before* this increment
-                                pendingObservationForPID[pid] = (startTime: Date(), initialInterventionCountWhenObservationStarted: automaticInterventionsSincePositiveActivity[pid, default: 0] -1)
+                                pendingObservationForPID[pid] = (startTime: Date(), initialInterventionCountWhenObservationStarted: (automaticInterventionsSincePositiveActivity[pid, default: 0]) - 1)
                                 updateInstanceDisplayInfo(for: pid, newStatus: .observation)
                                 if Defaults[.playSoundOnIntervention] {
                                     await SoundManager.shared.playSound(soundName: Defaults[.successfulInterventionSoundName])
@@ -685,7 +685,7 @@ public class CursorMonitor: ObservableObject {
                                         automaticInterventionsSincePositiveActivity[pid, default: 0] += 1
                                         totalAutomaticInterventionsThisSession += 1
                                         // Store the count *before* this increment
-                                        pendingObservationForPID[pid] = (startTime: Date(), initialInterventionCountWhenObservationStarted: automaticInterventionsSincePositiveActivity[pid, default: 0] -1)
+                                        pendingObservationForPID[pid] = (startTime: Date(), initialInterventionCountWhenObservationStarted: (automaticInterventionsSincePositiveActivity[pid, default: 0]) - 1)
                                         updateInstanceDisplayInfo(for: pid, newStatus: .observation)
                                         if Defaults[.playSoundOnIntervention] {
                                             await SoundManager.shared.playSound(soundName: Defaults[.successfulInterventionSoundName])
@@ -945,7 +945,7 @@ public class CursorMonitor: ObservableObject {
                 automaticInterventionsSincePositiveActivity[pid, default: 0] += 1
                 totalAutomaticInterventionsThisSession += 1
                 // Store the count *before* this increment
-                pendingObservationForPID[pid] = (startTime: Date(), initialInterventionCountWhenObservationStarted: automaticInterventionsSincePositiveActivity[pid, default: 0] -1)
+                pendingObservationForPID[pid] = (startTime: Date(), initialInterventionCountWhenObservationStarted: (automaticInterventionsSincePositiveActivity[pid, default: 0]) - 1)
                 updateInstanceDisplayInfo(for: pid, newStatus: .observation)
                 lastActivityTimestamp[pid] = Date() // Consider this an activity
                 connectionIssueResumeButtonClicks[pid] = 0 // Reset this as per spec

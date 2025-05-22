@@ -7,17 +7,16 @@ struct LogSettingsView: View {
     @ObservedObject private var sessionLogger = SessionLogger.shared
     @State private var searchText: String = ""
     @State private var selectedLogLevelFilter: LogLevel? = nil // Allow 'nil' for all levels
+    @State private var logEntries: [LogEntry] = []
 
     // Placeholder for actual log levels if LogLevel.allCases isn't directly usable
     // or if a specific order/naming is desired for the filter.
-    private var logLevelsForFilter: [LogLevel?] {
-        var levels: [LogLevel?] = [nil] // "All Levels"
-        levels.append(contentsOf: LogLevel.allCases)
-        return levels
+    private var logLevelsForFilter: [LogLevel] {
+        return LogLevel.allCases
     }
 
     private var filteredLogEntries: [LogEntry] {
-        var filtered = sessionLogger.entries
+        var filtered = logEntries
 
         if let levelFilter = selectedLogLevelFilter {
             filtered = filtered.filter { $0.level == levelFilter }
@@ -32,14 +31,19 @@ struct LogSettingsView: View {
         }
         return filtered
     }
+    
+    private func updateLogEntries() async {
+        logEntries = await sessionLogger.getEntries()
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             // MARK: - Toolbar / Controls
             HStack {
                 Picker("Filter by Level:", selection: $selectedLogLevelFilter) {
-                    ForEach(logLevelsForFilter, id: \\.self) { level in
-                        Text(level?.rawValue.capitalized ?? "All Levels").tag(level)
+                    Text("All Levels").tag(nil as LogLevel?)
+                    ForEach(logLevelsForFilter, id: \.self) { level in
+                        Text(level.displayName).tag(level as LogLevel?)
                     }
                 }
                 .pickerStyle(.menu)
@@ -65,7 +69,9 @@ struct LogSettingsView: View {
                 }
 
                 Button {
-                    sessionLogger.clearLog()
+                    Task {
+                        await sessionLogger.clearLog()
+                    }
                 } label: {
                     Image(systemName: "trash")
                     Text("Clear Log")
@@ -92,6 +98,24 @@ struct LogSettingsView: View {
             .listStyle(.plain) // Use plain list style for better density
         }
         .frame(minWidth: 500, idealWidth: 700, minHeight: 300, idealHeight: 500)
+        .task {
+            await updateLogEntries()
+        }
+        .onChange(of: selectedLogLevelFilter) { oldValue, newValue in
+            Task {
+                await updateLogEntries()
+            }
+        }
+        .onChange(of: searchText) { oldValue, newValue in
+            Task {
+                await updateLogEntries()
+            }
+        }
+        .onAppear {
+            Task {
+                await updateLogEntries()
+            }
+        }
     }
 
     @ViewBuilder
@@ -102,13 +126,13 @@ struct LogSettingsView: View {
                 .foregroundColor(colorForLogLevel(entry.level))
                 .frame(minWidth: 70, alignment: .leading) // Ensure consistent width for timestamp
 
-            Text(entry.level.rawValue.uppercased())
+            Text(entry.level.displayName.uppercased())
                 .font(.caption.bold())
                 .foregroundColor(colorForLogLevel(entry.level))
                 .frame(minWidth: 60, alignment: .leading) // Ensure consistent width for level
 
-            if let pid = entry.instancePID {
-                Text("PID: \\(pid)")
+            if entry.instancePID != nil {
+                Text("PID: \(entry.instancePID!)")
                     .font(.caption.monospacedDigit())
                     .foregroundColor(.gray)
                     .frame(minWidth: 70, alignment: .leading)
@@ -138,36 +162,44 @@ struct LogSettingsView: View {
     }
     
     private func copyLogToClipboard() {
-        let logText = sessionLogger.entries.map { entry -> String in
-            let pidString = entry.instancePID.map { "[PID: \\($0)] " } ?? ""
-            return "\\(entry.timestamp.formatted(date: .omitted, time: .standard)) [\\(entry.level.rawValue.uppercased())] \\(pidString)\\(entry.message)"
-        }.joined(separator: "\n")
-        
-        let pasteboard = NSPasteboard.general
-        pasteboard.clearContents()
-        pasteboard.setString(logText, forType: .string)
-        // Optionally, provide user feedback that copy was successful
+        Task {
+            let entries = await sessionLogger.getEntries()
+            let logText = entries.map { entry -> String in
+                let pidStringSegment = entry.instancePID.map { pidValue in "[PID: \\(pidValue)] " } ?? ""
+                return "\\(entry.timestamp.formatted(date: .omitted, time: .standard)) [\\(entry.level.displayName.uppercased())] " + pidStringSegment + entry.message
+            }.joined(separator: "\n")
+            
+            if let data = logText.data(using: .utf8) {
+                let pasteboard = NSPasteboard.general
+                pasteboard.clearContents()
+                pasteboard.setData(data, forType: .string)
+                // Optionally, provide user feedback that copy was successful
+            }
+        }
     }
 
     private func exportLog() {
-        let savePanel = NSSavePanel()
-        savePanel.allowedContentTypes = [.plainText]
-        savePanel.canCreateDirectories = true
-        savePanel.nameFieldStringValue = "CodeLooper_SessionLog_\\(dateFormatterForFilename()).txt"
+        Task {
+            let entries = await sessionLogger.getEntries()
+            let savePanel = NSSavePanel()
+            savePanel.allowedContentTypes = [.plainText]
+            savePanel.canCreateDirectories = true
+            savePanel.nameFieldStringValue = "CodeLooper_SessionLog_\\(dateFormatterForFilename()).txt"
 
-        if savePanel.runModal() == .OK {
-            if let url = savePanel.url {
-                var logContent = ""
-                for entry in sessionLogger.entries.reversed() { // Export oldest first
-                    let pidString = entry.instancePID != nil ? "PID: \\(entry.instancePID!)" : ""
-                    logContent += "\\(entry.timestamp) [\\(entry.level.rawValue.uppercased())] \\(pidString) \\(entry.message)\\n"
-                }
-                do {
-                    try logContent.write(to: url, atomically: true, encoding: .utf8)
-                } catch {
-                    // Handle error (e.g., show an alert)
-                    print("Failed to export log: \\(error.localizedDescription)")
-                    // Consider showing an alert to the user via AlertPresenter or similar
+            if savePanel.runModal() == .OK {
+                if let url = savePanel.url {
+                    var logContent = ""
+                    for entry in entries.reversed() { // Export oldest first
+                        let pidStringSegment = entry.instancePID.map { pidValue in "[PID: \\(pidValue)] " } ?? ""
+                        logContent += "\\(entry.timestamp) [\\(entry.level.displayName.uppercased())] " + pidStringSegment + entry.message + "\n"
+                    }
+                    do {
+                        try logContent.write(to: url, atomically: true, encoding: .utf8)
+                    } catch {
+                        // Handle error (e.g., show an alert)
+                        print("Failed to export log: \\(error.localizedDescription)")
+                        // Consider showing an alert to the user via AlertPresenter or similar
+                    }
                 }
             }
         }

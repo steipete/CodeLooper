@@ -31,9 +31,10 @@ struct CursorRuleSetsSettingsTab: View {
                             panel.canChooseFiles = false
                             panel.canChooseDirectories = true
                             panel.allowsMultipleSelection = false
+                            panel.allowedContentTypes = [.folder]
                             panel.message = "Select the project root directory to verify the Terminator Rule Set."
                             
-                            if await panel.runModal() == .OK {
+                            if panel.runModal() == .OK {
                                 if let url = panel.url {
                                     viewModel.verifyTerminatorRuleSetStatus(projectURL: url)
                                 } else {
@@ -66,15 +67,11 @@ struct CursorRuleSetsSettingsTab: View {
                     // Action buttons based on status
                     HStack {
                         Button(action: {
-                            Task {
-                                // Ensure projectURL is available before calling install
-                                if let projectURL = viewModel.selectedProjectURL {
-                                   await viewModel.installTerminatorRuleSet(forProject: projectURL)
-                                } else {
-                                    // Optionally, prompt user to select a project first
-                                    // Or disable the button if projectURL is nil
-                                    print("Cannot install rule set: No project selected.")
-                                }
+                            if let projectURL = viewModel.selectedProjectURL {
+                               viewModel.installTerminatorRuleSet(forProject: projectURL)
+                            } else {
+                                // Optionally, prompt user to select a project first
+                                print("Cannot install rule set: No project selected.")
                             }
                         }) {
                             Text(buttonText(for: viewModel.currentRuleSetStatus, projectSelected: viewModel.selectedProjectURL != nil, projectDisplayName: viewModel.projectDisplayName))
@@ -85,7 +82,7 @@ struct CursorRuleSetsSettingsTab: View {
                             Button("Update to v\\(newVersionString)") {
                                 if let url = viewModel.selectedProjectURL {
                                     Task {
-                                        await viewModel.installTerminatorRuleSet(forProject: url)
+                                        viewModel.installTerminatorRuleSet(forProject: url)
                                     }
                                 }
                             }

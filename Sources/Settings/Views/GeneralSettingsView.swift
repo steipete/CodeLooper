@@ -53,7 +53,7 @@ struct GeneralSettingsView: View {
 
     var body: some View {
         Form {
-            Section(header: Text("General Application Behavior")) {
+            Section("General Application Behavior") {
                 Toggle("Launch CodeLooper at Login", isOn: $startAtLogin)
                 Toggle("Show Icon in Menu Bar", isOn: $showInMenuBar)
                     .onChange(of: showInMenuBar) { oldValue, newValue in
@@ -65,7 +65,7 @@ struct GeneralSettingsView: View {
                     }
             }
 
-            Section(header: Text("Global Shortcut Configuration")) {
+            Section("Global Shortcut Configuration") {
                 Text("Define a global keyboard shortcut to quickly toggle monitoring.")
                     .font(.caption)
                     .foregroundColor(.secondary)
@@ -75,7 +75,7 @@ struct GeneralSettingsView: View {
                     .foregroundColor(.gray)
             }
 
-            Section(header: Text("Supervision Core Settings")) {
+            Section("Supervision Core Settings") {
                 Toggle("Enable Global Monitoring", isOn: $isGlobalMonitoringEnabled)
                 HStack {
                     Text("Monitoring Interval (seconds):")
@@ -86,14 +86,14 @@ struct GeneralSettingsView: View {
                     )
                 }
                 Stepper(
-                    "Max Auto-Interventions Per Instance: \\(maxInterventionsBeforePause)",
+                    "Max Auto-Interventions Per Instance: \(maxInterventionsBeforePause)",
                     value: $maxInterventionsBeforePause,
                     in: 1...25
                 )
                 Toggle("Play Sound on Intervention", isOn: $playSoundOnIntervention)
 
                 VStack(alignment: .leading) {
-                    Text("Text for \'Cursor Stops\' Recovery (when CodeLooper nudges Cursor):")
+                    Text("Text for 'Cursor Stops' Recovery (when CodeLooper nudges Cursor):")
                         .font(.caption)
                         .foregroundColor(.secondary)
                     TextEditor(text: $textForCursorStopsRecovery)
@@ -101,7 +101,7 @@ struct GeneralSettingsView: View {
                 }
             }
 
-            Section(header: Text("Updates (Powered by Sparkle)")) {
+            Section("Updates (Powered by Sparkle)") {
                 Toggle("Automatically Check for Updates", isOn: $automaticallyCheckForUpdates)
                 Button("Check for Updates Now") {
                     // This relies on AppDelegate being accessible and having a checkForUpdates method.
@@ -113,12 +113,19 @@ struct GeneralSettingsView: View {
                         print("Error: Could not get AppDelegate to check for updates.")
                     }
                 }
-                Text("CodeLooper Version: \\(appVersion) (Build \\(appBuild))")
+                Button("About CodeLooper") {
+                    if let appDelegate = NSApp.delegate as? AppDelegate {
+                        appDelegate.showAboutWindowClicked(nil)
+                    } else {
+                        print("Error: Could not get AppDelegate to show About window.")
+                    }
+                }
+                Text("CodeLooper Version: \(appVersion) (Build \(appBuild))")
                     .font(.footnote)
                     .foregroundColor(.secondary)
             }
 
-            Section(header: Text("Troubleshooting & Reset")) {
+            Section("Troubleshooting & Reset") {
                 Button("Reset Welcome Guide") {
                     Defaults[.hasShownWelcomeGuide] = false
                     // Similar to above, this relies on AppDelegate.

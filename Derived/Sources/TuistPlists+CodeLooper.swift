@@ -21,12 +21,12 @@ public enum Info: Sendable {
     public static let cfBundleName: String = "$(PRODUCT_NAME)"
     public static let cfBundlePackageType: String = "$(PRODUCT_BUNDLE_PACKAGE_TYPE)"
     public static let cfBundleShortVersionString: String = "2025.5.1"
-    public static let cfBundleURLTypes: [[String: String]] = [["CFBundleTypeRole": "Viewer", "CFBundleURLName": "ai.amantusmachina.codelooper", "CFBundleURLSchemes": ["codelooper"]]]
+    nonisolated(unsafe) public static let cfBundleURLTypes: [[String: Any]] = [["CFBundleTypeRole": "Viewer", "CFBundleURLName": "ai.amantusmachina.codelooper", "CFBundleURLSchemes": ["codelooper"]]]
     public static let cfBundleVersion: String = "$(CURRENT_PROJECT_VERSION)"
     public static let lsApplicationCategoryType: String = "public.app-category.utilities"
     public static let lsMinimumSystemVersion: String = "$(MACOSX_DEPLOYMENT_TARGET)"
     public static let lsuiElement: Bool = true
-    public static let nsAppTransportSecurity: [String: Bool] = ["NSAllowsArbitraryLoads": true]
+    nonisolated(unsafe) public static let nsAppTransportSecurity: [String: Bool] = ["NSAllowsArbitraryLoads": true]
     public static let nsContactsUsageDescription: String = "This app requires access to your contacts to export them to CodeLooper."
     public static let nsMainNibFile: String = "MainMenu"
     public static let nsMainStoryboardFile: String = ""

@@ -18,6 +18,7 @@ let project = Project(
         .remote(url: "https://github.com/apple/swift-log.git", requirement: .upToNextMajor(from: "1.5.0")),
         .remote(url: "https://github.com/sindresorhus/LaunchAtLogin", requirement: .upToNextMajor(from: "5.0.0")),
         .remote(url: "https://github.com/sparkle-project/Sparkle.git", requirement: .upToNextMajor(from: "2.0.0")),
+        .remote(url: "https://github.com/sindresorhus/KeyboardShortcuts", requirement: .upToNextMajor(from: "2.0.0")),
         .local(path: "AXorcist")
     ],
     settings: .settings(
@@ -65,7 +66,8 @@ let project = Project(
                 .package(product: "SwiftUIIntrospect"),
                 .package(product: "Logging"),
                 .package(product: "AXorcistLib"),
-                .package(product: "Sparkle")
+                .package(product: "Sparkle"),
+                .package(product: "KeyboardShortcuts")
             ],
             settings: .settings(
                 base: [

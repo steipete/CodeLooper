@@ -443,14 +443,20 @@ public class AppDelegate: NSObject, NSApplicationDelegate,
     @objc func showWelcomeWindow() {
         logger.info("Showing Welcome Window.")
         if welcomeWindowController == nil {
-            let welcomeView = WelcomeGuideView { [weak self] in
+            // Use the WelcomeViewModel
+            let welcomeViewModel = WelcomeViewModel(loginItemManager: LoginItemManager.shared) { [weak self] in
+                // This completion is called when WelcomeViewModel.finishOnboarding() is executed
                 self?.welcomeWindowController?.close()
                 self?.welcomeWindowController = nil // Release the window controller
-                self?.logger.info("Welcome guide 'Get Started' clicked. Proceeding to permission check.")
-                self?.checkAndPromptForAccessibilityPermissions()
+                self?.logger.info("Welcome onboarding flow finished. Accessibility should have been handled within the flow.")
+                // No need to call checkAndPromptForAccessibilityPermissions() here if it's part of the WelcomeView flow.
+                // Ensure that the app continues normal operation. For example, refresh UI or ensure monitoring starts if enabled.
+                self?.refreshUIStateAfterOnboarding()
             }
+            // Use WelcomeView with the viewModel
+            let welcomeView = WelcomeView(viewModel: welcomeViewModel)
             let window = NSWindow(
-                contentRect: NSRect(x: 0, y: 0, width: 500, height: 650), // Match WelcomeGuideView frame
+                contentRect: NSRect(x: 0, y: 0, width: 480, height: 600), // Adjusted size
                 styleMask: [.titled, .closable], // Non-resizable, closable
                 backing: .buffered,
                 defer: false
@@ -581,5 +587,17 @@ public class AppDelegate: NSObject, NSApplicationDelegate,
         let state = Defaults[.isGlobalMonitoringEnabled] ? "enabled" : "disabled"
         logger.info("Global monitoring toggled via shortcut: \(state)")
         menuManager?.refreshMenu() // Call refreshMenu to update menu items
+    }
+
+    // Helper function to refresh state after onboarding is complete
+    private func refreshUIStateAfterOnboarding() {
+        logger.info("Onboarding complete. Refreshing UI state.")
+        // Example: Ensure monitoring starts if it's globally enabled and was awaiting onboarding completion.
+        if Defaults[.isGlobalMonitoringEnabled] && !CursorMonitor.shared.isMonitoringActive {
+            logger.info("Global monitoring is enabled, starting monitor loop after onboarding.")
+            CursorMonitor.shared.startMonitoringLoop()
+        }
+        // Refresh menu, etc.
+        menuManager?.refreshMenu()
     }
 }

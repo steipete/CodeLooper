@@ -2,7 +2,7 @@ import Foundation
 
 /// Represents the information for a monitored Cursor instance, suitable for display in the UI.
 public struct MonitoredInstanceInfo: Identifiable, Sendable, Hashable {
-    let id: pid_t // Conforms to Identifiable using pid
+    public let id: pid_t // Conforms to Identifiable using pid
     let pid: pid_t
     var displayName: String // e.g., "Cursor (PID: 12345)"
     var status: DisplayStatus
@@ -14,7 +14,7 @@ public struct MonitoredInstanceInfo: Identifiable, Sendable, Hashable {
     // var lastInterventionType: String?
     
     // Implement Hashable
-    static func == (lhs: MonitoredInstanceInfo, rhs: MonitoredInstanceInfo) -> Bool {
+    public static func == (lhs: MonitoredInstanceInfo, rhs: MonitoredInstanceInfo) -> Bool {
         lhs.pid == rhs.pid &&
         lhs.status == rhs.status &&
         lhs.isActivelyMonitored == rhs.isActivelyMonitored &&
@@ -22,7 +22,7 @@ public struct MonitoredInstanceInfo: Identifiable, Sendable, Hashable {
         lhs.displayName == rhs.displayName
     }
 
-    func hash(into hasher: inout Hasher) {
+    public func hash(into hasher: inout Hasher) {
         hasher.combine(pid)
         hasher.combine(status)
         hasher.combine(isActivelyMonitored)
