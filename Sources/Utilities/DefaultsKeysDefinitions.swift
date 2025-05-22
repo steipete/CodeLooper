@@ -27,7 +27,7 @@ extension Defaults.Keys {
     static let showInMenuBar = Key<Bool>("showInMenuBar", default: true)
 
     // MARK: - Permissions Settings
-    
+
     static let contactsAccessState = Key<Constants.AccessState>("contactsAccessState", default: .notDetermined)
 
     // MARK: - Debug Settings

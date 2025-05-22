@@ -109,7 +109,7 @@ class IconAnimator {
         // Show the first frame and mark as animating
         advanceFrame(tooltipFormat: tooltipFormat)
         isAnimating = true
-        logger.info("Started icon animation with \(self.frames.count) frames")
+        logger.info("Started icon animation with \(frames.count) frames")
     }
 
     /// Advance to the next animation frame

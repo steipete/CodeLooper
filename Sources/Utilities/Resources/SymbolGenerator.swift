@@ -39,7 +39,7 @@ enum SymbolGenerator {
         let attributes: [NSAttributedString.Key: Any] = [
             .font: NSFont.boldSystemFont(ofSize: 14),
             .foregroundColor: NSColor.white,
-            .paragraphStyle: paragraphStyle
+            .paragraphStyle: paragraphStyle,
         ]
 
         let textRect = NSRect(
@@ -58,7 +58,8 @@ enum SymbolGenerator {
 
         // Save the image
         if let tiffData = image.tiffRepresentation,
-           let bitmapRep = NSBitmapImageRep(data: tiffData) {
+           let bitmapRep = NSBitmapImageRep(data: tiffData)
+        {
             // Get base directory path using FileManager
             let fileManager = FileManager.default
             let currentDirectoryURL = URL(fileURLWithPath: fileManager.currentDirectoryPath)
@@ -81,7 +82,8 @@ enum SymbolGenerator {
                 let darkImage = adjustImageForDarkMode(image)
                 if let darkTiffData = darkImage.tiffRepresentation,
                    let darkRep = NSBitmapImageRep(data: darkTiffData),
-                   let darkPNGData = darkRep.representation(using: .png, properties: [:]) {
+                   let darkPNGData = darkRep.representation(using: .png, properties: [:])
+                {
                     let darkPath = resourcesDirURL.appendingPathComponent("symbol-dark.png")
                     try darkPNGData.write(to: darkPath)
                     print("Successfully created symbol-dark.png at \(darkPath.path)")
@@ -91,7 +93,8 @@ enum SymbolGenerator {
                 let lightImage = adjustImageForLightMode(image)
                 if let lightTiffData = lightImage.tiffRepresentation,
                    let lightRep = NSBitmapImageRep(data: lightTiffData),
-                   let lightPNGData = lightRep.representation(using: .png, properties: [:]) {
+                   let lightPNGData = lightRep.representation(using: .png, properties: [:])
+                {
                     let lightPath = resourcesDirURL.appendingPathComponent("symbol-light.png")
                     try lightPNGData.write(to: lightPath)
                     print("Successfully created symbol-light.png at \(lightPath.path)")

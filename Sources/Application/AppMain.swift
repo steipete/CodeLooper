@@ -140,7 +140,8 @@ private func checkForExistingInstance(appIdentifier: String) async -> Bool {
     ) { notification in
         // Check if this is from another process by looking at the process ID
         if let senderPID = notification.userInfo?["pid"] as? Int,
-           senderPID != ourProcessID {
+           senderPID != ourProcessID
+        {
             Task {
                 await instanceTracker.markInstanceExists()
                 logger.info("Received response from existing instance (PID: \(senderPID))")
@@ -184,7 +185,8 @@ private func setupInstanceListener(appIdentifier: String) {
         if let senderInfo = notification.userInfo,
            let action = senderInfo["action"] as? String,
            let senderPID = senderInfo["pid"] as? Int,
-           senderPID != ourProcessID {
+           senderPID != ourProcessID
+        {
             switch action {
             case "check":
                 // Respond to the notification to signal we are running

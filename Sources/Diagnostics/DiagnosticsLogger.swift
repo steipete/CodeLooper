@@ -334,7 +334,7 @@ actor DiagnosticsLogger {
         let buildNumber = Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "Unknown"
 
         // Get memory and CPU information - ProcessInfo is thread-safe
-        let physicalMemory = ProcessInfo.processInfo.physicalMemory / (1_024 * 1_024) // Convert to MB
+        let physicalMemory = ProcessInfo.processInfo.physicalMemory / (1024 * 1024) // Convert to MB
         let processorCount = ProcessInfo.processInfo.processorCount
         let activeProcessorCount = ProcessInfo.processInfo.activeProcessorCount
 
@@ -347,9 +347,10 @@ actor DiagnosticsLogger {
             do {
                 let attributes = try fileManager.attributesOfFileSystem(forPath: homeDirectory)
                 if let freeSize = attributes[.systemFreeSize] as? UInt64,
-                   let totalSize = attributes[.systemSize] as? UInt64 {
-                    freeSpace = "\(freeSize / (1_024 * 1_024 * 1_024)) GB" // Convert to GB
-                    totalSpace = "\(totalSize / (1_024 * 1_024 * 1_024)) GB" // Convert to GB
+                   let totalSize = attributes[.systemSize] as? UInt64
+                {
+                    freeSpace = "\(freeSize / (1024 * 1024 * 1024)) GB" // Convert to GB
+                    totalSpace = "\(totalSize / (1024 * 1024 * 1024)) GB" // Convert to GB
                 }
             } catch {
                 // Silently fail, we'll keep the "Unknown" values
@@ -433,7 +434,7 @@ actor DiagnosticsLogger {
     ///   - operation: The operation name to record
     ///   - context: Optional context data
     /// - Returns: A Task that will return the operation UUID when completed
-    nonisolated func safeRecordOperationStart(_ operation: String, context: [String: Any]? = nil) -> Task<UUID, Never> {
+    nonisolated func safeRecordOperationStart(_ operation: String, context _: [String: Any]? = nil) -> Task<UUID, Never> {
         // Create a Task.detached to avoid capturing context
         // Task.detached creates a new task with no access to the current task's context
         Task {
@@ -447,7 +448,7 @@ actor DiagnosticsLogger {
     /// - Parameters:
     ///   - operationId: The UUID returned when starting the operation
     ///   - context: Optional context data
-    nonisolated func safeRecordOperationSuccess(_ operationId: UUID, context: [String: Any]? = nil) {
+    nonisolated func safeRecordOperationSuccess(_ operationId: UUID, context _: [String: Any]? = nil) {
         // Use Task.detached to avoid capturing context
         Task.detached {
             // For Sendable compliance, we don't pass the non-Sendable context
@@ -460,7 +461,7 @@ actor DiagnosticsLogger {
     ///   - operation: The operation name
     ///   - context: Optional context data
     /// - Warning: This method is less reliable - prefer using the UUID-based version to avoid race conditions
-    nonisolated func safeRecordOperationSuccess(_ operation: String, context: [String: Any]? = nil) {
+    nonisolated func safeRecordOperationSuccess(_ operation: String, context _: [String: Any]? = nil) {
         // Use Task.detached to avoid capturing context
         Task.detached {
             // For Sendable compliance, we don't pass the non-Sendable context
@@ -473,7 +474,7 @@ actor DiagnosticsLogger {
     ///   - operationId: The UUID returned when starting the operation
     ///   - error: The error that occurred
     ///   - context: Optional context data
-    nonisolated func safeRecordOperationFailure(_ operationId: UUID, error: Error, context: [String: Any]? = nil) {
+    nonisolated func safeRecordOperationFailure(_ operationId: UUID, error: Error, context _: [String: Any]? = nil) {
         // Convert the error to string to avoid Sendable issues with arbitrary Error types
         let errorDescription = error.localizedDescription
 
@@ -493,7 +494,7 @@ actor DiagnosticsLogger {
     ///   - error: The error that occurred
     ///   - context: Optional context data
     /// - Warning: This method is less reliable - prefer using the UUID-based version to avoid race conditions
-    nonisolated func safeRecordOperationFailure(_ operation: String, error: Error, context: [String: Any]? = nil) {
+    nonisolated func safeRecordOperationFailure(_ operation: String, error: Error, context _: [String: Any]? = nil) {
         // Convert the error to string to avoid Sendable issues with arbitrary Error types
         let errorDescription = error.localizedDescription
 

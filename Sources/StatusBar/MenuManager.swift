@@ -93,27 +93,27 @@ final class MenuManager {
     @MainActor
     private func buildApplicationMenu() async -> NSMenu {
         let menu = NSMenu()
-        
+
         // App title
         let titleItem = NSMenuItem(title: Constants.appName, action: nil, keyEquivalent: "")
         titleItem.isEnabled = false
         menu.addItem(titleItem)
-        
+
         menu.addItem(NSMenuItem.separator())
-        
+
         // Settings
         let settingsItem = NSMenuItem(title: "Settings...", action: #selector(settingsClicked), keyEquivalent: ",")
         settingsItem.target = self
         menu.addItem(settingsItem)
-        
+
         menu.addItem(NSMenuItem.separator())
-        
+
         // Start at Login
         let startAtLoginItem = NSMenuItem(title: "Start at Login", action: #selector(toggleStartAtLoginClicked), keyEquivalent: "")
         startAtLoginItem.target = self
         startAtLoginItem.state = Defaults[.startAtLogin] ? .on : .off
         menu.addItem(startAtLoginItem)
-        
+
         // Debug menu (if enabled)
         if Defaults[.showDebugMenu] {
             menu.addItem(NSMenuItem.separator())
@@ -121,42 +121,42 @@ final class MenuManager {
             debugItem.target = self
             menu.addItem(debugItem)
         }
-        
+
         menu.addItem(NSMenuItem.separator())
-        
+
         // About
         let aboutItem = NSMenuItem(title: "About \(Constants.appName)", action: #selector(aboutClicked), keyEquivalent: "")
         aboutItem.target = self
         menu.addItem(aboutItem)
-        
+
         // Quit
         let quitItem = NSMenuItem(title: "Quit \(Constants.appName)", action: #selector(quitClicked), keyEquivalent: "q")
         quitItem.target = self
         menu.addItem(quitItem)
-        
+
         return menu
     }
-    
+
     // MARK: - Menu Actions
-    
+
     @objc private func settingsClicked() {
         delegate?.showSettings()
     }
-    
+
     @objc private func toggleStartAtLoginClicked() {
         delegate?.toggleStartAtLogin()
         refreshMenu() // Refresh to update checkmark
     }
-    
+
     @objc private func toggleDebugMenuClicked() {
         delegate?.toggleDebugMenu()
         refreshMenu() // Refresh to show/hide debug items
     }
-    
+
     @objc private func aboutClicked() {
         delegate?.showAbout()
     }
-    
+
     @objc private func quitClicked() {
         NSApplication.shared.terminate(nil)
     }
@@ -176,9 +176,9 @@ final class MenuManager {
 
         logger.info("Menu manager resources cleaned up")
     }
-    
+
     // MARK: - Icon Management
-    
+
     /// Clean up icon-related resources
     @MainActor
     private func cleanupIconResources() {
@@ -186,15 +186,15 @@ final class MenuManager {
         menuBarIconManager = nil
         logger.debug("Icon resources cleaned up")
     }
-    
+
     /// Highlight the menu bar item briefly
     @MainActor
     func highlightMenuBarItem() {
         guard let button = statusItem?.button else { return }
-        
+
         // Flash the menu bar icon briefly
         let originalAlpha = button.alphaValue
-        
+
         NSAnimationContext.runAnimationGroup { context in
             context.duration = 0.1
             button.animator().alphaValue = 0.3
@@ -205,7 +205,7 @@ final class MenuManager {
             }
         }
     }
-    
+
     /// Get the menu bar icon manager
     func getMenuBarIconManager() -> MenuBarIconManager? {
         return menuBarIconManager

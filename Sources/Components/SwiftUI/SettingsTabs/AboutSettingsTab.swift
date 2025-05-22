@@ -33,7 +33,7 @@ struct AboutSettingsTab: View {
 
                 // App Description
                 Text("CodeLooper is your coding companion for macOS, helping you be more productive with your development workflow.")
-                   .multilineTextAlignment(.center)
+                    .multilineTextAlignment(.center)
                     .frame(maxWidth: 400)
                     .padding(.horizontal)
                     .padding(.vertical, 2)

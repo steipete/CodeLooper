@@ -45,7 +45,7 @@ public enum Constants: UIConstantsProvider {
 
     /// Name of the icon image resource
     public static let menuBarIconName = "menu-bar-icon"
-    
+
     /// Added to trigger Mac CI build
     public static let ciTriggerComment = "Trigger CI"
 
@@ -93,13 +93,13 @@ public enum PermissionType {
 
 // MARK: - Access States
 
-extension Constants {
+public extension Constants {
     /// Access state for permissions and services
-    public enum AccessState: String, CaseIterable, Codable, Defaults.Serializable {
-        case authorized = "authorized"
-        case denied = "denied"
-        case restricted = "restricted"
-        case notDetermined = "notDetermined"
-        case unknown = "unknown"
+    enum AccessState: String, CaseIterable, Codable, Defaults.Serializable {
+        case authorized
+        case denied
+        case restricted
+        case notDetermined
+        case unknown
     }
 }

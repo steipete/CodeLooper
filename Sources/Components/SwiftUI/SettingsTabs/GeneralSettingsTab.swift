@@ -74,7 +74,7 @@ struct GeneralSettingsTab: View {
                             Text("CodeLooper is your coding companion for macOS")
                                 .font(.footnote)
                                 .foregroundColor(.secondary)
-                            
+
                             Text("Version: \(Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0.0")")
                                 .font(.footnote)
                                 .foregroundColor(.secondary)

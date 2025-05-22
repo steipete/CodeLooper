@@ -60,11 +60,11 @@ public final class ResourceLoader: Sendable {
 
 // MARK: - Image Resource Loading
 
-extension ResourceLoader {
+public extension ResourceLoader {
     // Load an image from various resource locations
     // Making this function sendable-compatible for Swift 6
     @MainActor
-    public static func loadImageResource(named name: String, fileExtension: String = "png") -> NSImage? {
+    static func loadImageResource(named name: String, fileExtension: String = "png") -> NSImage? {
         // Try various resource locations using portable approaches
         var potentialPaths: [String?] = [
             Bundle.main.path(forResource: name, ofType: fileExtension),
@@ -119,10 +119,10 @@ extension ResourceLoader {
 }
 
 // Constants extension to add a helpful method for logo loading
-extension Constants {
+public extension Constants {
     // Load the app logo icon - making it MainActor-bound for Swift 6 concurrency safety
     @MainActor
-    public static func loadAppLogo() -> NSImage? {
+    static func loadAppLogo() -> NSImage? {
         let logoImage = NSImage.loadResourceImage(named: "menu-bar-icon") ??
             NSImage.loadResourceImage(named: "symbol") ??
             NSImage.loadResourceImage(named: "logo")

@@ -50,7 +50,7 @@ struct WelcomeWindowView: View {
                         appEnvironment.showWelcomeScreen = false
                     }
                 }
-                // Welcome view handles its own state management
+            // Welcome view handles its own state management
         }
     }
 

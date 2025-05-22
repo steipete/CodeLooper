@@ -12,7 +12,7 @@ extension AppDelegate: MenuManagerDelegate {
         logger.info("Settings menu item clicked")
         showSettingsWindow(nil)
     }
-    
+
     func toggleStartAtLogin() {
         logger.info("Toggle start at login clicked")
         let newValue = !Defaults[.startAtLogin]
@@ -20,7 +20,7 @@ extension AppDelegate: MenuManagerDelegate {
         loginItemManager?.syncLoginItemWithPreference()
         logger.info("Start at login set to: \(newValue)")
     }
-    
+
     func toggleDebugMenu() {
         logger.info("Toggle debug menu clicked")
         let newValue = !Defaults[.showDebugMenu]
@@ -37,7 +37,7 @@ extension AppDelegate: MenuManagerDelegate {
         alert.addButton(withTitle: "OK")
         alert.runModal()
     }
-    
+
     private func getAppVersion() -> String {
         return Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "Unknown"
     }

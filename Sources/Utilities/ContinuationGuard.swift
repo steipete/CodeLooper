@@ -9,7 +9,7 @@ actor ContinuationGuard {
     /// Attempts to resume with a success value
     /// - Parameter value: The value to resume with
     /// - Returns: Whether this was the first resume attempt (true) or a duplicate (false)
-    func resume(returning value: some Any) -> Bool {
+    func resume(returning _: some Any) -> Bool {
         guard !hasResumed else { return false }
         hasResumed = true
         return true
@@ -18,7 +18,7 @@ actor ContinuationGuard {
     /// Attempts to resume with an error
     /// - Parameter error: The error to resume with
     /// - Returns: Whether this was the first resume attempt (true) or a duplicate (false)
-    func resume(throwing error: Error) -> Bool {
+    func resume(throwing _: Error) -> Bool {
         guard !hasResumed else { return false }
         hasResumed = true
         return true

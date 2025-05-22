@@ -372,7 +372,8 @@ class MenuBarIconManager {
         // Create a new template image with the app's symbol
         let symbolName = currentState == .error ? "exclamationmark.circle" : "circle.dashed"
         if let icon = NSImage(systemSymbolName: symbolName, accessibilityDescription: Constants.appName)?
-            .withSymbolConfiguration(NSImage.SymbolConfiguration(pointSize: 18, weight: .medium)) {
+            .withSymbolConfiguration(NSImage.SymbolConfiguration(pointSize: 18, weight: .medium))
+        {
             prepareIconForStatusBar(icon)
             return icon
         }

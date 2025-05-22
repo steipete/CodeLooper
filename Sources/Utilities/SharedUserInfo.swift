@@ -12,7 +12,7 @@ struct SharedUserInfo {
     private var _avatarData: Data?
 
     // Maximum size for avatar data: 1MB
-    private static let maxAvatarSize = 1_024 * 1_024
+    private static let maxAvatarSize = 1024 * 1024
 
     // Property with validation logic
     var avatarData: Data? {

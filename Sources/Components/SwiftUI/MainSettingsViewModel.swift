@@ -67,10 +67,10 @@ public final class MainSettingsViewModel {
     /// Update start at login setting
     public func updateStartAtLogin(_ enabled: Bool) {
         // Log the current state before attempting to change
-        logger.info("Updating startAtLogin setting from \(self.startAtLogin) to \(enabled)")
+        logger.info("Updating startAtLogin setting from \(startAtLogin) to \(enabled)")
 
         // Update our stored property first for UI responsiveness
-        self.startAtLogin = enabled
+        startAtLogin = enabled
 
         // Update the login item status in the system
         let success = loginItemManager.setStartAtLogin(enabled: enabled)
@@ -83,7 +83,7 @@ public final class MainSettingsViewModel {
 
             // If the system update failed, update property and UserDefaults to reflect actual state
             let actualState = loginItemManager.startsAtLogin()
-            self.startAtLogin = actualState
+            startAtLogin = actualState
             logger.info("Corrected startAtLogin to match system: \(actualState)")
         }
     }
@@ -91,10 +91,10 @@ public final class MainSettingsViewModel {
     /// Update show in menu bar setting
     public func updateShowInMenuBar(_ enabled: Bool) {
         // Log the current state for debugging
-        logger.info("Updating showInMenuBar setting from \(self.showInMenuBar) to \(enabled)")
+        logger.info("Updating showInMenuBar setting from \(showInMenuBar) to \(enabled)")
 
         // Update stored property for UI responsiveness
-        self.showInMenuBar = enabled
+        showInMenuBar = enabled
 
         // Post a notification to inform that menu bar visibility changed
         logger.info("Menu bar visibility changed to: \(enabled)")
@@ -113,10 +113,10 @@ public final class MainSettingsViewModel {
     /// Update show welcome screen setting
     public func updateShowWelcomeScreen(_ enabled: Bool) {
         // Log the current state before attempting to change
-        logger.info("Updating showWelcomeScreen setting from \(self.showWelcomeScreen) to \(enabled)")
+        logger.info("Updating showWelcomeScreen setting from \(showWelcomeScreen) to \(enabled)")
 
         // Update stored property for UI responsiveness
-        self.showWelcomeScreen = enabled
+        showWelcomeScreen = enabled
 
         if enabled {
             // If enabling welcome screen, also reset onboarding flag

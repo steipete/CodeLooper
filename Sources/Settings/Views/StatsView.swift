@@ -12,10 +12,10 @@ struct StatsView: View {
         VStack(alignment: .leading, spacing: 16) {
             Text("Application Statistics")
                 .font(.headline)
-            
+
             Text("CodeLooper is running and ready to help with your coding tasks.")
                 .foregroundColor(.secondary)
-            
+
             Spacer()
         }
         .padding()

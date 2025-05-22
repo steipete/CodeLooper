@@ -81,11 +81,10 @@ class AppEnvironment: ObservableObject {
     private func setupNotificationObservers() {
         // Setup basic notification observers for core functionality
         logger.info("Setting up notification observers for core functionality")
-        
+
         // Listen for theme changes if needed in the future
         // Additional observers can be added here as the app grows
     }
-
 
     // MARK: - Private State
 

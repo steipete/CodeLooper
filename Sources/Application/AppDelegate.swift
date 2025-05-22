@@ -10,7 +10,8 @@ import Defaults
 @MainActor
 public class AppDelegate: NSObject, NSApplicationDelegate,
     @unchecked Sendable,
-    ObservableObject {
+    ObservableObject
+{
     /// Shared singleton instance for global access
     public static var shared: AppDelegate {
         guard let delegate = NSApp.delegate as? AppDelegate else {
@@ -40,7 +41,7 @@ public class AppDelegate: NSObject, NSApplicationDelegate,
     // MARK: - App Lifecycle
 
     // This is managed by SwiftUI's application lifecycle, but it still works with the old setup
-    public func applicationDidFinishLaunching(_ notification: Notification) {
+    public func applicationDidFinishLaunching(_: Notification) {
         // Add startup logging with new enhanced logger that writes to both system and file
         logger.info("Application starting up - logs are now stored in Application Support/CodeLooper/Logs")
 
@@ -60,7 +61,7 @@ public class AppDelegate: NSObject, NSApplicationDelegate,
 
         // Setup all notification observers
         setupNotificationObservers()
-        
+
         // Setup AppleScript support
         setupAppleScriptSupport()
 
@@ -94,7 +95,7 @@ public class AppDelegate: NSObject, NSApplicationDelegate,
 
         // Setup all notification observers
         setupNotificationObservers()
-        
+
         // Setup AppleScript support
         setupAppleScriptSupport()
 
@@ -122,12 +123,12 @@ public class AppDelegate: NSObject, NSApplicationDelegate,
         logger.info("Settings functionality is ready")
     }
 
-    public func applicationWillTerminate(_ notification: Notification) {
+    public func applicationWillTerminate(_: Notification) {
         logger.info("Application is terminating")
 
         // Clean up menu manager
         menuManager?.cleanup()
-        
+
         // Clean up AppleScript support
         cleanupAppleScriptSupport()
 
@@ -182,17 +183,17 @@ public class AppDelegate: NSObject, NSApplicationDelegate,
 
     // MARK: - Window Management
 
-    func showSettingsWindow(_ sender: Any?) {
+    func showSettingsWindow(_: Any?) {
         logger.info("Show settings window requested")
 
         // Use the native Settings framework
         logger.info("Using native Settings framework to open settings")
         NotificationCenter.default.post(name: .openSettingsWindow, object: nil)
     }
-    
+
     func showWelcomeWindow() {
         logger.info("Show welcome window requested")
-        
+
         // Post notification to show welcome window
         NotificationCenter.default.post(name: .showWelcomeWindow, object: nil)
     }
@@ -219,7 +220,7 @@ public class AppDelegate: NSObject, NSApplicationDelegate,
         loginItemManager = LoginItemManager.shared
 
         // Verify required services are initialized
-        guard let _ = loginItemManager else {
+        guard loginItemManager != nil else {
             logger.error("Failed to initialize one or more core services")
             return
         }
@@ -290,7 +291,8 @@ public class AppDelegate: NSObject, NSApplicationDelegate,
             guard let self else { return }
 
             if let userInfo = notification.userInfo,
-               let isVisible = userInfo["visible"] as? Bool {
+               let isVisible = userInfo["visible"] as? Bool
+            {
                 // Use a Task to call the MainActor-isolated method
                 Task { @MainActor in
                     self.updateMenuBarVisibility(isVisible)

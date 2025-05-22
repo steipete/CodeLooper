@@ -22,25 +22,25 @@ import SwiftUI
     init(loginItemManager: LoginItemManager, onCompletion: (() -> Void)? = nil) {
         self.loginItemManager = loginItemManager
         onCompletionCallback = onCompletion
-        
+
         logger.info("WelcomeViewModel initialized for CodeLooper")
     }
 
     // MARK: - Navigation
 
     func goToNextStep() {
-        logger.info("Attempting to move from step: \(String(describing: self.currentStep)) to next step")
+        logger.info("Attempting to move from step: \(String(describing: currentStep)) to next step")
 
         // Special cases based on current step
-        switch self.currentStep {
+        switch currentStep {
         case .welcome:
             // From welcome, go to settings step
-            self.currentStep = .settings
+            currentStep = .settings
             logger.info("Moving to settings step")
 
         case .settings:
             // Move to completion
-            self.currentStep = .complete
+            currentStep = .complete
             logger.info("Moving to completion step")
 
         case .complete:
@@ -50,8 +50,8 @@ import SwiftUI
     }
 
     func goToPreviousStep() {
-        if let prevStep = WelcomeStep(rawValue: self.currentStep.rawValue - 1) {
-            self.currentStep = prevStep
+        if let prevStep = WelcomeStep(rawValue: currentStep.rawValue - 1) {
+            currentStep = prevStep
         }
     }
 
