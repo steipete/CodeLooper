@@ -40,6 +40,7 @@
 		4336D6897015ACCCB1061968 /* symbol.png in Resources */ = {isa = PBXBuildFile; fileRef = AA29E7678517AB755201385A /* symbol.png */; };
 		448BF52934BF1A3DE9A966A2 /* GeneralSettingsTab.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5B90EE899110CFF876B12F5C /* GeneralSettingsTab.swift */; };
 		47A31CF8E335731EBD786992 /* Logger.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8E52466D111E8481176D7608 /* Logger.swift */; };
+		526B2FABCEADCB58E8C89A80 /* CursorAppLifecycleManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = F932E34F2F38DD2F304866AB /* CursorAppLifecycleManager.swift */; };
 		5885F3752C9613EEB9DF2B4B /* DiagnosticsLogger.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC0C0DAFE0042888816F08B5 /* DiagnosticsLogger.swift */; };
 		5DDDE5EC2D1C274D80731182 /* NSImage+ResourceLoader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47BFE5F8FF03A80E28157AE6 /* NSImage+ResourceLoader.swift */; };
 		5F65C66CD4D3D45F8E03C8CD /* TuistPlists+CodeLooper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 09EE41D476B9E1DDF4BB3C41 /* TuistPlists+CodeLooper.swift */; };
@@ -230,6 +231,7 @@
 		F2A986804F8A12B8A58B92A2 /* MenuBarIconManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuBarIconManager.swift; sourceTree = "<group>"; };
 		F5BD9EF679B7DBA11587C4CB /* CursorSupervisionSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CursorSupervisionSettingsView.swift; sourceTree = "<group>"; };
 		F91D875E3D9A2EC1874763B3 /* UserInterface.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserInterface.swift; sourceTree = "<group>"; };
+		F932E34F2F38DD2F304866AB /* CursorAppLifecycleManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CursorAppLifecycleManager.swift; sourceTree = "<group>"; };
 		FE445F08ECA9AE0063E2AA49 /* LoginItemManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginItemManager.swift; sourceTree = "<group>"; };
 		FEE054A119C16C0058C8AC17 /* ProgramEntry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProgramEntry.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -292,6 +294,7 @@
 			isa = PBXGroup;
 			children = (
 				E1B46238C32C74DEAF36578E /* Models */,
+				F932E34F2F38DD2F304866AB /* CursorAppLifecycleManager.swift */,
 				D8D75E06F92FADB6B0863FBA /* CursorInstanceModels.swift */,
 				7B425EA51475F4BEC7D5140A /* CursorMonitor.swift */,
 			);
@@ -731,6 +734,7 @@
 				5DDDE5EC2D1C274D80731182 /* NSImage+ResourceLoader.swift in Sources */,
 				211EC07BA59835AC61AEA74B /* StatusIconState.swift in Sources */,
 				2FD00A2FC1AF559BA0259DE1 /* UploadCompletionFeedback.swift in Sources */,
+				526B2FABCEADCB58E8C89A80 /* CursorAppLifecycleManager.swift in Sources */,
 				BA0F55DB128F625F76084822 /* CursorInstanceModels.swift in Sources */,
 				1EB3DAF90502B431C374B95C /* CursorMonitor.swift in Sources */,
 				BEA8E437B90E47F214BEA68C /* MonitoredInstance.swift in Sources */,

@@ -36,12 +36,11 @@ public class CursorMonitor: ObservableObject {
         subsystem: Bundle.main.bundleIdentifier ?? "ai.amantusmachina.codelooper",
         category: "CursorMonitor"
     )
-    private let cursorBundleIdentifier = "ai.cursor.Cursor" // As per spec 2.1
     public let axorcist: AXorcistLib.AXorcist // Explicitly type with Lib
     @Published public var instanceInfo: [pid_t: CursorInstanceInfo] = [:]
     @Published public var monitoredInstances: [MonitoredInstanceInfo] = []
     private var manuallyPausedPIDs: Set<pid_t> = []
-    private var cancellables = Set<AnyCancellable>()
+    nonisolated(unsafe) private var cancellables = Set<AnyCancellable>()
     private let sessionLogger: SessionLogger
     private let locatorManager: LocatorManager
 
@@ -56,163 +55,80 @@ public class CursorMonitor: ObservableObject {
     private var pendingObservationForPID: [pid_t: (startTime: Date, initialInterventionCountWhenObservationStarted: Int)] = [:]
 
     // These are accessed and mutated on the MainActor due to the class being @MainActor
-    @MainActor private var appLaunchObserver: AnyCancellable?
-    @MainActor private var appTerminateObserver: AnyCancellable?
     private var monitoringTask: Task<Void, Never>?
     var isMonitoringActive: Bool = false // Changed from private to internal (default)
+    public var isMonitoringActivePublic: Bool { isMonitoringActive } // For CursorAppLifecycleManager
+
+    private var appLifecycleManager: CursorAppLifecycleManager!
 
     public init(axorcist: AXorcistLib.AXorcist, sessionLogger: SessionLogger, locatorManager: LocatorManager) {
         self.axorcist = axorcist
         self.sessionLogger = sessionLogger
         self.locatorManager = locatorManager
+        self.appLifecycleManager = CursorAppLifecycleManager(owner: self, sessionLogger: sessionLogger)
+
         self.logger.info("CursorMonitor initialized.")
         Task {
             await self.sessionLogger.log(level: .info, message: "CursorMonitor initialized.")
         }
-        setupWorkspaceNotificationObservers()
-        scanForExistingInstances()
+        
+        // Subscribe to updates from appLifecycleManager
+        appLifecycleManager.$instanceInfo
+            .receive(on: DispatchQueue.main)
+            .assign(to: &$instanceInfo)
+        
+        appLifecycleManager.$monitoredInstances
+            .receive(on: DispatchQueue.main)
+            .assign(to: &$monitoredInstances)
+
+        // Start lifecycle monitoring
+        appLifecycleManager.initializeSystemHooks() // This calls scanForExistingInstances and setupWorkspaceNotificationObservers
     }
 
     deinit {
         logger.info("CursorMonitor deinitialized...")
+        // appLifecycleManager will deinit separately.
+        // Ensure local cancellables are cleared.
+        cancellables.forEach { $0.cancel() }
         Task { @MainActor [weak self] in
             self?.stopMonitoringLoop()
         }
     }
 
-    private func setupWorkspaceNotificationObservers() {
-        NSWorkspace.shared.notificationCenter
-            .publisher(for: NSWorkspace.didLaunchApplicationNotification)
-            .compactMap { $0.userInfo?[NSWorkspace.applicationUserInfoKey] as? NSRunningApplication }
-            .filter { $0.bundleIdentifier == self.cursorBundleIdentifier }
-            .receive(on: DispatchQueue.main) // Ensure main thread for UI updates and AX interactions
-            .sink { [weak self] app in
-                self?.handleCursorLaunch(app)
-            }
-            .store(in: &cancellables)
-
-        NSWorkspace.shared.notificationCenter
-            .publisher(for: NSWorkspace.didTerminateApplicationNotification)
-            .compactMap { $0.userInfo?[NSWorkspace.applicationUserInfoKey] as? NSRunningApplication }
-            .filter { $0.bundleIdentifier == self.cursorBundleIdentifier }
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] app in
-                self?.handleCursorTermination(app)
-            }
-            .store(in: &cancellables)
-        logger.info("Workspace notification observers set up for Cursor.")
-    }
-
-    private func scanForExistingInstances() {
-        let runningApps = NSWorkspace.shared.runningApplications
-        for app in runningApps {
-            if app.bundleIdentifier == cursorBundleIdentifier, !app.isTerminated {
-                logger.info("Found existing Cursor instance (PID: \\(app.processIdentifier)) on scan.")
-                handleCursorLaunch(app)
-            }
-        }
-        if instanceInfo.isEmpty {
-            logger.info("No running Cursor instances found on initial scan.")
-        }
-    }
-
-    private func handleCursorLaunch(_ app: NSRunningApplication) {
-        let pid = app.processIdentifier
-        guard instanceInfo[pid] == nil else {
-            logger.info("Instance PID \\(pid) already being monitored.")
-            return
-        }
-        let newInfo = CursorInstanceInfo(app: app, status: .unknown, statusMessage: "Initializing...")
-        instanceInfo[pid] = newInfo
-        
-        // Add to monitoredInstances for UI
-        let monitoredInfo = MonitoredInstanceInfo(
-            id: pid,
-            pid: pid,
-            displayName: "Cursor (PID: \(pid))",
-            status: .active,
-            isActivelyMonitored: true,
-            interventionCount: 0
-        )
-        monitoredInstances.append(monitoredInfo)
-        
+    // Called by CursorAppLifecycleManager
+    public func didLaunchInstance(pid: pid_t) {
+        logger.info("Instance PID \\(pid) launched, initializing states.")
+        // Initialize states for the new PID - this logic will move to CursorInstanceStateManager
         automaticInterventionsSincePositiveActivity[pid] = 0
         connectionIssueResumeButtonClicks[pid] = 0
         consecutiveRecoveryFailures[pid] = 0
         lastKnownSidebarStateHash[pid] = nil
-        lastActivityTimestamp[pid] = Date() // Initialize on launch
-        
-        logger.info("Cursor instance launched (PID: \\(pid)). Started monitoring.")
-        Task {
-            await sessionLogger.log(level: .info, message: "Cursor instance launched (PID: \\(pid)). Started monitoring.")
-        }
-        if !isMonitoringActive {
-            startMonitoringLoop()
-        }
+        lastActivityTimestamp[pid] = Date()
+        pendingObservationForPID.removeValue(forKey: pid) // Clear any stale observation
+
+        // If this is the first instance and monitoring is not active, appLifecycleManager
+        // would have called startMonitoringLoop. If it's already active, no need to restart.
+        // If it was stopped because no instances, and now one is added, appLifecycleManager handles start.
     }
 
-    private func handleCursorTermination(_ app: NSRunningApplication) {
-        let pid = app.processIdentifier
-        guard instanceInfo.removeValue(forKey: pid) != nil else {
-            logger.info("Received termination for unmonitored PID \\(pid).")
-            return
-        }
-        
-        // Remove from monitoredInstances
-        monitoredInstances.removeAll { $0.pid == pid }
-        
-        // Remove from manuallyPausedPIDs if present
-        manuallyPausedPIDs.remove(pid)
-        
+    // Called by CursorAppLifecycleManager
+    public func didTerminateInstance(pid: pid_t) {
+        logger.info("Instance PID \\(pid) terminated, cleaning up states.")
+        // Clean up states for the terminated PID - this logic will move to CursorInstanceStateManager
         automaticInterventionsSincePositiveActivity.removeValue(forKey: pid)
         connectionIssueResumeButtonClicks.removeValue(forKey: pid)
         consecutiveRecoveryFailures.removeValue(forKey: pid)
         lastKnownSidebarStateHash.removeValue(forKey: pid)
         lastActivityTimestamp.removeValue(forKey: pid)
         pendingObservationForPID.removeValue(forKey: pid)
-
-        logger.info("Cursor instance terminated (PID: \\(pid)). Stopped monitoring for this instance.")
-        Task {
-            await sessionLogger.log(level: .info, message: "Cursor instance terminated (PID: \\(pid)). Stopped monitoring for this instance.")
-        }
+        manuallyPausedPIDs.remove(pid) // Also ensure this is cleared
         
-        if monitoredInstances.isEmpty && isMonitoringActive {
-            logger.info("No more Cursor instances. Stopping monitoring loop.")
-            stopMonitoringLoop()
-        }
+        // If no more instances, appLifecycleManager signals stopMonitoringLoop.
     }
     
+    // Public method to allow UI or other components to refresh the list if needed
     public func refreshMonitoredInstances() {
-        logger.debug("Refreshing monitored instances list.")
-        let currentlyRunningPIDs = NSWorkspace.shared.runningApplications
-            .filter { $0.bundleIdentifier == self.cursorBundleIdentifier }
-            .map { $0.processIdentifier }
-        
-        let pidsToShutdown = Set(instanceInfo.keys).subtracting(currentlyRunningPIDs)
-        for pid in pidsToShutdown {
-            if instanceInfo.removeValue(forKey: pid) != nil {
-                 logger.info("Instance PID \\(pid) no longer running (detected by refresh). Removing.")
-                 Task { await sessionLogger.log(level: .info, message: "Instance PID \\(pid) no longer running (detected by refresh). Removing.", pid: pid) }
-                 
-                 // Remove from monitoredInstances
-                 monitoredInstances.removeAll { $0.pid == pid }
-                 
-                 // Remove from manuallyPausedPIDs if present
-                 manuallyPausedPIDs.remove(pid)
-                 
-                 automaticInterventionsSincePositiveActivity.removeValue(forKey: pid)
-                 connectionIssueResumeButtonClicks.removeValue(forKey: pid)
-                 consecutiveRecoveryFailures.removeValue(forKey: pid)
-                 lastKnownSidebarStateHash.removeValue(forKey: pid)
-                 lastActivityTimestamp.removeValue(forKey: pid)
-                 pendingObservationForPID.removeValue(forKey: pid)
-            }
-        }
-        scanForExistingInstances()
-         if monitoredInstances.isEmpty && isMonitoringActive {
-            logger.info("No more Cursor instances after refresh. Stopping monitoring loop.")
-            stopMonitoringLoop()
-        }
+        appLifecycleManager.refreshMonitoredInstances()
     }
 
     public func startMonitoringLoop() {
@@ -292,27 +208,33 @@ public class CursorMonitor: ObservableObject {
             guard let currentInfo = instanceInfo[pid] else { continue }
             
             guard let runningApp = NSRunningApplication(processIdentifier: pid), !runningApp.isTerminated else {
-                logger.info("Instance PID \\(pid) found terminated during tick, removing.")
-                // Use a local variable for app if it might be nil after the guard
-                if let appToTerminate = NSRunningApplication(processIdentifier: pid) {
-                    handleCursorTermination(appToTerminate)
+                logger.info("Instance PID \\(pid) found terminated during tick, processing removal.")
+                // If runningApp was valid before this guard, it means it just terminated.
+                // We need to ensure appLifecycleManager handles this termination properly.
+                // It might have already been handled by workspace notifications, but this is a fallback.
+                
+                // Create a temporary NSRunningApplication if possible to pass to the manager
+                // However, if it truly terminated, NSRunningApplication(processIdentifier: pid) might be nil.
+                // The appLifecycleManager.handleCursorTermination is robust to this.
+                // More simply, we can call didTerminateInstance which handles the state cleanup.
+                // And ensure appLifecycleManager also knows, though it might be redundant if notifications worked.
+                
+                // Robustly tell appLifecycleManager to clean up this PID if it still knows about it.
+                // It's possible it's already gone due to notifications.
+                // The primary source of truth for active PIDs is appLifecycleManager.instanceInfo
+                if let appInstance = NSRunningApplication(processIdentifier: pid) {
+                    // This will ensure appLifecycleManager removes it and calls back to didTerminateInstance
+                    self.appLifecycleManager.handleCursorTermination(appInstance)
                 } else {
-                    // If app is not running, directly remove info
-                    if instanceInfo.removeValue(forKey: pid) != nil {
-                        // Remove from monitoredInstances
-                        monitoredInstances.removeAll { $0.pid == pid }
-                        
-                        // Remove from manuallyPausedPIDs if present
-                        manuallyPausedPIDs.remove(pid)
-                        
-                        automaticInterventionsSincePositiveActivity.removeValue(forKey: pid)
-                        connectionIssueResumeButtonClicks.removeValue(forKey: pid)
-                        consecutiveRecoveryFailures.removeValue(forKey: pid)
-                        lastKnownSidebarStateHash.removeValue(forKey: pid)
-                        lastActivityTimestamp.removeValue(forKey: pid)
-                        pendingObservationForPID.removeValue(forKey: pid) // Clean up observation state too
-                        Task { await sessionLogger.log(level: .info, message: "Instance PID \\(pid) terminated and removed.", pid: pid) }
-                    }
+                    // If we can't even get an NSRunningApplication, it's definitely gone.
+                    // Call our internal cleanup, which will also be called by appLifecycleManager's callback.
+                    // This makes it idempotent.
+                    self.didTerminateInstance(pid: pid)
+                    // Also ensure appLifecycleManager is consistent if it missed the notification for some reason
+                    // by explicitly removing from its structures if an app instance can't be formed.
+                    // This is a bit more direct.
+                    self.appLifecycleManager.instanceInfo.removeValue(forKey: pid)
+                    self.appLifecycleManager.monitoredInstances.removeAll { $0.pid == pid }
                 }
                 continue
             }
