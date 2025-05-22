@@ -810,7 +810,7 @@ public class CursorMonitor: ObservableObject {
         if let inputFieldLocator = await locatorManager.getLocator(for: "mainInputField") {
             let recoveryText = Defaults[.textForCursorStopsRecovery]
             
-            let setValueResponse = await axorcist.handlePerformAction(for: String(pid), locator: inputFieldLocator, actionName: String(kAXSetValueAttribute), actionValue: AnyCodable(recoveryText), isDebugLoggingEnabled: false, currentDebugLogs: &tempLogs)
+            let setValueResponse = await axorcist.handlePerformAction(for: String(pid), locator: inputFieldLocator, actionName: String(kAXValueAttribute), actionValue: AnyCodable(recoveryText), isDebugLoggingEnabled: false, currentDebugLogs: &tempLogs)
             
             if setValueResponse.error == nil {
                 let pressActionResponse = await axorcist.handlePerformAction(for: String(pid), locator: inputFieldLocator, actionName: ApplicationServices.kAXPressAction, actionValue: nil, isDebugLoggingEnabled: false, currentDebugLogs: &tempLogs)

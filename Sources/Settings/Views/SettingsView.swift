@@ -15,12 +15,12 @@ struct SettingsView: View {
                     Label("Supervision", systemImage: "eye.fill")
                 }
             
-            CursorRuleSetsSettingsView()
+            CursorRuleSetsSettingsTab()
                 .tabItem {
                     Label("Rule Sets", systemImage: "list.star")
                 }
             
-            ExternalMCPsSettingsView()
+            ExternalMCPsSettingsTab()
                 .tabItem {
                     Label("External MCPs", systemImage: "server.rack")
                 }
@@ -230,516 +230,365 @@ struct CursorSupervisionSettingsView: View {
     }
 }
 
-enum RuleSetStatus: Equatable {
-    case notInstalled
-    case installed
-    case checking
-    case error(String)
-}
-
-struct CursorRuleSetsSettingsView: View {
-    @State private var terminatorRuleSetStatus: RuleSetStatus = .checking
-    @State private var terminatorButtonText: String = "Select Project Directory..."
-    @State private var isShowingDirectoryPicker: Bool = false
-    @State private var selectedProjectDirectory: URL?
-    @State private var lastCheckedProjectDirectory: URL?
-    @State private var installErrorMessage: String?
-
-    private let terminatorScriptName = "terminator.scpt"
-    private let terminatorRuleName = "codelooper_terminator_rule.mdc"
-    private let cursorSubDir = ".cursor"
-    private let scriptsSubDir = "scripts"
-    private let rulesSubDir = "rules"
+// MARK: - Cursor Rule Sets Tab (Integrated from Sources/Components/SwiftUI/SettingsTabs/CursorRuleSetsSettingsTab.swift)
+struct CursorRuleSetsSettingsTab: View {
+    @Bindable var viewModel: MainSettingsViewModel // This will be provided by the parent SettingsView
+    @State private var selectedProjectURL: URL? 
+    @State private var ruleSetStatus: MCPConfigManager.RuleSetStatus = .notInstalled 
+    @State private var projectDisplayName: String = "Selected Project"
 
     var body: some View {
-        Form {
-            Section(header: Text("Terminator Terminal Controller Rule Set")) {
-                Text(
-                    "This rule set allows Cursor to open and control a specific terminal window using " +
-                    "AppleScript, useful for tasks requiring persistent terminal sessions managed by " +
-                    "an AI agent."
-                )
-                    .font(.caption)
+        ScrollView {
+            VStack(alignment: .leading, spacing: 20) {
+                Text("Manage Cursor Project Rule Sets")
+                    .font(.title2)
+                Text("Install, update, or verify rule sets for your Cursor projects. These rules can help Cursor understand specific project contexts better.")
                     .foregroundColor(.secondary)
-                    .padding(.bottom, 5)
+                    .padding(.bottom)
 
-                HStack {
-                    VStack(alignment: .leading) {
-                        Text("Status: \(statusText(for: terminatorRuleSetStatus))")
-                        if let dir = lastCheckedProjectDirectory {
-                            Text("Checked in: \(dir.lastPathComponent)")
-                                .font(.caption)
-                                .foregroundColor(.gray)
-                        }
-                    }
-                    Spacer()
-                    Button(terminatorButtonText) {
-                        handleTerminatorButtonAction()
-                    }
-                }
-                
-                if let errorMsg = installErrorMessage {
-                    Text(errorMsg)
-                        .font(.caption)
-                        .foregroundColor(.red)
-                        .padding(.top, 2)
-                }
-            }
-        }
-        .padding()
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .fileImporter(
-            isPresented: $isShowingDirectoryPicker,
-            allowedContentTypes: [.folder],
-            allowsMultipleSelection: false
-        ) { result in
-            switch result {
-            case .success(let urls):
-                if let url = urls.first {
-                    selectedProjectDirectory = url
-                    lastCheckedProjectDirectory = url // Update for display immediately
-                    installErrorMessage = nil // Clear previous errors
-                    checkTerminatorInstallation(at: url)
-                }
-            case .failure(let error):
-                terminatorRuleSetStatus = .error("Failed to select directory: \(error.localizedDescription)")
-                installErrorMessage = "Failed to select directory: \(error.localizedDescription)"
-                updateButtonText()
-            }
-        }
-        .onAppear {
-            // Initial check if a directory was previously selected or use a default heuristic
-            // For V1, require manual selection first.
-            updateButtonText() // Set initial button text based on status
-        }
-    }
-
-    private func statusText(for status: RuleSetStatus) -> String {
-        switch status {
-        case .notInstalled: return "Not Installed"
-        case .installed: return "Installed"
-        case .checking: return "Checking..."
-        case .error(let msg): return "Error"
-        }
-    }
-    
-    private func updateButtonText() {
-        switch terminatorRuleSetStatus {
-        case .notInstalled:
-            terminatorButtonText = selectedProjectDirectory == nil ? "Select Project Directory..." : "Install"
-        case .installed:
-            terminatorButtonText = "Verify Installation"
-        case .checking:
-            terminatorButtonText = "Checking..."
-        case .error:
-            terminatorButtonText = selectedProjectDirectory == nil ? 
-                "Select Project Directory..." : "Retry Install/Check"
-        }
-    }
-
-    private func handleTerminatorButtonAction() {
-        installErrorMessage = nil // Clear previous errors
-        guard let projectDir = selectedProjectDirectory else {
-            isShowingDirectoryPicker = true
-            return
-        }
-
-        switch terminatorRuleSetStatus {
-        case .notInstalled, .error: // If not installed or error, try to install/reinstall
-            installTerminatorRuleSet(to: projectDir)
-        case .installed: // If installed, verify again
-            checkTerminatorInstallation(at: projectDir)
-        case .checking:
-            break // Do nothing if already checking
-        }
-    }
-
-    private func checkTerminatorInstallation(at projectPath: URL?) {
-        guard let projectPath = projectPath else {
-            terminatorRuleSetStatus = .notInstalled // Or some other appropriate default if no path
-            updateButtonText()
-            return
-        }
-
-        terminatorRuleSetStatus = .checking
-        updateButtonText()
-        
-        DispatchQueue.global(qos: .userInitiated).async {
-            let scriptURL = projectPath.appendingPathComponent(cursorSubDir)
-                .appendingPathComponent(scriptsSubDir)
-                .appendingPathComponent(terminatorScriptName)
-            let ruleURL = projectPath.appendingPathComponent(cursorSubDir)
-                .appendingPathComponent(rulesSubDir)
-                .appendingPathComponent(terminatorRuleName)
-
-            let scriptExists = FileManager.default.fileExists(atPath: scriptURL.path)
-            let ruleExists = FileManager.default.fileExists(atPath: ruleURL.path)
-            
-            // Simulate a small delay for checking
-            Thread.sleep(forTimeInterval: 0.5)
-
-            DispatchQueue.main.async {
-                if scriptExists && ruleExists {
-                    terminatorRuleSetStatus = .installed
-                } else {
-                    terminatorRuleSetStatus = .notInstalled
-                    if !scriptExists {
-                        print("Terminator script not found at \(scriptURL.path)")
-                    }
-                    if !ruleExists {
-                        print("Terminator rule not found at \(ruleURL.path)")
-                    }
-                }
-                updateButtonText()
-            }
-        }
-    }
-    
-    // Installation logic will go here
-    private func installTerminatorRuleSet(to projectPath: URL) {
-        terminatorRuleSetStatus = .checking
-        updateButtonText()
-        installErrorMessage = nil
-
-        DispatchQueue.global(qos: .userInitiated).async {
-            guard let scriptSourceURL = Bundle.main.url(
-                    forResource: terminatorScriptName,
-                    withExtension: nil,
-                    subdirectory: "RuleSets/Terminator"
-                ),
-                let ruleSourceURL = Bundle.main.url(
-                    forResource: terminatorRuleName,
-                    withExtension: nil,
-                    subdirectory: "RuleSets/Terminator"
-                ) else {
-                DispatchQueue.main.async {
-                    self.installErrorMessage = "Error: Bundled rule set files not found."
-                    self.terminatorRuleSetStatus = .error("Bundle integrity issue")
-                    self.updateButtonText()
-                }
-                return
-            }
-
-            let cursorDir = projectPath.appendingPathComponent(self.cursorSubDir)
-            let scriptsDir = cursorDir.appendingPathComponent(self.scriptsSubDir)
-            let rulesDir = cursorDir.appendingPathComponent(self.rulesSubDir)
-
-            let scriptDestURL = scriptsDir.appendingPathComponent(self.terminatorScriptName)
-            let ruleDestURL = rulesDir.appendingPathComponent(self.terminatorRuleName)
-
-            do {
-                try FileManager.default.createDirectory(
-                    at: scriptsDir,
-                    withIntermediateDirectories: true,
-                    attributes: nil
-                )
-                try FileManager.default.createDirectory(
-                    at: rulesDir,
-                    withIntermediateDirectories: true,
-                    attributes: nil
-                )
-
-                // Copy script (overwrite if exists as per spec for "Install/Update")
-                if FileManager.default.fileExists(atPath: scriptDestURL.path) {
-                    try FileManager.default.removeItem(at: scriptDestURL)
-                }
-                try FileManager.default.copyItem(at: scriptSourceURL, to: scriptDestURL)
-                print("Copied script to \(scriptDestURL.path)")
-
-                // Copy rule (overwrite if exists)
-                if FileManager.default.fileExists(atPath: ruleDestURL.path) {
-                    try FileManager.default.removeItem(at: ruleDestURL)
-                }
-                try FileManager.default.copyItem(at: ruleSourceURL, to: ruleDestURL)
-                print("Copied rule to \(ruleDestURL.path)")
-                
-                DispatchQueue.main.async {
-                    // Re-check installation after attempting to copy
-                    self.checkTerminatorInstallation(at: projectPath)
-                }
-
-            } catch {
-                DispatchQueue.main.async {
-                    self.installErrorMessage = "Installation failed: \(error.localizedDescription)"
-                    self.terminatorRuleSetStatus = .error("File operation failed")
-                    self.updateButtonText()
-                }
-            }
-        }
-    }
-}
-
-struct ExternalMCPsSettingsView: View {
-    @State private var mcpServers: [MCPServerEntry] = []
-    @State private var isLoading: Bool = true
-    @State private var errorMessage: String? = nil
-    
-    // For sheet presentation
-    @State private var selectedMCPForConfig: MCPServerEntry? = nil
-    @State private var isShowingMCPConfigSheet: Bool = false
-    
-    // For warning alerts
-    @State private var mcpToWarnAbout: MCPServerEntry? = nil
-    @State private var isShowingEnableWarning: Bool = false
-
-    var body: some View {
-        VStack(alignment: .leading) {
-            Text("Manage External Model Context Protocol (MCP) Servers")
-                .font(.title2)
-                .padding(.bottom)
-            
-            Text("Enable and configure MCP servers that CodeLooper can utilize to extend AI agent capabilities within Cursor. Changes here directly modify your `~/.cursor/mcp.json` file.")
-                .font(.caption)
-                .foregroundColor(.secondary)
-                .padding(.bottom, 10)
-
-            if isLoading {
-                ProgressView("Loading MCP Configuration...")
-            } else if let errorMsg = errorMessage {
-                Text("Error loading MCP configuration: \(errorMsg)")
-                    .foregroundColor(.red)
-            } else {
-                List {
-                    ForEach($mcpServers, id: \.id) { $mcpEntry in
-                        MCPRowView(mcpEntry: $mcpEntry,
-                                   onToggle: { wolltenabled in
-                                        if wolltenabled && (mcpEntry.id == "claude-code" || mcpEntry.id == "macos-automator") {
-                                            mcpToWarnAbout = mcpEntry
-                                            isShowingEnableWarning = true
-                                        } else {
-                                            toggleMCPServer(mcpEntry, enabled: wolltenabled)
-                                        }
-                                   },
-                                   onConfigure: { selectedMCPForConfig = mcpEntry; isShowingMCPConfigSheet = true }
-                        )
-                    }
-                }
-            }
-            Spacer()
-            Text("MCP Configuration File: ~/.cursor/mcp.json")
-                .font(.footnote)
-                .foregroundColor(.gray)
-        }
-        .padding()
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .onAppear(perform: loadMCPServers)
-        .sheet(isPresented: $isShowingMCPConfigSheet, onDismiss: loadMCPServers) {
-            if let mcp = selectedMCPForConfig {
-                MCPConfigSheetView(mcpEntry: mcp)
-            }
-        }
-        .alert(isPresented: $isShowingEnableWarning) {
-            guard let mcpToEnable = mcpToWarnAbout else { return Alert(title: Text("Error")) } // Should not happen
-            return Alert(
-                title: Text("Enable \(mcpToEnable.name)?"),
-                message: Text("Enabling powerful MCPs like \(mcpToEnable.name) can execute arbitrary code or commands on your system. Ensure you trust the source and understand the risks before proceeding."),
-                primaryButton: .destructive(Text("Enable \(mcpToEnable.name)")) { 
-                    toggleMCPServer(mcpToEnable, enabled: true)
-                    mcpToWarnAbout = nil
-                },
-                secondaryButton: .cancel { mcpToWarnAbout = nil }
-            )
-        }
-    }
-
-    private func loadMCPServers() {
-        isLoading = true
-        errorMessage = nil
-        Task {
-            do {
-                let servers = try await MCPConfigManager.shared.getConfiguredMCPServers()
-                DispatchQueue.main.async {
-                    self.mcpServers = servers
-                    self.isLoading = false
-                }
-            } catch {
-                DispatchQueue.main.async {
-                    self.errorMessage = error.localizedDescription
-                    self.isLoading = false
-                }
-            }
-        }
-    }
-    
-    private func toggleMCPServer(_ mcp: MCPServerEntry, enabled: Bool) {
-        Task {
-            do {
-                // Create default details if enabling for the first time
-                // These would be specific to each MCP type
-                var details: MCPServerDetailsCodable? = nil
-                if enabled {
-                    details = MCPServerDetailsCodable(name: mcp.name, path: mcp.path, version: mcp.version, environment: mcp.environment)
-                    // For XcodeBuildMCP, name might be "Xcode Build Service" in mcp.json
-                    // For Claude Code, name might be "Claude Code CLI"
-                    // For macOS Automator, name might be "macOS Automator"
-                    // These are often hardcoded by Cursor when it creates them.
-                    // We should try to match Cursor's naming or provide a reasonable default.
-                    // For V1, we will use the mcpEntry.name as the name in mcp.json if no other details exist.
+                // Terminator Terminal Controller Rule Set (Spec 3.3.C)
+                VStack(alignment: .leading, spacing: 10) {
+                    Text("Terminator Terminal Controller")
+                        .font(.headline)
+                    Text("Provides rules for interacting with the macOS Terminal via AppleScript, allowing Cursor to execute commands or manage terminal windows as part of its workflows.")
+                        .font(.subheadline)
+                        .foregroundColor(.secondary)
                     
-                    // Fetch existing details to preserve them if they exist.
-                    let currentServers = try await MCPConfigManager.shared.getConfiguredMCPServers()
-                    if let currentDetail = currentServers.first(where: { $0.id == mcp.id }) {
-                        details = MCPServerDetailsCodable(name: currentDetail.name, path: currentDetail.path, version: currentDetail.version, environment: currentDetail.environment)
-                    }
-                    if details?.name.isEmpty ?? true { details?.name = mcp.name } // Ensure name is set
-                }
-                
-                try await MCPConfigManager.shared.updateMCPServer(id: mcp.id, nameForNew: mcp.name, enabled: enabled, details: details)
-                loadMCPServers() // Refresh list
-            } catch {
-                DispatchQueue.main.async {
-                    self.errorMessage = "Failed to update MCP server: \(error.localizedDescription)"
-                    // Optionally revert toggle state here if needed
-                    loadMCPServers() // Refresh to show actual state
-                }
-            }
-        }
-    }
-}
-
-struct MCPRowView: View {
-    @Binding var mcpEntry: MCPServerEntry
-    var onToggle: (Bool) -> Void
-    var onConfigure: () -> Void
-    
-    // TODO: Add icons for each MCP
-    private var mcpIconName: String {
-        switch mcpEntry.id {
-        case "claude-code": return "c.square.fill" // Placeholder
-        case "macos-automator": return "hammer.fill" // Placeholder
-        case "XcodeBuildMCP": return "hammer.circle.fill" // Placeholder
-        default: return "questionmark.circle.fill"
-        }
-    }
-
-    var body: some View {
-        HStack {
-            Image(systemName: mcpIconName)
-                .font(.title2)
-                .frame(width: 30)
-            VStack(alignment: .leading) {
-                Text(mcpEntry.name).font(.headline)
-                Text(statusText())
-                    .font(.caption)
-                    .foregroundColor(mcpEntry.enabled ? .green : .gray)
-                if let path = mcpEntry.path, !path.isEmpty {
-                    Text("Path: \(path)").font(.caption2).foregroundColor(.secondary)
-                }
-                if let version = mcpEntry.version, !version.isEmpty {
-                    Text("Version: \(version)").font(.caption2).foregroundColor(.secondary)
-                }
-            }
-            Spacer()
-            Button("Configure...") {
-                onConfigure()
-            }
-            .disabled(!mcpEntry.enabled) // Only allow configure if enabled
-            
-            Toggle("", isOn: Binding(get: {mcpEntry.enabled}, set: { newValue, _ in onToggle(newValue) }))
-                .labelsHidden()
-        }
-    }
-    
-    private func statusText() -> String {
-        mcpEntry.enabled ? "Enabled" : "Disabled"
-    }
-}
-
-// Placeholder for configuration sheet
-struct MCPConfigSheetView: View {
-    @Environment(\.dismiss) var dismiss
-    let mcpEntry: MCPServerEntry // Passed in
-    
-    // State for editable fields, initialized from mcpEntry
-    @State private var path: String
-    @State private var version: String
-    @State private var environmentEntries: [EnvVarEntry]
-    
-    struct EnvVarEntry: Identifiable, Hashable {
-        let id = UUID()
-        var key: String = ""
-        var value: String = ""
-    }
-
-    init(mcpEntry: MCPServerEntry) {
-        self.mcpEntry = mcpEntry
-        _path = State(initialValue: mcpEntry.path ?? "")
-        _version = State(initialValue: mcpEntry.version ?? "")
-        _environmentEntries = State(initialValue: (mcpEntry.environment ?? [:]).map { EnvVarEntry(key: $0.key, value: $0.value) }.sorted(by: { $0.key < $1.key }))
-        if _environmentEntries.wrappedValue.isEmpty { // Ensure at least one empty row for new env vars
-            _environmentEntries.wrappedValue.append(EnvVarEntry())
-        }
-    }
-
-    var body: some View {
-        VStack {
-            Text("Configure \(mcpEntry.name)")
-                .font(.title)
-                .padding()
-            
-            Form {
-                if mcpEntry.id == "claude-code" || mcpEntry.id == "macos-automator" {
-                    TextField("Path to CLI/App (optional for default installs)", text: $path)
-                    Text("Example for Claude Code: /usr/local/bin/claude (if installed via Homebrew). Leave blank if using 'npx @cursorfn/claude-code-cli'.")
-                        .font(.caption).foregroundColor(.secondary)
-                }
-                
-                if mcpEntry.id == "XcodeBuildMCP" {
-                    TextField("Xcode Version Override (e.g., 15.3)", text: $version)
-                    Text("Leave blank to use system default Xcode. Specify a version string like \"15.0\" to use a specific Xcode version if multiple are installed.")
-                        .font(.caption).foregroundColor(.secondary)
-                    
-                    Section("Environment Variables") {
-                        ForEach($environmentEntries) { $entry in
-                            HStack {
-                                TextField("Key", text: $entry.key)
-                                TextField("Value", text: $entry.value)
-                                Button(action: { if let index = environmentEntries.firstIndex(where: { $0.id == entry.id }) { environmentEntries.remove(at: index) } }) {
-                                    Image(systemName: "minus.circle.fill").foregroundColor(.red)
+                    Button("Verify in Project...") {
+                        Task {
+                            let panel = NSOpenPanel()
+                            panel.canChooseFiles = false
+                            panel.canChooseDirectories = true
+                            panel.allowsMultipleSelection = false
+                            panel.message = "Select the project root directory to verify the Terminator Rule Set."
+                            
+                            if await panel.runModal() == .OK {
+                                if let url = panel.url {
+                                    self.selectedProjectURL = url
+                                    // Update ruleSetStatus and projectDisplayName based on verification
+                                    let statusResult = viewModel.verifyTerminatorRuleSetStatus(projectURL: url)
+                                    self.ruleSetStatus = statusResult
+                                    self.projectDisplayName = url.lastPathComponent
+                                } else {
+                                    // Handle case where user cancels or no URL is selected
+                                    self.ruleSetStatus = .notInstalled // Reset or set to an appropriate default
+                                    self.projectDisplayName = "Selected Project"
+                                    self.selectedProjectURL = nil
                                 }
-                                .buttonStyle(PlainButtonStyle())
+                            } else {
+                                // User cancelled panel - do nothing, keep existing state
                             }
                         }
-                        Button("Add Environment Variable") {
-                            environmentEntries.append(EnvVarEntry())
+                    }
+
+                    // Display Rule Set Status
+                    if selectedProjectURL != nil {
+                        HStack {
+                            Text("Status for \\\\(projectDisplayName):")
+                                .font(.headline)
+                            Text(ruleSetStatus.displayName)
+                                .foregroundColor(statusColor(for: ruleSetStatus))
+                            Spacer()
+                        }
+                        .padding(.vertical, 5)
+                    } else {
+                        Text("Select a project directory to verify or install the rule set.")
+                            .font(.callout)
+                            .foregroundColor(.secondary)
+                            .padding(.vertical, 5)
+                    }
+                    
+                    // Action buttons based on status
+                    HStack {
+                        Button(action: {
+                            viewModel.installTerminatorRuleSet(forProject: selectedProjectURL)
+                            // After action, re-verify status if a project is selected
+                            if let url = selectedProjectURL {
+                                self.ruleSetStatus = viewModel.verifyTerminatorRuleSetStatus(projectURL: url)
+                            } else {
+                                // If no project was selected, installTerminatorRuleSet would have prompted.
+                                // We don't have a URL to immediately verify here, so we reset the view.
+                                self.ruleSetStatus = .notInstalled
+                                self.projectDisplayName = "Selected Project"
+                            }
+                        }) {
+                            Text(buttonText(for: ruleSetStatus, projectSelected: selectedProjectURL != nil))
+                        }
+
+                        if case .updateAvailable(_, let newVersion) = ruleSetStatus, selectedProjectURL != nil {
+                            Button("Update to v\\\\(newVersion)") {
+                                if let url = selectedProjectURL {
+                                    if viewModel.mcpConfigManager.installTerminatorRuleSet(to: url) {
+                                        self.ruleSetStatus = viewModel.verifyTerminatorRuleSetStatus(projectURL: url)
+                                        AlertPresenter.shared.showInfo(title: "Rule Set Updated", message: "Terminator Rule Set updated successfully in \\\\(url.lastPathComponent).")
+                                    } else {
+                                        AlertPresenter.shared.showAlert(title: "Update Failed", message: "Could not update Terminator Rule Set in \\\\(url.lastPathComponent). Check logs.", style: .critical)
+                                    }
+                                }
+                            }
                         }
                     }
                 }
-            }
-            .padding()
+                .padding()
+                .background(Color(NSColor.controlBackgroundColor))
+                .cornerRadius(8)
 
-            HStack {
-                Button("Cancel") { dismiss() }
                 Spacer()
-                Button("Save Configuration") {
-                    saveConfiguration()
-                    dismiss()
-                }
-                .keyboardShortcut(.defaultAction)
             }
             .padding()
         }
-        .frame(minWidth: 500, idealWidth: 600, minHeight: 350, idealHeight: 450)
+    }
+
+    private func statusColor(for status: MCPConfigManager.RuleSetStatus) -> Color {
+        switch status {
+        case .notInstalled, .bundleResourceMissing:
+            return .orange // More of a neutral "action needed" or app setup issue
+        case .corrupted:
+            return .red // Data integrity issue
+        case .installed:
+            return .green
+        case .updateAvailable:
+            return .blue // Informational, positive action available
+        }
+    }
+
+    private func buttonText(for status: MCPConfigManager.RuleSetStatus, projectSelected: Bool) -> String {
+        if !projectSelected {
+            return "Select Project & Install/Verify Rule Set"
+        }
+        switch status {
+        case .notInstalled, .corrupted, .bundleResourceMissing:
+            return "Install Rule Set to \\\\(projectDisplayName)"
+        case .installed(let version):
+            return "Re-install v\\\\(version) to \\\\(projectDisplayName)"
+        case .updateAvailable(let installedVersion, _):
+            // The main button serves as re-install for the current (older) version if an update is also separately offered
+            return "Re-install v\\\\(installedVersion) to \\\\(projectDisplayName)"
+        }
+    }
+}
+
+// MARK: - External MCPs Tab (Integrated from Sources/Components/SwiftUI/SettingsTabs/ExternalMCPsSettingsTab.swift)
+struct ExternalMCPsSettingsTab: View {
+    @Bindable var viewModel: MainSettingsViewModel // This will be provided by the parent SettingsView
+    
+    // State for warning alerts (Spec 3.3.D)
+    @State private var showClaudeCodeEnableWarning = false
+    @State private var showMacOSAutomatorEnableWarning = false
+    @State private var showClearMCPFileConfirmation = false
+
+    // Local @State for status messages (e.g. claudeCodeStatus) are removed.
+    // They are now obtained directly from viewModel.claudeCodeStatusMessage etc.
+
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 20) {
+                Text("External Model Context Protocol (MCP) Servers")
+                    .font(.title2)
+                Text("Enable and configure MCP servers to extend CodeLooper\\'s capabilities with AI agents like Cursor. Changes here will update your `~/.cursor/mcp.json` file.")
+                    .foregroundColor(.secondary)
+                    .padding(.bottom)
+
+                // Display mcp.json path (Spec 3.3.D)
+                HStack {
+                    Text("MCP Configuration File:")
+                        .font(.headline)
+                    Text("~/.cursor/mcp.json")
+                        .font(.system(.body, design: .monospaced))
+                    Spacer()
+                    Button {
+                        viewModel.viewMCPFile()
+                    } label: {
+                        Image(systemName: "doc.text.magnifyingglass")
+                        Text("View File")
+                    }
+                    Button(role: .destructive) {
+                        showClearMCPFileConfirmation = true
+                    } label: {
+                        Image(systemName: "trash")
+                        Text("Clear File")
+                    }
+                }
+                .padding(.bottom)
+                .alert("Clear MCP Configuration File?", isPresented: $showClearMCPFileConfirmation) {
+                    Button("Clear File", role: .destructive) { viewModel.clearMCPFile() }
+                    Button("Cancel", role: .cancel) {}
+                } message: {
+                    Text("Are you sure you want to clear the MCP configuration file (~/.cursor/mcp.json)? This will reset all MCP server settings and the global shortcut to their defaults. This action cannot be undone.")
+                }
+
+                // Claude Code MCP (Spec 3.3.D)
+                mcpConfigurationView(
+                    mcpName: "Claude Code",
+                    mcpDescription: "Integrates with Anthropic\\'s Claude Code for advanced code generation and understanding tasks.",
+                    isEnabled: Binding(
+                        get: { viewModel.isClaudeCodeEnabled },
+                        set: { newValue in
+                            if newValue { // Enabling
+                                showClaudeCodeEnableWarning = true
+                            } else { // Disabling
+                                viewModel.isClaudeCodeEnabled = false
+                            }
+                        }
+                    ),
+                    statusMessageBinding: Binding( // Changed from statusMessage to statusMessageBinding
+                        get: { viewModel.claudeCodeStatusMessage },
+                        set: { _ in /* Read-only from view model */ }
+                    ),
+                    detailsAction: { viewModel.configureClaudeCode() }
+                )
+                .alert("Enable Claude Code MCP?", isPresented: $showClaudeCodeEnableWarning) {
+                    Button("Enable", role: .destructive) { viewModel.isClaudeCodeEnabled = true }
+                    Button("Cancel", role: .cancel) { /* Toggle will remain false implicitly */ }
+                } message: {
+                    Text("Enabling the Claude Code MCP allows external tools to execute commands with broad system access. Ensure you trust the source and understand the potential risks before proceeding.")
+                }
+
+                // macOS Automator MCP (Spec 3.3.D)
+                mcpConfigurationView(
+                    mcpName: "macOS Automator",
+                    mcpDescription: "Allows AI agents to run AppleScripts and JXA scripts to automate macOS applications and system tasks.",
+                    isEnabled: Binding(
+                        get: { viewModel.isMacOSAutomatorEnabled },
+                        set: { newValue in
+                            if newValue { // Enabling
+                                showMacOSAutomatorEnableWarning = true
+                            } else { // Disabling
+                                viewModel.isMacOSAutomatorEnabled = false
+                            }
+                        }
+                    ),
+                    statusMessageBinding: Binding( // Changed
+                        get: { viewModel.macOSAutomatorStatusMessage },
+                        set: { _ in /* Read-only from view model */ }
+                    ),
+                    detailsAction: { viewModel.configureMacOSAutomator() }
+                )
+                .alert("Enable macOS Automator MCP?", isPresented: $showMacOSAutomatorEnableWarning) {
+                    Button("Enable", role: .destructive) { viewModel.isMacOSAutomatorEnabled = true }
+                    Button("Cancel", role: .cancel) {}
+                } message: {
+                    Text("Enabling the macOS Automator MCP allows AI agents to execute arbitrary AppleScripts and JavaScript for Automation (JXA) scripts. This provides powerful control over your Mac but also carries significant security risks if misused. Only enable this if you fully understand and accept these risks.")
+                }
+                
+                // XcodeBuild MCP (Spec 3.3.D)
+                mcpConfigurationView(
+                    mcpName: "XcodeBuild",
+                    mcpDescription: "Enables interaction with Xcode projects for building, testing, and querying project information.",
+                    isEnabled: $viewModel.isXcodeBuildEnabled, // Direct binding
+                    statusMessageBinding: Binding( // Changed
+                        get: { viewModel.xcodeBuildStatusMessage },
+                        set: { _ in /* Read-only from view model */ }
+                    ),
+                    detailsAction: { viewModel.configureXcodeBuild() }
+                )
+
+                Divider().padding(.vertical)
+
+                // Global Shortcut Configuration (Spec 7.A.2)
+                VStack(alignment: .leading, spacing: 10) {
+                    Text("Global MCP Shortcut")
+                        .font(.headline)
+                    Text("Define a system-wide shortcut to trigger the primary MCP action (e.g., from Cursor). This requires an external tool or script listening for this shortcut. Example: \\\"Command+Shift+L\\\"")
+                        .font(.subheadline)
+                        .foregroundColor(.secondary)
+                    
+                    HStack {
+                        TextField("Global Shortcut String", text: $viewModel.globalShortcutString)
+                            .textFieldStyle(RoundedBorderTextFieldStyle())
+                        
+                        Button("Save Shortcut") {
+                            viewModel.saveGlobalShortcut()
+                        }
+                    }
+                    Text("Note: CodeLooper itself does not register this shortcut. Ensure your designated MCP or a helper tool handles it.")
+                        .font(.caption)
+                        .foregroundColor(.gray)
+                }
+                .padding()
+                .background(Color(NSColor.controlBackgroundColor))
+                .cornerRadius(8)
+
+                Spacer()
+            }
+            .padding()
+            .onAppear {
+                viewModel.refreshAllMCPStatusMessages() // Refresh statuses on appear
+            }
+            .onChange(of: viewModel.isClaudeCodeEnabled) { _, _ in viewModel.refreshAllMCPStatusMessages() }
+            .onChange(of: viewModel.isMacOSAutomatorEnabled) { _, _ in viewModel.refreshAllMCPStatusMessages() }
+            .onChange(of: viewModel.isXcodeBuildEnabled) { _, _ in viewModel.refreshAllMCPStatusMessages() }
+            // Sheet presentations for MCP configurations
+            .sheet(isPresented: $viewModel.showingClaudeConfigSheet) {
+                ClaudeCodeConfigView(
+                    isPresented: $viewModel.showingClaudeConfigSheet,
+                    customCliName: $viewModel.claudeCodeCustomCliName,
+                    onSave: { newName in
+                        viewModel.saveClaudeCodeConfiguration(newCliName: newName)
+                        // Status will be refreshed by the onChange of isClaudeCodeEnabled or on next appear
+                    }
+                )
+            }
+            .sheet(isPresented: $viewModel.showingXcodeConfigSheet) {
+                XcodeBuildConfigView(
+                    isPresented: $viewModel.showingXcodeConfigSheet,
+                    versionString: $viewModel.xcodeBuildVersionString,
+                    isIncrementalBuildsEnabled: $viewModel.xcodeBuildIncrementalBuilds,
+                    isSentryDisabled: $viewModel.xcodeBuildSentryDisabled,
+                    onSave: { version, incremental, sentry in
+                        viewModel.saveXcodeBuildConfiguration(version: version, incrementalBuilds: incremental, sentryDisabled: sentry)
+                    }
+                )
+            }
+            .sheet(isPresented: $viewModel.showingAutomatorConfigSheet) {
+                MacOSAutomatorConfigView(isPresented: $viewModel.showingAutomatorConfigSheet)
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func mcpConfigurationView(mcpName: String, mcpDescription: String, isEnabled: Binding<Bool>, statusMessageBinding: Binding<String>, detailsAction: @escaping () -> Void) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack {
+                Image(systemName: "puzzlepiece.extension.fill") // Generic icon
+                    .font(.title2)
+                    .foregroundColor(.accentColor)
+                Text(mcpName)
+                    .font(.headline)
+                Spacer()
+                Toggle("Enabled", isOn: isEnabled)
+                    .labelsHidden()
+            }
+            Text(mcpDescription)
+                .font(.subheadline)
+                .foregroundColor(.secondary)
+            
+            Text(statusMessageBinding.wrappedValue) // Display the status message from ViewModel
+                .font(.caption)
+                .foregroundColor(determineStatusColor(forMessage: statusMessageBinding.wrappedValue))
+                .padding(.vertical, 2)
+
+            Button("Configure / Details...") {
+                detailsAction()
+            }
+        }
+        .padding()
+        .background(Color(NSColor.controlBackgroundColor))
+        .cornerRadius(8)
     }
     
-    private func saveConfiguration() {
-        Task {
-            var updatedDetails = MCPServerDetailsCodable(name: mcpEntry.name, path: path, version: version)
-            if !environmentEntries.isEmpty && !(environmentEntries.count == 1 && environmentEntries[0].key.isEmpty) {
-                updatedDetails.environment = environmentEntries.reduce(into: [String:String]()) { dict, entry in
-                    if !entry.key.isEmpty { dict[entry.key] = entry.value }
-                }
-            }
-            if updatedDetails.path?.isEmpty ?? true { updatedDetails.path = nil } // Don't save empty path string
-            if updatedDetails.version?.isEmpty ?? true { updatedDetails.version = nil }
-            
-            do {
-                try await MCPConfigManager.shared.updateMCPServer(id: mcpEntry.id, nameForNew: mcpEntry.name, enabled: true, details: updatedDetails)
-            } catch {
-                // TODO: Show error to user in the sheet
-                print("Error saving MCP config: \(error.localizedDescription)")
-            }
+    private func determineStatusColor(forMessage message: String) -> Color {
+        let lowercasedMessage = message.lowercased()
+        if lowercasedMessage.contains("error") || lowercasedMessage.contains("failed") || lowercasedMessage.contains("not found") {
+            return .red
+        } else if lowercasedMessage.contains("enabled") || lowercasedMessage.contains("active") || lowercasedMessage.contains("configured") {
+            return .green
+        } else if lowercasedMessage.contains("disabled") || lowercasedMessage.contains("unknown") || lowercasedMessage.contains("loading") {
+            return .gray
+        } else if lowercasedMessage.contains("update available") || lowercasedMessage.contains("warning") {
+            return .orange
         }
+        return .secondary // Default color
     }
 }
 

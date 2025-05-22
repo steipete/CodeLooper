@@ -96,7 +96,7 @@ public class LocatorManager {
         default:
             Task {
                 await SessionLogger.shared.log(
-                    level: .warn,
+                    level: .warning,
                     message: "Attempted to reset unknown locator override: \(elementName)"
                 )
             }

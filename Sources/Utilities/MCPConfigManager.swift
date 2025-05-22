@@ -1,141 +1,443 @@
 import Foundation
+import OSLog
+import Defaults // For accessing default values if needed
 
-// Basic structure for an MCP server entry in mcp.json
-// This can be expanded as needed based on actual MCP server configurations
-struct MCPServerEntry: Codable, Hashable {
+// Define simple structs for mcp.json structure (Spec 7)
+// These can be expanded as needed based on the actual mcp.json format
+struct MCPRoot: Codable {
+    var mcpServers: [String: MCPServerEntry]? // Dictionary of MCP server configurations
+    var globalShortcut: String? // Optional global shortcut string
+
+    // Initialize with empty servers and no shortcut if creating a new file
+    init(mcpServers: [String : MCPServerEntry]? = [:], globalShortcut: String? = "") {
+        self.mcpServers = mcpServers
+        self.globalShortcut = globalShortcut
+    }
+}
+
+struct MCPServerEntry: Codable {
+    // Common properties for all MCP servers
+    var name: String
+    var enabled: Bool
+    var command: [String]? // For command-line based MCPs like Claude Code, XcodeBuild
+    // Add other MCP-specific properties here as needed
+    // e.g., version for XcodeBuild, cliName for Claude Code
+    var version: String? // For XcodeBuildMCP
+    var customCliName: String? // For Claude Code
+    // For macOS Automator, specific script paths or identifiers might be stored
+    var incrementalBuildsEnabled: Bool? // For XcodeBuildMCP
+    var sentryDisabled: Bool? // For XcodeBuildMCP
+}
+
+// New struct to hold comprehensive status for an MCP
+struct MCPFullStatus {
     var id: String
     var name: String
-    var enabled: Bool // Reflects if CodeLooper thinks it should be in mcp.json
-    var path: String? // e.g., for local CLIs
-    var version: String? // e.g., for XcodeBuildMCP
-    var environment: [String: String]? // e.g., for XcodeBuildMCP
-    
-    // Add other common or specific fields as necessary
+    var enabled: Bool
+    var displayStatus: String
+    var command: [String]?
+    var version: String?
+    var customCliName: String?
+    var incrementalBuildsEnabled: Bool?
+    var sentryDisabled: Bool?
+    // Add any other fields from MCPServerEntry that might be useful directly
 }
 
-struct MCPFileContent: Codable {
-    var mcpServers: [String: MCPServerDetailsCodable] // Key is server ID like "claude-code"
-    var globalShortcut: String? // Preserve this
-    // Preserve any other top-level keys by using a dictionary for unknown keys
-    // For simplicity in V1, we'll focus on mcpServers and globalShortcut
-}
-
-// A codable representation for the values in mcpServers dictionary
-struct MCPServerDetailsCodable: Codable, Hashable {
-    var name: String
-    var path: String? // Used by Claude Code CLI, macOS Automator
-    var version: String? // Used by XcodeBuildMCP
-    var environment: [String: String]? // Used by XcodeBuildMCP
-    // Add any other fields that specific MCPs might use in mcp.json
-}
-
-actor MCPConfigManager {
+@MainActor
+class MCPConfigManager {
     static let shared = MCPConfigManager()
-    private let logger = Logger(category: .mcpConfiguration) // Assumes LogCategory has .mcpConfiguration
+    private let logger = Logger(subsystem: Constants.bundleIdentifier, category: "MCPConfigManager")
 
     private var mcpFilePath: URL {
         let homeDir = FileManager.default.homeDirectoryForCurrentUser
-        return homeDir.appendingPathComponent(".cursor").appendingPathComponent("mcp.json")
+        return homeDir.appendingPathComponent(".cursor/mcp.json")
     }
 
-    private func readMCPFile() throws -> MCPFileContent {
-        let path = mcpFilePath
-        if !FileManager.default.fileExists(atPath: path.path) {
-            logger.info("mcp.json not found at \(path.path). Returning default empty content.")
-            // Return a default structure if file doesn't exist
-            return MCPFileContent(mcpServers: [:], globalShortcut: "") 
+    private init() {
+        logger.info("MCPConfigManager initialized. MCP file path: \(self.mcpFilePath.path)")
+        // Ensure the .cursor directory exists
+        ensureDotCursorDirectoryExists()
+    }
+
+    private func ensureDotCursorDirectoryExists() {
+        let dotCursorDir = mcpFilePath.deletingLastPathComponent()
+        if !FileManager.default.fileExists(atPath: dotCursorDir.path) {
+            do {
+                try FileManager.default.createDirectory(at: dotCursorDir, withIntermediateDirectories: true, attributes: nil)
+                logger.info("Created .cursor directory at \(dotCursorDir.path)")
+            } catch {
+                logger.error("Failed to create .cursor directory: \(error.localizedDescription)")
+            }
         }
+    }
+
+    // MARK: - mcp.json Handling (Spec 7)
+
+    func readMCPConfig() -> MCPRoot? {
         do {
-            let data = try Data(contentsOf: path)
+            if !FileManager.default.fileExists(atPath: mcpFilePath.path) {
+                logger.info("mcp.json does not exist. Will attempt to create with defaults if an MCP is enabled.")
+                return MCPRoot() // Return a default empty structure
+            }
+            let data = try Data(contentsOf: mcpFilePath)
             let decoder = JSONDecoder()
-            let content = try decoder.decode(MCPFileContent.self, from: data)
-            logger.info("Successfully read and decoded mcp.json")
-            return content
+            let config = try decoder.decode(MCPRoot.self, from: data)
+            logger.info("Successfully read mcp.json")
+            return config
         } catch {
             logger.error("Failed to read or decode mcp.json: \(error.localizedDescription)")
-            throw error
+            return nil
         }
     }
 
-    private func writeMCPFile(_ content: MCPFileContent) throws {
-        let path = mcpFilePath
+    func writeMCPConfig(_ config: MCPRoot) -> Bool {
         do {
-            // Ensure .cursor directory exists
-            try FileManager.default.createDirectory(
-                at: path.deletingLastPathComponent(),
-                withIntermediateDirectories: true,
-                attributes: nil
-            )
-            
             let encoder = JSONEncoder()
             encoder.outputFormatting = .prettyPrinted
-            let data = try encoder.encode(content)
-            try data.write(to: path, options: .atomic)
-            logger.info("Successfully wrote mcp.json to \(path.path)")
+            let data = try encoder.encode(config)
+            try data.write(to: mcpFilePath, options: .atomic)
+            logger.info("Successfully wrote mcp.json to \(self.mcpFilePath.path)")
+            return true
         } catch {
-            logger.error("Failed to write mcp.json: \(error.localizedDescription)")
-            throw error
+            logger.error("Failed to encode or write mcp.json: \(error.localizedDescription)")
+            return false
         }
     }
     
-    // Example function to get all configured MCP servers from CodeLooper's perspective
-    // This would merge defaults with actual mcp.json content
-    public func getConfiguredMCPServers() async throws -> [MCPServerEntry] {
-        let currentContent = try await readMCPFile()
-        var entries: [MCPServerEntry] = []
-
-        // Example for Claude Code
-        let claudeDetails = currentContent.mcpServers["claude-code"]
-        entries.append(MCPServerEntry(
-            id: "claude-code", 
-            name: "Claude Code Agent", 
-            enabled: claudeDetails != nil,
-            path: claudeDetails?.path
-        ))
-
-        // Example for macOS Automator
-        let automatorDetails = currentContent.mcpServers["macos-automator"]
-        entries.append(MCPServerEntry(
-            id: "macos-automator", 
-            name: "macOS Automator", 
-            enabled: automatorDetails != nil,
-            path: automatorDetails?.path // Automator might not use a path in mcp.json
-        ))
-
-        // Example for XcodeBuildMCP
-        let xcodeDetails = currentContent.mcpServers["XcodeBuildMCP"]
-        entries.append(MCPServerEntry(
-            id: "XcodeBuildMCP", 
-            name: "Xcode Build Service", 
-            enabled: xcodeDetails != nil,
-            version: xcodeDetails?.version,
-            environment: xcodeDetails?.environment
-        ))
-        
-        return entries
+    func ensureMCPFileExists() {
+        if !FileManager.default.fileExists(atPath: mcpFilePath.path) {
+            logger.info("mcp.json does not exist, creating with default structure.")
+            let defaultConfig = MCPRoot(mcpServers: [:], globalShortcut: "")
+            _ = writeMCPConfig(defaultConfig)
+        }
     }
 
-    public func updateMCPServer(
-        id: String,
-        nameForNew: String,
-        enabled: Bool,
-        details: MCPServerDetailsCodable?
-    ) async throws {
-        var currentContent = try await readMCPFile()
+    // MARK: - Global Shortcut Management
 
-        if enabled {
-            guard let detailsToSet = details else {
-                let errorMsg = "Details must be provided to enable MCP server: \(id)"
-                logger.error(errorMsg)
-                throw NSError(domain: "MCPConfigManager", code: 1, userInfo: [NSLocalizedDescriptionKey: errorMsg])
-            }
-            currentContent.mcpServers[id] = detailsToSet
-            logger.info("Enabled/updated MCP server '\(id)' in mcp.json config.")
+    func getGlobalShortcut() -> String? {
+        let config = readMCPConfig()
+        return config?.globalShortcut
+    }
+
+    func setGlobalShortcut(_ shortcut: String?) -> Bool {
+        ensureMCPFileExists()
+        var currentConfig = readMCPConfig() ?? MCPRoot()
+        currentConfig.globalShortcut = shortcut
+        let success = writeMCPConfig(currentConfig)
+        if success {
+            logger.info("Set global shortcut to: \(shortcut ?? "nil")")
         } else {
-            currentContent.mcpServers.removeValue(forKey: id)
-            logger.info("Disabled MCP server '\(id)' by removing from mcp.json config.")
+            logger.error("Failed to write mcp.json when setting global shortcut.")
         }
+        return success
+    }
+
+    // MARK: - File Operations (Spec 7.A.3)
+
+    func getMCPFilePath() -> URL {
+        return mcpFilePath
+    }
+
+    func clearMCPFile() -> Bool {
+        do {
+            // Create a default empty MCPRoot structure
+            let defaultConfig = MCPRoot(mcpServers: [:], globalShortcut: "")
+            // Write this default structure to the file, effectively clearing it
+            // while keeping it as valid JSON.
+            let success = writeMCPConfig(defaultConfig)
+            if success {
+                logger.info("mcp.json has been cleared (reset to default empty structure).")
+            } else {
+                logger.error("Failed to clear mcp.json by writing default structure.")
+            }
+            return success
+        } 
+        // Removed catch block to let writeMCPConfig handle its own errors if it logs them.
+        // If writeMCPConfig can throw and we need to catch it here, that needs to be defined.
+        // Assuming writeMCPConfig returns false on failure and logs, so no specific error handling here.
+    }
+
+    // MARK: - Specific MCP Management (Spec 3.3.D)
+
+    func setMCPEnabled(mcpIdentifier: String, nameForEntry: String, enabled: Bool, defaultCommand: [String]? = nil) {
+        ensureMCPFileExists() // Make sure the file exists before trying to modify it
+        var currentConfig = readMCPConfig() ?? MCPRoot() // Start with current or default
+
+        if currentConfig.mcpServers == nil { // Initialize if nil
+            currentConfig.mcpServers = [:]
+        }
+
+        var entry = currentConfig.mcpServers?[mcpIdentifier] ?? MCPServerEntry(name: nameForEntry, enabled: enabled) // Default to new if not found
+        entry.name = nameForEntry // Ensure name is set/updated
+        entry.enabled = enabled
+        if enabled, entry.command == nil, let defaultCommand = defaultCommand {
+             entry.command = defaultCommand
+        }
+        // If disabling, we might want to keep the command, or clear it based on exact requirements.
+        // For now, we keep it.
+
+        currentConfig.mcpServers?[mcpIdentifier] = entry
+        _ = writeMCPConfig(currentConfig)
+        logger.info("Set MCP \(mcpIdentifier) enabled state to \(enabled)")
+    }
+
+    func getMCPStatus(mcpIdentifier: String) -> MCPFullStatus {
+        guard let config = readMCPConfig(), let servers = config.mcpServers, let entry = servers[mcpIdentifier] else {
+            // Default status for an MCP not found in the config
+            let name = mcpIdentifier // Or a more friendly default name mapping
+            return MCPFullStatus(
+                id: mcpIdentifier,
+                name: name,
+                enabled: false,
+                displayStatus: "Not Configured",
+                command: nil,
+                version: nil,
+                customCliName: nil,
+                incrementalBuildsEnabled: nil,
+                sentryDisabled: nil
+            )
+        }
+
+        var statusParts: [String] = []
+        if entry.enabled {
+            statusParts.append("Enabled")
+        } else {
+            statusParts.append("Disabled")
+        }
+
+        if let version = entry.version, !version.isEmpty {
+            statusParts.append("v\(version)")
+        }
+        if let cliName = entry.customCliName, !cliName.isEmpty {
+            statusParts.append("(CLI: \(cliName))")
+        }
+        if entry.incrementalBuildsEnabled == true {
+            statusParts.append("(Incremental)")
+        }
+        // Sentry status might not be something to show in a brief status string unless specifically required.
+
+        let displayStatus = statusParts.joined(separator: " ")
+
+        return MCPFullStatus(
+            id: mcpIdentifier,
+            name: entry.name,
+            enabled: entry.enabled,
+            displayStatus: displayStatus.isEmpty ? (entry.enabled ? "Enabled" : "Disabled") : displayStatus,
+            command: entry.command,
+            version: entry.version,
+            customCliName: entry.customCliName,
+            incrementalBuildsEnabled: entry.incrementalBuildsEnabled,
+            sentryDisabled: entry.sentryDisabled
+        )
+    }
+
+    // Placeholder for updating specific MCP configurations (e.g., XcodeBuild version)
+    func updateMCPConfiguration(mcpIdentifier: String, params: [String: Any]) -> Bool {
+        ensureMCPFileExists()
+        var currentConfig = readMCPConfig() ?? MCPRoot()
+        if currentConfig.mcpServers == nil { currentConfig.mcpServers = [:] }
+
+        if var entry = currentConfig.mcpServers?[mcpIdentifier] {
+            if let version = params["version"] as? String {
+                entry.version = version
+            }
+            if let cliName = params["customCliName"] as? String {
+                entry.customCliName = cliName
+            }
+            if let incremental = params["incrementalBuildsEnabled"] as? Bool {
+                entry.incrementalBuildsEnabled = incremental
+            }
+            if let sentry = params["sentryDisabled"] as? Bool {
+                entry.sentryDisabled = sentry
+            }
+            // Add other params as needed
+            currentConfig.mcpServers?[mcpIdentifier] = entry
+            let success = writeMCPConfig(currentConfig)
+            if success {
+                logger.info("Updated configuration for MCP \(mcpIdentifier)")
+            } else {
+                logger.error("Failed to write mcp.json when updating MCP \(mcpIdentifier)")
+            }
+            return success
+        } else {
+            logger.warning("Attempted to update non-existent MCP: \(mcpIdentifier)")
+            return false // Indicate failure as the MCP entry doesn't exist
+        }
+    }
+
+    // MARK: - Specific MCP Getters for Configuration Booleans
+
+    func getXcodeBuildIncrementalBuildsFlag() -> Bool {
+        guard let config = readMCPConfig(), 
+              let servers = config.mcpServers, 
+              let entry = servers["XcodeBuildMCP"] else {
+            return false // Default to false if not found
+        }
+        return entry.incrementalBuildsEnabled ?? false // Default to false if nil
+    }
+
+    func getXcodeBuildSentryDisabledFlag() -> Bool {
+        guard let config = readMCPConfig(), 
+              let servers = config.mcpServers, 
+              let entry = servers["XcodeBuildMCP"] else {
+            return false // Default to false
+        }
+        return entry.sentryDisabled ?? false // Default to false if nil
+    }
+
+    // MARK: - Cursor Rule Set Management (Spec 3.3.C)
+
+    enum RuleSetStatus {
+        case notInstalled
+        case installed(version: String)
+        case updateAvailable(installedVersion: String, newVersion: String)
+        case corrupted // If file exists but version can't be read
+        case bundleResourceMissing // If the app's bundled rule is missing
+
+        var displayName: String {
+            switch self {
+            case .notInstalled: "Not Installed"
+            case .installed(let version): "Installed (v\(version))"
+            case .updateAvailable(let installed, let new): "Update Available (Installed: v\(installed), New: v\(new))"
+            case .corrupted: "Installed (Corrupted - Cannot Read Version)"
+            case .bundleResourceMissing: "Error: App's rule file missing"
+            }
+        }
+    }
+
+    private func getVersion(from ruleFileContent: String) -> String? {
+        // Simple version parsing: looks for "// Version: X.Y.Z"
+        let lines = ruleFileContent.split(whereSeparator: \.isNewline)
+        for line in lines {
+            let trimmedLine = line.trimmingCharacters(in: .whitespacesAndNewlines)
+            if trimmedLine.starts(with: "// Version:") {
+                return trimmedLine.replacingOccurrences(of: "// Version:", with: "").trimmingCharacters(in: .whitespacesAndNewlines)
+            }
+        }
+        return nil // No version found
+    }
+
+    private func getBundledRuleInfo() -> (content: String, version: String)? {
+        guard let ruleSourceURL = Bundle.main.url(forResource: "codelooper_terminator_rule", withExtension: "mdc") else {
+            logger.error("Bundled Terminator rule file 'codelooper_terminator_rule.mdc' not found.")
+            return nil
+        }
+        do {
+            let content = try String(contentsOf: ruleSourceURL)
+            guard let version = getVersion(from: content) else {
+                // Assuming the bundled file *must* have a version for this mechanism to work
+                logger.error("Bundled Terminator rule file is missing a version string. This is a critical app resource issue.")
+                // Return a placeholder or handle as a fatal error for the update mechanism for this rule.
+                // For now, let's say it's "unknown" but this state should ideally not be reached in a production build.
+                return (content, "unknown_bundle_version_error") 
+            }
+            return (content, version)
+        } catch {
+            logger.error("Failed to read bundled Terminator rule file: \(error.localizedDescription)")
+            return nil
+        }
+    }
+
+    func installTerminatorRuleSet(to projectRootURL: URL) -> Bool {
+        logger.info("Attempting to install Terminator Rule Set to \(projectRootURL.path)")
         
-        try await writeMCPFile(currentContent)
+        let scriptsDir = projectRootURL.appendingPathComponent(".cursor/scripts")
+        let rulesDir = projectRootURL.appendingPathComponent(".cursor/rules")
+
+        do {
+            // Create directories if they don't exist
+            try FileManager.default.createDirectory(at: scriptsDir, withIntermediateDirectories: true, attributes: nil)
+            try FileManager.default.createDirectory(at: rulesDir, withIntermediateDirectories: true, attributes: nil)
+
+            // Get paths to bundled resources (Spec 1.5)
+            guard let scriptSourcePath = Bundle.main.url(forResource: "terminator", withExtension: "scpt"),
+                  let ruleSourcePath = Bundle.main.url(forResource: "codelooper_terminator_rule", withExtension: "mdc") else {
+                logger.error("Bundled Terminator rule set files not found.")
+                return false
+            }
+
+            let scriptDestPath = scriptsDir.appendingPathComponent(scriptSourcePath.lastPathComponent)
+            let ruleDestPath = rulesDir.appendingPathComponent(ruleSourcePath.lastPathComponent)
+
+            // Copy files, overwrite if exist (as per Spec 3.3.C - "Prompts to overwrite")
+            // For simplicity here, we'll just overwrite. A real implementation would prompt.
+            if FileManager.default.fileExists(atPath: scriptDestPath.path) {
+                try FileManager.default.removeItem(at: scriptDestPath)
+            }
+            try FileManager.default.copyItem(at: scriptSourcePath, to: scriptDestPath)
+            logger.info("Copied \(scriptSourcePath.lastPathComponent) to \(scriptDestPath.path)")
+
+            if FileManager.default.fileExists(atPath: ruleDestPath.path) {
+                try FileManager.default.removeItem(at: ruleDestPath)
+            }
+            try FileManager.default.copyItem(at: ruleSourcePath, to: ruleDestPath)
+            logger.info("Copied \(ruleSourcePath.lastPathComponent) to \(ruleDestPath.path)")
+            
+            logger.info("Terminator Rule Set installed successfully to \(projectRootURL.path)")
+            return true
+        } catch {
+            logger.error("Failed to install Terminator Rule Set: \(error.localizedDescription)")
+            // Show alert to user (AlertPresenter.shared.showError...)
+            return false
+        }
+    }
+
+    func verifyTerminatorRuleSet(at projectRootURL: URL) -> RuleSetStatus { 
+        let scriptPath = projectRootURL.appendingPathComponent(".cursor/scripts/terminator.scpt")
+        let rulePath = projectRootURL.appendingPathComponent(".cursor/rules/codelooper_terminator_rule.mdc")
+
+        let scriptExists = FileManager.default.fileExists(atPath: scriptPath.path)
+        let ruleFileExists = FileManager.default.fileExists(atPath: rulePath.path)
+
+        guard let bundledInfo = getBundledRuleInfo() else {
+            return .bundleResourceMissing
+        }
+        // If bundled version itself indicates an error (e.g. missing version string in bundled file)
+        if bundledInfo.version == "unknown_bundle_version_error" {
+            return .bundleResourceMissing // Treat as if the resource isn't properly available for versioning
+        }
+        let bundledVersion = bundledInfo.version
+
+        if !scriptExists || !ruleFileExists {
+            return .notInstalled
+        }
+
+        do {
+            let installedRuleContent = try String(contentsOf: rulePath)
+            guard let installedVersion = getVersion(from: installedRuleContent) else {
+                return .corrupted 
+            }
+
+            // Basic semantic version comparison (major.minor.patch)
+            // This is a simplified comparison. For robust semver, a dedicated library is better.
+            let (installedMajor, installedMinor, installedPatch) = parseVersionString(installedVersion)
+            let (bundledMajor, bundledMinor, bundledPatch) = parseVersionString(bundledVersion)
+
+            if bundledMajor > installedMajor || 
+               (bundledMajor == installedMajor && bundledMinor > installedMinor) || 
+               (bundledMajor == installedMajor && bundledMinor == installedMinor && bundledPatch > installedPatch) {
+                return .updateAvailable(installedVersion: installedVersion, newVersion: bundledVersion)
+            } else if installedVersion == bundledVersion { // Or more comprehensively, if bundled is not newer
+                return .installed(version: installedVersion)
+            } else {
+                // Installed version is newer or different in a non-upgrade path (e.g. manual edit, dev version)
+                // Treat as installed, but log this unusual case.
+                logger.info("Installed rule set (v\(installedVersion)) is newer than or different from bundled (v\(bundledVersion)). Treating as installed.")
+                return .installed(version: installedVersion) 
+            }
+        } catch {
+            logger.error("Failed to read installed rule file at \(rulePath.path): \(error.localizedDescription)")
+            return .corrupted
+        }
+    }
+    
+    // Helper for basic version string parsing (e.g., "1.0.0" -> (1,0,0) )
+    private func parseVersionString(_ versionString: String) -> (major: Int, minor: Int, patch: Int) {
+        let components = versionString.split(separator: ".").compactMap { Int($0) }
+        return (
+            components.count > 0 ? components[0] : 0,
+            components.count > 1 ? components[1] : 0,
+            components.count > 2 ? components[2] : 0
+        )
     }
 }
