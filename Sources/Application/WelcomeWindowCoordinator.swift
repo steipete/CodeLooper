@@ -39,7 +39,7 @@ class WelcomeWindowCoordinator: NSObject {
 
         // Create the welcome window
         let window = NSWindow(
-            contentRect: NSRect(x: 0, y: 0, width: 600, height: 600),
+            contentRect: NSRect(x: 0, y: 0, width: 700, height: 700),
             styleMask: [.titled, .closable, .miniaturizable],
             backing: .buffered,
             defer: false

@@ -39,8 +39,8 @@ struct WelcomeWindowView: View {
                     appEnvironment.showWelcomeScreen = false
                 }
                 .frame(
-                    width: 600,
-                    height: 600
+                    width: 700,
+                    height: 700
                 )
                 // Listen for dismiss notifications
                 .onReceive(NotificationCenter.default.publisher(for: .dismissWelcomeWindow)) { _ in
@@ -56,7 +56,8 @@ struct WelcomeWindowView: View {
 
     private func createViewModel() -> WelcomeViewModel {
         let viewModel = WelcomeViewModel(
-            loginItemManager: loginItemManager
+            loginItemManager: loginItemManager,
+            windowManager: nil // SwiftUI-based approach doesn't have direct WindowManager access
         ) { [self] in
             logger.info("Welcome flow completed, closing window")
 

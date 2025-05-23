@@ -8,21 +8,15 @@ struct CodeLooperApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
 
     // ViewModel for settings, initialized as a StateObject to persist across settings views
-    @StateObject private var mainSettingsViewModel: MainSettingsViewModel
+    @StateObject private var mainSettingsViewModel = MainSettingsViewModel(
+        loginItemManager: LoginItemManager.shared, // Use shared instances directly
+        updaterViewModel: UpdaterViewModel(sparkleUpdaterManager: nil) // Fallback to nil initially
+    )
     
     // SessionLogger, assuming it's an ObservableObject and can be a @StateObject
     // If SessionLogger.shared is a simple static instance and already an ObservableObject,
     // it can be passed directly or wrapped if @StateObject semantics are desired for its lifecycle here.
     @StateObject private var sessionLogger = SessionLogger.shared
-
-    // Initialize mainSettingsViewModel in the init method using appDelegate
-    init() {
-        let delegate = AppDelegate.shared
-        _mainSettingsViewModel = StateObject(wrappedValue: MainSettingsViewModel(
-            loginItemManager: delegate.loginItemManager ?? LoginItemManager.shared, // Fallback if delegate not fully ready
-            updaterViewModel: delegate.updaterViewModel ?? UpdaterViewModel(sparkleUpdaterManager: nil) // Fallback
-        ))
-    }
 
     var body: some Scene {
         // The main application UI is primarily a MenuBarExtra app.

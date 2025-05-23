@@ -59,7 +59,10 @@ class WindowManager {
     @objc func showWelcomeWindow() {
         logger.info("Showing Welcome Window.")
         if welcomeWindowController == nil {
-            let welcomeViewModel = WelcomeViewModel(loginItemManager: loginItemManager) { [weak self] in
+            let welcomeViewModel = WelcomeViewModel(
+                loginItemManager: loginItemManager, 
+                windowManager: self
+            ) { [weak self] in
                 self?.welcomeWindowController?.close()
                 self?.welcomeWindowController = nil
                 self?.logger.info("Welcome onboarding flow finished.")
@@ -67,7 +70,7 @@ class WindowManager {
             }
             let welcomeView = WelcomeView(viewModel: welcomeViewModel) // Assuming WelcomeView is accessible
             let window = NSWindow(
-                contentRect: NSRect(x: 0, y: 0, width: 480, height: 600),
+                contentRect: NSRect(x: 0, y: 0, width: 700, height: 700),
                 styleMask: [.titled, .closable],
                 backing: .buffered,
                 defer: false

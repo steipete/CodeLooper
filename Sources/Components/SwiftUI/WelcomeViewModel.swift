@@ -18,10 +18,12 @@ final class WelcomeViewModel: ObservableObject {
     }
 
     private var loginItemManager: LoginItemManager
+    private var windowManager: WindowManager?
     private var onCompletionCallback: (() -> Void)?
 
-    init(loginItemManager: LoginItemManager, onCompletion: (() -> Void)? = nil) {
+    init(loginItemManager: LoginItemManager, windowManager: WindowManager? = nil, onCompletion: (() -> Void)? = nil) {
         self.loginItemManager = loginItemManager
+        self.windowManager = windowManager
         onCompletionCallback = onCompletion
 
         logger.info("WelcomeViewModel initialized for CodeLooper")
@@ -86,8 +88,8 @@ final class WelcomeViewModel: ObservableObject {
 
     func handleOpenAccessibilitySettingsAndPrompt() {
         logger.info("Handling open accessibility settings and prompt.")
-        // First, try to trigger the system prompt via AppDelegate's WindowManager
-        AppDelegate.shared.windowManager?.checkAndPromptForAccessibilityPermissions(showPromptIfNeeded: true)
+        // First, try to trigger the system prompt via the provided WindowManager
+        windowManager?.checkAndPromptForAccessibilityPermissions(showPromptIfNeeded: true)
 
         // Then, open the system settings pane as before
         if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility") {

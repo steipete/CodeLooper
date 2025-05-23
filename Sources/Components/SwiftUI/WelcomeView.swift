@@ -524,6 +524,7 @@ struct FooterView: View {
 
 #Preview {
     WelcomeView(viewModel: WelcomeViewModel(
-        loginItemManager: LoginItemManager.shared
+        loginItemManager: LoginItemManager.shared,
+        windowManager: nil // Preview doesn't need actual WindowManager
     ))
 }
