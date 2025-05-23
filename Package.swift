@@ -7,7 +7,7 @@ let package = Package(
         .macOS(.v14)
     ],
     products: [
-        .executable(name: "CodeLooper-Mac", targets: ["CodeLooper"])
+        .executable(name: "CodeLooper", targets: ["CodeLooper"])
     ],
     dependencies: [
         // Core UI and settings
