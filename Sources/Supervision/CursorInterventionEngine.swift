@@ -13,7 +13,7 @@ public class CursorInterventionEngine: ObservableObject {
         category: String(describing: CursorInterventionEngine.self)
     )
 
-    // MARK: - Constants & Thresholds (to be moved from CursorMonitor)
+    // MARK: - Constants & Thresholds
     // These will be populated from CursorMonitor.swift
     static let positiveWorkKeywords = [
         "Saving", "Saved", "Exporting", "Exported", "Generating", "Generated", "Building", "Built", "Running", "Ran",
@@ -52,7 +52,7 @@ public class CursorInterventionEngine: ObservableObject {
     private let locatorManager: LocatorManager
     private let instanceStateManager: CursorInstanceStateManager
 
-    // MARK: - Enums (to be moved or defined here)
+    // MARK: - Enums
     public enum InterventionType: String, CaseIterable, Codable, Sendable {
         case unknown = "Unknown"
         case noInterventionNeeded = "No Intervention Needed"
@@ -105,7 +105,7 @@ public class CursorInterventionEngine: ObservableObject {
         self.logger.info("CursorInterventionEngine initialized.")
     }
 
-    // MARK: - Core Intervention Logic (Methods to be moved from CursorMonitor)
+    // MARK: - Core Intervention Logic
     // Placeholder for methods like:
     // func determineInterventionType(for pid: pid_t, runningApp: NSRunningApplication) async -> InterventionType?
     // func checkForPositiveWorkingState(for pid: pid_t, using element: AXUIElement?) async -> Bool

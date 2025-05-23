@@ -51,7 +51,6 @@ public class CursorMonitor: ObservableObject {
     private var appLifecycleManager: CursorAppLifecycleManager!
     private var interventionEngine: CursorInterventionEngine! // Added property
 
-    // Removed state properties now in CursorInstanceStateManager:
     // private var manuallyPausedPIDs: Set<pid_t> = [:]
     // private var automaticInterventionsSincePositiveActivity: [pid_t: Int] = [:]
     // @Published public var totalAutomaticInterventionsThisSession: Int = 0 -> Replaced with totalAutomaticInterventionsThisSessionDisplay
@@ -241,7 +240,7 @@ public class CursorMonitor: ObservableObject {
             // The execute() method itself is async, so the 'await' here covers those calls implicitly.
             let (newStatus, newStatusMessage, shouldStopProcessingPID) = await useCase.execute()
 
-            if var infoToUpdate = appLifecycleManager.instanceInfo[pid] { // Re-fetch in case it was removed by termination logic
+            if var infoToUpdate = appLifecycleManager.instanceInfo[pid] {
                 infoToUpdate.status = newStatus
                 infoToUpdate.statusMessage = newStatusMessage
                 appLifecycleManager.instanceInfo[pid] = infoToUpdate // Update the source of truth

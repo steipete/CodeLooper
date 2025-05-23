@@ -64,7 +64,6 @@ project.xcworkspace/
 .idea/
 *.swp
 *~
-.vscode/
 .cursor/
 
 # CocoaPods

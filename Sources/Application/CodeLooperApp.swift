@@ -1,6 +1,7 @@
+import Defaults
+import KeyboardShortcuts
+import os
 import SwiftUI
-import Defaults // Ensure Defaults is imported if MainSettingsViewModel uses it directly or indirectly
-// import Diagnostics // For SessionLogger if it's in this module - Removed as Diagnostics sources are part of the main CodeLooper target
 
 @main
 struct CodeLooperApp: App {

@@ -5,8 +5,6 @@ import AppKit
 struct MainPopoverView: View {
     @ObservedObject private var cursorMonitor = CursorMonitor.shared
     @Default(.isGlobalMonitoringEnabled) private var isGlobalMonitoringEnabled
-    @EnvironmentObject var appDelegate: AppDelegate
-    @EnvironmentObject var mainSettingsViewModel: MainSettingsViewModel
 
     private func openSettings() {
         NotificationCenter.default.post(name: .openSettingsWindow, object: nil)
@@ -52,7 +50,7 @@ struct MainPopoverView: View {
 
             HStack {
                 Button("Open Settings") {
-                    appDelegate.mainSettingsCoordinator?.showSettings()
+                    openSettings()
                     // Close popover after clicking
                     NSApp.deactivate()
                 }

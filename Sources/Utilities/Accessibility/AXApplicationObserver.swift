@@ -79,7 +79,6 @@ class AXApplicationObserver {
 
         if monitoredBundleIdentifiers.contains(bundleIdentifier) {
             // Log: Monitored application \(appName) terminated.
-            // Future: Implement logic to handle termination of a monitored application (e.g., cleanup state)
         }
     }
 }

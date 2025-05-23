@@ -19,7 +19,6 @@ public final class MainSettingsViewModel: ObservableObject {
     let mcpConfigManager = MCPConfigManager.shared // Made public for access from previews if needed, but primarily internal
     let updaterViewModel: UpdaterViewModel // Modified: Changed to internal (default access level)
 
-    // @Observable handles publishing for these, so @Published / @State are removed.
     private(set) var startAtLogin: Bool = Defaults[.startAtLogin]
     private(set) var showInMenuBar: Bool = Defaults[.showInMenuBar]
     private(set) var showWelcomeScreen: Bool = Defaults[.isFirstLaunch] || Defaults[.showWelcomeScreen]
@@ -31,7 +30,6 @@ public final class MainSettingsViewModel: ObservableObject {
     var flashIconOnIntervention: Bool = Defaults[.flashIconOnIntervention]
 
     // Global Shortcut
-    // Removed: var globalShortcutString: String = ""
 
     // Computed property for showDebugMenu
     var showDebugMenu: Bool {
@@ -63,7 +61,6 @@ public final class MainSettingsViewModel: ObservableObject {
 
     // Status for individual MCPs (raw boolean enabled/disabled)
     // These are now computed properties based on mcpConfigManager
-    // The stored properties for these were removed in a previous step, this is a getter/setter structure
     var isClaudeCodeEnabled: Bool {
         get { mcpConfigManager.getMCPStatus(mcpIdentifier: "claude-code").enabled }
         set { 
@@ -85,6 +82,8 @@ public final class MainSettingsViewModel: ObservableObject {
             refreshMCPStatusMessage(for: "XcodeBuildMCP")
         }
     }
+
+    var defaultsObservations: Set<AnyCancellable> = Set<AnyCancellable>()
 
     // MARK: - Initialization
 

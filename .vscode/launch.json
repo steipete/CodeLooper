@@ -17,6 +17,24 @@
             "name": "Release CodeLooper-Mac",
             "program": "${workspaceFolder:CodeLooper}/.build/release/CodeLooper-Mac",
             "preLaunchTask": "swift: Build Release CodeLooper-Mac"
+        },
+        {
+            "type": "swift",
+            "request": "launch",
+            "args": [],
+            "cwd": "${workspaceFolder:CodeLooper}",
+            "name": "Debug CodeLooper",
+            "program": "${workspaceFolder:CodeLooper}/.build/debug/CodeLooper",
+            "preLaunchTask": "swift: Build Debug CodeLooper"
+        },
+        {
+            "type": "swift",
+            "request": "launch",
+            "args": [],
+            "cwd": "${workspaceFolder:CodeLooper}",
+            "name": "Release CodeLooper",
+            "program": "${workspaceFolder:CodeLooper}/.build/release/CodeLooper",
+            "preLaunchTask": "swift: Build Release CodeLooper"
         }
     ]
 }

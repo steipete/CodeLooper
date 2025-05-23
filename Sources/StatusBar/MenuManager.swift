@@ -14,7 +14,6 @@ protocol MenuManagerDelegate: AnyObject, Sendable {
     func toggleStartAtLogin()
     func toggleDebugMenu()
     func showAbout()
-    // func togglePopover() // No longer needed from delegate, handled internally
 }
 
 // MARK: - Menu Manager
@@ -154,7 +153,7 @@ final class MenuManager {
 
     @MainActor
     func refreshMenu() {
-        guard let statusBar = statusItem else { // Delegate check removed, menu is for fallback
+        guard let statusBar = statusItem else {
             logger.error("Status item is nil, can't refresh menu")
             return
         }
@@ -271,8 +270,6 @@ final class MenuManager {
         logger.info("Menu manager resources cleaned up")
     }
     
-    // Cleanup for icon resources - if menuBarIconManager is removed or simplified.
-    // private func cleanupIconResources() { ... }
     
     @objc
     private func showLogWindowClicked() {
@@ -287,9 +284,7 @@ final class MenuManager {
     }
 }
 
-// Helper for monitoring outside clicks to close popover (already defined in deleted StatusBarController, ensure it's here or accessible)
-// For brevity, assuming EventMonitor is defined as previously shown, or moved to a shared utility file.
-// If not, it needs to be included here.
+// Helper for monitoring outside clicks to close popover
 public class EventMonitor {
     private var monitor: Any?
     private let mask: NSEvent.EventTypeMask
@@ -316,7 +311,3 @@ public class EventMonitor {
     }
 }
 
-// Notification Name for menu bar visibility (already defined in deleted StatusBarController, ensure it's here or accessible)
-// extension Notification.Name {
-//    static let menuBarVisibilityChanged = Notification.Name("menuBarVisibilityChanged")
-// }

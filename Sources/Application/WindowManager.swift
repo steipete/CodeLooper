@@ -5,6 +5,7 @@ import Defaults
 import Foundation
 import os
 import SwiftUI
+import ApplicationServices
 
 @MainActor
 protocol WindowManagerDelegate: AnyObject {
@@ -91,29 +92,29 @@ class WindowManager {
         logger.info("Checking accessibility permissions (via WindowManager).")
         var debugLogs: [String] = []
         var permissionsGranted = false
+        
         do {
+            // First, try without prompting to see current status
             try AXorcistLib.checkAccessibilityPermissions(isDebugLoggingEnabled: false, currentDebugLogs: &debugLogs)
             permissionsGranted = true
             logger.info("Accessibility permissions already granted.")
             Task { await sessionLogger.log(level: .info, message: "Accessibility permissions granted.") }
         } catch let error as AccessibilityError {
             if case .notAuthorized = error, showPromptIfNeeded {
-                logger.warning("Accessibility permissions not granted. Will attempt to prompt. Error: \(error.localizedDescription)")
-                Task { await sessionLogger.log(level: .warning, message: "Accessibility permissions not granted, prompting. Error: \(error.localizedDescription)") }
-                debugLogs.removeAll()
+                logger.warning("Accessibility permissions not granted. Will attempt to trigger system prompt. Error: \(error.localizedDescription)")
+                Task { await sessionLogger.log(level: .warning, message: "Accessibility permissions not granted, triggering system prompt. Error: \(error.localizedDescription)") }
                 
-                do {
-                    try AXorcistLib.checkAccessibilityPermissions(isDebugLoggingEnabled: false, currentDebugLogs: &debugLogs)
-                    permissionsGranted = true
-                    logger.info("Accessibility permissions granted after prompt (or were already granted).")
-                    Task { await sessionLogger.log(level: .info, message: "Accessibility permissions granted after prompt.") }
-                } catch let promptError {
-                    logger.error("Failed to obtain accessibility permissions after prompt: \(promptError.localizedDescription)")
-                    Task { await sessionLogger.log(level: .error, message: "Failed to obtain accessibility permissions after prompt: \(promptError.localizedDescription)") }
-                    if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility") {
-                        NSWorkspace.shared.open(url)
-                    }
+                // **KEY FIX**: Make an actual accessibility API call to trigger the system prompt
+                // This will cause macOS to show the authorization dialog and add CodeLooper to the accessibility list
+                Task { @MainActor in
+                    await triggerAccessibilityPrompt()
                 }
+                
+                // Also open the System Settings as a fallback
+                if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility") {
+                    NSWorkspace.shared.open(url)
+                }
+                
             } else {
                 logger.error("Error checking accessibility permissions: \(error.localizedDescription)")
                 Task { await sessionLogger.log(level: .error, message: "Error checking accessibility permissions: \(error.localizedDescription)") }
@@ -136,6 +137,35 @@ class WindowManager {
         if permissionsGranted {
             // Delegate can decide if any specific action is needed upon confirmation
         }
+    }
+    
+    /// Triggers the accessibility prompt by making an actual accessibility API call
+    @MainActor
+    private func triggerAccessibilityPrompt() async {
+        logger.info("Triggering accessibility prompt by making AX API call...")
+        
+        // Method 1: Use AXIsProcessTrustedWithOptions with prompt option
+        // This is the standard way to trigger the accessibility permission prompt
+        // Using the same approach as AXorcist's AccessibilityPermissions.swift
+        let kAXTrustedCheckOptionPromptKey = "AXTrustedCheckOptionPrompt"
+        let options = [kAXTrustedCheckOptionPromptKey: true] as CFDictionary
+        let isGranted = AXIsProcessTrustedWithOptions(options)
+        
+        if isGranted {
+            logger.info("Accessibility permissions granted after prompt trigger.")
+            Task { await sessionLogger.log(level: .info, message: "Accessibility permissions granted after prompt trigger.") }
+        } else {
+            logger.info("Accessibility prompt displayed. User needs to manually grant permissions.")
+            Task { await sessionLogger.log(level: .info, message: "Accessibility prompt displayed. User needs to manually grant permissions.") }
+        }
+        
+        // Method 2: As a backup, try to create a system-wide AX element to ensure the prompt is triggered
+        let systemWideElement = AXUIElementCreateSystemWide()
+        var focusedElement: CFTypeRef?
+        let _ = AXUIElementCopyAttributeValue(systemWideElement, kAXFocusedUIElementAttribute as CFString, &focusedElement)
+        // This call will fail if permissions aren't granted, but it ensures the app appears in the accessibility list
+        
+        logger.info("Accessibility API calls completed to trigger system prompt.")
     }
 
     func handleFirstLaunchOrWelcomeScreen() {

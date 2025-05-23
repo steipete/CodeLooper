@@ -4,7 +4,6 @@ import Foundation
 // Simple utility to generate a symbol.png file for the menu bar
 // Run with: swift SymbolGenerator.swift
 
-// Main entry point - removed @main attribute to avoid conflict
 // Use this script separately if needed
 enum SymbolGenerator {
     static func main() {

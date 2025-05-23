@@ -3,7 +3,6 @@ import OSLog
 import SwiftUI
 
 // This was previously the main entry point, now replaced by AppMain.swift
-// Note: @main attribute removed to avoid conflict with AppMain.swift
 enum ProgramEntry {
     // Define a unique identifier for our app - using bundle ID is recommended
     private static let appIdentifier = "ai.amantusmachina.codelooper.instance"

@@ -129,10 +129,7 @@ class MCPConfigManager {
                 logger.error("Failed to clear mcp.json by writing default structure.")
             }
             return success
-        } 
-        // Removed catch block to let writeMCPConfig handle its own errors if it logs them.
-        // If writeMCPConfig can throw and we need to catch it here, that needs to be defined.
-        // Assuming writeMCPConfig returns false on failure and logs, so no specific error handling here.
+        }
     }
 
     // MARK: - Specific MCP Management (Spec 3.3.D)

@@ -76,5 +76,3 @@ struct CodableUserInfo: Codable {
         self.avatarData = avatarData
     }
 }
-
-// Legacy Preferences structure has been removed
