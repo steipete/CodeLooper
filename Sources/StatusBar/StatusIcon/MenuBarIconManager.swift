@@ -16,7 +16,7 @@ import OSLog
 class MenuBarIconManager {
     // MARK: - Properties
 
-    private let logger = Logger(subsystem: "ai.amantusmachina.codelooper", category: "MenuBarIconManager")
+    private let logger = Logger(label: "MenuBarIconManager", category: .statusBar)
     weak var statusItem: NSStatusItem?
     private var appearanceObserver: Any?
 

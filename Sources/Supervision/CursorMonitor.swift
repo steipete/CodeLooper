@@ -31,10 +31,7 @@ public class CursorMonitor: ObservableObject {
         locatorManager: LocatorManager.shared
     )
 
-    private let logger = Logger(
-        subsystem: Bundle.main.bundleIdentifier ?? "ai.amantusmachina.codelooper",
-        category: "CursorMonitor"
-    )
+    private let logger = Logger(category: .cursorMonitor)
     public let axorcist: AXorcistLib.AXorcist // Explicitly type with Lib
     @Published public var instanceInfo: [pid_t: CursorInstanceInfo] = [:]
     @Published public var monitoredInstances: [MonitoredInstanceInfo] = []
@@ -85,18 +82,28 @@ public class CursorMonitor: ObservableObject {
             await self.sessionLogger.log(level: .info, message: "CursorMonitor initialized with all components.")
         }
         
+        // Use sink instead of assign to avoid immediate updates during initialization
         appLifecycleManager.$instanceInfo
             .receive(on: DispatchQueue.main)
-            .assign(to: &$instanceInfo)
+            .sink { [weak self] newInstanceInfo in
+                self?.instanceInfo = newInstanceInfo
+            }
+            .store(in: &cancellables)
         
         appLifecycleManager.$monitoredInstances
             .receive(on: DispatchQueue.main)
-            .assign(to: &$monitoredInstances)
+            .sink { [weak self] newMonitoredInstances in
+                self?.monitoredInstances = newMonitoredInstances
+            }
+            .store(in: &cancellables)
 
         // Subscribe to totalAutomaticInterventionsThisSession from instanceStateManager
         instanceStateManager.$totalAutomaticInterventionsThisSession
             .receive(on: DispatchQueue.main)
-            .assign(to: &$totalAutomaticInterventionsThisSessionDisplay)
+            .sink { [weak self] newTotal in
+                self?.totalAutomaticInterventionsThisSessionDisplay = newTotal
+            }
+            .store(in: &cancellables)
 
         appLifecycleManager.initializeSystemHooks()
     }
@@ -199,11 +206,15 @@ public class CursorMonitor: ObservableObject {
                 // This logic should ideally be centralized in appLifecycleManager or a dedicated handler
                 // For now, keep it here but flag for potential future refactor if not already handled by appLifecycleManager's observation.
                 if let appInstance = NSRunningApplication(processIdentifier: pid) { // Re-fetch in case it was found terminated just now
-                    self.appLifecycleManager.handleCursorTermination(appInstance) 
+                    await MainActor.run {
+                        self.appLifecycleManager.handleCursorTermination(appInstance)
+                    }
                 } else { // If NSRunningApplication can't find it, it means it's truly gone
                     self.didTerminateInstance(pid: pid) // Ensure state is cleaned up in instanceStateManager
-                    self.appLifecycleManager.instanceInfo.removeValue(forKey: pid)
-                    self.appLifecycleManager.monitoredInstances.removeAll { $0.pid == pid }
+                    await MainActor.run {
+                        self.appLifecycleManager.instanceInfo.removeValue(forKey: pid)
+                        self.appLifecycleManager.monitoredInstances.removeAll { $0.pid == pid }
+                    }
                 }
                 continue
             }
@@ -216,9 +227,11 @@ public class CursorMonitor: ObservableObject {
                     if infoToUpdate.status != .paused {
                         infoToUpdate.status = .paused
                         infoToUpdate.statusMessage = "Monitoring Paused (Manual)"
-                        appLifecycleManager.instanceInfo[pid] = infoToUpdate
-                        let displayStatus = mapCursorStatusToDisplayStatus(infoToUpdate.status)
-                        updateInstanceDisplayInfo(for: pid, newStatus: displayStatus, interventionCount: instanceStateManager.getAutomaticInterventions(for: pid))
+                        await MainActor.run {
+                            self.appLifecycleManager.instanceInfo[pid] = infoToUpdate
+                            let displayStatus = self.mapCursorStatusToDisplayStatus(infoToUpdate.status)
+                            self.updateInstanceDisplayInfo(for: pid, newStatus: displayStatus, interventionCount: self.instanceStateManager.getAutomaticInterventions(for: pid))
+                        }
                     }
                 }
                 continue // Skip to next PID
@@ -243,10 +256,12 @@ public class CursorMonitor: ObservableObject {
             if var infoToUpdate = appLifecycleManager.instanceInfo[pid] {
                 infoToUpdate.status = newStatus
                 infoToUpdate.statusMessage = newStatusMessage
-                appLifecycleManager.instanceInfo[pid] = infoToUpdate // Update the source of truth
+                await MainActor.run {
+                    self.appLifecycleManager.instanceInfo[pid] = infoToUpdate // Update the source of truth
 
-                let displayStatus = mapCursorStatusToDisplayStatus(newStatus)
-                updateInstanceDisplayInfo(for: pid, newStatus: displayStatus, interventionCount: instanceStateManager.getAutomaticInterventions(for: pid))
+                    let displayStatus = self.mapCursorStatusToDisplayStatus(newStatus)
+                    self.updateInstanceDisplayInfo(for: pid, newStatus: displayStatus, interventionCount: self.instanceStateManager.getAutomaticInterventions(for: pid))
+                }
             } else {
                 logger.info("PID \(pid) no longer in instanceInfo after use case execution (likely terminated). Skipping UI update for it.")
             }
@@ -265,11 +280,11 @@ public class CursorMonitor: ObservableObject {
     private func getPrimaryDisplayableText(axElement: AXElement?) -> String {
         guard let element = axElement else { return "" }
         let attributeKeysInOrder: [String] = [
-            AXAttributeNames.kAXValueAttribute as String,
-            AXAttributeNames.kAXTitleAttribute as String,
-            AXAttributeNames.kAXDescriptionAttribute as String,
-            AXAttributeNames.kAXPlaceholderValueAttribute as String,
-            AXAttributeNames.kAXHelpAttribute as String
+            kAXValueAttribute as String,
+            kAXTitleAttribute as String,
+            kAXDescriptionAttribute as String,
+            kAXPlaceholderValueAttribute as String,
+            kAXHelpAttribute as String
         ]
         for key in attributeKeysInOrder {
             if let anyCodableInstance = element.attributes?[key] {
@@ -284,9 +299,9 @@ public class CursorMonitor: ObservableObject {
     private func getSecondaryDisplayableText(axElement: AXElement?) -> String {
         guard let element = axElement else { return "" }
         let attributeKeysInOrder: [String] = [
-            AXAttributeNames.kAXValueAttribute as String,
-            AXAttributeNames.kAXTitleAttribute as String,
-            AXAttributeNames.kAXDescriptionAttribute as String,
+            kAXValueAttribute as String,
+            kAXTitleAttribute as String,
+            kAXDescriptionAttribute as String,
         ]
         for key in attributeKeysInOrder {
             if let anyCodableInstance = element.attributes?[key] {
@@ -310,7 +325,9 @@ public class CursorMonitor: ObservableObject {
         info.status = .idle 
         info.statusMessage = "Idle (Resumed by User)"
         instanceStateManager.setLastActivityTimestamp(for: pid, date: Date()) // Also update last activity
-        instanceInfo[pid] = info
+        await MainActor.run {
+            self.instanceInfo[pid] = info
+        }
     }
 
     public func resetAllInstancesAndResume() async {
@@ -352,16 +369,21 @@ public class CursorMonitor: ObservableObject {
     public func pauseMonitoring(for pid: pid_t) {
         logger.info("Manually pausing monitoring for PID: \\(pid)")
         instanceStateManager.setManuallyPaused(pid: pid, paused: true)
-        updateInstanceDisplayInfo(for: pid, newStatus: .pausedManually, isActive: false)
+        Task { @MainActor in
+            self.updateInstanceDisplayInfo(for: pid, newStatus: .pausedManually, isActive: false)
+        }
     }
     
     public func resumeMonitoring(for pid: pid_t) {
         logger.info("Manually resuming monitoring for PID: \\(pid)")
         instanceStateManager.setManuallyPaused(pid: pid, paused: false)
         instanceStateManager.setLastActivityTimestamp(for: pid, date: Date()) // Treat resume as activity
-        updateInstanceDisplayInfo(for: pid, newStatus: .active, isActive: true)
+        Task { @MainActor in
+            self.updateInstanceDisplayInfo(for: pid, newStatus: .active, isActive: true)
+        }
     }
     
+    @MainActor
     private func updateInstanceDisplayInfo(
         for pid: pid_t,
         newStatus: DisplayStatus,

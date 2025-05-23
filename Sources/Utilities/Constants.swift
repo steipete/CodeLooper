@@ -35,7 +35,7 @@ public enum Constants: UIConstantsProvider {
 
     /// The application bundle identifier
     public static var bundleIdentifier: String {
-        Bundle.main.bundleIdentifier ?? "ai.amantusmachina.codelooper"
+        Bundle.main.bundleIdentifier ?? "me.steipete.codelooper"
     }
 
     // MARK: - UI Constants

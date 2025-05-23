@@ -73,7 +73,7 @@ if [ -f "$TUIST_PLISTS_FILE" ]; then
     if grep -q "cfBundleURLTypes: \[\[String: Any\]\]" "$TUIST_PLISTS_FILE"; then
         echo "Found cfBundleURLTypes with [[String: Any]] type. Converting to Sendable type."
         # Replace the type and convert the array value to use proper typing
-        sed -i '' 's/cfBundleURLTypes: \[\[String: Any\]\] = \[\["CFBundleTypeRole": "Viewer", "CFBundleURLName": "ai\.amantusmachina\.codelooper", "CFBundleURLSchemes": \["codelooper"\]\]\]/cfBundleURLTypes: [[String: Sendable]] = [["CFBundleTypeRole": "Viewer", "CFBundleURLName": "ai.amantusmachina.codelooper", "CFBundleURLSchemes": ["codelooper"]]]/g' "$TUIST_PLISTS_FILE"
+        sed -i '' 's/cfBundleURLTypes: \[\[String: Any\]\] = \[\["CFBundleTypeRole": "Viewer", "CFBundleURLName": "me\.steipete\.codelooper", "CFBundleURLSchemes": \["codelooper"\]\]\]/cfBundleURLTypes: [[String: Sendable]] = [["CFBundleTypeRole": "Viewer", "CFBundleURLName": "me.steipete.codelooper", "CFBundleURLSchemes": ["codelooper"]]]/g' "$TUIST_PLISTS_FILE"
         echo "Changed cfBundleURLTypes to use [[String: Sendable]] type"
     elif grep -q "cfBundleURLTypes: \[\[String: String\]\]" "$TUIST_PLISTS_FILE"; then
         echo "Found cfBundleURLTypes with [[String: String]] type"
@@ -88,7 +88,7 @@ if [ -f "$TUIST_PLISTS_FILE" ]; then
     # Note: This might need adjustment if the exact string doesn't match.
     # It assumes the problematic line specifically converts "CFBundleURLSchemes": ["<scheme>"] to "CFBundleURLSchemes": "<scheme>"
     # For safety, it targets the specific pattern based on the previous script version.
-    if grep -q 's/\\\[\\\["CFBundleTypeRole": "Viewer", "CFBundleURLName": "ai.amantusmachina.codelooper", "CFBundleURLSchemes": \\\["codelooper"\\\]\\\]\\\]/\[\["CFBundleTypeRole": "Viewer", "CFBundleURLName": "ai.amantusmachina.codelooper", "CFBundleURLSchemes": "codelooper"\]\]/g' "$TUIST_PLISTS_FILE"; then
+    if grep -q 's/\\\[\\\["CFBundleTypeRole": "Viewer", "CFBundleURLName": "me.steipete.codelooper", "CFBundleURLSchemes": \\\["codelooper"\\\]\\\]\\\]/\[\["CFBundleTypeRole": "Viewer", "CFBundleURLName": "me.steipete.codelooper", "CFBundleURLSchemes": "codelooper"\]\]/g' "$TUIST_PLISTS_FILE"; then
         echo "Found incorrect sed line that flattens CFBundleURLSchemes array. Removing it."
         # This is tricky with sed. It might be safer to ensure the data isn't flattened by ensuring the plist itself is correct
         # and the type in Swift is [[String: Any]]. The previous step handles the type.

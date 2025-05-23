@@ -11,7 +11,7 @@ actor FileLogger {
 
     private init() {
         // Simple initialization
-        Logger(subsystem: Constants.bundleIdentifier, category: "FileLogger")
+        Logger(label: "FileLogger", category: .utilities)
             .debug("FileLogger initialized - using OSLog for all logging")
     }
 
@@ -28,7 +28,7 @@ actor FileLogger {
         let filename = (file as NSString).lastPathComponent
 
         // Use OSLog directly - no file writing
-        let logger = Logger(subsystem: Constants.bundleIdentifier, category: category)
+        let logger = Logger(label: category, category: .utilities)
 
         // Format the message to include source location information
         let formattedMessage = "\(message) [\(filename):\(line) \(function)]"
@@ -44,7 +44,7 @@ actor FileLogger {
         case .error:
             logger.error("\(formattedMessage)")
         case .fault:
-            logger.fault("\(formattedMessage)")
+            logger.critical("\(formattedMessage)")
         default:
             logger.notice("\(formattedMessage)")
         }
@@ -76,7 +76,7 @@ actor FileLogger {
             }
         } catch {
             // In case of error, just log and return the path anyway
-            let logger = Logger(subsystem: Constants.bundleIdentifier, category: "FileLogger")
+            let logger = Logger(label: "FileLogger", category: .utilities)
             logger.error("Failed to create log directory: \(error.localizedDescription)")
         }
 

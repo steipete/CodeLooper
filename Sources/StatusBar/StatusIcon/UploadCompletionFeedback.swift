@@ -15,7 +15,7 @@ class UploadCompletionFeedback {
     private var tasks: [String: Task<Void, Error>] = [:]
 
     /// Logger for this class
-    private let logger = Logger(subsystem: "ai.amantusmachina.codelooper", category: "UploadCompletionFeedback")
+    private let logger = Logger(label: "UploadCompletionFeedback", category: .ui)
 
     // MARK: - Initialization
 
@@ -230,7 +230,7 @@ class UploadCompletionFeedback {
 
         // Create a request with the content and a unique identifier
         let request = UNNotificationRequest(
-            identifier: "ai.amantusmachina.codelooper.upload-complete-\(UUID().uuidString)",
+            identifier: "me.steipete.codelooper.upload-complete-\(UUID().uuidString)",
             content: content,
             trigger: nil // Deliver immediately
         )

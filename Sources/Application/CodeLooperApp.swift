@@ -8,15 +8,7 @@ struct CodeLooperApp: App {
     // Use the App Delegate for lifecycle events and managing non-SwiftUI parts
     @NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
 
-    // ViewModel for settings, initialized as a StateObject to persist across settings views
-    @StateObject private var mainSettingsViewModel = MainSettingsViewModel(
-        loginItemManager: LoginItemManager.shared, // Use shared instances directly
-        updaterViewModel: UpdaterViewModel(sparkleUpdaterManager: nil) // Fallback to nil initially
-    )
-    
-    // SessionLogger, assuming it's an ObservableObject and can be a @StateObject
-    // If SessionLogger.shared is a simple static instance and already an ObservableObject,
-    // it can be passed directly or wrapped if @StateObject semantics are desired for its lifecycle here.
+    // Initialize SessionLogger first since it's an actor
     @StateObject private var sessionLogger = SessionLogger.shared
 
     var body: some Scene {
@@ -26,14 +18,21 @@ struct CodeLooperApp: App {
 
         // Define the Settings scene
         Settings {
-            SettingsPanesContainerView()
-                .environmentObject(mainSettingsViewModel)
-                .environmentObject(sessionLogger) // Provide SessionLogger to the settings environment
-                // Pass the updaterViewModel to views that need it, for example, directly to GeneralSettingsView if it's part of SettingsPanesContainerView
-                // Or, modify SettingsPanesContainerView to accept and pass it down.
-                // For simplicity, if GeneralSettingsView is directly in Settings, you might do:
-                // GeneralSettingsView(updaterViewModel: appDelegate.updaterViewModel ?? UpdaterViewModel(sparkleUpdaterManager: nil))
+            SettingsSceneView()
+                .environmentObject(sessionLogger)
         }
+    }
+}
+
+struct SettingsSceneView: View {
+    @StateObject private var mainSettingsViewModel = MainSettingsViewModel(
+        loginItemManager: LoginItemManager.shared,
+        updaterViewModel: UpdaterViewModel(sparkleUpdaterManager: nil)
+    )
+    
+    var body: some View {
+        SettingsPanesContainerView()
+            .environmentObject(mainSettingsViewModel)
     }
 }
 

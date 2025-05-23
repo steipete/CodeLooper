@@ -15,7 +15,7 @@ final class DefaultsManager: @unchecked Sendable {
 
     // MARK: - Properties
 
-    private let logger = Logger(subsystem: "ai.amantusmachina.codelooper", category: "DefaultsManager")
+    private let logger = Logger(label: "DefaultsManager", category: .defaults)
     private var observers: [AnyCancellable] = []
 
     // MARK: - Initialization

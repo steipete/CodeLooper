@@ -27,8 +27,8 @@ public class AppDelegate: NSObject, NSApplicationDelegate,
 
     // MARK: - Logger
 
-    // Use os.Logger for categorized logging
-    private let logger = os.Logger(subsystem: Bundle.main.bundleIdentifier ?? "ai.amantusmachina.codelooper", category: LogCategory.app.rawValue)
+    // Use custom Logger for categorized logging
+    let logger = Logger(category: .appDelegate)
 
     // MARK: - Properties
 
@@ -64,19 +64,10 @@ public class AppDelegate: NSObject, NSApplicationDelegate,
         logger.info("Initializing core services")
         initializeServices()
 
-        AppIconStateController.shared.setup(cursorMonitor: CursorMonitor.shared)
-
-        if Defaults[.isGlobalMonitoringEnabled] {
-            logger.info("Global monitoring is enabled. Starting CursorMonitor loop.")
-            CursorMonitor.shared.startMonitoringLoop()
-        } else {
-            logger.info("Global monitoring is disabled. CursorMonitor loop not started initially.")
-        }
-
-        syncLoginItemStatus()
-
         logger.info("Setting up menu bar")
         setupMenuBar()
+
+        syncLoginItemStatus()
 
         if let statusButton = menuManager?.statusItem?.button {
             statusButton.image = NSImage(named: "MenuBarTemplateIcon")
@@ -90,30 +81,47 @@ public class AppDelegate: NSObject, NSApplicationDelegate,
 
         windowManager?.handleFirstLaunchOrWelcomeScreen()
         
-        AppIconStateController.shared.$currentTintColor
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] newTintColor in
-                self?.menuManager?.statusItem?.button?.contentTintColor = newTintColor
-                self?.logger.info("Menu bar icon tint color updated.")
-            }
-            .store(in: &cancellables)
+        // Delay cursor monitoring setup until after other initialization
+        DispatchQueue.main.async {
+            AppIconStateController.shared.setup(cursorMonitor: CursorMonitor.shared)
 
-        Defaults.publisher(.isGlobalMonitoringEnabled)
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] change in
-                guard let self = self else { return }
-                if change.newValue {
-                    self.logger.info("Global monitoring toggled ON. Starting CursorMonitor loop.")
-                    CursorMonitor.shared.startMonitoringLoop()
-                } else {
-                    self.logger.info("Global monitoring toggled OFF. Stopping CursorMonitor loop.")
-                    CursorMonitor.shared.stopMonitoringLoop()
+            // Always start monitoring to detect cursor instances (for count display)
+            // This will run the observer to detect instances, regardless of intervention state
+            self.logger.info("Starting cursor observer to detect instances")
+            CursorMonitor.shared.startMonitoringLoop()
+            
+            // If global monitoring for interventions is disabled, we still want to detect instances
+            if !Defaults[.isGlobalMonitoringEnabled] {
+                self.logger.info("Global intervention monitoring is disabled, but instance detection is active")
+            } else {
+                self.logger.info("Global intervention monitoring is enabled")
+            }
+            
+            AppIconStateController.shared.$currentTintColor
+                .receive(on: DispatchQueue.main)
+                .sink { [weak self] newTintColor in
+                    self?.menuManager?.statusItem?.button?.contentTintColor = newTintColor
+                    self?.logger.info("Menu bar icon tint color updated.")
                 }
-            }
-            .store(in: &cancellables)
+                .store(in: &self.cancellables)
 
-        KeyboardShortcuts.onKeyUp(for: .toggleMonitoring) { [weak self] in
-            self?.toggleMonitoringState()
+            Defaults.publisher(.isGlobalMonitoringEnabled)
+                .receive(on: DispatchQueue.main)
+                .sink { [weak self] change in
+                    guard let self = self else { return }
+                    if change.newValue {
+                        self.logger.info("Global monitoring toggled ON. Starting CursorMonitor loop.")
+                        CursorMonitor.shared.startMonitoringLoop()
+                    } else {
+                        self.logger.info("Global monitoring toggled OFF. Stopping CursorMonitor loop.")
+                        CursorMonitor.shared.stopMonitoringLoop()
+                    }
+                }
+                .store(in: &self.cancellables)
+
+            KeyboardShortcuts.onKeyUp(for: .toggleMonitoring) { [weak self] in
+                self?.toggleMonitoringState()
+            }
         }
 
         logger.info("Application startup completed successfully")
@@ -217,7 +225,7 @@ public class AppDelegate: NSObject, NSApplicationDelegate,
         logger.info("Setting up exception handling")
         // Configure global exception handler
         NSSetUncaughtExceptionHandler { exception in
-            let exceptionLogger = os.Logger(subsystem: Bundle.main.bundleIdentifier ?? "ai.amantusmachina.codelooper", category: "ExceptionHandler")
+            let exceptionLogger = os.Logger(subsystem: Bundle.main.bundleIdentifier ?? "me.steipete.codelooper", category: "ExceptionHandler")
             exceptionLogger.critical("Uncaught exception: \(exception.name.rawValue), reason: \(exception.reason ?? "unknown")")
 
             // Get stack trace
@@ -242,7 +250,8 @@ public class AppDelegate: NSObject, NSApplicationDelegate,
         _ = self.locatorManager
         logger.info("LocatorManager accessed.")
         
-        sparkleUpdaterManager = SparkleUpdaterManager()
+        // Disabled until this is setup.
+        //sparkleUpdaterManager = SparkleUpdaterManager()
         logger.info("SparkleUpdaterManager initialized.")
 
         if let sparkleManager = self.sparkleUpdaterManager {
@@ -294,8 +303,9 @@ public class AppDelegate: NSObject, NSApplicationDelegate,
 
         let menuBarObserver = setupMenuBarVisibilityObserver()
         let highlightMenuBarObserver = setupHighlightMenuBarObserver()
+        let settingsObserver = setupSettingsWindowObserver()
 
-        notificationObservers.append(contentsOf: [menuBarObserver, highlightMenuBarObserver])
+        notificationObservers.append(contentsOf: [menuBarObserver, highlightMenuBarObserver, settingsObserver])
 
         logger.info("Application startup completed successfully")
     }
@@ -330,6 +340,28 @@ public class AppDelegate: NSObject, NSApplicationDelegate,
         }
     }
 
+    private func setupSettingsWindowObserver() -> NSObjectProtocol {
+        NotificationCenter.default.addObserver(
+            forName: .openSettingsWindow,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            guard let self else { return }
+            
+            Task { @MainActor in
+                self.logger.info("Received notification to open settings window")
+                // Activate the app first to bring windows to foreground
+                NSApp.activate(ignoringOtherApps: true)
+                // Open the settings using NSApp's built-in mechanism for SwiftUI Settings scenes
+                if #available(macOS 13.0, *) {
+                    NSApp.sendAction(Selector(("showSettingsWindow:")), to: nil, from: nil)
+                } else {
+                    NSApp.sendAction(Selector(("showPreferencesWindow:")), to: nil, from: nil)
+                }
+            }
+        }
+    }
+
     // @objc func showWelcomeWindow() { ... } // Moved to WindowManager
 
     // MARK: - Accessibility Permissions
@@ -339,13 +371,7 @@ public class AppDelegate: NSObject, NSApplicationDelegate,
     // func checkAndPromptForAccessibilityPermissions(showPromptIfNeeded: Bool = true) { ... } // Moved to WindowManager
 
     // MARK: - MenuManagerDelegate Conformance
-
-    /*
-    func showSettings() { ... }
-    func toggleStartAtLogin() { ... }
-    func toggleDebugMenu() { ... }
-    func showAbout() { ... }
-    */
+    // Methods implemented in AppDelegate+MenuManagerDelegate.swift
 
     deinit {
         MainActor.assumeIsolated {

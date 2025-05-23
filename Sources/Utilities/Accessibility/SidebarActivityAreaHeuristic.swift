@@ -13,7 +13,7 @@ struct SidebarActivityAreaHeuristic: AXElementHeuristic {
 
         let locator1 = AXorcistLib.Locator(
             match_all: false,
-            criteria: ["role": kAXScrollAreaRole],
+            criteria: ["role": AXRoleNames.kAXScrollAreaRole],
             computed_name_contains: "chat"
         )
         let queryResponse1 = await axorcist.handleQuery(
@@ -26,7 +26,7 @@ struct SidebarActivityAreaHeuristic: AXElementHeuristic {
 
         let locator2 = AXorcistLib.Locator(
             match_all: false,
-            criteria: ["role": kAXScrollAreaRole, "identifier": "sidebar"]
+            criteria: ["role": AXRoleNames.kAXScrollAreaRole, "identifier": "sidebar"]
         )
         let queryResponse2 = await axorcist.handleQuery(
             for: nil,
@@ -38,7 +38,7 @@ struct SidebarActivityAreaHeuristic: AXElementHeuristic {
 
         let locator3 = AXorcistLib.Locator(
             match_all: false,
-            criteria: ["role": kAXGroupRole],
+            criteria: ["role": AXRoleNames.kAXGroupRole],
             computed_name_contains: "sidebar"
         )
         let queryResponse3 = await axorcist.handleQuery(

@@ -48,7 +48,7 @@ let project = Project(
             name: "CodeLooper",
             destinations: [.mac],
             product: .app,
-            bundleId: "ai.amantusmachina.codelooper",
+            bundleId: "me.steipete.codelooper",
             deploymentTargets: .macOS("14.0"),
             infoPlist: .file(path: "CodeLooper/Info.plist"),
             sources: [
@@ -72,7 +72,7 @@ let project = Project(
             settings: .settings(
                 base: [
                     "INFOPLIST_FILE": "CodeLooper/Info.plist",
-                    "PRODUCT_BUNDLE_IDENTIFIER": "ai.amantusmachina.codelooper",
+                    "PRODUCT_BUNDLE_IDENTIFIER": "me.steipete.codelooper",
                     "MARKETING_VERSION": "1.0",
                     "CURRENT_PROJECT_VERSION": "1"
                 ]

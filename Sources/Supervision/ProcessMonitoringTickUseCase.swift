@@ -37,8 +37,7 @@ class ProcessMonitoringTickUseCase {
         self.locatorManager = locatorManager
         self.instanceStateManager = instanceStateManager
         self.interventionEngine = interventionEngine
-        let subsystem = Bundle.main.bundleIdentifier ?? "ai.amantusmachina.codelooper"
-        self.logger = Logger(subsystem: subsystem, category: "ProcessMonitoringTickUseCase_PID_\(pid)")
+        self.logger = Logger(label: "ProcessMonitoringTickUseCase_PID_\(pid)", category: .supervision)
         self.logger.info("Initialized for PID \(pid)")
     }
 

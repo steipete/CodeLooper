@@ -1,6 +1,6 @@
 name: CodeLooper
 options:
-  bundleIdPrefix: ai.amantusmachina
+  bundleIdPrefix: me.steipete
   deploymentTarget:
     macOS: '14.0'
 packages:
@@ -25,7 +25,7 @@ targets:
         # Basic settings
         INFOPLIST_FILE: CodeLooper/Info.plist
         MACOSX_DEPLOYMENT_TARGET: '14.0'
-        PRODUCT_BUNDLE_IDENTIFIER: ai.amantusmachina.codelooper
+        PRODUCT_BUNDLE_IDENTIFIER: me.steipete.codelooper
 
         # Swift concurrency settings
         SWIFT_STRICT_CONCURRENCY: complete
@@ -43,7 +43,7 @@ targets:
       properties:
         CFBundleName: CodeLooper
         CFBundleDisplayName: CodeLooper
-        CFBundleIdentifier: ai.amantusmachina.codelooper
+        CFBundleIdentifier: me.steipete.codelooper
         CFBundleVersion: 1.0
         CFBundleShortVersionString: 1.0
         LSApplicationCategoryType: public.app-category.productivity

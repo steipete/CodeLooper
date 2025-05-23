@@ -36,7 +36,7 @@ public final class LogManager {
 
         // Pre-initialize loggers for all categories
         for category in LogCategory.allCases {
-            loggers[category] = Logger(subsystem: subsystem, category: category.rawValue)
+            loggers[category] = Logger(category: category)
         }
     }
 
@@ -52,7 +52,7 @@ public final class LogManager {
         }
 
         // Create and cache a new logger if needed
-        let logger = Logger(subsystem: subsystem, category: category.rawValue)
+        let logger = Logger(category: category)
         loggers[category] = logger
         return logger
     }
@@ -117,7 +117,7 @@ public final class LogManager {
     public func log(
         _ message: String,
         level: LogLevel,
-        category: LogCategory = .default,
+        category: LogCategory = .general,
         file: String = #file,
         function: String = #function,
         line: Int = #line
@@ -189,7 +189,7 @@ public final class LogManager {
     ///   - line: The line number (auto-filled)
     public func debug(
         _ message: String,
-        category: LogCategory = .default,
+        category: LogCategory = .general,
         file: String = #file,
         function: String = #function,
         line: Int = #line
@@ -206,7 +206,7 @@ public final class LogManager {
     ///   - line: The line number (auto-filled)
     public func info(
         _ message: String,
-        category: LogCategory = .default,
+        category: LogCategory = .general,
         file: String = #file,
         function: String = #function,
         line: Int = #line
@@ -223,7 +223,7 @@ public final class LogManager {
     ///   - line: The line number (auto-filled)
     public func notice(
         _ message: String,
-        category: LogCategory = .default,
+        category: LogCategory = .general,
         file: String = #file,
         function: String = #function,
         line: Int = #line
@@ -240,7 +240,7 @@ public final class LogManager {
     ///   - line: The line number (auto-filled)
     public func warning(
         _ message: String,
-        category: LogCategory = .default,
+        category: LogCategory = .general,
         file: String = #file,
         function: String = #function,
         line: Int = #line
@@ -257,7 +257,7 @@ public final class LogManager {
     ///   - line: The line number (auto-filled)
     public func error(
         _ message: String,
-        category: LogCategory = .default,
+        category: LogCategory = .general,
         file: String = #file,
         function: String = #function,
         line: Int = #line
@@ -274,7 +274,7 @@ public final class LogManager {
     ///   - line: The line number (auto-filled)
     public func critical(
         _ message: String,
-        category: LogCategory = .default,
+        category: LogCategory = .general,
         file: String = #file,
         function: String = #function,
         line: Int = #line
@@ -291,7 +291,7 @@ public final class LogManager {
     ///   - line: The line number (auto-filled)
     public func fault(
         _ message: String,
-        category: LogCategory = .default,
+        category: LogCategory = .general,
         file: String = #file,
         function: String = #function,
         line: Int = #line

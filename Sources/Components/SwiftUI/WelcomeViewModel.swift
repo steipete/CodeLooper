@@ -8,7 +8,7 @@ import SwiftUI
 @MainActor
 @Observable
 final class WelcomeViewModel: ObservableObject {
-    private let logger = Logger(subsystem: "ai.amantusmachina.codelooper", category: "WelcomeViewModel")
+    private let logger = Logger(label: "WelcomeViewModel", category: .onboarding)
     var currentStep: WelcomeStep = .welcome
 
     // Computed property for startAtLogin

@@ -20,7 +20,6 @@
 public enum CodeLooperAsset: Sendable {
   public static let accentColor = CodeLooperColors(name: "AccentColor")
   public static let menuBarTemplateIcon = CodeLooperImages(name: "MenuBarTemplateIcon")
-  public static let logo = CodeLooperImages(name: "logo")
 }
 
 // MARK: - Implementation Details

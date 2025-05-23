@@ -14,7 +14,7 @@ public final class LoginItemManager: ObservableObject {
 
     // MARK: - Properties
 
-    private let logger = Logger(subsystem: Constants.bundleIdentifier, category: "LoginItemManager")
+    private let logger = Logger(category: .utilities)
     private static let statusChangedNotification = Notification.Name("LaunchAtLoginStatusChanged")
 
     // Store notification observation token for proper cleanup

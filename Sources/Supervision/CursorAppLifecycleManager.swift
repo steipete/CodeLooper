@@ -9,13 +9,10 @@ import Foundation
 
 @MainActor
 public class CursorAppLifecycleManager: ObservableObject {
-    private let logger = Logger(
-        subsystem: Bundle.main.bundleIdentifier ?? "ai.amantusmachina.codelooper",
-        category: String(describing: CursorAppLifecycleManager.self)
-    )
+    private let logger = Logger(label: String(describing: CursorAppLifecycleManager.self), category: .lifecycle)
     
     // Constants
-    private let cursorBundleIdentifier = "ai.cursor.Cursor"
+    private let cursorBundleIdentifier = "com.todesktop.230313mzl4w4u92"
 
     @Published public var instanceInfo: [pid_t: CursorInstanceInfo] = [:]
     @Published public var monitoredInstances: [MonitoredInstanceInfo] = []

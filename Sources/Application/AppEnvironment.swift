@@ -16,7 +16,7 @@ import SwiftUI
 */
 @MainActor
 class AppEnvironment: ObservableObject {
-    private let logger = Logger(subsystem: Constants.bundleIdentifier, category: "AppEnvironment")
+    private let logger = Logger(category: .app)
 
     // MARK: - App Settings and Preferences
 

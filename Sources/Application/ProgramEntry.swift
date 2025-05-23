@@ -5,7 +5,7 @@ import SwiftUI
 // This was previously the main entry point, now replaced by AppMain.swift
 enum ProgramEntry {
     // Define a unique identifier for our app - using bundle ID is recommended
-    private static let appIdentifier = "ai.amantusmachina.codelooper.instance"
+    private static let appIdentifier = "me.steipete.codelooper.instance"
 
     // Mark the main method as @MainActor because it interacts with UI components
     @MainActor

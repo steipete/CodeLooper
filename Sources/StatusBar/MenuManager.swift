@@ -22,7 +22,7 @@ protocol MenuManagerDelegate: AnyObject, Sendable {
 final class MenuManager {
     // MARK: - Properties
 
-    let logger = Logger(subsystem: "ai.amantusmachina.codelooper", category: "MenuManager")
+    let logger = Logger(label: "MenuManager", category: .statusBar)
 
     var statusItem: NSStatusItem?
     // var progressIndicator: NSProgressIndicator? // Not used in current spec for popover
@@ -85,58 +85,71 @@ final class MenuManager {
     func setupMenuBar() {
         logger.info("Creating status item in menu bar")
 
-        Task {
-            try? await Task.sleep(for: .milliseconds(100))
+        statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength) // Use variableLength for icon + text
+        statusItem?.isVisible = Defaults[.showInMenuBar] // Set initial visibility
 
-            statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength) // Use squareLength for icon-only
-            statusItem?.isVisible = Defaults[.showInMenuBar] // Set initial visibility
-
-            if let button = statusItem?.button {
-                // Set the template icon
-                button.image = NSImage(named: "MenuBarTemplateIcon")
-                button.image?.isTemplate = true
-                
-                // Set initial tint color from AppIconStateController
-                button.contentTintColor = AppIconStateController.shared.currentTintColor
-                
-                // Configure button properties
-                button.action = #selector(togglePopover) // Action is to toggle popover
-                button.target = self
-                button.toolTip = Constants.appName
-                
-                logger.info("Configured status item with template icon and initial tint color: \(String(describing: button.contentTintColor))")
-            } else {
-                logger.error("Failed to get status item button")
-            }
+        if let button = statusItem?.button {
+            // Set the template icon
+            button.image = NSImage(named: "MenuBarTemplateIcon")
+            button.image?.isTemplate = true
             
-            // Menu is now secondary, can be set up to be shown on right-click or via a popover button if needed.
-            // For now, primary interaction is popover. Right-click for menu:
-            if let button = statusItem?.button {
-                 button.sendAction(on: [.leftMouseUp, .rightMouseUp]) // Ensure right click can also trigger actions
-            }
-            refreshMenu() // Keep menu for right-click or alternative access
+            // Set initial tint color from AppIconStateController
+            button.contentTintColor = AppIconStateController.shared.currentTintColor
+            
+            // Configure button properties
+            button.action = #selector(togglePopover) // Action is to toggle popover
+            button.target = self
+            button.toolTip = Constants.appName
+            
+            // Set initial cursor count
+            updateCursorInstanceCount()
+            
+            logger.info("Configured status item with template icon and initial tint color: \(String(describing: button.contentTintColor))")
+        } else {
+            logger.error("Failed to get status item button")
         }
+        
+        // Menu is only shown on right-click via togglePopover, not automatically set
+        // For now, primary interaction is popover. Right-click for menu:
+        if let button = statusItem?.button {
+             button.sendAction(on: [.leftMouseUp, .rightMouseUp]) // Ensure right click can also trigger actions
+        }
+        
+        // Subscribe to cursor monitor updates to update the count
+        CursorMonitor.shared.$monitoredInstances
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                self?.updateCursorInstanceCount()
+            }
+            .store(in: &cancellables)
     }
     
     @objc private func togglePopover(_ sender: Any?) {
         // If the event is a right-click, show the context menu, otherwise toggle popover.
-        // This makes the menu accessible again.
         if let event = NSApp.currentEvent, event.type == .rightMouseUp {
-            statusItem?.menu = nil // Temporarily remove menu to allow button to show its own menu
-            statusItem?.menu = statusItem?.menu ?? NSMenu() // Use menu property instead of deprecated popUpMenu
-            // Re-assign the menu if it was programmatically built, or ensure it's always set for future right-clicks.
-            // For simplicity, we assume refreshMenu() keeps it updated if needed.
-            // Or, more robustly, store the built menu and re-assign it.
-            Task { await self.statusItem?.menu = buildApplicationMenu() }
+            // Build and show the menu for right-click
+            Task { 
+                let menu = await buildApplicationMenu()
+                // Set the menu temporarily for right-click and then remove it
+                statusItem?.menu = menu
+                // The menu will automatically show for the right-click
+                // Remove the menu after a short delay to avoid interfering with left-clicks
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                    self.statusItem?.menu = nil
+                }
+            }
             return
         }
         
-        guard let button = statusItem?.button else { return }
+        guard let button = statusItem?.button else { 
+            logger.error("No button available for popover toggle")
+            return 
+        }
+        
         if popover.isShown {
             closePopover(sender: nil)
         } else {
-            // Ensure any context menu is dismissed before showing popover
-            statusItem?.menu?.cancelTracking()
+            logger.info("Showing popover for left-click")
             popover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
             eventMonitor?.start()
             button.isHighlighted = true
@@ -153,16 +166,9 @@ final class MenuManager {
 
     @MainActor
     func refreshMenu() {
-        guard let statusBar = statusItem else {
-            logger.error("Status item is nil, can't refresh menu")
-            return
-        }
-
-        Task<Void, Never> {
-            let menu = await buildApplicationMenu()
-            statusBar.menu = menu // Set the menu for right-click
-            logger.info("Menu refreshed for right-click access")
-        }
+        // Menu is built dynamically on right-click via togglePopover
+        // No need to set a permanent menu since it conflicts with the popover
+        logger.info("Menu refresh requested - menu will be built on right-click")
     }
 
     @MainActor
@@ -281,6 +287,39 @@ final class MenuManager {
     private func quitClicked() {
         logger.info("Quit menu item clicked. Terminating application.")
         NSApp.terminate(nil)
+    }
+
+    private func updateCursorInstanceCount() {
+        guard let button = statusItem?.button else { return }
+        
+        let count = CursorMonitor.shared.monitoredInstances.count
+        
+        // Create attributed string with icon and count
+        let attributedString = NSMutableAttributedString()
+        
+        // Add the icon as an attachment
+        if let image = NSImage(named: "MenuBarTemplateIcon") {
+            let attachment = NSTextAttachment()
+            attachment.image = image
+            // Scale the image to match text height
+            let iconSize = NSSize(width: 16, height: 16)
+            attachment.bounds = NSRect(x: 0, y: -2, width: iconSize.width, height: iconSize.height)
+            attributedString.append(NSAttributedString(attachment: attachment))
+        }
+        
+        // Add space and count text
+        let countText = count > 0 ? " \(count)" : " 0"
+        let textAttributes: [NSAttributedString.Key: Any] = [
+            .font: NSFont.menuFont(ofSize: 14),
+            .foregroundColor: NSColor.controlTextColor
+        ]
+        attributedString.append(NSAttributedString(string: countText, attributes: textAttributes))
+        
+        // Set the attributed string as the button title
+        button.attributedTitle = attributedString
+        button.image = nil // Clear the image since we're using it in the attributed string
+        
+        logger.debug("Updated menu bar cursor count to: \(count)")
     }
 }
 

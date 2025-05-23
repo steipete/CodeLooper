@@ -14,7 +14,7 @@ class NotificationManager {
 
     // MARK: - Properties
 
-    private let logger = Logger(subsystem: Constants.bundleIdentifier, category: "NotificationManager")
+    private let logger = Logger(category: .notifications)
 
     // MARK: - Initialization
 

@@ -1,83 +1,23 @@
 import AXorcistLib // Use the library product
+import AppKit
+import ApplicationServices // Ensure this is imported for AX constants
 import Defaults // For UserDefaults access
 import Foundation
-import ApplicationServices
 
 // AXorcistLib.Locator should be directly usable as `Locator` after import.
+
+// MARK: - LocatorManager
 
 @MainActor // Changed from actor to @MainActor class
 public class LocatorManager {
     public static let shared = LocatorManager()
     private let axorcistInstance: AXorcist // To pass to discoverer
     private let dynamicDiscoverer: DynamicLocatorDiscoverer
+    private let logger = Logger(category: .accessibility)
 
     // Default locators - these are fallback locators if not overridden by user or found in session cache.
     // These should represent common, reasonably stable ways to find these elements.
-    private let defaultLocators: [LocatorType: AXorcistLib.Locator] = [
-        .generatingIndicatorText: AXorcistLib.Locator(
-            match_all: false,
-            criteria: ["role": AXRoleNames.kAXStaticTextRole],
-            root_element_path_hint: nil,
-            requireAction: nil,
-            computed_name_contains: "generating"
-        ),
-        .sidebarActivityArea: AXorcistLib.Locator(
-            match_all: false,
-            criteria: ["role": AXRoleNames.kAXScrollAreaRole],
-            root_element_path_hint: nil,
-            requireAction: nil,
-            computed_name_contains: nil
-        ),
-        .errorMessagePopup: AXorcistLib.Locator(
-            match_all: false,
-            criteria: [
-                "role": AXRoleNames.kAXStaticTextRole,
-                "isLikelyErrorMessage": "true"
-            ],
-            root_element_path_hint: nil,
-            requireAction: nil,
-            computed_name_contains: nil
-        ),
-        .stopGeneratingButton: AXorcistLib.Locator(
-            match_all: false,
-            criteria: ["role": AXRoleNames.kAXButtonRole],
-            root_element_path_hint: nil,
-            requireAction: nil,
-            computed_name_contains: "Stop"
-        ),
-        .connectionErrorIndicator: AXorcistLib.Locator(
-            match_all: false,
-            criteria: ["role": AXRoleNames.kAXStaticTextRole],
-            root_element_path_hint: nil,
-            requireAction: nil,
-            computed_name_contains: "offline"
-        ),
-        .resumeConnectionButton: AXorcistLib.Locator(
-            match_all: false,
-            criteria: ["role": AXRoleNames.kAXButtonRole],
-            root_element_path_hint: nil,
-            requireAction: nil,
-            computed_name_contains: "Resume"
-        ),
-        .forceStopResumeLink: AXorcistLib.Locator(
-            match_all: false,
-            criteria: ["role": AXRoleNames.kAXLinkRole],
-            root_element_path_hint: nil,
-            requireAction: nil,
-            computed_name_contains: "Resume Conversation"
-        ),
-        .mainInputField: AXorcistLib.Locator(
-            match_all: false,
-            criteria: [
-                "role": AXRoleNames.kAXTextAreaRole,
-                "AXMainWindow": "true",
-                "AXEnabled": "true"
-            ],
-            root_element_path_hint: nil,
-            requireAction: nil,
-            computed_name_contains: nil
-        )
-    ]
+    private var defaultLocators: [LocatorType: AXorcistLib.Locator?] = [:]
 
     // Session cache for successfully used/discovered locators
     private var sessionCache: [LocatorType: AXorcistLib.Locator] = [:]
@@ -87,6 +27,11 @@ public class LocatorManager {
         // For simplicity, assuming discoverer can take it during its discover call.
         self.axorcistInstance = AXorcist() // Or get from a shared context if appropriate
         self.dynamicDiscoverer = DynamicLocatorDiscoverer()
+        
+        // Populate defaultLocators from LocatorType enum
+        for type in LocatorType.allCases {
+            defaultLocators[type] = type.defaultLocator
+        }
     }
 
     public func getLocator(for type: LocatorType, pid: pid_t? = nil) async -> AXorcistLib.Locator? {

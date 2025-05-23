@@ -10,12 +10,11 @@ struct GeneratingIndicatorTextHeuristic: AXElementHeuristic {
 
     @MainActor func discover(for pid: pid_t, axorcist: AXorcist) async -> AXorcistLib.Locator? {
         var tempLogs: [String] = []
-        let axorcist = AXorcist() // Assuming a new instance per call or shared instance access
 
         // Attempt 1: Specific text and role
         let locator1 = AXorcistLib.Locator(
             match_all: false,
-            criteria: ["role": kAXStaticTextRole],
+            criteria: ["role": AXRoleNames.kAXStaticTextRole],
             computed_name_contains: "Generating"
         )
         let queryResponse1 = await axorcist.handleQuery(
@@ -33,7 +32,7 @@ struct GeneratingIndicatorTextHeuristic: AXElementHeuristic {
         // Attempt 2: Broader role with general keywords
         let locator2 = AXorcistLib.Locator(
             match_all: false,
-            criteria: ["role": kAXStaticTextRole],
+            criteria: ["role": AXRoleNames.kAXStaticTextRole],
             computed_name_contains: "loading"
         )
         let queryResponse2 = await axorcist.handleQuery(
@@ -51,7 +50,7 @@ struct GeneratingIndicatorTextHeuristic: AXElementHeuristic {
         // Attempt 3: Progress indicator role
         let locator3 = AXorcistLib.Locator(
             match_all: false,
-            criteria: ["role": kAXProgressIndicatorRole]
+            criteria: ["role": AXRoleNames.kAXProgressIndicatorRole]
         )
         let queryResponse3 = await axorcist.handleQuery(
             for: nil,

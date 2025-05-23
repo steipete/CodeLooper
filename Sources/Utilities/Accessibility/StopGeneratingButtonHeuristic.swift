@@ -13,8 +13,8 @@ struct StopGeneratingButtonHeuristic: AXElementHeuristic {
 
         let locator1 = AXorcistLib.Locator(
             match_all: false,
-            criteria: ["role": kAXButtonRole, "title": "Stop Generating"],
-            requireAction: kAXPressAction
+            criteria: ["role": AXRoleNames.kAXButtonRole, "title": "Stop Generating"],
+            requireAction: AXActionNames.kAXPressAction
         )
         let queryResponse1 = await axorcist.handleQuery(
             for: nil,
@@ -26,8 +26,8 @@ struct StopGeneratingButtonHeuristic: AXElementHeuristic {
 
         let locator2 = AXorcistLib.Locator(
             match_all: false,
-            criteria: ["role": kAXButtonRole],
-            requireAction: kAXPressAction,
+            criteria: ["role": AXRoleNames.kAXButtonRole],
+            requireAction: AXActionNames.kAXPressAction,
             computed_name_contains: "Stop"
         )
         let queryResponse2 = await axorcist.handleQuery(
@@ -40,8 +40,8 @@ struct StopGeneratingButtonHeuristic: AXElementHeuristic {
 
         let locator3 = AXorcistLib.Locator(
             match_all: false,
-            criteria: ["role": kAXButtonRole, "AXRoleDescription": "stop button"],
-            requireAction: kAXPressAction
+            criteria: ["role": AXRoleNames.kAXButtonRole, "AXRoleDescription": "stop button"],
+            requireAction: AXActionNames.kAXPressAction
         )
         let queryResponse3 = await axorcist.handleQuery(
             for: nil,

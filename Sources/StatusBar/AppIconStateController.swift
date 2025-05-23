@@ -27,10 +27,7 @@ enum AppIconState: Sendable { // Made Sendable
 
 @MainActor
 class AppIconStateController: ObservableObject {
-    private static let logger = Logger(
-        subsystem: Bundle.main.bundleIdentifier ?? "ai.amantusmachina.codelooper", 
-        category: "AppIconStateController"
-    )
+    private static let logger = Logger(label: "AppIconStateController", category: .statusBar)
     
     public static let shared = AppIconStateController() // Added shared instance
 
@@ -40,18 +37,24 @@ class AppIconStateController: ObservableObject {
     private var currentIconState: AppIconState = .gray // Internal logical state
     private var preFlashTintColor: NSColor? = nil // Store tint color before flash
     private var cursorMonitor: CursorMonitor?
-    private var globalMonitoringEnabled: Bool = Defaults[.isGlobalMonitoringEnabled]
+    private var globalMonitoringEnabled: Bool = false // Don't read Defaults during init
     private var cancellables = Set<AnyCancellable>()
     private var flashTask: Task<Void, Never>? // To manage the flash duration
+    private var isSetupComplete: Bool = false // Track if setup is complete
 
     private init() { // Made private for singleton
         Self.logger.info("AppIconStateController initialized.")
-        currentIconState = globalMonitoringEnabled ? .black : .gray
+        // Don't read from Defaults during init to avoid background thread issues
+        currentIconState = .gray
         currentTintColor = currentIconState.tintColor
     }
     
     func setup(cursorMonitor: CursorMonitor) {
         self.cursorMonitor = cursorMonitor
+        
+        // Now it's safe to read from Defaults
+        self.globalMonitoringEnabled = Defaults[.isGlobalMonitoringEnabled]
+        
         Self.logger.info("AppIconStateController setup with CursorMonitor.")
 
         // Observe global monitoring toggle from Defaults
@@ -73,11 +76,18 @@ class AppIconStateController: ObservableObject {
             }
             .store(in: &cancellables)
         
-        // Initial calculation
+        // Mark setup as complete and do initial calculation
+        self.isSetupComplete = true
         calculateAndApplyIconState()
     }
     
     private func calculateAndApplyIconState() {
+        // Don't update state until setup is complete to avoid background thread issues
+        guard isSetupComplete else {
+            Self.logger.debug("Setup not complete, skipping icon state calculation")
+            return
+        }
+        
         guard let monitor = self.cursorMonitor else {
             currentIconState = globalMonitoringEnabled ? .black : .gray // Default if monitor not set up
             let newTintColor = currentIconState.tintColor

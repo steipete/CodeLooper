@@ -35,9 +35,9 @@ public extension Notification.Name {
     static let themeDidChange = Notification.Name("themeDidChange")
 
     // Application-specific notifications
-    static let userDataChanged = Notification.Name("ai.amantusmachina.codelooper.userDataChanged")
-    static let themePreferenceChanged = Notification.Name("ai.amantusmachina.codelooper.themePreferenceChanged")
+    static let userDataChanged = Notification.Name("me.steipete.codelooper.userDataChanged")
+    static let themePreferenceChanged = Notification.Name("me.steipete.codelooper.themePreferenceChanged")
 
     // Debug notifications
-    static let debugNotificationTest = Notification.Name("ai.amantusmachina.codelooper.debugNotificationTest")
+    static let debugNotificationTest = Notification.Name("me.steipete.codelooper.debugNotificationTest")
 }

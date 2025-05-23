@@ -8,7 +8,7 @@ import SwiftUI
 public final class MainSettingsCoordinator: NSObject {
     // MARK: - Properties
 
-    private let logger = Logger(subsystem: "ai.amantusmachina.codelooper", category: "MainSettingsCoordinator")
+    private let logger = Logger(label: "MainSettingsCoordinator", category: .settings)
     private var cancellables = Set<AnyCancellable>()
     private let loginItemManager: LoginItemManager
     private let updaterViewModel: UpdaterViewModel

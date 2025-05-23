@@ -4,10 +4,7 @@ import OSLog
 import AppKit
 
 public actor SoundManager {
-    private static let logger = Logger(
-        subsystem: Bundle.main.bundleIdentifier ?? "ai.amantusmachina.codelooper", 
-        category: "SoundManager"
-    )
+    private static let logger = Logger(category: .sound)
     public static let shared = SoundManager()
 
     private var audioPlayer: AVAudioPlayer?

@@ -12,22 +12,22 @@ public final class MainSettingsViewModel: ObservableObject {
     // MARK: - Properties
 
     // Logger instance
-    private let logger = Logger(subsystem: "ai.amantusmachina.codelooper", category: "MainSettingsViewModel")
+    private let logger = Logger(label: "MainSettingsViewModel", category: .settings)
 
     // Dependencies
     private let loginItemManager: LoginItemManager
     let mcpConfigManager = MCPConfigManager.shared // Made public for access from previews if needed, but primarily internal
     let updaterViewModel: UpdaterViewModel // Modified: Changed to internal (default access level)
 
-    private(set) var startAtLogin: Bool = Defaults[.startAtLogin]
-    private(set) var showInMenuBar: Bool = Defaults[.showInMenuBar]
-    private(set) var showWelcomeScreen: Bool = Defaults[.isFirstLaunch] || Defaults[.showWelcomeScreen]
-    private(set) var showCopyCounter: Bool = Defaults[.showCopyCounter]
-    private(set) var showPasteCounter: Bool = Defaults[.showPasteCounter]
-    private(set) var showTotalInterventions: Bool = Defaults[.showTotalInterventions]
-    var isGlobalMonitoringEnabled: Bool = Defaults[.isGlobalMonitoringEnabled]
-    var playSoundOnIntervention: Bool = Defaults[.playSoundOnIntervention]
-    var flashIconOnIntervention: Bool = Defaults[.flashIconOnIntervention]
+    private(set) var startAtLogin: Bool = false // Don't read Defaults during init
+    private(set) var showInMenuBar: Bool = true // Safe default
+    private(set) var showWelcomeScreen: Bool = false // Safe default
+    private(set) var showCopyCounter: Bool = false // Safe default
+    private(set) var showPasteCounter: Bool = false // Safe default
+    private(set) var showTotalInterventions: Bool = true // Safe default
+    var isGlobalMonitoringEnabled: Bool = true // Safe default
+    var playSoundOnIntervention: Bool = true // Safe default
+    var flashIconOnIntervention: Bool = true // Safe default
 
     // Global Shortcut
 
@@ -91,17 +91,16 @@ public final class MainSettingsViewModel: ObservableObject {
     public init(loginItemManager: LoginItemManager, updaterViewModel: UpdaterViewModel) {
         self.loginItemManager = loginItemManager
         self.updaterViewModel = updaterViewModel
-        // Load initial global shortcut string - REMOVED
-        // self.globalShortcutString = mcpConfigManager.getGlobalShortcut() ?? ""
         
-        // These lines are now redundant as refreshAllMCPStatusMessages handles it.
-        // xcodeBuildIncrementalBuilds = mcpConfigManager.getXcodeBuildIncrementalBuildsFlag()
-        // xcodeBuildSentryDisabled = mcpConfigManager.getXcodeBuildSentryDisabledFlag()
-
         // Load initial MCP statuses
         refreshAllMCPStatusMessages()
 
-        logger.info("MainSettingsViewModel initialized and MCP statuses refreshed.") // Updated log message
+        logger.info("MainSettingsViewModel initialized")
+        
+        // Load Defaults safely after initialization
+        Task { @MainActor in
+            await self.refreshSettings()
+        }
     }
 
     // MARK: - Settings Management
@@ -200,6 +199,12 @@ public final class MainSettingsViewModel: ObservableObject {
         self.startAtLogin = Defaults[.startAtLogin]
         self.showInMenuBar = Defaults[.showInMenuBar]
         self.showWelcomeScreen = Defaults[.isFirstLaunch] || Defaults[.showWelcomeScreen]
+        self.showCopyCounter = Defaults[.showCopyCounter]
+        self.showPasteCounter = Defaults[.showPasteCounter]
+        self.showTotalInterventions = Defaults[.showTotalInterventions]
+        self.isGlobalMonitoringEnabled = Defaults[.isGlobalMonitoringEnabled]
+        self.playSoundOnIntervention = Defaults[.playSoundOnIntervention]
+        self.flashIconOnIntervention = Defaults[.flashIconOnIntervention]
 
         logger.info("Settings refreshed")
     }

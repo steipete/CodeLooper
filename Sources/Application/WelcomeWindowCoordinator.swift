@@ -16,7 +16,7 @@ class WelcomeWindowCoordinator: NSObject {
 
     static let shared = WelcomeWindowCoordinator()
 
-    private let logger = Logger(subsystem: Constants.bundleIdentifier, category: "WelcomeWindowCoordinator")
+    private let logger = Logger(label: "WelcomeWindowCoordinator", category: .onboarding)
     // Make welcomeWindow internal so it can be directly checked from MenuManager
     var welcomeWindow: NSWindow?
     private var cancellables = Set<AnyCancellable>()

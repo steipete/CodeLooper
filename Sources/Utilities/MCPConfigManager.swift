@@ -44,7 +44,7 @@ struct MCPFullStatus {
 @MainActor
 class MCPConfigManager {
     static let shared = MCPConfigManager()
-    private let logger = Logger(subsystem: Constants.bundleIdentifier, category: "MCPConfigManager")
+    private let logger = Logger(category: .mcpConfig)
 
     private var mcpFilePath: URL {
         let homeDir = FileManager.default.homeDirectoryForCurrentUser

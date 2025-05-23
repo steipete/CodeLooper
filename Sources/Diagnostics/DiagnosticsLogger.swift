@@ -22,7 +22,7 @@ actor DiagnosticsLogger {
     static let shared = DiagnosticsLogger()
 
     // Primary logger instance
-    private let logger = Logger(subsystem: "ai.amantusmachina.codelooper", category: "Diagnostics")
+    private let logger = Logger(label: "DiagnosticsLogger", category: .general)
 
     // Diagnostic state tracking - all state is actor-isolated
     private var operationCounts: [String: Int] = [:]
@@ -380,7 +380,7 @@ actor DiagnosticsLogger {
         Upload Interval: \(uploadInterval) seconds
 
         Note: Logs are available through Apple's Console.app 
-        (using Subsystem: \(Bundle.main.bundleIdentifier ?? "ai.amantusmachina.codelooper"))
+        (using Subsystem: \(Bundle.main.bundleIdentifier ?? "me.steipete.codelooper"))
         """
     }
 

@@ -690,7 +690,7 @@ perform_notarization() {
         # Legacy altool approach
         AUTH_ARGS=$(get_altool_auth_args)
         
-        SUBMIT_CMD="xcrun altool --notarize-app --primary-bundle-id \"ai.amantusmachina.codelooper\" --file \"$ZIP_PATH\" $AUTH_ARGS"
+        SUBMIT_CMD="xcrun altool --notarize-app --primary-bundle-id \"me.steipete.codelooper\" --file \"$ZIP_PATH\" $AUTH_ARGS"
         if [ "$VERBOSE" = "true" ]; then
             log "Running command: $SUBMIT_CMD"
         fi

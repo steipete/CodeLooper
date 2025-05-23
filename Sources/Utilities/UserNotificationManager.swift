@@ -12,10 +12,7 @@ public actor UserNotificationManager {
     
     // MARK: - Properties
     
-    private static let logger = Logger(
-        subsystem: Bundle.main.bundleIdentifier ?? "ai.amantusmachina.codelooper", 
-        category: "UserNotificationManager"
-    )
+    private static let logger = Logger(category: .notifications)
     private var isAuthorizationRequested = false
     
     // MARK: - Initialization

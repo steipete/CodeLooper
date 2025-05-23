@@ -5,10 +5,7 @@ import Defaults
 
 @MainActor
 public class CursorInstanceStateManager: ObservableObject {
-    private let logger = Logger(
-        subsystem: Bundle.main.bundleIdentifier ?? "ai.amantusmachina.codelooper",
-        category: String(describing: CursorInstanceStateManager.self)
-    )
+    private let logger = Logger(category: .supervision)
 
     // Moved from CursorMonitor
     @Published public var manuallyPausedPIDs: Set<pid_t> = []

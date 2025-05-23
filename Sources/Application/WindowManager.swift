@@ -16,7 +16,7 @@ protocol WindowManagerDelegate: AnyObject {
 
 @MainActor
 class WindowManager {
-    private let logger = os.Logger(subsystem: Bundle.main.bundleIdentifier ?? "ai.amantusmachina.codelooper", category: "WindowManager")
+    private let logger = os.Logger(subsystem: Bundle.main.bundleIdentifier ?? "me.steipete.codelooper", category: "WindowManager")
 
     // MARK: - Properties
     private var aboutWindowController: NSWindowController?

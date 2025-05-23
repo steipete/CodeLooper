@@ -8,10 +8,7 @@ import ApplicationServices // Added for kAX constants
 
 @MainActor
 public class CursorInterventionEngine: ObservableObject {
-    private let logger = Logger(
-        subsystem: Bundle.main.bundleIdentifier ?? "ai.amantusmachina.codelooper",
-        category: String(describing: CursorInterventionEngine.self)
-    )
+    private let logger = Logger(label: String(describing: CursorInterventionEngine.self), category: .interventionEngine)
 
     // MARK: - Constants & Thresholds
     // These will be populated from CursorMonitor.swift

@@ -16,7 +16,10 @@ This file provides guidance to AI assistants when working with code in this repo
 - Use AppleScript to find the bundle identifier for an app name
 - To run any terminal command, use `osascript .cursor/scripts/terminator.scpt`.
   Call it without arguments to understand syntax.
-- read_file, write_file, move_file all need absolute paths!
+
+- Please build the app to test, but do 
+
+
 
 ## Project Overview
 
@@ -66,10 +69,11 @@ This is the **CodeLooper** project, a Swift macOS menu bar application that prov
 
 ```bash
 # Project setup and building
-swift build                           # Build with SPM
-./scripts/generate-xcproj.sh         # Generate Xcode project via Tuist
-./scripts/open-xcode.sh             # Open in Xcode
-./scripts/run-app.sh                # Run the application
+swift build                           # Build with SPM (less common for day-to-day Xcode work)
+./scripts/generate-xcproj.sh         # CRITICAL: Generate/regenerate Xcode project via Tuist. ALWAYS use this script.
+                                      # This script includes vital patches for Swift 6 Sendable compliance with Tuist-generated code.
+./scripts/open-xcode.sh             # Open in Xcode (use after generating project)
+./scripts/run-app.sh                # Run the application (preferably from Xcode after project generation)
 
 # Code quality and formatting
 ./run-swiftlint.sh                  # Check code quality (preserves self. references)
@@ -80,6 +84,21 @@ swift test                          # Run unit tests
 cd AXorcist && swift build          # Build accessibility tools
 ./AXorcist/.build/debug/axorc --help # Test accessibility CLI
 ```
+
+### Tuist Project Generation
+
+Due to Swift 6's strict concurrency checking and how Tuist generates code (specifically for Plist constants like `cfBundleURLTypes`),
+**it is essential to always use the `./scripts/generate-xcproj.sh` script to generate or regenerate the Xcode project.**
+
+This script performs the following crucial steps:
+1. Runs `tuist generate` to create the base Xcode project.
+2. **Applies necessary patches** to Tuist-generated Swift files (e.g., `Derived/Sources/TuistPlists+CodeLooper.swift`).
+   These patches modify the generated code to ensure Sendable compliance, for instance by:
+    - Adjusting types (e.g., from `[[String: String]]` to `[[String: Any]]` for `cfBundleURLTypes`).
+    - Potentially adding `nonisolated(unsafe)` to static properties that use non-Sendable types if Tuist generation doesn't handle it.
+
+**Failure to use this script will likely result in build errors related to Sendable compliance or incorrect type definitions in the generated Xcode project.**
+If you encounter build errors related to `TuistPlists+CodeLooper.swift` or Sendable types in generated code, ensure you have run `./scripts/generate-xcproj.sh` most recently.
 
 ### Git Workflow
 - **Main Branch**: `main` (default for PRs)

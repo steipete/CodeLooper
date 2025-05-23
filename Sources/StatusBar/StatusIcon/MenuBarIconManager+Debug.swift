@@ -6,7 +6,7 @@ import OSLog
 extension MenuBarIconManager {
     // Use a dedicated logger for debugging
     private var debugLogger: Logger {
-        Logger(subsystem: "ai.amantusmachina.codelooper", category: "MenuBarIconManager+Debug")
+        Logger(label: "MenuBarIconManager+Debug", category: .statusBar)
     }
 
     /// Debug function to verify icon loading

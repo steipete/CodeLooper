@@ -3,7 +3,7 @@ import Defaults
 import AppKit
 
 struct MainPopoverView: View {
-    @ObservedObject private var cursorMonitor = CursorMonitor.shared
+    @StateObject private var cursorMonitor = CursorMonitor.shared
     @Default(.isGlobalMonitoringEnabled) private var isGlobalMonitoringEnabled
 
     private func openSettings() {
@@ -16,8 +16,12 @@ struct MainPopoverView: View {
                 .font(.headline)
                 .padding(.bottom, 5)
 
-            Toggle("Enable Cursor Supervision", isOn: $cursorMonitor.isMonitoringActive)
-                .onChange(of: cursorMonitor.isMonitoringActive) { _, newValue in
+            Toggle("Enable Cursor Supervision", isOn: $isGlobalMonitoringEnabled)
+                .onChange(of: isGlobalMonitoringEnabled) { _, newValue in
+                    // Update Defaults to keep them in sync
+                    Defaults[.isGlobalMonitoringEnabled] = newValue
+                    
+                    // Update CursorMonitor state
                     if newValue {
                         cursorMonitor.startMonitoringLoop()
                     } else {
@@ -54,7 +58,9 @@ struct MainPopoverView: View {
                     // Close popover after clicking
                     NSApp.deactivate()
                 }
+                
                 Spacer()
+                
                 Button("Reset All Counters") {
                     Task {
                         await cursorMonitor.resetAllInstancesAndResume()
@@ -62,6 +68,13 @@ struct MainPopoverView: View {
                     // Close popover after clicking
                     NSApp.deactivate()
                 }
+                
+                Spacer()
+                
+                Button("Quit") {
+                    NSApp.terminate(nil)
+                }
+                .foregroundColor(.red)
             }
             .padding(.top, 5)
         }

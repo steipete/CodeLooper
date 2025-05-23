@@ -13,7 +13,7 @@ bundleIdentifier.notificationName
 For example:
 
 ```swift
-ai.amantusmachina.codelooper.userLoggedIn
+me.steipete.codelooper.userLoggedIn
 ```
 
 ### Benefits of this Convention
