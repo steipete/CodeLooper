@@ -25,7 +25,7 @@ struct AboutSettingsView: View {
                     .foregroundColor(.secondary)
             }
             
-            Text("CodeLooper helps you automate and enhance your workflows.\n© \(Calendar.current.component(.year, from: Date())) Peter Steinberger. All rights reserved.")
+            Text("CodeLooper helps you automate and enhance your workflows.\n© \(Calendar.current.component(.year, from: Date())) \(Constants.appAuthor). All rights reserved.")
                 .font(.body)
                 .multilineTextAlignment(.center)
                 .foregroundColor(.gray)
@@ -35,7 +35,7 @@ struct AboutSettingsView: View {
 
             VStack(alignment: .leading, spacing: 10) {
                 Link("CodeLooper Website", destination: URL(string: "https://codelooper.com")!)
-                Link("View Source on GitHub", destination: URL(string: "https://github.com/steipete/CodeLooper")!)
+                Link("View Source on GitHub", destination: URL(string: Constants.githubRepositoryURL)!)
                 Link("Follow @CodeLooperApp on X", destination: URL(string: "https://twitter.com/CodeLooperApp")!)
                 Link("Contact Support", destination: URL(string: "mailto:support@codelooper.com")!)
             }

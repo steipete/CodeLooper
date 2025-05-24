@@ -1,19 +1,13 @@
 import SwiftUI
 
 struct AboutView: View {
-    private var appVersion: String {
-        Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as! String
-    }
-    private var appBuild: String {
-        Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as! String
-    }
-    private var copyright: String {
-        Bundle.main.object(forInfoDictionaryKey: "NSHumanReadableCopyright") as! String
-    }
-    private let appName = "CodeLooper"
+    private let appName = Bundle.main.infoDictionary?["CFBundleName"] as? String ?? "CodeLooper"
+    private let appVersion = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "Unknown"
+    private let buildNumber = Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "Unknown"
+    private let copyrightInfo = Bundle.main.infoDictionary?["NSHumanReadableCopyright"] as? String ?? "© Your Name"
+    private let githubURL = URL(string: Constants.githubRepositoryURL)!
     private let websiteURL = URL(string: "https://codelooper.app/")!
     private let twitterURL = URL(string: "https://x.com/CodeLoopApp")!
-    private let githubURL = URL(string: "https://github.com/steipete/CodeLooper")!
 
     var body: some View {
         VStack(spacing: 15) {
@@ -27,11 +21,11 @@ struct AboutView: View {
                 .font(.largeTitle)
                 .fontWeight(.semibold)
 
-            Text("Version \\(appVersion) (Build \\(appBuild))")
+            Text("Version \\(appVersion) (Build \\(buildNumber))")
                 .font(.callout)
                 .foregroundColor(.secondary)
 
-            Text(copyright)
+            Text(copyrightInfo)
                 .font(.caption)
                 .foregroundColor(.gray)
                 .padding(.bottom)

@@ -62,7 +62,7 @@ struct SettingsPanesContainerView: View {
         HStack(spacing: 20) {
             Link("CodeLooper.app", destination: URL(string: "https://codelooper.app/")!)
             Link("Follow @CodeLoopApp on X", destination: URL(string: "https://x.com/CodeLoopApp")!)
-            Link("View on GitHub", destination: URL(string: "https://github.com/steipete/CodeLooper")!)
+            Link("View on GitHub", destination: URL(string: Constants.githubRepositoryURL)!)
             Spacer()
         }
         .padding(.horizontal)

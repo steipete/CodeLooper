@@ -25,8 +25,8 @@ struct AboutSettingsTab: View {
                         .font(.title)
                         .bold()
 
-                    Text("Version \(Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0.0")")
-                        .font(.subheadline)
+                    Text("Version \(Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0.0") (Build \(Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "Unknown"))")
+                        .font(.footnote)
                         .foregroundColor(.secondary)
                 }
                 .padding(.top, 5)
@@ -52,17 +52,12 @@ struct AboutSettingsTab: View {
                 .padding(.top, 2)
 
                 // Single website link button
-                Button("Visit GitHub") {
-                    if let url = URL(string: "https://github.com/codelooper/codelooper") {
-                        NSWorkspace.shared.open(url)
-                    }
-                }
-                .frame(width: 140)
-                .padding(.top, 2)
+                Link("View on GitHub", destination: URL(string: Constants.githubRepositoryURL)!)
+                    .padding(.top)
 
                 // Copyright
                 let year = Calendar.current.component(.year, from: Date())
-                Text("© \(year) CodeLooper Contributors. All rights reserved.")
+                Text("© \(year) \(Constants.appAuthor). All rights reserved.")
                     .font(.footnote)
                     .foregroundColor(.secondary)
                     .padding(.top, 5)
@@ -78,12 +73,27 @@ struct AboutSettingsTab: View {
 }
 
 #Preview {
-    // Create dummy UpdaterViewModel for the preview
-    let dummySparkleUpdaterManager = SparkleUpdaterManager()
-    let dummyUpdaterViewModel = UpdaterViewModel(sparkleUpdaterManager: dummySparkleUpdaterManager)
+    // Create dummy/shared instances for preview
+    let loginItemManager = LoginItemManager.shared
+    let sparkleUpdaterManager = SparkleUpdaterManager() // Assuming it can be init'd simply
+    let updaterViewModel = UpdaterViewModel(sparkleUpdaterManager: sparkleUpdaterManager)
+    let mainSettingsViewModel = MainSettingsViewModel(loginItemManager: loginItemManager, updaterViewModel: updaterViewModel)
 
-    AboutSettingsTab(viewModel: MainSettingsViewModel(
-        loginItemManager: LoginItemManager.shared,
-        updaterViewModel: dummyUpdaterViewModel
-    ))
+    AboutSettingsTab(viewModel: mainSettingsViewModel)
+        // .environmentObject(mainSettingsViewModel) // viewModel is passed directly, no need for environmentObject here
+        .frame(width: 350, height: 400)
+}
+
+struct AboutSettingsTab_Previews: PreviewProvider {
+    static var previews: some View {
+        // Create dummy/shared instances for preview
+        let loginItemManager = LoginItemManager.shared
+        let sparkleUpdaterManager = SparkleUpdaterManager() // Assuming it can be init'd simply
+        let updaterViewModel = UpdaterViewModel(sparkleUpdaterManager: sparkleUpdaterManager)
+        let mainSettingsViewModel = MainSettingsViewModel(loginItemManager: loginItemManager, updaterViewModel: updaterViewModel)
+
+        AboutSettingsTab(viewModel: mainSettingsViewModel)
+            // .environmentObject(mainSettingsViewModel) // viewModel is passed directly, no need for environmentObject here
+            .frame(width: 350, height: 400)
+    }
 }

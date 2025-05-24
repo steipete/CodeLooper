@@ -44,9 +44,6 @@ public struct AXpectorView: View {
                     }
                 }
                 .padding(.top)
-                Button("Re-check Permissions") {
-                    viewModel.checkAccessibilityPermissions(promptIfNeeded: true)
-                }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             // No .onAppear needed here specifically to trigger a prompt, 

@@ -82,11 +82,6 @@ struct AXInspectorLogView: View { // Renamed
                 .pickerStyle(.menu)
 
                 Button {
-                    // Refresh action if needed
-                } label: {
-                    Image(systemName: "arrow.clockwise")
-                }
-                Button {
                     Task { await axClearLogs(); logEntries = [] }
                 } label: {
                     Image(systemName: "trash")
@@ -102,7 +97,7 @@ struct AXInspectorLogView: View { // Renamed
                 .listStyle(.inset)
                 .onChange(of: filteredLogEntries) { oldValue, newValue in 
                     if newValue.count > oldValue.count {
-                        proxy.scrollTo(newValue.first?.id, anchor: .top)
+                        proxy.scrollTo(newValue.last?.id, anchor: .bottom)
                     }
                 }
             }

@@ -192,9 +192,9 @@ class WindowManager: ObservableObject {
     }
 
     // MARK: - Alert Helper
-    private func showAlert(title: String, message: String, style: NSAlert.Style) {
-        AlertPresenter.shared.showAlert(title: title, message: message, style: style)
-    }
+    // private func showAlert(title: String, message: String, style: NSAlert.Style) { // Method appears unused
+    //     AlertPresenter.shared.showAlert(title: title, message: message, style: style)
+    // }
 
     // MARK: - Public Interface for UI Actions
 

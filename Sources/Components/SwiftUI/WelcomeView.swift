@@ -125,7 +125,7 @@ struct WelcomeStepView: View {
                         .font(.callout)
                         .foregroundColor(.secondary)
 
-                    Link("Visit our GitHub", destination: URL(string: "https://github.com/steipete/CodeLooper")!) // Updated link
+                    Link("Visit our GitHub", destination: URL(string: Constants.githubRepositoryURL)!) // Updated link
                         .font(.callout)
                         .foregroundColor(Color.accentColor)
                         .underline()

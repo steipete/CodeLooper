@@ -38,6 +38,11 @@ public enum Constants: UIConstantsProvider {
         Bundle.main.bundleIdentifier ?? "me.steipete.codelooper"
     }
 
+    // MARK: - External Links & Info
+    public static let githubRepositoryURL = "https://github.com/codelooper/codelooper"
+    public static let githubUsername = "steipete"
+    public static let appAuthor = "Peter Steinberger"
+
     // MARK: - UI Constants
 
     /// Size of the icon in the menu bar (22x22 for menu bar standard)
