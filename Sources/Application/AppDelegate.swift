@@ -19,11 +19,8 @@ public class AppDelegate: NSObject, NSApplicationDelegate,
     ObservableObject {
 
     /// Shared singleton instance for global access
-    public static var shared: AppDelegate {
-        guard let delegate = NSApp.delegate as? AppDelegate else {
-            fatalError("AppDelegate not found as NSApp.delegate")
-        }
-        return delegate
+    public static var shared: AppDelegate? {
+        return NSApp.delegate as? AppDelegate
     }
 
     // MARK: - Logger

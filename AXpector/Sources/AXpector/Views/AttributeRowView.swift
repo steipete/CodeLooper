@@ -73,7 +73,6 @@ struct AttributeRowView: View {
                                         refToNavigate = (valueRef as! AXUIElement)
                                     } else {
                                         axWarningLog("Attribute \(attributeKey) expected AXUIElement but got other type.")
-                                        CFRelease(valueRef) // Release the unexpected type
                                     }
                                 } else if attributeUIType == .arrayOfAXElements {
                                     if CFGetTypeID(valueRef) == CFArrayGetTypeID() {
@@ -81,14 +80,14 @@ struct AttributeRowView: View {
                                         if CFArrayGetCount(array) > 0 {
                                             let firstElementRaw = CFArrayGetValueAtIndex(array, 0)
                                             // Ensure the first element is indeed an AXUIElement
-                                            if CFGetTypeID(firstElementRaw) == AXUIElementGetTypeID() {
+                                            if let firstElementTyped = firstElementRaw as? AnyObject, CFGetTypeID(firstElementTyped) == AXUIElementGetTypeID() {
                                                 // We need to retain this specific element if we're passing it out of the array's scope
                                                 // or ensure the ViewModel copies it. For now, we assume navigateToElementInTree handles it.
                                                 // AXUIElement is a CFType, so it should be CFRetained if kept beyond immediate scope.
                                                 // However, navigateToElementInTree is not designed to take ownership.
                                                 // The simplest is to pass it directly. If AXUIElement is a struct wrapper in AXorcistLib, it handles its own lifetime.
                                                 // Given AXUIElement is a direct CFType, direct pass is fine if usage is immediate.
-                                                refToNavigate = (firstElementRaw as! AXUIElement) // Cast, assume correct type based on .arrayOfAXElements
+                                                refToNavigate = (firstElementTyped as! AXUIElement)
                                                 // No need to CFRetain refToNavigate here as it's from within a CFArray whose lifetime is managed by valueRef.
                                             } else {
                                                 axWarningLog("Attribute \(attributeKey) is arrayOfAXElements, but first element is not AXUIElement.")
@@ -99,9 +98,8 @@ struct AttributeRowView: View {
                                     } else {
                                         axWarningLog("Attribute \(attributeKey) expected CFArray but got other type.")
                                     }
-                                    CFRelease(valueRef) // Release the array itself
                                 } else {
-                                     CFRelease(valueRef) // Should not happen if type is .axElement
+                                     // Should not happen if type is .axElement
                                 }
 
                                 if let finalRefToNavigate = refToNavigate {

@@ -75,12 +75,7 @@ let project = Project(
                 "Sources/**"
             ],
             resources: [
-                "Resources/codelooper_terminator_rule.mdc",
                 "Resources/CodeLooper.sdef",
-                "Resources/menu-bar-icon.png",
-                "Resources/symbol-dark.png",
-                "Resources/symbol-light.png",
-                "Resources/symbol.png",
                 "Resources/MainMenu.nib",
                 "CodeLooper/Assets.xcassets",
                 "CodeLooper/Base.lproj/**"

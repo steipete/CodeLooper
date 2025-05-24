@@ -5,6 +5,11 @@ import AXorcist
 // AXorcist import already includes logging utilities
 import Defaults // ADD for Defaults[.verboseLogging]
 
+// Define the key locally if not accessible from main app target's DefaultsKeys
+extension Defaults.Keys {
+    static let verboseLogging_axpector = Key<Bool>("verboseLogging", default: false)
+}
+
 @MainActor
 class AXpectorViewModel: ObservableObject {
     // MARK: - Properties
@@ -19,7 +24,7 @@ class AXpectorViewModel: ObservableObject {
         didSet {
             if oldValue != selectedApplicationPID {
                 if isHoverModeActive {
-                    stopHoverMonitoring() 
+                    stopHoverMonitoring()
                     isHoverModeActive = false
                 }
                 
@@ -42,6 +47,7 @@ class AXpectorViewModel: ObservableObject {
     
     // Tree State
     @Published var accessibilityTree: [AXPropertyNode] = []
+    internal var originalAccessibilityTree: [AXPropertyNode] = []
     @Published var selectedNode: AXPropertyNode? {
         didSet {
             updateHighlightForNode(selectedNode, isHover: false, isFocusHighlight: false) 
@@ -65,7 +71,16 @@ class AXpectorViewModel: ObservableObject {
     internal var attributeSettableStatusCache: [String: Bool] = [:]
     internal var cachedNodeIDForSettableStatus: AXPropertyNode.ID? = nil
 
-    // Cache for AttributeDisplayInfo (moved from extension)
+    // Moved from AXpectorViewModel+AttributeEditing.swift
+    internal struct AttributeDisplayInfo { // Make internal if only used by ViewModel and its extensions
+        let displayString: String
+        let valueType: AXAttributeValueType
+        let isSettable: Bool
+        let settableDisplayString: String // e.g., " (W)" or ""
+        let navigatableElementRef: AXUIElement? // Only non-nil if valueType is .axElement
+        // For .arrayOfAXElements, we might need a different structure or handle navigation separately
+    }
+    
     internal var attributeDisplayInfoCache: [String: AttributeDisplayInfo] = [:] // Keyed by attributeName
     internal var cachedNodeIDForDisplayInfo: AXPropertyNode.ID? = nil
 
@@ -87,7 +102,7 @@ class AXpectorViewModel: ObservableObject {
                     stopFocusTrackingMonitoring()
                     focusedElementInfo = "Enable focus tracking mode."
                     temporarilySelectedNodeIDByFocus = nil
-                    isFocusTrackingModeActive = false
+                    isFocusTrackingModeActive = false 
                 }
                 startHoverMonitoring()
                 hoveredElementInfo = "Hover over an element...\nTree selection disabled."
@@ -168,8 +183,11 @@ class AXpectorViewModel: ObservableObject {
     }
 
     deinit {
-        stopHoverMonitoring() 
-        stopFocusTrackingMonitoring() 
+        Task { @MainActor [weak self] in // Ensure cleanup happens on main actor, capture self weakly
+            guard let self = self else { return }
+            self.stopHoverMonitoring()
+            self.stopFocusTrackingMonitoring()
+        }
         // GlobalAXLogger.shared.removeSubscriber(self) // Example
     }
 
@@ -217,7 +235,7 @@ class AXpectorViewModel: ObservableObject {
                 }
             }
 
-            let locator = Locator(criteria: criteria, root_element_path_hint: targetNode.fullPathArrayForLocator) 
+            let locator = Locator(criteria: criteria, rootElementPathHint: targetNode.fullPathArrayForLocator)
 
             await GlobalAXLogger.shared.updateOperationDetails(commandID: "performAction_\(actionName)", appName: appIdentifier)
 
@@ -227,13 +245,12 @@ class AXpectorViewModel: ObservableObject {
                 actionName: actionName
             )
 
-            if Defaults[.verboseLogging] {
-                let collectedLogs = await GlobalAXLogger.shared.getLogs()
-                let logMessages = GlobalAXLogger.formatEntriesAsText(collectedLogs, includeTimestamps: true, includeLevels: true, includeDetails: true)
-                for logMessage in logMessages {
-                    axDebugLog("AXorcist (PerformAction) Log: \(logMessage)")
+            if Defaults[.verboseLogging_axpector] { 
+                let collectedLogs = await axGetLogEntries() 
+                for logEntry in collectedLogs { // Iterate and log
+                    axDebugLog("AXorcist (PerformAction) Log [L:\(logEntry.level.rawValue) T:\(logEntry.timestamp)]: \(logEntry.message) Details: \(logEntry.details ?? [:])")
                 }
-                await GlobalAXLogger.shared.clearLogs()
+                await axClearLogs() 
             }
 
             if response.error == nil, let responseData = response.data?.value as? PerformResponse, responseData.success {
@@ -266,6 +283,7 @@ class AXpectorViewModel: ObservableObject {
         guard let pid = selectedApplicationPID else {
             axWarningLog("Attempted to fetch tree with no application selected.")
             self.accessibilityTree = []
+            self.originalAccessibilityTree = []
             self.filteredAccessibilityTree = []
             self.selectedNode = nil
             self.treeLoadingError = "No application selected."
@@ -276,6 +294,7 @@ class AXpectorViewModel: ObservableObject {
             axWarningLog("Application with PID \(pid) not found in observed applications.")
             self.treeLoadingError = "Application with PID \(pid) not found."
             self.accessibilityTree = []
+            self.originalAccessibilityTree = []
             self.filteredAccessibilityTree = []
             self.isLoadingTree = false
             return
@@ -286,63 +305,90 @@ class AXpectorViewModel: ObservableObject {
         self.isLoadingTree = true
         self.treeLoadingError = nil
         self.accessibilityTree = [] 
+        self.originalAccessibilityTree = []
         self.filteredAccessibilityTree = []
 
-        Task {
-            let commandID = "fetchTree_\(appName.filter { $0.isLetter || $0.isNumber })_\(UUID().uuidString.prefix(6))"
-            await GlobalAXLogger.shared.updateOperationDetails(commandID: commandID, appName: appName)
+        // Capture appName and pid into local constants
+        let currentAppName = appName
+        let currentPid = pid
+        let commandID = "fetchTree_\(currentAppName.filter { $0.isLetter || $0.isNumber })_\(UUID().uuidString.prefix(6))"
 
-            // Returns a JSON String of AXorcist.CollectAllOutput
-            let jsonStringResponse = await axorcist.handleCollectAll(
-                for: appName, // Or pid directly if AXorcist prefers
-                locator: nil, // No specific locator for initial full tree
-                pathHint: nil,
-                maxDepth: self.initialFetchDepth,
-                requestedAttributes: AXpectorViewModel.defaultFetchAttributes,
-                outputFormat: .json, // Explicitly request JSON to match AXorcist.CollectAllOutput
-                commandId: commandID
-            )
-            
-            var fetchedNodes: [AXPropertyNode] = []
-            var operationError: String? = nil
+        Task.detached { [weak self, currentAppName, currentPid, commandID] () async -> Void in
+            guard let strongSelf = self else {
+                axWarningLog("AXpectorViewModel was deallocated before performTreeFetchAndProcess could be run for app: \(currentAppName)")
+                return
+            }
+            await strongSelf.performTreeFetchAndProcess(appName: currentAppName, pid: currentPid, commandID: commandID)
+        }
+    }
+    
+    private func performTreeFetchAndProcess(appName: String, pid: Int32, commandID: String) async {
+        // Define a nested private function to process the response
+        func processResponse(json: String, currentApp: String, currentPid: Int32) -> (nodes: [AXpector.AXPropertyNode]?, error: String?) {
+            var localFetchedNodes: [AXpector.AXPropertyNode] = []
+            var localOperationError: String? = nil
+            let jsonDataUTF8: Data? = json.data(using: .utf8)
 
             do {
-                if let jsonData = jsonStringResponse.data(using: .utf8) {
+                if let jsonData = jsonDataUTF8 {
+                    let localJsonData: Data = jsonData
                     let decoder = JSONDecoder()
-                    let collectAllOutput = try decoder.decode(AXorcist.CollectAllOutput.self, from: jsonData) // Use AXorcist.CollectAllOutput
+                    let collectAllOutput = try decoder.decode(CollectAllOutput.self, from: localJsonData)
                     
                     if collectAllOutput.success {
-                        // elements are [AXorcist.AXElement]
-                        fetchedNodes = collectAllOutput.collectedElements.map { mapAXElementToNode($0, pid: pid, currentDepth: 0, parentPath: "") }
-                        axInfoLog("Successfully fetched and mapped \(fetchedNodes.count) root elements for \(appName).")
-                        self.treeLoadingError = nil
+                        localFetchedNodes = collectAllOutput.collectedElements.map { 
+                            self.mapJsonAXElementToNode($0, pid: currentPid, currentDepth: 0, parentPath: "")
+                        }
                     } else {
                         let errorDetail = collectAllOutput.errorMessage ?? "Unknown error from AXorcist.handleCollectAll."
-                        operationError = "Failed to fetch tree for \(appName): \(errorDetail)"
-                        axErrorLog(operationError!)
+                        localOperationError = "Failed to fetch tree for \(currentApp): \(errorDetail)"
                     }
                 } else {
-                    operationError = "Failed to convert JSON string response to Data for \(appName)."
-                    axErrorLog(operationError!)
+                    localOperationError = "Failed to convert JSON string response to Data for \(currentApp). JSON String was nil after UTF-8 conversion."
                 }
             } catch {
-                operationError = "Failed to decode AXorcist.CollectAllOutput JSON for \(appName): \(error.localizedDescription). JSON: \(jsonStringResponse)"
-                axErrorLog(operationError!)
+                localOperationError = "Failed to decode AXorcist.CollectAllOutput JSON for \(currentApp): \(error.localizedDescription). JSON: \(json)"
             }
 
-            await MainActor.run {
-                self.isLoadingTree = false
-                if let opError = operationError {
-                    self.treeLoadingError = opError
-                    self.accessibilityTree = [] // Clear tree on error
-                    self.filteredAccessibilityTree = []
-                } else {
-                    self.accessibilityTree = fetchedNodes
-                    self.applyFilter() // Apply current filter/search to the new tree
-                }
-            }
-            await GlobalAXLogger.shared.updateOperationDetails(commandID: nil, appName: nil) 
+            return (localFetchedNodes.isEmpty && localOperationError == nil ? [] : localFetchedNodes, localOperationError)
         }
+
+        await GlobalAXLogger.shared.updateOperationDetails(commandID: commandID, appName: appName)
+
+        let jsonStringResponse: String = await MainActor.run {
+            self.axorcist.handleCollectAll(
+                for: appName, 
+                locator: nil, 
+                pathHint: nil,
+                maxDepth: self.initialFetchDepth, 
+                requestedAttributes: AXpectorViewModel.defaultFetchAttributes,
+                outputFormat: .jsonString, 
+                commandId: commandID
+            )
+        }
+        
+        // Call the new local function
+        let result = processResponse(json: jsonStringResponse, currentApp: appName, currentPid: pid)
+        
+        // Update self's properties based on the result
+        await MainActor.run {
+            self.treeLoadingError = result.error
+            if let nodes = result.nodes {
+                self.accessibilityTree = nodes
+                self.originalAccessibilityTree = nodes
+            } else {
+                self.accessibilityTree = []
+                self.originalAccessibilityTree = []
+            }
+            self.isLoadingTree = false
+            self.applyFilter()
+            if let error = result.error {
+                axErrorLog("AXpector: Error processing tree for \(appName): \(error)")
+            } else {
+                axInfoLog("AXpector: Successfully processed tree for \(appName). Nodes: \(result.nodes?.count ?? 0)")
+            }
+        }
+        await GlobalAXLogger.shared.updateOperationDetails(commandID: nil, appName: nil)
     }
 }
 
@@ -395,7 +441,7 @@ extension AXpectorViewModel {
             await GlobalAXLogger.shared.updateOperationDetails(commandID: commandID, appName: String(pid)) // Use pid for appName
 
             // getElementAtPoint returns HandlerResponse, not throwing
-            let response = await axorcist.getElementAtPoint(
+            let response = axorcist.getElementAtPoint(
                 pid: pid, 
                 point: mouseLocation, 
                 requestedAttributes: AXpectorViewModel.defaultFetchAttributes // Fetch attributes for display
@@ -403,31 +449,26 @@ extension AXpectorViewModel {
 
             if Task.isCancelled { return }
 
-            if let axElement = response.data?.value as? AXorcist.AXElement { // Correctly unwrap AXElement
-                if let underlyingElement = axElement.underlyingElement {
-                    // Get frame and show highlight
-                    let frame = await self.getFrameForAXElement(underlyingElement)
-                    if let nsRectFrame = frame {
-                        self.highlightWindowController.showHighlight(at: nsRectFrame, color: NSColor.orange.withAlphaComponent(0.4)) // Example color
-                    } else {
-                        self.highlightWindowController.hideHighlight()
-                    }
-
-                    let role = axElement.attributes?[AXAttributeNames.kAXRoleAttribute]?.value as? String ?? "N/A"
-                    let title = axElement.attributes?[AXAttributeNames.kAXTitleAttribute]?.value as? String ?? ""
-                    let shortTitle = title.isEmpty ? "" : " - \"\(title.prefix(30))\""
-                    hoveredElementInfo = "Hover: \(role)\(shortTitle)"
-                    
-                    // Find the corresponding node in the tree to select it temporarily
-                    if let nodeInTree = findNodeByAXElement(underlyingElement, in: self.accessibilityTree) {
-                        self.temporarilySelectedNodeIDByHover = nodeInTree.id
-                    } else {
-                        self.temporarilySelectedNodeIDByHover = nil // Element not in current tree
-                    }
+            if let axElement = response.data?.value as? Element { // Use Element
+                let underlyingElement = axElement.underlyingElement
+                // Get frame and show highlight
+                let frame = await self.getFrameForAXElement(underlyingElement)
+                if let nsRectFrame = frame {
+                    self.highlightWindowController.showHighlight(at: nsRectFrame, color: NSColor.orange.withAlphaComponent(0.4)) // Example color
                 } else {
-                    hoveredElementInfo = "Hover: Element found, but no underlying reference."
-                    highlightWindowController.hideHighlight()
-                    self.temporarilySelectedNodeIDByHover = nil
+                    self.highlightWindowController.hideHighlight()
+                }
+
+                let role = axElement.attributes?[AXAttributeNames.kAXRoleAttribute]?.value as? String ?? "N/A"
+                let title = axElement.attributes?[AXAttributeNames.kAXTitleAttribute]?.value as? String ?? ""
+                let shortTitle = title.isEmpty ? "" : " - \"\(title.prefix(30))\""
+                hoveredElementInfo = "Hover: \(role)\(shortTitle)"
+                
+                // Find the corresponding node in the tree to select it temporarily
+                if let nodeInTree = findNodeByAXElement(underlyingElement, in: self.accessibilityTree) {
+                    self.temporarilySelectedNodeIDByHover = nodeInTree.id
+                } else {
+                    self.temporarilySelectedNodeIDByHover = nil // Element not in current tree
                 }
             } else if let errorMsg = response.error {
                 hoveredElementInfo = "Hover Error: \(errorMsg)"

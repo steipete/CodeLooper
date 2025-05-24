@@ -42,7 +42,7 @@ extension AXpectorViewModel {
         expandAllParentsInFilteredTree(nodes: filteredAccessibilityTree)
     }
 
-    private func parseFilterText(_ text: String) -> (criteria: [FilterCriterion], generalTerms: [GeneralTermCriterion]) {
+    internal func parseFilterText(_ text: String) -> (criteria: [FilterCriterion], generalTerms: [GeneralTermCriterion]) {
         var criteria: [FilterCriterion] = []
         var generalTerms: [GeneralTermCriterion] = []
         let components = text.split(separator: " ").map { String($0) }
@@ -81,7 +81,7 @@ extension AXpectorViewModel {
         return (criteria, generalTerms)
     }
 
-    private func filterNodes(_ nodes: [AXPropertyNode], criteria: [FilterCriterion], generalTerms: [GeneralTermCriterion]) -> [AXPropertyNode] {
+    internal func filterNodes(_ nodes: [AXPropertyNode], criteria: [FilterCriterion], generalTerms: [GeneralTermCriterion]) -> [AXPropertyNode] {
         var matchedNodes: [AXPropertyNode] = []
         for node in nodes {
             var matchesAllCriteria = true

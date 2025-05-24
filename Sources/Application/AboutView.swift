@@ -2,13 +2,13 @@ import SwiftUI
 
 struct AboutView: View {
     private var appVersion: String {
-        Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "N/A"
+        Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as! String
     }
     private var appBuild: String {
-        Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "N/A"
+        Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as! String
     }
     private var copyright: String {
-        Bundle.main.object(forInfoDictionaryKey: "NSHumanReadableCopyright") as? String ?? "Copyright © 2024 Your Name. All rights reserved."
+        Bundle.main.object(forInfoDictionaryKey: "NSHumanReadableCopyright") as! String
     }
     private let appName = "CodeLooper"
     private let websiteURL = URL(string: "https://codelooper.app/")!

@@ -113,7 +113,6 @@
 		C9E8E6A9360537846791A3BA /* WelcomeStep+Sendable.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A92381A60033FD16DC9AE63 /* WelcomeStep+Sendable.swift */; };
 		CB33BAB501D1924C0BD4F7DB /* MacOSAutomatorConfigView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 76F24870919EA7083C92D456 /* MacOSAutomatorConfigView.swift */; };
 		CD10B171C48F5F90AF812BE2 /* LogCategory.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0C3551D2B56218B60003051 /* LogCategory.swift */; };
-		CDFFB6450F84F08A20126A3A /* codelooper_terminator_rule.mdc in Resources */ = {isa = PBXBuildFile; fileRef = 1377EBAAAD24B7A2D66638F4 /* codelooper_terminator_rule.mdc */; };
 		CFA48B0C2F2A226CFCF63C89 /* WelcomeWindowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3627917CAA03B1A93F5E99EA /* WelcomeWindowView.swift */; };
 		D36F6415E23A47171C215BB9 /* AboutView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 55726BE7EF05884876CA0408 /* AboutView.swift */; };
 		D47685B3180D379449B090DF /* GeneralSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3C69CC949209A6B0F3D95D5C /* GeneralSettingsView.swift */; };
@@ -184,7 +183,6 @@
 		10A7A335B8AAB7AEE8632F01 /* ResumeConnectionButtonHeuristic.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ResumeConnectionButtonHeuristic.swift; sourceTree = "<group>"; };
 		10BDD8C7BDEABDA95017ECB4 /* CursorInstanceStateManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CursorInstanceStateManager.swift; sourceTree = "<group>"; };
 		11B22B91FDE5D7C57D8C8330 /* XcodeBuildConfigView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = XcodeBuildConfigView.swift; sourceTree = "<group>"; };
-		1377EBAAAD24B7A2D66638F4 /* codelooper_terminator_rule.mdc */ = {isa = PBXFileReference; path = codelooper_terminator_rule.mdc; sourceTree = "<group>"; };
 		13E3BD55C4561D42055015EA /* AboutSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AboutSettingsView.swift; sourceTree = "<group>"; };
 		16D1B5B9949C8968D7A0F2F2 /* DynamicLocatorDiscoverer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DynamicLocatorDiscoverer.swift; sourceTree = "<group>"; };
 		1E072564F6C7363162D5F526 /* CodeLooper.sdef */ = {isa = PBXFileReference; path = CodeLooper.sdef; sourceTree = "<group>"; };
@@ -572,7 +570,6 @@
 		D666E60EA2730514C3FFA236 /* Resources */ = {
 			isa = PBXGroup;
 			children = (
-				1377EBAAAD24B7A2D66638F4 /* codelooper_terminator_rule.mdc */,
 				1E072564F6C7363162D5F526 /* CodeLooper.sdef */,
 				CC10D906EAF6E924567E3DB3 /* MainMenu.nib */,
 			);
@@ -763,7 +760,6 @@
 				13ED50F2F28C4EEF3532770A /* Main.storyboard in Resources */,
 				EB1A07B5BD013FEF94A72FF0 /* CodeLooper.sdef in Resources */,
 				3EB93F9333F97BEB98D906BF /* MainMenu.nib in Resources */,
-				CDFFB6450F84F08A20126A3A /* codelooper_terminator_rule.mdc in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

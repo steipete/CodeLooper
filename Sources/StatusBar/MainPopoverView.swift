@@ -77,7 +77,7 @@ struct MainPopoverView: View {
                 // Replaced SettingsLink with Button
                 Button("Open Settings") {
                     // Close popover first
-                    AppDelegate.shared.menuManager?.closePopover(sender: nil)
+                    AppDelegate.shared?.menuManager?.closePopover(sender: nil)
                     // Then open settings
                     NSApp.sendAction(Selector(("showSettingsWindow:")), to: nil, from: nil)
                 }

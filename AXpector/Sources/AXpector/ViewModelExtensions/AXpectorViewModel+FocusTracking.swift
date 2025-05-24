@@ -15,16 +15,17 @@ extension AXpectorViewModel {
                 object: nil, 
                 queue: .main
             ) { [weak self] notification in
-                guard let self = self, self.isFocusTrackingModeActive,
-                      let activatedApp = notification.userInfo?[NSWorkspace.applicationUserInfoKey] as? NSRunningApplication else {
-                    return
-                }
-                axInfoLog("App activated: \(activatedApp.localizedName ?? "unknown") with PID \(activatedApp.processIdentifier). AXpector will update focus tracking.") // CHANGED
-                
-                let pidToObserve = self.selectedApplicationPID ?? activatedApp.processIdentifier
-                _ = Task {
-                    // AXorcist.startFocusTracking uses ax...Log internally
-                    await self.axorcist.startFocusTracking(for: pidToObserve, callback: self.handleFocusNotificationFromAXorcist)
+                Task { @MainActor in // Run the whole handler on MainActor
+                    guard let self = self else { return } 
+                    guard self.isFocusTrackingModeActive,
+                          let activatedApp = notification.userInfo?[NSWorkspace.applicationUserInfoKey] as? NSRunningApplication else {
+                        return
+                    }
+                    axInfoLog("App activated: \(activatedApp.localizedName ?? "unknown") with PID \(activatedApp.processIdentifier). AXpector will update focus tracking.") // CHANGED
+                    
+                    let pidToObserve = self.selectedApplicationPID ?? activatedApp.processIdentifier
+                    // The axorcist.startFocusTracking is async, so it's fine here.
+                    _ = self.axorcist.startFocusTracking(for: pidToObserve, callback: self.handleFocusNotificationFromAXorcist)
                 }
             }
         }
@@ -32,10 +33,10 @@ extension AXpectorViewModel {
         Task {
             if let pid = selectedApplicationPID {
                 // AXorcist.startFocusTracking uses ax...Log internally
-                _ = await axorcist.startFocusTracking(for: pid, callback: self.handleFocusNotificationFromAXorcist)
+                _ = axorcist.startFocusTracking(for: pid, callback: self.handleFocusNotificationFromAXorcist)
             } else if let frontmostApp = NSWorkspace.shared.frontmostApplication {
                 // AXorcist.startFocusTracking uses ax...Log internally
-                _ = await axorcist.startFocusTracking(for: frontmostApp.processIdentifier, callback: self.handleFocusNotificationFromAXorcist)
+                _ = axorcist.startFocusTracking(for: frontmostApp.processIdentifier, callback: self.handleFocusNotificationFromAXorcist)
             } else {
                 axWarningLog("Focus Tracking: No application selected and no frontmost application found to observe.") // CHANGED
             }
@@ -46,7 +47,7 @@ extension AXpectorViewModel {
         axInfoLog("AXpectorViewModel: Requesting to stop focus tracking monitoring.") // CHANGED
         Task {
             // AXorcist.stopFocusTracking uses ax...Log internally
-            _ = await axorcist.stopFocusTracking()
+            axorcist.stopFocusTracking()
         }
     }
 
@@ -74,13 +75,12 @@ extension AXpectorViewModel {
             }
         }
 
-        let axLibElement = AXorcist.Element(focusedElement) // CHANGED from AXElement to AXorcist.Element
+        let axLibElement = Element(focusedElement) // CHANGED from AXElement to Element
         let appElementForPath = AXUIElementCreateApplication(pid)
 
         let role = axLibElement.role()
         let title = axLibElement.title()
-        let pathArray = axLibElement.generatePathArray(upTo: appElementForPath)
-        CFRelease(appElementForPath)
+        let pathArray = axLibElement.generatePathArray(upTo: Element(appElementForPath))
         // PathComponent in AXorcist.Element's Path struct might have a better string representation.
         // Assuming generatePathArray returns [String] for now, or that Path.PathComponent.description is suitable.
         // For now, using map { $0.isEmpty ? "(empty)" : $0 } as was originally there for String arrays.

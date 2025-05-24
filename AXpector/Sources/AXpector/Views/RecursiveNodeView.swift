@@ -28,8 +28,8 @@ struct RecursiveNodeView: View {
                     NodeLabel(node: node, selectedNodeID: $selectedNodeID, viewModel: viewModel)
                 }
             )
-            .onChange(of: node.isExpanded) { isNowExpanded in
-                if isNowExpanded && node.hasChildrenAXProperty && !node.areChildrenFullyLoaded && !node.isLoadingChildren {
+            .onChange(of: node.isExpanded) { oldValue, newValue in
+                if newValue && node.hasChildrenAXProperty && !node.areChildrenFullyLoaded && !node.isLoadingChildren {
                     viewModel.expandNodeAndLoadChildren(node)
                 }
             }

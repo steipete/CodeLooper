@@ -6,7 +6,7 @@ import AXorcist // For AXPermissions
 // MARK: - Accessibility Permissions Check
 extension AXpectorViewModel {
     func checkAccessibilityPermissions(promptIfNeeded: Bool = false) {
-        let trusted = AXPermissions.isAPIEnabled(promptIfNeeded: promptIfNeeded)
+        let trusted = AXTrustUtil.checkAccessibilityPermissions(promptIfNeeded: promptIfNeeded)
         
         if self.isAccessibilityEnabled != trusted { 
             self.isAccessibilityEnabled = trusted

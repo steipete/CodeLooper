@@ -2,11 +2,13 @@ import SwiftUI
 import AXorcist // For AXPropertyNode if it's moved or directly used
 
 @MainActor
-struct AXpectorView: View {
+public struct AXpectorView: View {
     @StateObject private var viewModel = AXpectorViewModel()
     @State private var selectedNodeID: AXPropertyNode.ID?
 
-    var body: some View {
+    public init() {} // Add public initializer
+
+    public var body: some View {
         // Check for Accessibility Permissions first
         if viewModel.isAccessibilityEnabled == false { // Explicitly check for false
             VStack(spacing: 20) {
@@ -40,7 +42,9 @@ struct AXpectorView: View {
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .onAppear {
-                viewModel.checkAccessibilityPermissions() // Attempt to check again if view appears in this state
+                Task { // Wrap in Task
+                    viewModel.checkAccessibilityPermissions() // Attempt to check again if view appears in this state
+                }
             }
         } else { // Accessibility is enabled, show the main UI
             NavigationView {
@@ -55,7 +59,7 @@ struct AXpectorView: View {
                     .padding(.horizontal)
                     .padding(.top)
                     .padding(.bottom, 8) // Add some space below picker
-                    .onChange(of: viewModel.selectedApplicationPID) { _ in
+                    .onChange(of: viewModel.selectedApplicationPID) {
                         selectedNodeID = nil 
                         viewModel.selectedNode = nil
                         // viewModel.temporarilySelectedNodeIDByHover is reset by the viewModel itself
@@ -229,24 +233,20 @@ struct AXpectorView: View {
                             }
                             .id("\(viewModel.selectedApplicationPID?.description ?? "nil")-\(viewModel.filterText)") // Change ID based on PID and filterText to help SwiftUI redraw/reset state
                             .listStyle(.sidebar) 
-                            .onChange(of: selectedNodeID) { newNodeID in
+                            .onChange(of: selectedNodeID) { oldValue, newValue in
                                 if !viewModel.isHoverModeActive {
                                     // When selecting from filtered tree, find node in original tree to keep selectedNode consistent
-                                    // or ensure selectedNode is also derived from filtered tree for detail view.
-                                    // For now, assume findNode will search the original structure if detail relies on it,
-                                    // or that selection maps to the *filtered* node for details.
-                                    // The current findNode searches `accessibilityTree`. This will need adjustment if we want to find in `filteredAccessibilityTree`
-                                    // or if the details should always show full unfiltered node data.
-                                    // Let's assume for now, `findNode` should search the tree that corresponds to the displayed list.
-                                    viewModel.selectedNode = viewModel.findNode(by: newNodeID, in: viewModel.filteredAccessibilityTree) // Changed to filtered tree
+                                    if let newID = newValue { // Use newValue
+                                        viewModel.selectedNode = viewModel.findNode(by: newID, in: viewModel.filteredAccessibilityTree) // Changed to filtered tree
+                                    }
                                 } else {
                                     // Deselect if in hover mode and user clicks, to avoid confusion
                                     // Or, allow selection but make hover highlight distinct
                                     // For now, click selection is disabled in hover mode by NodeLabel's onTapGesture
                                 }
                             }
-                            .onChange(of: viewModel.temporarilySelectedNodeIDByHover) { hoveredID in
-                                if let idToScrollTo = hoveredID { // Ensure there is an ID
+                            .onChange(of: viewModel.temporarilySelectedNodeIDByHover) { oldValue, newValue in
+                                if let idToScrollTo = newValue { // Use newValue
                                     withAnimation(.easeInOut(duration: 0.3)) { // Optional animation
                                         scrollViewProxy.scrollTo(idToScrollTo, anchor: .center) // Scroll to the center
                                     }
@@ -315,9 +315,6 @@ struct AXpectorView: View {
                 }
             }
             .frame(minHeight: 400, idealHeight: 600) 
-        }
-        .onAppear {
-            // viewModel.fetchRunningApplications() // Already called in init
         }
     }
 }

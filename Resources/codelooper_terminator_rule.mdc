@@ -1,8 +1,0 @@
----
-description:
-globs:
-alwaysApply: false
----
-// Version: 0.1.0
-// This is a placeholder for codelooper_terminator_rule.mdc
-// It defines rules for the terminator script.

@@ -13,16 +13,16 @@ let package = Package(
         )
     ],
     dependencies: [
-        // Add any dependencies AXpector might have, e.g., AXorcist
+        // Add any dependencies AXpector might need. E.g., AXorcist
         // For now, assuming it might need AXorcist, like the main app uses it.
+        .package(path: "../AXorcist") // Corrected and uncommented
         // If AXpector is fully standalone or uses other things, adjust this.
-        // .package(path: "../AXorcist") // Example if it needs AXorcist
     ],
     targets: [
         .target(
             name: "AXpector",
             dependencies: [
-                // .product(name: "AXorcist", package: "AXorcist") // Example
+                .product(name: "AXorcist", package: "AXorcist") // Uncommented
             ],
             path: "Sources/AXpector"
         )

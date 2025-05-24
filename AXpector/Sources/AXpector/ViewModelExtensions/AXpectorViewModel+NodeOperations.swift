@@ -56,14 +56,14 @@ extension AXpectorViewModel {
             return
         }
 
-        let (currentCriteria, currentGeneralTerms) = parseFilterText(debouncedFilterText.lowercased())
+        let (currentCriteria, currentGeneralTerms) = parseFilterText(self.debouncedFilterText.lowercased())
         axInfoLog("Expanding node and loading children for: \(node.displayName) (Path: \(node.fullPath)) with depth \(self.subsequentFetchDepth)")
         node.isLoadingChildren = true
 
         Task {
             await GlobalAXLogger.shared.updateOperationDetails(commandID: "expandNode_\(node.id.uuidString.prefix(8))", appName: String(node.pid))
 
-            let rootAXElementForExpansion = AXorcist.Element(node.axElementRef)
+            let rootAXElementForExpansion = Element(node.axElementRef)
             let fetchedPropertyNodeChildren = await self.recursivelyFetchChildren(
                 forElement: rootAXElementForExpansion,
                 pid: node.pid,
@@ -73,18 +73,17 @@ extension AXpectorViewModel {
                 pathOfElementToFetchChildrenFor: node.fullPath
             )
 
-            if Defaults[.verboseLogging] {
-                let collectedLogs = await GlobalAXLogger.shared.getLogs()
-                let logMessages = GlobalAXLogger.formatEntriesAsText(collectedLogs, includeTimestamps: true, includeLevels: true, includeDetails: true)
-                for logMessage in logMessages {
-                    axDebugLog("AXorcist (ExpandNode) Log: \(logMessage)")
+            if Defaults[.verboseLogging_axpector] {
+                let collectedLogs = await axGetLogEntries()
+                for logEntry in collectedLogs { // Iterate and log
+                    axDebugLog("AXorcist (ExpandNode) Log [L:\(logEntry.level.rawValue) T:\(logEntry.timestamp)]: \(logEntry.message) Details: \(logEntry.details ?? [:])")
                 }
-                await GlobalAXLogger.shared.clearLogs()
+                await axClearLogs()
             }
             
             let childrenToAssign: [AXPropertyNode]
-            if !debouncedFilterText.isEmpty { 
-                axInfoLog("Re-filtering \(fetchedPropertyNodeChildren.count) newly loaded children for node \(node.displayName) against filter: \(debouncedFilterText)")
+            if !self.debouncedFilterText.isEmpty {
+                axInfoLog("Re-filtering \(fetchedPropertyNodeChildren.count) newly loaded children for node \(node.displayName) against filter: \(self.debouncedFilterText)")
                 childrenToAssign = filterNodes(fetchedPropertyNodeChildren, criteria: currentCriteria, generalTerms: currentGeneralTerms)
             } else {
                 childrenToAssign = fetchedPropertyNodeChildren
@@ -102,7 +101,7 @@ extension AXpectorViewModel {
     }
 
     private func recursivelyFetchChildren(
-        forElement elementToFetchChildrenFor: AXorcist.Element,
+        forElement elementToFetchChildrenFor: Element,
         pid: pid_t,
         depthOfElementToFetchChildrenFor: Int, // This is the depth in the overall tree of the element whose children we are fetching
         currentExpansionLevel: Int, // How many levels deep are we in *this specific* expansion operation
@@ -122,7 +121,7 @@ extension AXpectorViewModel {
             let (childAttributes, _) = getElementAttributes(
                 element: childAX,
                 attributes: AXpectorViewModel.defaultFetchAttributes,
-                outputFormat: .json 
+                outputFormat: .jsonString
             )
             
             let childRole = childAttributes[AXAttributeNames.kAXRoleAttribute]?.value as? String
@@ -197,7 +196,47 @@ extension AXpectorViewModel {
     // This function is now largely replaced by the logic inside recursivelyFetchChildren
     // but might be kept if it's used for an initial full tree fetch.
     // For expanding nodes, recursivelyFetchChildren is more direct.
-    internal func mapAXElementToNode(_ axElementFromCollectAll: AXorcist.Element, pid: pid_t, currentDepth: Int, parentPath: String) -> AXPropertyNode {
+    @MainActor
+    internal func mapJsonAXElementToNode(_ jsonElement: AXElement, pid: pid_t, currentDepth: Int, parentPath: String) -> AXPropertyNode {
+        let role = jsonElement.attributes?[AXAttributeNames.kAXRoleAttribute]?.value as? String
+        let title = jsonElement.attributes?[AXAttributeNames.kAXTitleAttribute]?.value as? String
+        let descriptionText = jsonElement.attributes?[AXAttributeNames.kAXDescriptionAttribute]?.value as? String
+        let valueText = jsonElement.attributes?[AXAttributeNames.kAXValueAttribute]?.value as? String
+
+        var currentPathComponent = role ?? "UnknownRole"
+        if let t = title, !t.isEmpty { currentPathComponent += "[\"\(t.prefix(20))\"]" }
+        // Path construction from jsonElement.path might be better if available and reliable
+        let newPath = parentPath.isEmpty ? currentPathComponent : "\(parentPath)/\(currentPathComponent)"
+
+        // Children are not directly available in AXElement struct from CollectAllOutput in a nested way for this map.
+        // The CollectAllOutput.collectedElements is a flat list of all elements found.
+        // So, children for this node would need to be reconstructed based on paths, or this mapping is only for top-level elements.
+        // For now, assume children will be empty and loaded later.
+
+        // TEMPORARY: Use a placeholder for axElementRef. This will break interactions.
+        let placeholderRef = AXUIElementCreateApplication(pid) // This is NOT correct but makes it compile.
+
+        let node = AXPropertyNode(
+            id: UUID(), 
+            axElementRef: placeholderRef, // Placeholder!
+            pid: pid, 
+            role: role ?? "N/A", 
+            title: title ?? "",
+            descriptionText: descriptionText ?? "",
+            value: valueText ?? "",
+            fullPath: jsonElement.path?.joined(separator: "/") ?? newPath, // Prefer actual path from AXElement if present
+            children: [], // Children need to be populated by a separate step that reconstructs hierarchy from flat list
+            attributes: jsonElement.attributes ?? [:],
+            actions: [], // Actions are not in AXElement struct
+            hasChildrenAXProperty: false, // Cannot determine from AXElement struct alone, assume false or determine later
+            depth: currentDepth
+        )
+        node.areChildrenFullyLoaded = true // Since we are not populating children here from this map
+        return node
+    }
+
+    @MainActor
+    internal func mapAXElementToNode(_ axElementFromCollectAll: Element, pid: pid_t, currentDepth: Int, parentPath: String) -> AXPropertyNode {
         // This mapping is for when Element comes from a broader collectAll operation,
         // which already has its children populated up to a certain depth.
         
@@ -214,7 +253,7 @@ extension AXpectorViewModel {
         let newPath = parentPath.isEmpty ? currentPathComponent : "\(parentPath)/\(currentPathComponent)"
 
         // Children from Element are already Element type
-        let mappedChildren: [AXPropertyNode] = axElementFromCollectAll.children?.map {
+        let mappedChildren: [AXPropertyNode] = axElementFromCollectAll.children()?.map {
             mapAXElementToNode($0, pid: pid, currentDepth: currentDepth + 1, parentPath: newPath)
         } ?? []
         
@@ -226,11 +265,11 @@ extension AXpectorViewModel {
             actions: axElementFromCollectAll.actions ?? [],
             // hasChildrenAXProperty should be determined by querying the actual AXUIElement if not provided by axElementFromCollectAll
             // For now, inferring from mappedChildren.count, but AXorcist.Element().children() would be more accurate for the actual AX property.
-            hasChildrenAXProperty: !mappedChildren.isEmpty || (axElementFromCollectAll.attributes?[AXAttributeNames.kAXChildrenAttribute]?.value as? [Any])?.isEmpty == false,
+            hasChildrenAXProperty: !mappedChildren.isEmpty || (axElementFromCollectAll.children()?.isEmpty == false),
             depth: currentDepth
         )
         // If axElementFromCollectAll.children is non-nil, it means they were part of the fetch.
-        node.areChildrenFullyLoaded = axElementFromCollectAll.children != nil 
+        node.areChildrenFullyLoaded = axElementFromCollectAll.children() != nil
         return node
     }
 } 

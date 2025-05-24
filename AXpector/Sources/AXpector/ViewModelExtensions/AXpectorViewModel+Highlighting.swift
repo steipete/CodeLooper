@@ -37,32 +37,47 @@ extension AXpectorViewModel {
         }
     }
 
-    private func getFrameForAXElement(_ elementRef: AXUIElement) async -> NSRect? {
+    internal func getFrameForAXElement(_ elementRef: AXUIElement) async -> NSRect? {
         var positionValue: CFTypeRef?
         var sizeValue: CFTypeRef?
 
         let posError = AXUIElementCopyAttributeValue(elementRef, kAXPositionAttribute as CFString, &positionValue)
         let sizeError = AXUIElementCopyAttributeValue(elementRef, kAXSizeAttribute as CFString, &sizeValue)
 
-        guard posError == .success, let posVal = positionValue, AXValueGetType(posVal) == .cgPoint else {
-            axDebugLog("Could not get position for element or wrong type. Error: \(posError.rawValue)")
-            if let pv = positionValue { CFRelease(pv) }
-            if let sv = sizeValue { CFRelease(sv) }
+        guard posError == .success, let posValUnwrapped = positionValue else {
+            axDebugLog("Could not get position for element (nil CFTypeRef). Error: \(posError.rawValue)")
             return nil
         }
-        defer { CFRelease(posVal) }
+        guard CFGetTypeID(posValUnwrapped) == AXValueGetTypeID() else {
+            axDebugLog("Position value is not an AXValue based on CFGetTypeID. Actual TypeID: \(CFGetTypeID(posValUnwrapped))")
+            return nil
+        }
+        let posAxValue = posValUnwrapped as! AXValue // Force cast after type check
 
-        guard sizeError == .success, let sizeVal = sizeValue, AXValueGetType(sizeVal) == .cgSize else {
-            axDebugLog("Could not get size for element or wrong type. Error: \(sizeError.rawValue)")
-            if let sv = sizeValue { CFRelease(sv) }
+        guard AXValueGetType(posAxValue) == .cgPoint else {
+            axDebugLog("Position AXValue is not of type CGPoint. Type: \(AXValueGetType(posAxValue).rawValue)")
             return nil
         }
-        defer { CFRelease(sizeVal) }
+
+        guard sizeError == .success, let sizeValUnwrapped = sizeValue else {
+            axDebugLog("Could not get size for element (nil CFTypeRef). Error: \(sizeError.rawValue)")
+            return nil
+        }
+        guard CFGetTypeID(sizeValUnwrapped) == AXValueGetTypeID() else {
+            axDebugLog("Size value is not an AXValue based on CFGetTypeID. Actual TypeID: \(CFGetTypeID(sizeValUnwrapped))")
+            return nil
+        }
+        let sizeAxValue = sizeValUnwrapped as! AXValue // Force cast after type check
+
+        guard AXValueGetType(sizeAxValue) == .cgSize else {
+            axDebugLog("Size AXValue is not of type CGSize. Type: \(AXValueGetType(sizeAxValue).rawValue)")
+            return nil
+        }
 
         var point = CGPoint.zero
         var size = CGSize.zero
-        AXValueGetValue(posVal, .cgPoint, &point)
-        AXValueGetValue(sizeVal, .cgSize, &size)
+        AXValueGetValue(posAxValue, .cgPoint, &point)
+        AXValueGetValue(sizeAxValue, .cgSize, &size)
 
         guard size.width > 0 && size.height > 0 else {
             axDebugLog("Element has zero or negative size: \(size)")
