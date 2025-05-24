@@ -3,7 +3,7 @@ import SwiftUI
 
 @MainActor
 struct LogSettingsView: View {
-    @ObservedObject private var sessionLogger = SessionLogger.shared
+    @EnvironmentObject var sessionLogger: SessionLogger
     @State private var searchText: String = ""
     @State private var selectedLogLevelFilter: LogLevel? // Allow 'nil' for all levels
     @State private var logEntries: [LogEntry] = []
@@ -31,8 +31,8 @@ struct LogSettingsView: View {
         return filtered
     }
     
-    private func updateLogEntries() async {
-        logEntries = await sessionLogger.getEntries()
+    private func updateLogEntries() {
+        logEntries = sessionLogger.getEntries()
     }
 
     var body: some View {
@@ -68,9 +68,8 @@ struct LogSettingsView: View {
                 }
 
                 Button {
-                    Task {
-                        await sessionLogger.clearLog()
-                    }
+                    sessionLogger.clearLog()
+                    updateLogEntries()
                 } label: {
                     Image(systemName: "trash")
                     Text("Clear Log")
@@ -98,22 +97,16 @@ struct LogSettingsView: View {
         }
         .frame(minWidth: 500, idealWidth: 700, minHeight: 300, idealHeight: 500)
         .task {
-            await updateLogEntries()
+            updateLogEntries()
         }
         .onChange(of: selectedLogLevelFilter) { _, _ in
-            Task {
-                await updateLogEntries()
-            }
+            updateLogEntries()
         }
         .onChange(of: searchText) { _, _ in
-            Task {
-                await updateLogEntries()
-            }
+            updateLogEntries()
         }
         .onAppear {
-            Task {
-                await updateLogEntries()
-            }
+            updateLogEntries()
         }
     }
 
@@ -162,10 +155,10 @@ struct LogSettingsView: View {
     
     private func copyLogToClipboard() {
         Task {
-            let entries = await sessionLogger.getEntries()
+            let entries = sessionLogger.getEntries()
             let logText = entries.map { entry -> String in
-                let pidStringSegment = entry.instancePID.map { _ in "[PID: \\(pidValue)] " } ?? ""
-                return "\\(entry.timestamp.formatted(date: .omitted, time: .standard)) [\\(entry.level.displayName.uppercased())] " + pidStringSegment + entry.message
+                let pidString = entry.instancePID.map { "[PID: \(String($0))] " } ?? ""
+                return "\(entry.timestamp.formatted(date: .omitted, time: .standard)) [\(entry.level.displayName.uppercased())] \(pidString)\(entry.message)"
             }.joined(separator: "\n")
             
             if let data = logText.data(using: .utf8) {
@@ -179,24 +172,24 @@ struct LogSettingsView: View {
 
     private func exportLog() {
         Task {
-            let entries = await sessionLogger.getEntries()
+            let entries = sessionLogger.getEntries()
             let savePanel = NSSavePanel()
             savePanel.allowedContentTypes = [.plainText]
             savePanel.canCreateDirectories = true
-            savePanel.nameFieldStringValue = "CodeLooper_SessionLog_\\(dateFormatterForFilename()).txt"
+            savePanel.nameFieldStringValue = "CodeLooper_SessionLog_\(dateFormatterForFilename()).txt"
 
             if savePanel.runModal() == .OK {
                 if let url = savePanel.url {
                     var logContent = ""
                     for entry in entries.reversed() { // Export oldest first
-                        let pidStringSegment = entry.instancePID.map { _ in "[PID: \\(pidValue)] " } ?? ""
-                        logContent += "\\(entry.timestamp) [\\(entry.level.displayName.uppercased())] " + pidStringSegment + entry.message + "\n"
+                        let pidString = entry.instancePID.map { "[PID: \(String($0))] " } ?? ""
+                        logContent += "\(entry.timestamp) [\(entry.level.displayName.uppercased())] \(pidString)\(entry.message)\n"
                     }
                     do {
                         try logContent.write(to: url, atomically: true, encoding: .utf8)
                     } catch {
                         // Handle error (e.g., show an alert)
-                        print("Failed to export log: \\(error.localizedDescription)")
+                        print("Failed to export log: \(error.localizedDescription)")
                         // Consider showing an alert to the user via AlertPresenter or similar
                     }
                 }
@@ -214,15 +207,14 @@ struct LogSettingsView: View {
 #if DEBUG
 struct LogSettingsView_Previews: PreviewProvider {
     static var previews: some View {
-        // Example: Populate SessionLogger with some mock data for previewing
         let logger = SessionLogger.shared
         Task {
-            await logger.log(level: .info, message: "Preview log: Application started.", pid: 123)
-            await logger.log(level: .debug, message: "Preview log: Debugging some cool feature here. This message might be a bit longer to test wrapping and text selection capabilities within the log view.", pid: 456)
-            await logger.log(level: .warning, message: "Preview log: Something might be wrong, be careful!", pid: 123)
-            await logger.log(level: .error, message: "Preview log: An error occurred! Oh noes! Details should follow.", pid: 789)
-            await logger.log(level: .critical, message: "Preview log: Critical failure, system unstable.", pid: 123)
-            await logger.log(level: .info, message: "Preview log: Another info message without PID.")
+            logger.log(level: .info, message: "Preview log: Application started.", pid: 123)
+            logger.log(level: .debug, message: "Preview log: Debugging some cool feature here. This message might be a bit longer to test wrapping and text selection capabilities within the log view.", pid: 456)
+            logger.log(level: .warning, message: "Preview log: Something might be wrong, be careful!", pid: 123)
+            logger.log(level: .error, message: "Preview log: An error occurred! Oh noes! Details should follow.", pid: 789)
+            logger.log(level: .critical, message: "Preview log: Critical failure, system unstable.", pid: 123)
+            logger.log(level: .info, message: "Preview log: Another info message without PID.")
         }
         
         return LogSettingsView()

@@ -145,9 +145,18 @@ class WindowManager: ObservableObject {
             window.contentView = NSHostingView(rootView: axpectorView)
             axpectorWindowController = NSWindowController(window: window)
         }
+        logger.info("Before axpectorWindowController.showWindow(nil)")
         axpectorWindowController?.showWindow(nil)
-        NSApp.activate(ignoringOtherApps: true)
-        axpectorWindowController?.window?.makeKeyAndOrderFront(nil)
+        logger.info("After axpectorWindowController.showWindow(nil)")
+        // NSApp.activate(ignoringOtherApps: true)
+        // Replace deprecated activate call with a modern equivalent if necessary, or rely on makeKeyAndOrderFront
+        if let window = axpectorWindowController?.window {
+            NSApp.activate() // General activation
+            window.makeKeyAndOrderFront(nil)
+            logger.info("After axpectorWindowController.window.makeKeyAndOrderFront(nil)")
+        } else {
+            logger.error("AXpector window is nil after trying to show.")
+        }
     }
 
     // MARK: - Accessibility (Consolidated)
@@ -156,32 +165,21 @@ class WindowManager: ObservableObject {
     func checkAndPromptForAccessibilityPermissions(showPromptIfNeeded: Bool = true) {
         logger.info("Checking accessibility permissions...")
         
-        do {
-            // Use the global AXorcist function, passing down the promptIfNeeded parameter
-            try checkAccessibilityPermissions(promptIfNeeded: showPromptIfNeeded)
+        // AXTrustUtil.checkAccessibilityPermissions returns Bool, doesn't throw
+        let permissionsGranted = AXTrustUtil.checkAccessibilityPermissions(promptIfNeeded: showPromptIfNeeded)
+
+        if permissionsGranted {
             logger.info("Accessibility permissions already granted.")
             sessionLogger.log(level: .info, message: "Accessibility permissions granted.")
-        } catch let error as AccessibilityError {
-            if case .notAuthorized = error, showPromptIfNeeded {
-                logger.warning("Accessibility permissions not granted. System prompt should have been triggered by AXorcist.Error: \(error.localizedDescription)")
-                sessionLogger.log(level: .warning, message: "Accessibility permissions not granted, system prompt should have occurred. Error: \(error.localizedDescription)")
-                
-                // The prompt is handled by AXorcist.checkAccessibilityPermissions when promptIfNeeded is true.
-                // We just open settings as a fallback or for user to confirm.
-                openAccessibilitySystemSettings()
-            } else {
-                logger.error("Error checking accessibility permissions: \(error.localizedDescription)")
-                sessionLogger.log(level: .error, message: "Error checking accessibility permissions: \(error.localizedDescription)")
-                if showPromptIfNeeded {
-                    showAlert(title: "Accessibility Permissions Error", message: "CodeLooper encountered an error: \(error.localizedDescription). Please check System Settings.", style: .critical)
-                    openAccessibilitySystemSettings()
-                }
-            }
-        } catch { // Catch any other unexpected errors
-            logger.error("An unexpected error occurred while checking accessibility permissions: \(error.localizedDescription)")
-            sessionLogger.log(level: .error, message: "Unexpected error checking accessibility permissions: \(error.localizedDescription)")
+        } else {
+            // Permissions are not granted.
+            // If promptIfNeeded was true, AXTrustUtil.checkAccessibilityPermissions should have triggered the system prompt.
+            logger.warning("Accessibility permissions not granted. If prompt was requested, system prompt should have occurred.")
+            sessionLogger.log(level: .warning, message: "Accessibility permissions not granted. System prompt may have occurred if requested.")
+            
+            // If we were supposed to prompt, and they are still not granted, 
+            // it might be good to guide the user to settings, as the system prompt might have been missed or denied.
             if showPromptIfNeeded {
-                showAlert(title: "Accessibility Check Failed", message: "An unexpected error occurred: \(error.localizedDescription). Please check System Settings.", style: .critical)
                 openAccessibilitySystemSettings()
             }
         }

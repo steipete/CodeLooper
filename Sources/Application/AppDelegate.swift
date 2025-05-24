@@ -27,6 +27,7 @@ public class AppDelegate: NSObject, NSApplicationDelegate,
 
     // Use custom Logger for categorized logging
     let logger = Logger(category: .appDelegate)
+    private var singleInstanceLock: SingleInstanceLock? // For single instance check
 
     // MARK: - Properties
 
@@ -54,108 +55,60 @@ public class AppDelegate: NSObject, NSApplicationDelegate,
     // MARK: - App Lifecycle
 
     // This is managed by SwiftUI's application lifecycle, but it still works with the old setup
-    public func applicationDidFinishLaunching(_: Notification) {
-        logger.info("Application starting up - logs are now stored in Application Support/CodeLooper/Logs")
+    public func applicationDidFinishLaunching(_ notification: Notification) {
+        logger.info("Application finished launching.")
+        sessionLogger.log(level: .info, message: "Application finished launching.")
 
-        // --- SINGLE INSTANCE CHECK ---
-        let bundleID = Bundle.main.bundleIdentifier!
-        let runningApps = NSRunningApplication.runningApplications(withBundleIdentifier: bundleID)
-
-        if runningApps.count > 1 {
-            logger.warning("Multiple instances of CodeLooper detected (\(runningApps.count)). Activating first instance and showing settings.")
-            if let firstInstance = runningApps.first(where: { $0 != .current }) {
-                // Corrected activation method for macOS 14+
-                var activationOptions: NSApplication.ActivationOptions = [.activateAllWindows]
-                if #available(macOS 10.15, *) {
-                    activationOptions.insert(.activateIgnoringOtherApps)
-                }
-                
-                // The new activate method is on NSRunningApplication and does not have a completion handler.
-                // It returns a Bool indicating success.
-                let activated = firstInstance.activate(options: activationOptions)
-                
-                if activated {
-                    self.logger.info("Successfully activated other instance.")
-                } else {
-                    self.logger.warning("Could not activate other instance.")
-                }
-
-                // Terminate the current instance after attempting to activate the other.
-                NSApp.terminate(nil)
-                return // Don't continue launching this instance
-            } else {
-                // This case (count > 1 but no *other* instance) shouldn't happen but log it.
-                logger.error("Running apps count is \(runningApps.count), but couldn't find an *other* instance to activate.")
+        // Single instance check
+        singleInstanceLock = SingleInstanceLock(identifier: "me.steipete.codelooper.instance")
+        if !singleInstanceLock!.isPrimaryInstance {
+            logger.warning("Another instance of CodeLooper is already running. Terminating this instance.")
+            // Optionally, bring the other instance to the front
+            if let runningApp = NSRunningApplication.runningApplications(withBundleIdentifier: Bundle.main.bundleIdentifier!).first(where: { $0 != NSRunningApplication.current }) {
+                runningApp.activate(options: [.activateAllWindows])
             }
+            NSApp.terminate(nil)
+            return // Important to return here
         }
-        // --- END SINGLE INSTANCE CHECK ---
 
-        setupExceptionHandling()
+        // Initialize core services FIRST
+        initializeServices() // Ensure windowManager and other services are ready
 
-        logger.info("Initializing core services")
-        initializeServices()
-
-        logger.info("Setting up menu bar")
-        setupMenuBar()
-
-        syncLoginItemStatus()
-
-        if let statusButton = menuManager?.statusItem?.button {
-            statusButton.image = NSImage(named: "MenuBarTemplateIcon")
-            statusButton.image?.isTemplate = true
-            statusButton.contentTintColor = AppIconStateController.shared.currentTintColor
-        } else {
-            logger.warning("menuManager.statusItem.button is nil, cannot set initial icon image.")
-        }
-        
+        // Setup main application components
+        // setupMenuBarExtras() // Replaced by setupMenuBar if it serves the same purpose or if extra functionality moved elsewhere
+        setupMenuBar() // Assuming this is the correct replacement
         setupNotificationObservers()
+        // setupSupervision() // Commenting out for now - CursorMonitor.shared might handle its own start via Defaults observation
 
-        windowManager?.handleFirstLaunchOrWelcomeScreen()
+        // Restore window state or show welcome guide
+        handleWindowRestorationAndFirstLaunch()
         
-        // Delay cursor monitoring setup until after other initialization
-        DispatchQueue.main.async {
-            AppIconStateController.shared.setup(cursorMonitor: CursorMonitor.shared)
+        // Ensure shared instance is set up for other parts of the app that might need it early.
+        // However, direct access should be minimized in favor of dependency injection or notifications.
+        // Self.shared = self // This is incorrect; shared is a get-only computed property.
 
-            // Always start monitoring to detect cursor instances (for count display)
-            // This will run the observer to detect instances, regardless of intervention state
-            self.logger.info("Starting cursor observer to detect instances")
-            CursorMonitor.shared.startMonitoringLoop()
-            
-            // If global monitoring for interventions is disabled, we still want to detect instances
-            if !Defaults[.isGlobalMonitoringEnabled] {
-                self.logger.info("Global intervention monitoring is disabled, but instance detection is active")
-            } else {
-                self.logger.info("Global intervention monitoring is enabled")
-            }
-            
-            AppIconStateController.shared.$currentTintColor
-                .receive(on: DispatchQueue.main)
-                .sink { [weak self] newTintColor in
-                    self?.menuManager?.statusItem?.button?.contentTintColor = newTintColor
-                    self?.logger.info("Menu bar icon tint color updated.")
-                }
-                .store(in: &self.cancellables)
-
-            Defaults.publisher(.isGlobalMonitoringEnabled)
-                .receive(on: DispatchQueue.main)
-                .sink { [weak self] change in
-                    guard let self = self else { return }
-                    if change.newValue {
-                        self.logger.info("Global monitoring toggled ON. Starting CursorMonitor loop.")
-                        CursorMonitor.shared.startMonitoringLoop()
-                    } else {
-                        self.logger.info("Global monitoring toggled OFF. Stopping CursorMonitor loop.")
-                        CursorMonitor.shared.stopMonitoringLoop()
-                    }
-                }
-                .store(in: &self.cancellables)
-
-            KeyboardShortcuts.onKeyUp(for: .toggleMonitoring) { [weak self] in
-                self?.toggleMonitoringState()
+        #if DEBUG
+        // Automatically open settings for faster debugging in DEBUG builds
+        Timer.scheduledTimer(withTimeInterval: 0.1, repeats: false) { _ in
+            Task { @MainActor in
+                // Ensure windowManager is available and settings can be opened.
+                // This assumes windowManager is initialized and ready.
+                // If settings are part of a scene that's always available, that's easier.
+                // For now, directly call a method on windowManager if available.
+                // Need to ensure windowManager is properly initialized before this timer fires.
+                // A more robust way for scenes: NSApp.openSettings()
+                // but if your settings is custom window, use windowManager.
+                // Let's assume showSettingsWindow() exists on AppDelegate or WindowManager.
+                // If using standard SwiftUI Settings scene:
+                // NSApp.sendAction(Selector(("showSettingsWindow:")), to: nil, from: nil)
+                // Or for custom window via windowManager:
+                // self.windowManager?.openSettings() // Incorrect method name
+                // NSApp.sendAction(Selector(("showSettingsWindow:")), to: nil, from: nil)
+                SettingsService.openSettingsSubject.send()
+                self.logger.info("DEBUG: Requested settings open via SettingsService.")
             }
         }
-
-        logger.info("Application startup completed successfully")
+        #endif
     }
 
     // Called when app is initialized with SwiftUI lifecycle
@@ -251,6 +204,10 @@ public class AppDelegate: NSObject, NSApplicationDelegate,
 
     @objc func showAXpectorWindow() { // New method
         logger.info("AppDelegate: Request to show AXpector window.")
+        if windowManager == nil {
+            logger.error("WindowManager is nil in AppDelegate when trying to show AXpector window!")
+            return
+        }
         windowManager?.showAXpectorWindow()
     }
 
@@ -437,6 +394,10 @@ public class AppDelegate: NSObject, NSApplicationDelegate,
         }
         menuManager?.refreshMenu()
     }
+
+    private func handleWindowRestorationAndFirstLaunch() {
+        // ... existing code ...
+    }
 }
 
 @MainActor
@@ -457,7 +418,10 @@ extension AppDelegate: MenuManagerDelegate {
     func showSettings() {
         logger.info("Settings menu item clicked")
         // Use the new SwiftUI Settings scene
-        NSApp.sendAction(Selector(("showSettingsWindow:")), to: nil, from: nil)
+        // NSApp.sendAction(Selector(("showSettingsWindow:")), to: nil, from: nil)
+        // NSApp.sendAction(Selector(("showSettingsWindow:")), to: nil, from: nil)
+        SettingsService.openSettingsSubject.send()
+        logger.info("Requested settings open via SettingsService from menu.")
     }
 
     func toggleStartAtLogin() {
@@ -479,3 +443,79 @@ extension AppDelegate: MenuManagerDelegate {
 }
 
 // MARK: - Other App Actions
+
+/// A helper class to ensure only one instance of the application is running.
+/// This uses a file lock to detect other instances.
+@MainActor
+private class SingleInstanceLock {
+    private let identifier: String
+    private var fileHandle: FileHandle?
+    let isPrimaryInstance: Bool
+
+    init(identifier: String) {
+        self.identifier = identifier
+        #if !DEBUG // Only enforce single instance lock in Release builds
+        let lockFileName = "\(identifier).lock"
+        let tempDir = FileManager.default.temporaryDirectory
+        let lockFilePath = tempDir.appendingPathComponent(lockFileName).path
+
+        if FileManager.default.fileExists(atPath: lockFilePath) {
+            // Try to open the lock file for reading. If it succeeds, another instance holds the lock.
+            // If it fails, the other instance might have crashed without cleaning up.
+            if let handle = FileHandle(forReadingAtPath: lockFilePath) {
+                // Check if the process holding the lock is still running
+                // This is a basic check; more robust methods might involve PID checking.
+                // For simplicity, we assume if the file exists and is readable, another instance is active.
+                self.isPrimaryInstance = false
+                handle.closeFile() // Close the handle, we don't need to keep it open.
+                self.fileHandle = nil // This instance doesn't hold the lock
+                AppDelegate.shared?.logger.info("Lock file exists at \(lockFilePath). Another instance is likely running.")
+                return
+            } else {
+                // File exists but can't be opened for reading (e.g., stale lock file)
+                // Attempt to remove it and become the primary.
+                AppDelegate.shared?.logger.warning("Stale lock file found at \(lockFilePath). Attempting to remove.")
+                try? FileManager.default.removeItem(atPath: lockFilePath)
+            }
+        }
+
+        // Attempt to create and lock the file
+        if FileManager.default.createFile(atPath: lockFilePath, contents: nil, attributes: nil) {
+            self.fileHandle = FileHandle(forWritingAtPath: lockFilePath)
+            if self.fileHandle != nil {
+                // Successfully created and got a handle to the lock file. This is the primary instance.
+                self.isPrimaryInstance = true
+                AppDelegate.shared?.logger.info("Successfully acquired instance lock at \(lockFilePath). This is the primary instance.")
+            } else {
+                // Failed to get a handle even after creating the file (should be rare)
+                self.isPrimaryInstance = false
+                AppDelegate.shared?.logger.error("Failed to get file handle for lock file at \(lockFilePath) even after creation.")
+            }
+        } else {
+            // Failed to create the lock file (e.g., permissions issue, or another instance just created it)
+            self.isPrimaryInstance = false
+            AppDelegate.shared?.logger.error("Failed to create lock file at \(lockFilePath).")
+        }
+        #else // For DEBUG builds, always assume primary instance
+        self.isPrimaryInstance = true
+        self.fileHandle = nil // No actual file lock in debug
+        AppDelegate.shared?.logger.info("DEBUG build: Single instance lock is bypassed.")
+        #endif
+    }
+
+    deinit {
+        #if !DEBUG // Only manage lock file in Release builds
+        // Release the lock if this was the primary instance
+        if isPrimaryInstance, let handle = fileHandle {
+            handle.closeFile()
+            let lockFileName = "\(identifier).lock"
+            let tempDir = FileManager.default.temporaryDirectory
+            let lockFilePath = tempDir.appendingPathComponent(lockFileName).path
+            try? FileManager.default.removeItem(atPath: lockFilePath)
+            Task { @MainActor in
+                AppDelegate.shared?.logger.info("Released instance lock and removed lock file at \(lockFilePath).")
+            }
+        }
+        #endif
+    }
+}

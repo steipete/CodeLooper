@@ -431,7 +431,7 @@ public class CursorMonitor: ObservableObject {
             return
         }
 
-        logger.debug("Attempting to fetch windows for PID \(appInfo.pid) using element: \(appElement.briefDescription() ?? "Invalid App Element")")
+        logger.debug("Attempting to fetch windows for PID \(appInfo.pid) using element: \(appElement.briefDescription())")
         guard let windowElements: [Element] = appElement.windows() else {
             logger.info("Application PID \(appInfo.pid) has no windows or failed to fetch (appElement.windows() returned nil).")
             appInfo.windows = []

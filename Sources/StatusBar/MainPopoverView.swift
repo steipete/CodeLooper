@@ -78,6 +78,7 @@ struct MainPopoverView: View {
                 SettingsLink {
                     Text("Open Settings")
                 }
+                .tint(.accentColor)
                 .onReceive(NotificationCenter.default.publisher(for: NSWindow.willCloseNotification)) { notification in
                     // Optional: Add logic if something needs to happen when the settings window closes
                     // For example, re-focusing the app or specific clean-up.

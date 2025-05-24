@@ -335,14 +335,22 @@ final class MenuManager {
 
     private func updateButtonTintColor() {
         guard let button = statusItem?.button else { return }
+
+        let desiredTintColor = AppIconStateController.shared.currentTintColor
         
         if isGlobalMonitoringEnabled {
-            button.contentTintColor = AppIconStateController.shared.currentTintColor
-            logger.info("Monitoring ON: Applied active tint color: \(String(describing: button.contentTintColor))")
+            if let specificColor = desiredTintColor {
+                button.contentTintColor = specificColor
+            } else {
+                // If desiredTintColor is nil (e.g., for .black state),
+                // set contentTintColor to nil to let the template image work.
+                button.contentTintColor = nil
+            }
         } else {
-            button.contentTintColor = .secondaryLabelColor // Grey out when monitoring is OFF
-            logger.info("Monitoring OFF: Applied grey tint color.")
+            // Monitoring disabled: use a less prominent color
+            button.contentTintColor = NSColor.gray.withAlphaComponent(0.7)
         }
+        logger.info("Updated button tint color. Monitoring enabled: \(isGlobalMonitoringEnabled), Desired Tint: \(String(describing: desiredTintColor)), Actual Tint: \(String(describing: button.contentTintColor))")
     }
 }
 
