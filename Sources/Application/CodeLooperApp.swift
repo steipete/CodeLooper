@@ -7,31 +7,30 @@ import Logging
 
 @main
 struct CodeLooperApp: App {
-    // Use the App Delegate for lifecycle events and managing non-SwiftUI parts
-    @NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
-    private let appLifecycleManager = CursorMonitor.shared.appLifecycleManager
-    private let initialLogger = Logger(category: .app)
+    // MARK: - Properties
 
-    // Initialize SessionLogger first since it's an actor
+    // Use @NSApplicationDelegateAdaptor to connect AppDelegate
+    @NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
+    @Environment(\.scenePhase) private var scenePhase
+
+    // Access the shared instance of CursorMonitor
+    @StateObject private var cursorMonitor = CursorMonitor.shared
     @StateObject private var sessionLogger = SessionLogger.shared
 
+    // Logger for CodeLooperApp
+    private let logger = Logger(category: .app)
+
+    // MARK: - Initialization
+
     init() {
-        // Configure and bootstrap the logging system as early as possible.
-        // Use a temporary logger for this initial setup phase if needed.
-        // Bootstrap for console
+        // Perform one-time setup for the logging system.
         Diagnostics.Logger.bootstrap(destination: .console, minLevel: .debug)
-        // Bootstrap for osLog as well, if desired (swift-log can have multiple handlers,
-        // but this bootstrap function sets one system-wide handler at a time)
-        // To have both, LoggingSystem.bootstrap would need to be called with a MultiplexLogHandler
-        // that includes both. The current Logger.bootstrap replaces the handler.
-        // For now, let's assume console is the primary one for this explicit call.
-        // If osLog is desired by default, the Logger.ensureBootstrap does set .osLog.
-        
-        // You can add a log message here to confirm bootstrapping
-        // Note: The initialLogger uses Diagnostics.Logger, which itself ensures bootstrapping.
-        // So, the explicit bootstrap above might be for specific early setup if default isn't desired.
-        let initialLogger = Logger(category: .app) // This Logger is from Diagnostics
-        initialLogger.info("CodeLooperApp initialized and logger bootstrapped via explicit call (or ensureBootstrap).")
+        // If osLog is also desired:
+        // Diagnostics.Logger.bootstrap(destination: .osLog, minLevel: .debug)
+        // Note: swift-log's LoggingSystem.bootstrap typically replaces the handler factory.
+        // To use multiple handlers, MultiplexLogHandler should be configured within LoggingSystemSetup.
+
+        logger.info("CodeLooperApp initialized. ScenePhase: \(scenePhase)")
     }
 
     var body: some Scene {

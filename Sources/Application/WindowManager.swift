@@ -6,6 +6,7 @@ import Defaults
 import Diagnostics
 import Foundation
 import SwiftUI
+import AXpector
 
 @MainActor
 protocol WindowManagerDelegate: AnyObject {
@@ -21,6 +22,7 @@ class WindowManager: ObservableObject {
 
     private var settingsWindow: NSWindow?
     private var welcomeWindow: NSWindow?
+    private var axpectorWindowController: NSWindowController? // For AXpector
     var mainSettingsCoordinator: MainSettingsCoordinator? // Keep if used by other parts
 
     // Debouncer for window resize events (if still needed, otherwise remove)
@@ -45,8 +47,9 @@ class WindowManager: ObservableObject {
         
         logger.info("WindowManager initialized.")
         setupDebugMenuObserver()
-        // Initial check for accessibility
-        checkAndPromptForAccessibilityPermissions()
+        // Initial check for accessibility - DO NOT PROMPT HERE.
+        // Prompting should only happen on user action from Welcome/Settings.
+        checkAndPromptForAccessibilityPermissions(showPromptIfNeeded: false)
     }
 
     private func setupDebugMenuObserver() {
@@ -112,6 +115,28 @@ class WindowManager: ObservableObject {
         welcomeWindowController?.window?.makeKeyAndOrderFront(nil)
     }
     
+    @objc func showAXpectorWindow() {
+        logger.info("Showing AXpector Window.")
+        if axpectorWindowController == nil {
+            // Assuming AXpectorView is the main view from the AXpector module
+            let axpectorView = AXpectorView() 
+            let window = NSWindow(
+                contentRect: NSRect(x: 0, y: 0, width: 800, height: 600), // Adjust size as needed
+                styleMask: [.titled, .closable, .resizable, .miniaturizable],
+                backing: .buffered,
+                defer: false
+            )
+            window.center()
+            window.title = "AXpector - Accessibility Inspector"
+            window.isReleasedWhenClosed = false
+            window.contentView = NSHostingView(rootView: axpectorView)
+            axpectorWindowController = NSWindowController(window: window)
+        }
+        axpectorWindowController?.showWindow(nil)
+        NSApp.activate(ignoringOtherApps: true)
+        axpectorWindowController?.window?.makeKeyAndOrderFront(nil)
+    }
+
     // MARK: - Accessibility (Consolidated)
 
     /// Checks accessibility permissions and prompts the user if needed.
@@ -119,19 +144,17 @@ class WindowManager: ObservableObject {
         logger.info("Checking accessibility permissions...")
         
         do {
-            // Use the global AXorcist function
-            try checkAccessibilityPermissions()
+            // Use the global AXorcist function, passing down the promptIfNeeded parameter
+            try checkAccessibilityPermissions(promptIfNeeded: showPromptIfNeeded)
             logger.info("Accessibility permissions already granted.")
             sessionLogger.log(level: .info, message: "Accessibility permissions granted.")
         } catch let error as AccessibilityError {
             if case .notAuthorized = error, showPromptIfNeeded {
-                logger.warning("Accessibility permissions not granted. Triggering system prompt. Error: \(error.localizedDescription)")
-                sessionLogger.log(level: .warning, message: "Accessibility permissions not granted, triggering system prompt. Error: \(error.localizedDescription)")
+                logger.warning("Accessibility permissions not granted. System prompt should have been triggered by AXorcist.Error: \(error.localizedDescription)")
+                sessionLogger.log(level: .warning, message: "Accessibility permissions not granted, system prompt should have occurred. Error: \(error.localizedDescription)")
                 
-                Task { @MainActor in
-                    await triggerAccessibilityPromptViaAPI()
-                }
-                // Fallback: also open System Settings page
+                // The prompt is handled by AXorcist.checkAccessibilityPermissions when promptIfNeeded is true.
+                // We just open settings as a fallback or for user to confirm.
                 openAccessibilitySystemSettings()
             } else {
                 logger.error("Error checking accessibility permissions: \(error.localizedDescription)")
@@ -150,25 +173,6 @@ class WindowManager: ObservableObject {
             }
         }
     }
-    
-    /// Triggers the accessibility prompt by making an actual accessibility API call.
-    @MainActor
-    private func triggerAccessibilityPromptViaAPI() async {
-        logger.info("Attempting to trigger accessibility prompt via AX API call...")
-        let kAXTrustedCheckOptionPromptKey = "AXTrustedCheckOptionPrompt" // as CFString
-        let options = [kAXTrustedCheckOptionPromptKey as CFString: true as CFBoolean] as CFDictionary
-        
-        // This call should trigger the prompt if permissions are not already granted.
-        let isGranted = AXIsProcessTrustedWithOptions(options)
-        
-        if isGranted {
-            logger.info("Accessibility permissions appear granted after prompt trigger.")
-            sessionLogger.log(level: .info, message: "Accessibility permissions granted after prompt trigger.")
-        } else {
-            logger.info("Accessibility prompt displayed or API call made. User action may be required in System Settings.")
-            sessionLogger.log(level: .info, message: "Accessibility prompt displayed or API call made.")
-        }
-    }
 
     private func openAccessibilitySystemSettings() {
         if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility") {
@@ -181,15 +185,25 @@ class WindowManager: ObservableObject {
         AlertPresenter.shared.showAlert(title: title, message: message, style: style)
     }
 
+    // MARK: - Public Interface for UI Actions
+
+    /// Called when the user explicitly clicks a "Grant Permissions" button.
+    public func userInitiatedAccessibilityPrompt() {
+        logger.info("User initiated accessibility prompt.")
+        checkAndPromptForAccessibilityPermissions(showPromptIfNeeded: true)
+    }
+
     // MARK: - First Launch Logic
     func handleFirstLaunchOrWelcomeScreen() {
         logger.info("Checking if welcome guide should be shown.")
         if !Defaults[.hasShownWelcomeGuide] {
             logger.info("Welcome guide has not been shown. Displaying now.")
             showWelcomeWindow()
+            // Do not prompt for accessibility here. The WelcomeView should have a button that calls userInitiatedAccessibilityPrompt.
         } else {
-            logger.info("Welcome guide already shown. Ensuring accessibility permissions are checked.")
-            // No direct delegate call here, checkAndPromptForAccessibilityPermissions is called in init
+            logger.info("Welcome guide already shown. Ensuring accessibility permissions are checked (silently).")
+            // This silent check is fine to update internal state or log.
+            checkAndPromptForAccessibilityPermissions(showPromptIfNeeded: false)
         }
     }
     

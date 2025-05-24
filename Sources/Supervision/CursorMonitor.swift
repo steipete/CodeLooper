@@ -28,14 +28,14 @@ public class CursorMonitor: ObservableObject {
     // This will be the single instance shared across the app.
     public static let shared = CursorMonitor(
         axorcist: AXorcist(), 
-        sessionLogger: SessionLogger.shared, 
+        sessionLogger: SessionLogger.shared,
         locatorManager: LocatorManager.shared,
         instanceStateManager: CursorInstanceStateManager(sessionLogger: SessionLogger.shared)
     )
 
     public let axorcist: AXorcist
     @Published public var instanceInfo: [pid_t: CursorInstanceInfo] = [:]
-    @Published public var monitoredInstances: [MonitoredInstanceInfo] = []
+    @Published public var monitoredApps: [MonitoredAppInfo] = []
     
     // totalAutomaticInterventionsThisSession is now managed by instanceStateManager
     // but we still need a @Published property here to update the UI.
@@ -51,14 +51,34 @@ public class CursorMonitor: ObservableObject {
     var isMonitoringActive: Bool = false // Changed from private to internal (default)
     public var isMonitoringActivePublic: Bool { isMonitoringActive } // For CursorAppLifecycleManager
 
-    // private var manuallyPausedPIDs: Set<pid_t> = [:]
-    // private var automaticInterventionsSincePositiveActivity: [pid_t: Int] = [:]
-    // @Published public var totalAutomaticInterventionsThisSession: Int = 0 -> Replaced with totalAutomaticInterventionsThisSessionDisplay
-    // private var connectionIssueResumeButtonClicks: [pid_t: Int] = [:]
-    // private var consecutiveRecoveryFailures: [pid_t: Int] = [:]
-    // private var lastKnownSidebarStateHash: [pid_t: Int?] = [:]
-    // private var lastActivityTimestamp: [pid_t: Date] = [:]
-    // private var pendingObservationForPID: [pid_t: (startTime: Date, initialInterventionCountWhenObservationStarted: Int)] = [:]
+#if DEBUG
+    public static var sharedForPreview: CursorMonitor = {
+        let previewMonitor = CursorMonitor(
+            axorcist: AXorcist(), // Assuming AXorcist can be init'd simply
+            sessionLogger: SessionLogger.shared, // Or a mock/preview version if available
+            locatorManager: LocatorManager.shared, // Or mock
+            instanceStateManager: CursorInstanceStateManager(sessionLogger: SessionLogger.shared) // Or mock
+        )
+        // Configure previewMonitor with some mock data
+        let appPID = pid_t(12345)
+        let mockApp = MonitoredAppInfo(
+            id: appPID,
+            pid: appPID,
+            displayName: "Cursor (Preview)",
+            status: .active, // Use a valid status
+            isActivelyMonitored: true,
+            interventionCount: 2,
+            windows: [
+                MonitoredWindowInfo(id: "w1", windowTitle: "Document Preview.txt", axElement: nil, isPaused: false),
+                MonitoredWindowInfo(id: "w2", windowTitle: "Settings Preview", axElement: nil, isPaused: true)
+            ]
+        )
+        previewMonitor.monitoredApps = [mockApp]
+        previewMonitor.totalAutomaticInterventionsThisSessionDisplay = 5
+        // previewMonitor.isMonitoringActive = true // isMonitoringActive is internal
+        return previewMonitor
+    }()
+#endif
 
     // Public initializer allowing AXorcist injection
     public init(axorcist: AXorcist, sessionLogger: SessionLogger, locatorManager: LocatorManager, instanceStateManager: CursorInstanceStateManager) {
@@ -70,29 +90,35 @@ public class CursorMonitor: ObservableObject {
         // Initialize interventionEngine
         self.interventionEngine = CursorInterventionEngine(
             monitor: self, 
-            axorcist: self.axorcist, // Pass the instance's axorcist
+            axorcist: self.axorcist,
             sessionLogger: self.sessionLogger, 
             locatorManager: self.locatorManager, 
             instanceStateManager: self.instanceStateManager
         )
 
         self.logger.info("CursorMonitor initialized with all components.")
-        Task {
-            await self.sessionLogger.log(level: .info, message: "CursorMonitor initialized with all components.")
+        self.sessionLogger.log(level: .info, message: "CursorMonitor initialized with all components.")
+        
+        // Initial setup based on current state of AppLifecycleManager
+        self.monitoredApps = appLifecycleManager.monitoredApps.map { appInfo in
+            let newAppInfo = appInfo
+            return newAppInfo
         }
-        
-        // Use sink instead of assign to avoid immediate updates during initialization
-        appLifecycleManager.$instanceInfo
+
+        // Subscribe to updates from AppLifecycleManager on its primary published list
+        appLifecycleManager.$monitoredApps
             .receive(on: DispatchQueue.main)
-            .sink { [weak self] newInstanceInfo in
-                self?.instanceInfo = newInstanceInfo
-            }
-            .store(in: &cancellables)
-        
-        appLifecycleManager.$monitoredInstances
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] newMonitoredInstances in
-                self?.monitoredInstances = newMonitoredInstances
+            .sink { [weak self] newAppsFromManager in
+                guard let self = self else { return }
+                self.monitoredApps = newAppsFromManager.map { appInfo in
+                    if let existingApp = self.monitoredApps.first(where: { $0.pid == appInfo.pid }) {
+                        var updatedApp = appInfo
+                        updatedApp.windows = existingApp.windows
+                        return updatedApp
+                    } else {
+                        return appInfo
+                    }
+                }
             }
             .store(in: &cancellables)
 
@@ -105,6 +131,31 @@ public class CursorMonitor: ObservableObject {
             .store(in: &cancellables)
 
         appLifecycleManager.initializeSystemHooks()
+
+        // Subscribe to updates from AppLifecycleManager
+        appLifecycleManager.$monitoredApps
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] newAppsFromManager in
+                guard let self = self else { return }
+                // Reconcile newAppsFromManager with self.monitoredApps
+                // This might involve adding, removing, or updating existing app entries.
+                // For now, a simple replacement, but a more sophisticated merge might be needed
+                // if CursorMonitor adds its own state to MonitoredAppInfo that isn't from AppLifecycleManager.
+                self.monitoredApps = newAppsFromManager.map { appInfo in
+                    // If we need to preserve window list or other state through this update:
+                    if let existingApp = self.monitoredApps.first(where: { $0.pid == appInfo.pid }) {
+                        var updatedApp = appInfo
+                        updatedApp.windows = existingApp.windows // Preserve existing windows for now
+                        // Potentially copy over other CursorMonitor-specific states if any
+                        return updatedApp
+                    } else {
+                        return appInfo // New app
+                    }
+                }
+                // Potentially trigger an immediate window scan for new apps if required here.
+                // For example, if an app was just added, call `updateWindows` for it.
+            }
+            .store(in: &cancellables)
     }
 
     deinit {
@@ -118,12 +169,12 @@ public class CursorMonitor: ObservableObject {
     }
 
     public func didLaunchInstance(pid: pid_t) {
-        logger.info("Instance PID \\(pid) launched, initializing states via instanceStateManager.")
+        logger.info("Instance PID \(pid) launched, initializing states via instanceStateManager.")
         instanceStateManager.initializeState(for: pid)
     }
 
     public func didTerminateInstance(pid: pid_t) {
-        logger.info("Instance PID \\(pid) terminated, cleaning up states via instanceStateManager.")
+        logger.info("Instance PID \(pid) terminated, cleaning up states via instanceStateManager.")
         instanceStateManager.cleanupState(for: pid)
     }
     
@@ -136,41 +187,43 @@ public class CursorMonitor: ObservableObject {
             logger.info("Monitoring loop already active.")
             return
         }
-        guard !monitoredInstances.isEmpty else {
+        guard !monitoredApps.isEmpty else {
             logger.info("No Cursor instances to monitor. Loop not started.")
             return
         }
 
         isMonitoringActive = true
-        logger.info("Starting monitoring loop with interval \\(Defaults[.monitoringIntervalSeconds])s.")
-        Task {
-             await sessionLogger.log(level: .info, message: "Monitoring loop started with interval \\(Defaults[.monitoringIntervalSeconds])s.")
-        }
+        logger.info("Starting monitoring loop with interval \(Defaults[.monitoringIntervalSeconds])s.")
+        sessionLogger.log(level: .info, message: "Monitoring loop started with interval \(Defaults[.monitoringIntervalSeconds])s.")
 
         monitoringTask = Task { [weak self] in
             while let self = self, self.isMonitoringActive, !Task.isCancelled {
-                if self.monitoredInstances.isEmpty {
+                if self.monitoredApps.isEmpty {
                     self.logger.info("No active Cursor instances. Stopping monitoring loop from within.")
-                    await self.sessionLogger.log(level: .info, message: "No active Cursor instances. Monitoring loop will stop.")
+                    self.sessionLogger.log(level: .info, message: "No active Cursor instances. Monitoring loop will stop.")
                     await MainActor.run { self.stopMonitoringLoop() }
                     break 
                 }
-                await self.performMonitoringTick()
+                await self.performMonitoringCycle()
                 do {
                     try await Task.sleep(for: .seconds(Defaults[.monitoringIntervalSeconds]))
                 } catch {
                     if error is CancellationError {
                         self.logger.info("Monitoring loop sleep cancelled.")
-                        await self.sessionLogger.log(level: .info, message: "Monitoring loop sleep cancelled.")
+                        self.sessionLogger.log(level: .info, message: "Monitoring loop sleep cancelled.")
                         break
                     } else {
-                        self.logger.error("Monitoring loop sleep failed: \\(error.localizedDescription)")
-                        await self.sessionLogger.log(level: .error, message: "Monitoring loop sleep failed: \\(error.localizedDescription)")
+                        self.logger.error("Monitoring loop sleep failed: \(error.localizedDescription)")
+                        self.sessionLogger.log(level: .error, message: "Monitoring loop sleep failed: \(error.localizedDescription)")
                     }
                 }
             }
-            self?.logger.info("Monitoring loop finished.")
-            Task { await self?.sessionLogger.log(level: .info, message: "Monitoring loop finished.") }
+            if let strongSelf = self {
+                strongSelf.logger.info("Monitoring loop finished.")
+                strongSelf.sessionLogger.log(level: .info, message: "Monitoring loop finished.")
+            } else {
+                Diagnostics.Logger(category: .supervision).info("Monitoring loop finished, but CursorMonitor instance was deallocated.")
+            }
         }
     }
 
@@ -182,100 +235,39 @@ public class CursorMonitor: ObservableObject {
         monitoringTask?.cancel()
         monitoringTask = nil
         logger.info("Monitoring loop stopped.")
-        Task {
-            await sessionLogger.log(level: .info, message: "Monitoring loop stopped.")
-        }
+        sessionLogger.log(level: .info, message: "Monitoring loop stopped.")
     }
 
-    private func performMonitoringTick() async {
-        logger.debug("Performing monitoring tick for \\(appLifecycleManager.instanceInfo.count) instance(s).")
-        guard !appLifecycleManager.instanceInfo.isEmpty else {
-            logger.debug("No instances to monitor in tick.")
+    private func performMonitoringCycle() async {
+        guard !monitoredApps.isEmpty else {
+            logger.info("No monitored apps, skipping monitoring cycle.")
             return
         }
 
-        let pidsToProcess = Array(appLifecycleManager.instanceInfo.keys)
-        
-        for pid in pidsToProcess {
-            guard let currentInfo = appLifecycleManager.instanceInfo[pid] else {
-                logger.warning("PID \(pid) was in pidsToProcess but not found in instanceInfo. Skipping.")
-                continue
-            }
+        logger.info("Performing monitoring cycle for \(monitoredApps.count) app(s).")
+
+        // First, update window information for all monitored apps
+        await processMonitoredApps() // This updates the .windows property of each app in monitoredApps
+
+        // Existing intervention logic would go here, iterating through apps and their windows
+        for appInfo in monitoredApps {
+            // If you need to operate on windows, iterate appInfo.windows
+            logger.debug("Processing app: \(appInfo.displayName) (PID: \(appInfo.pid)) with \(appInfo.windows.count) windows.")
             
-            guard let runningApp = NSRunningApplication(processIdentifier: pid), !runningApp.isTerminated else {
-                logger.info("Instance PID \(pid) found terminated during tick, processing removal.")
-                // This logic should ideally be centralized in appLifecycleManager or a dedicated handler
-                // For now, keep it here but flag for potential future refactor if not already handled by appLifecycleManager's observation.
-                if let appInstance = NSRunningApplication(processIdentifier: pid) { // Re-fetch in case it was found terminated just now
-                    await MainActor.run {
-                        self.appLifecycleManager.handleCursorTermination(appInstance)
-                    }
-                } else { // If NSRunningApplication can't find it, it means it's truly gone
-                    self.didTerminateInstance(pid: pid) // Ensure state is cleaned up in instanceStateManager
-                    await MainActor.run {
-                        self.appLifecycleManager.instanceInfo.removeValue(forKey: pid)
-                        self.appLifecycleManager.monitoredInstances.removeAll { $0.pid == pid }
-                    }
-                }
-                continue
+            // Example: If intervention logic is per-app based on aggregated window states or app-level checks
+            // let currentStatus = instanceStateManager.getStatus(for: appInfo.pid)
+            // ... decision logic ...
+
+            // If intervention logic is per-window:
+            for windowInfo in appInfo.windows {
+                logger.debug("  Window: \(windowInfo.windowTitle ?? "N/A")")
+                // ... intervention logic for this specific window ...
+                // This might involve using instanceStateManager with a window-specific ID if needed
             }
-
-            // Check if manually paused before diving into the use case which might do AX queries
-            if instanceStateManager.isManuallyPaused(pid: pid) {
-                logger.debug("PID \(pid) is manually paused. Skipping deep check in this tick.")
-                // Ensure UI reflects this state accurately if not already set
-                if var infoToUpdate = appLifecycleManager.instanceInfo[pid] {
-                    if infoToUpdate.status != .paused {
-                        infoToUpdate.status = .paused
-                        infoToUpdate.statusMessage = "Monitoring Paused (Manual)"
-                        await MainActor.run {
-                            self.appLifecycleManager.instanceInfo[pid] = infoToUpdate
-                            let displayStatus = self.mapCursorStatusToDisplayStatus(infoToUpdate.status)
-                            self.updateInstanceDisplayInfo(for: pid, newStatus: displayStatus, interventionCount: self.instanceStateManager.getAutomaticInterventions(for: pid))
-                        }
-                    }
-                }
-                continue // Skip to next PID
-            }
-
-            let useCase = ProcessMonitoringTickUseCase(
-                pid: pid,
-                currentInfo: currentInfo,
-                runningApp: runningApp,
-                axorcist: self.axorcist,
-                sessionLogger: self.sessionLogger,
-                locatorManager: self.locatorManager,
-                instanceStateManager: self.instanceStateManager,
-                interventionEngine: self.interventionEngine,
-                parentLogger: self.logger // Pass CursorMonitor's logger as parent
-            )
-
-            // All calls to interventionEngine methods are within useCase.execute(), which is async.
-            // The execute() method itself is async, so the 'await' here covers those calls implicitly.
-            let (newStatus, newStatusMessage, shouldStopProcessingPID) = await useCase.execute()
-
-            if var infoToUpdate = appLifecycleManager.instanceInfo[pid] {
-                infoToUpdate.status = newStatus
-                infoToUpdate.statusMessage = newStatusMessage
-                await MainActor.run {
-                    self.appLifecycleManager.instanceInfo[pid] = infoToUpdate // Update the source of truth
-
-                    let displayStatus = self.mapCursorStatusToDisplayStatus(newStatus)
-                    self.updateInstanceDisplayInfo(for: pid, newStatus: displayStatus, interventionCount: self.instanceStateManager.getAutomaticInterventions(for: pid))
-                }
-            } else {
-                logger.info("PID \(pid) no longer in instanceInfo after use case execution (likely terminated). Skipping UI update for it.")
-            }
-
-            if shouldStopProcessingPID {
-                // This means the use case determined no further action is needed for this PID in this tick
-                // (e.g., manually paused, unrecoverable, or intervention limit reached and handled within useCase)
-                logger.debug("PID \(pid): Processing stopped for this tick based on use case result.")
-                continue
-            }
-
-        } // end for pid in pidsToProcess
-        logger.debug("Finished monitoring tick.")
+        }
+        
+        // Update total intervention count for display
+        self.totalAutomaticInterventionsThisSessionDisplay = instanceStateManager.getTotalAutomaticInterventionsThisSession()
     }
 
     private func getPrimaryDisplayableText(axElement: AXElement?) -> String {
@@ -316,11 +308,11 @@ public class CursorMonitor: ObservableObject {
 
     public func resumeInterventions(for pid: pid_t) async {
         guard var info = instanceInfo[pid] else {
-            logger.warning("Attempted to resume interventions for unknown PID: \\(pid)")
+            logger.warning("Attempted to resume interventions for unknown PID: \(pid)")
             return
         }
-        logger.info("Resuming interventions for PID: \\(pid)")
-        await sessionLogger.log(level: .info, message: "User resumed interventions for PID \\(pid).", pid: pid)
+        logger.info("Resuming interventions for PID: \(pid)")
+        sessionLogger.log(level: .info, message: "User resumed interventions for PID \(pid).", pid: pid)
         
         instanceStateManager.initializeState(for: pid) // This resets all relevant counters and states
         info.status = .idle 
@@ -368,7 +360,7 @@ public class CursorMonitor: ObservableObject {
     }
     
     public func pauseMonitoring(for pid: pid_t) {
-        logger.info("Manually pausing monitoring for PID: \\(pid)")
+        logger.info("Manually pausing monitoring for PID: \(pid)")
         instanceStateManager.setManuallyPaused(pid: pid, paused: true)
         Task { @MainActor in
             self.updateInstanceDisplayInfo(for: pid, newStatus: .pausedManually, isActive: false)
@@ -376,7 +368,7 @@ public class CursorMonitor: ObservableObject {
     }
     
     public func resumeMonitoring(for pid: pid_t) {
-        logger.info("Manually resuming monitoring for PID: \\(pid)")
+        logger.info("Manually resuming monitoring for PID: \(pid)")
         instanceStateManager.setManuallyPaused(pid: pid, paused: false)
         instanceStateManager.setLastActivityTimestamp(for: pid, date: Date()) // Treat resume as activity
         Task { @MainActor in
@@ -392,12 +384,12 @@ public class CursorMonitor: ObservableObject {
         isActive: Bool? = nil,
         interventionCount: Int? = nil
     ) {
-        guard let index = monitoredInstances.firstIndex(where: { $0.pid == pid }) else {
-            logger.warning("Attempted to update display info for unknown PID: \\(pid)")
+        guard let index = monitoredApps.firstIndex(where: { $0.pid == pid }) else {
+            logger.warning("Attempted to update display info for unknown PID: \(pid)")
             return
         }
         
-        var updatedInfo = monitoredInstances[index]
+        var updatedInfo = monitoredApps[index]
         updatedInfo.status = newStatus
         
         if let isActive = isActive {
@@ -408,7 +400,7 @@ public class CursorMonitor: ObservableObject {
             updatedInfo.interventionCount = interventionCount
         }
         
-        monitoredInstances[index] = updatedInfo
+        monitoredApps[index] = updatedInfo
     }
     
     public func mapCursorStatusToDisplayStatus(_ status: CursorInstanceStatus) -> DisplayStatus {
@@ -429,5 +421,68 @@ public class CursorMonitor: ObservableObject {
     @MainActor
     public func updateInstanceDisplayInfo(for pid: pid_t, newStatus: DisplayStatus, interventionCount: Int) {
         // ... existing code ...
+    }
+
+    // Method to fetch and update window list for a given app PID
+    private func updateWindows(for appInfo: inout MonitoredAppInfo) async {
+        guard let appElement = applicationElement(forProcessID: appInfo.pid) else {
+            logger.warning("Could not get application element for PID \(appInfo.pid) to fetch windows.")
+            appInfo.windows = []
+            return
+        }
+
+        logger.debug("Attempting to fetch windows for PID \(appInfo.pid) using element: \(appElement.briefDescription() ?? "Invalid App Element")")
+        guard let windowElements: [Element] = appElement.windows() else {
+            logger.info("Application PID \(appInfo.pid) has no windows or failed to fetch (appElement.windows() returned nil).")
+            appInfo.windows = []
+            return
+        }
+        
+        logger.info("Fetched \(windowElements.count) raw window elements for PID \(appInfo.pid).")
+
+        var newWindowInfos: [MonitoredWindowInfo] = []
+        for (index, windowElement) in windowElements.enumerated() {
+            let title: String? = windowElement.title()
+            // Using a stable ID if possible, otherwise index. AXUIElement itself isn't directly hashable/identifiable for SwiftUI Identifiable easily.
+            // A proper unique ID might involve hashing element properties or using its accessibility identifier if available.
+            // For now, using index within the current fetch combined with PID as a temporary unique key if no title.
+            let windowId = "\(appInfo.pid)-window-\(title ?? "untitled")-\(index)" 
+            newWindowInfos.append(MonitoredWindowInfo(id: windowId, windowTitle: title, axElement: windowElement, isPaused: false)) // Pass AX element and default isPaused
+        }
+        appInfo.windows = newWindowInfos
+        logger.info("Updated \(newWindowInfos.count) windows for PID \(appInfo.pid). Titles: \(newWindowInfos.map { $0.windowTitle ?? "N/A" })")
+    }
+
+    // In your main monitoring loop or when an app is detected:
+    private func processMonitoredApps() async {
+        var newMonitoredApps = self.monitoredApps // Create a mutable copy
+        for i in newMonitoredApps.indices {
+            await updateWindows(for: &newMonitoredApps[i]) // Pass element of the copy
+        }
+        self.monitoredApps = newMonitoredApps // Reassign to publish changes
+    }
+
+    // Placeholder for per-window pause/resume
+    public func pauseMonitoring(for windowId: String, in pid: pid_t) {
+        guard let appIndex = monitoredApps.firstIndex(where: { $0.pid == pid }),
+              let windowIndex = monitoredApps[appIndex].windows.firstIndex(where: { $0.id == windowId }) else {
+            logger.warning("Window ID \(windowId) in PID \(pid) not found for pausing.")
+            return
+        }
+        monitoredApps[appIndex].windows[windowIndex].isPaused = true
+        logger.info("Paused monitoring for window ID \(windowId) in PID \(pid)")
+        // Potentially need to trigger objectWillChange if monitoredApps doesn't auto-publish nested changes deeply.
+        objectWillChange.send()
+    }
+
+    public func resumeMonitoring(for windowId: String, in pid: pid_t) {
+        guard let appIndex = monitoredApps.firstIndex(where: { $0.pid == pid }),
+              let windowIndex = monitoredApps[appIndex].windows.firstIndex(where: { $0.id == windowId }) else {
+            logger.warning("Window ID \(windowId) in PID \(pid) not found for resuming.")
+            return
+        }
+        monitoredApps[appIndex].windows[windowIndex].isPaused = false
+        logger.info("Resumed monitoring for window ID \(windowId) in PID \(pid)")
+        objectWillChange.send()
     }
 }

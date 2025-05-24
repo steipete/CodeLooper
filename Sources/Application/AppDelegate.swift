@@ -60,6 +60,32 @@ public class AppDelegate: NSObject, NSApplicationDelegate,
     public func applicationDidFinishLaunching(_: Notification) {
         logger.info("Application starting up - logs are now stored in Application Support/CodeLooper/Logs")
 
+        // --- SINGLE INSTANCE CHECK ---
+        let bundleID = Bundle.main.bundleIdentifier!
+        let runningApps = NSRunningApplication.runningApplications(withBundleIdentifier: bundleID)
+
+        if runningApps.count > 1 {
+            logger.warning("Multiple instances of CodeLooper detected (\(runningApps.count)). Activating first instance and showing settings.")
+            if let firstInstance = runningApps.first(where: { $0 != .current }) {
+                firstInstance.activate(options: [.activateAllWindows, .activateIgnoringOtherApps])
+                // Attempt to show settings on the other instance.
+                // This is tricky. A common way is via a custom URL scheme or distributed notifications.
+                // For now, we'll just activate it. If that instance is well-behaved, it might already have settings open
+                // or the user can open them. We'll try to send the action, though it might not work across processes directly.
+                // A more robust solution involves inter-process communication.
+                logger.info("Attempting to request settings window on first instance PID: \(firstInstance.processIdentifier)")
+                // This will show settings on the CURRENT app if the other app doesn't handle it.
+                // A proper IPC mechanism is needed for true remote control.
+                // For now, focus the other app and terminate this one.
+                NSApp.terminate(nil) // Terminate the current (duplicate) instance
+                return // Don't continue launching this instance
+            } else {
+                // This case (count > 1 but no *other* instance) shouldn't happen but log it.
+                logger.error("Running apps count is \(runningApps.count), but couldn't find an *other* instance to activate.")
+            }
+        }
+        // --- END SINGLE INSTANCE CHECK ---
+
         setupExceptionHandling()
 
         logger.info("Initializing core services")
@@ -219,6 +245,11 @@ public class AppDelegate: NSObject, NSApplicationDelegate,
 
     // @objc func showAboutWindow() { ... } // Moved to WindowManager
 
+    @objc func showAXpectorWindow() { // New method
+        logger.info("AppDelegate: Request to show AXpector window.")
+        windowManager?.showAXpectorWindow()
+    }
+
     // MARK: - App Initialization Methods
 
     private func setupExceptionHandling() {
@@ -303,9 +334,8 @@ public class AppDelegate: NSObject, NSApplicationDelegate,
 
         let menuBarObserver = setupMenuBarVisibilityObserver()
         let highlightMenuBarObserver = setupHighlightMenuBarObserver()
-        let settingsObserver = setupSettingsWindowObserver()
 
-        notificationObservers.append(contentsOf: [menuBarObserver, highlightMenuBarObserver, settingsObserver])
+        notificationObservers.append(contentsOf: [menuBarObserver, highlightMenuBarObserver])
 
         logger.info("Application startup completed successfully")
     }
@@ -339,30 +369,6 @@ public class AppDelegate: NSObject, NSApplicationDelegate,
             }
         }
     }
-
-    private func setupSettingsWindowObserver() -> NSObjectProtocol {
-        NotificationCenter.default.addObserver(
-            forName: .openSettingsWindow,
-            object: nil,
-            queue: .main
-        ) { [weak self] _ in
-            guard let self else { return }
-            
-            Task { @MainActor in
-                self.logger.info("Received notification to open settings window")
-                // Activate the app first to bring windows to foreground
-                NSApp.activate(ignoringOtherApps: true)
-                // Open the settings using NSApp's built-in mechanism for SwiftUI Settings scenes
-                if #available(macOS 13.0, *) {
-                    NSApp.sendAction(Selector(("showSettingsWindow:")), to: nil, from: nil)
-                } else {
-                    NSApp.sendAction(Selector(("showPreferencesWindow:")), to: nil, from: nil)
-                }
-            }
-        }
-    }
-
-    // @objc func showWelcomeWindow() { ... } // Moved to WindowManager
 
     // MARK: - Accessibility Permissions
 

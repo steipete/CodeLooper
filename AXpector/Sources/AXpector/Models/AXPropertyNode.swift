@@ -61,12 +61,12 @@ class AXPropertyNode: ObservableObject, Identifiable, Hashable {
     }
 
     // Equatable based on ID
-    static func == (lhs: AXPropertyNode, rhs: AXPropertyNode) -> Bool {
+    static nonisolated func == (lhs: AXPropertyNode, rhs: AXPropertyNode) -> Bool {
         lhs.id == rhs.id
     }
 
     // Hashable based on ID
-    func hash(into hasher: inout Hasher) {
+    nonisolated func hash(into hasher: inout Hasher) {
         hasher.combine(id)
     }
 

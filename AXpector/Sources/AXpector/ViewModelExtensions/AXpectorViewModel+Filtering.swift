@@ -32,7 +32,7 @@ extension AXpectorViewModel {
             return
         }
 
-        axInfoLog("Applying filter: \(debouncedFilterText)")
+        axInfoLog("Applying filter: \(self.debouncedFilterText)")
         let (criteria, generalTerms) = parseFilterText(debouncedFilterText.lowercased())
         
         if !criteria.isEmpty { axDebugLog("Parsed criteria: \(criteria.map { "(\($0.isNegated ? "NOT " : "")\($0.key):(\($0.isRegex ? "regex:" : "")\($0.value))" }) )") }
@@ -45,7 +45,7 @@ extension AXpectorViewModel {
     private func parseFilterText(_ text: String) -> (criteria: [FilterCriterion], generalTerms: [GeneralTermCriterion]) {
         var criteria: [FilterCriterion] = []
         var generalTerms: [GeneralTermCriterion] = []
-        let components = text.split(separator: ' ').map { String($0) }
+        let components = text.split(separator: " ").map { String($0) }
 
         let validKeys = ["role", "title", "value", "desc", "description", "path", "id"]
 
@@ -65,7 +65,7 @@ extension AXpectorViewModel {
                 keyToTest = String(keyToTest.dropFirst("regex:".count))
             }
 
-            let parts = keyToTest.split(separator: ':', maxSplits: 1).map { String($0) }
+            let parts = keyToTest.split(separator: ":", maxSplits: 1).map { String($0) }
             if parts.count == 2, validKeys.contains(parts[0]) {
                 let key = parts[0] == "description" ? "desc" : parts[0]
                 let value = parts[1]

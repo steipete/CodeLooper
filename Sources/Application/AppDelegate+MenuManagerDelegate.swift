@@ -9,8 +9,8 @@ extension AppDelegate: MenuManagerDelegate {
     // MARK: - Menu Actions
 
     func showSettings() {
-        logger.info("Settings menu item clicked")
-        NotificationCenter.default.post(name: .openSettingsWindow, object: nil)
+        logger.info("Show Settings triggered from menu delegate")
+        NSApp.sendAction(Selector(("showSettingsWindow:")), to: nil, from: nil)
     }
 
     func toggleStartAtLogin() {

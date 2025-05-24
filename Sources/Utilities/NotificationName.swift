@@ -18,7 +18,6 @@ public extension Notification.Name {
     // Reset actions
     static let requestResetConfirmation = Notification.Name("requestResetConfirmation")
     static let showSettingsWindow = Notification.Name("showSettingsWindow")
-    static let openSettingsWindow = Notification.Name("openSettingsWindow")
     static let showWelcomeWindow = Notification.Name("showWelcomeWindow")
 
     // Settings navigation
@@ -27,7 +26,7 @@ public extension Notification.Name {
     // Debug/Development features
     static let debugModeChanged = Notification.Name("debugModeChanged")
     static let verboseLoggingChanged = Notification.Name("verboseLoggingChanged")
-    static let menuBarVisibilityChanged = NSNotification.Name("menuBarVisibilityChanged")
+    static let menuBarVisibilityChanged = Notification.Name("menuBarVisibilityChanged")
     static let updateMenuBarExtras = NSNotification.Name("updateMenuBarExtras")
 
     // Notification handling
@@ -41,4 +40,8 @@ public extension Notification.Name {
 
     // Debug notifications
     static let debugNotificationTest = Notification.Name("me.steipete.codelooper.debugNotificationTest")
+
+    static let showMenuBarIcon = Notification.Name("showMenuBarIconNotification")
+    static let hideMenuBarIcon = Notification.Name("hideMenuBarIconNotification")
+    static let mcpSettingsChanged = Notification.Name("mcpSettingsChanged")
 }

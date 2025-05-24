@@ -64,8 +64,10 @@ struct GeneralSettingsView: View {
                             userInfo: ["visible": newValue]
                         )
                     }
-            } header: { Text("General Application Behavior") 
+            } header: { 
+                Text("General Application Behavior").padding(.top)
             }
+            .padding(.bottom)
 
             Section {
                 Text("Define a global keyboard shortcut to quickly toggle monitoring.")
@@ -75,8 +77,10 @@ struct GeneralSettingsView: View {
                 Text("Use standard symbols: ⌘ (Command), ⌥ (Option/Alt), ⇧ (Shift), ⌃ (Control). Example: ⌘⇧M")
                     .font(.caption2)
                     .foregroundColor(.gray)
-            } header: { Text("Global Shortcut Configuration") 
+            } header: { 
+                Text("Global Shortcut Configuration").padding(.top)
             }
+            .padding(.bottom)
 
             Section {
                 Toggle("Enable Global Monitoring", isOn: $isGlobalMonitoringEnabled)
@@ -102,35 +106,27 @@ struct GeneralSettingsView: View {
                     TextEditor(text: $textForCursorStopsRecovery)
                         .frame(height: 60)
                 }
-            } header: { Text("Supervision Core Settings") 
+            } header: { 
+                Text("Supervision Core Settings").padding(.top)
             }
+            .padding(.bottom)
 
             Section {
                 VStack(alignment: .leading) {
-                    HStack { Toggle("Automatically Check for Updates", isOn: $automaticallyCheckForUpdates) }
-                    HStack {
-                        Button("Check for Updates Now") {
-                            if let appDelegate = NSApp.delegate as? AppDelegate {
-                                appDelegate.checkForUpdates(nil)
-                            } else {
-                                print("Error: Could not get AppDelegate to check for updates.")
-                            }
-                        }
-                        .disabled(updaterViewModel.isUpdateInProgress)
-                    }
-                    HStack {
-                        Button("About CodeLooper") {
-                            if let appDelegate = NSApp.delegate as? AppDelegate {
-                                appDelegate.windowManager?.showAboutWindow()
-                            } else {
-                                print("Error: Could not get AppDelegate to show About window.")
-                            }
+                    Toggle("Automatically Check for Updates", isOn: $automaticallyCheckForUpdates)
+                    Button("Check for Updates Now") {
+                        if let appDelegate = NSApp.delegate as? AppDelegate {
+                            appDelegate.checkForUpdates(nil)
+                        } else {
+                            print("Error: Could not get AppDelegate to check for updates.")
                         }
                     }
+                    .disabled(updaterViewModel.isUpdateInProgress)
                 }
-                // HStack { Text("CodeLooper Version: ...") } // Keep this commented for now
-            } header: { Text("Updates") 
+            } header: { 
+                Text("Updates").padding(.top)
             }
+            .padding(.bottom)
 
             Section {
                 Button("Reset Welcome Guide") {

@@ -35,7 +35,7 @@ public final class MainSettingsCoordinator: NSObject {
 
         // Use the native Settings framework
         logger.info("Showing settings using native SwiftUI Settings framework")
-        NotificationCenter.default.post(name: .openSettingsWindow, object: nil)
+        NSApp.sendAction(Selector(("showSettingsWindow:")), to: nil, from: nil)
     }
 
     /// Closes the settings window
@@ -51,6 +51,7 @@ public final class MainSettingsCoordinator: NSObject {
             .publisher(for: .showSettingsWindow)
             .sink { [weak self] _ in
                 Task { @MainActor in
+                    self?.logger.info("Received .showSettingsWindow notification, calling MainSettingsCoordinator.showSettings()")
                     self?.showSettings()
                 }
             }

@@ -79,7 +79,7 @@ extension AppDelegate {
     @objc(showSettingsWindowForScripting)
     func showSettingsWindowForScripting() {
         logger.info("AppleScript called: show settings window")
-        NotificationCenter.default.post(name: .openSettingsWindow, object: nil)
+        NSApp.sendAction(Selector(("showSettingsWindow:")), to: nil, from: nil)
     }
 
     /// AppleScript handler for basic app operations

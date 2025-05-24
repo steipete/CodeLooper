@@ -1,22 +1,23 @@
 import AppKit
 import Combine
-import Defaults // Assuming CursorInstanceInfo might use it, or for future use
+import Defaults
 import Diagnostics
 import Foundation
-import OSLog
 
 // Forward declare CursorMonitor if needed for the owner reference, or ensure it's imported if in a different module (not the case here)
 // class CursorMonitor {} // Placeholder if full import isn't desired yet, but direct reference is better.
 
 @MainActor
 public class CursorAppLifecycleManager: ObservableObject {
-    private let logger = Logger(category: .lifecycle)
+    private let logger = Diagnostics.Logger(category: .lifecycle)
     
     // Constants
     private let cursorBundleIdentifier = "com.todesktop.230313mzl4w4u92"
 
-    @Published public var instanceInfo: [pid_t: CursorInstanceInfo] = [:]
-    @Published public var monitoredInstances: [MonitoredInstanceInfo] = []
+    // Store the app info directly, keyed by PID
+    @Published public var runningAppInfo: [pid_t: MonitoredAppInfo] = [:]
+    // Published list of MonitoredAppInfo for observers like CursorMonitor
+    @Published public var monitoredApps: [MonitoredAppInfo] = []
     
     // Marking cancellables as nonisolated(unsafe) means we assert its access is externally synchronized
     // or that operations on it are inherently thread-safe. Storing and cancelling Combine publishers
@@ -50,25 +51,23 @@ public class CursorAppLifecycleManager: ObservableObject {
         NSWorkspace.shared.notificationCenter
             .publisher(for: NSWorkspace.didLaunchApplicationNotification)
             .compactMap { $0.userInfo?[NSWorkspace.applicationUserInfoKey] as? NSRunningApplication }
-            .filter { $0.bundleIdentifier == self.cursorBundleIdentifier } // self.cursorBundleIdentifier is correct here
+            .filter { $0.bundleIdentifier == self.cursorBundleIdentifier }
             .receive(on: DispatchQueue.main)
             .sink { [weak self] app in
-                // self? refers to CursorAppLifecycleManager instance
                 self?.handleCursorLaunch(app) 
             }
-            .store(in: &cancellables) // self.cancellables is correct here
+            .store(in: &cancellables)
 
         NSWorkspace.shared.notificationCenter
             .publisher(for: NSWorkspace.didTerminateApplicationNotification)
             .compactMap { $0.userInfo?[NSWorkspace.applicationUserInfoKey] as? NSRunningApplication }
-            .filter { $0.bundleIdentifier == self.cursorBundleIdentifier } // self.cursorBundleIdentifier is correct here
+            .filter { $0.bundleIdentifier == self.cursorBundleIdentifier }
             .receive(on: DispatchQueue.main)
             .sink { [weak self] app in
-                // self? refers to CursorAppLifecycleManager instance
                 self?.handleCursorTermination(app)
             }
-            .store(in: &cancellables) // self.cancellables is correct here
-        logger.info("Workspace notification observers set up for Cursor.") // self.logger is correct here
+            .store(in: &cancellables)
+        logger.info("Workspace notification observers set up for Cursor.")
     }
 
     func scanForExistingInstances() {
@@ -76,98 +75,94 @@ public class CursorAppLifecycleManager: ObservableObject {
         for app in runningApps {
             if app.bundleIdentifier == cursorBundleIdentifier, !app.isTerminated {
                 logger.info("Found existing Cursor instance (PID: \\(app.processIdentifier)) on scan.")
-                handleCursorLaunch(app) // self.handleCursorLaunch implicitly
+                handleCursorLaunch(app)
             }
         }
-        if instanceInfo.isEmpty { // self.instanceInfo implicitly
+        if runningAppInfo.isEmpty {
             logger.info("No running Cursor instances found on initial scan.")
         }
+        updatePublishedMonitoredApps() // Update published list
     }
 
     func handleCursorLaunch(_ app: NSRunningApplication) {
         let pid = app.processIdentifier
-        guard instanceInfo[pid] == nil else {
+        guard runningAppInfo[pid] == nil else {
             logger.info("Instance PID \\(pid) already being monitored.")
             return
         }
-        let newInfo = CursorInstanceInfo(app: app, status: .unknown, statusMessage: "Initializing...")
-        instanceInfo[pid] = newInfo
         
-        let monitoredInfo = MonitoredInstanceInfo(
+        let appInfo = MonitoredAppInfo(
             id: pid,
             pid: pid,
-            displayName: "Cursor (PID: \\(pid))",
-            status: .active, // Defaulting to active, owner might update based on deeper checks
-            isActivelyMonitored: true, // Assuming newly launched are monitored
-            interventionCount: 0 // Will be managed by owner or another component
+            displayName: app.localizedName ?? "Cursor (PID: \\(pid))", // Use app's localized name
+            status: .active, // Initial status
+            isActivelyMonitored: true,
+            interventionCount: 0,
+            windows: [] // Windows will be populated by CursorMonitor
         )
-        monitoredInstances.append(monitoredInfo)
+        runningAppInfo[pid] = appInfo
+        updatePublishedMonitoredApps() // Update published list
         
-        // Initialization of per-PID states (e.g., automaticInterventionsSincePositiveActivity)
-        // will be handled by the future CursorInstanceStateManager, signaled by the owner (CursorMonitor)
-        // after a launch is processed by CursorAppLifecycleManager.
-        owner?.didLaunchInstance(pid: pid) // Notify owner to set up detailed state
+        owner?.didLaunchInstance(pid: pid)
 
         logger.info("Cursor instance launched (PID: \\(pid)). Manager processed launch.")
         Task {
-            await sessionLogger.log(level: .info, message: "Cursor instance launched (PID: \\(pid)). Manager processed launch.", pid: pid)
+            sessionLogger.log(level: .info, message: "Cursor instance launched (PID: \\(pid)). Manager processed launch.", pid: pid)
         }
         
-        // Inform owner; owner decides if loop should start/is already running
         if let owner = self.owner, !owner.isMonitoringActivePublic {
-             owner.startMonitoringLoop() // Call on owner
+             owner.startMonitoringLoop()
         }
     }
 
     func handleCursorTermination(_ app: NSRunningApplication) {
         let pid = app.processIdentifier
-        guard instanceInfo.removeValue(forKey: pid) != nil else {
+        guard runningAppInfo.removeValue(forKey: pid) != nil else {
             logger.info("Received termination for unmonitored PID \\(pid).")
             return
         }
+        updatePublishedMonitoredApps() // Update published list
         
-        monitoredInstances.removeAll { $0.pid == pid }
-        
-        // Notify owner to clean up detailed state for this PID
         owner?.didTerminateInstance(pid: pid)
 
         logger.info("Cursor instance terminated (PID: \\(pid)). Manager processed termination.")
         Task {
-            await sessionLogger.log(level: .info, message: "Cursor instance terminated (PID: \\(pid)). Manager processed termination.", pid: pid)
+            sessionLogger.log(level: .info, message: "Cursor instance terminated (PID: \\(pid)). Manager processed termination.", pid: pid)
         }
         
-        // Inform owner; owner decides if loop should stop
-        if let owner = self.owner, monitoredInstances.isEmpty, owner.isMonitoringActivePublic {
+        if let owner = self.owner, monitoredApps.isEmpty, owner.isMonitoringActivePublic { // Check new published list
             logger.info("No more Cursor instances. Signaling owner to stop monitoring loop.")
-            owner.stopMonitoringLoop() // Call on owner
+            owner.stopMonitoringLoop()
         }
     }
 
-    public func refreshMonitoredInstances() {
-        logger.debug("Refreshing monitored instances list.")
+    public func refreshMonitoredInstances() { // Renaming to refreshRunningApps might be clearer
+        logger.debug("Refreshing monitored apps list.")
         let currentlyRunningPIDs = NSWorkspace.shared.runningApplications
             .filter { $0.bundleIdentifier == self.cursorBundleIdentifier }
             .map { $0.processIdentifier }
         
-        let pidsToShutdown = Set(instanceInfo.keys).subtracting(currentlyRunningPIDs)
+        let pidsToShutdown = Set(runningAppInfo.keys).subtracting(currentlyRunningPIDs)
         for pid in pidsToShutdown {
-            if instanceInfo.removeValue(forKey: pid) != nil {
+            if runningAppInfo.removeValue(forKey: pid) != nil {
                  logger.info("Instance PID \\(pid) no longer running (detected by refresh). Removing.")
-                 Task { await sessionLogger.log(level: .info, message: "Instance PID \\(pid) no longer running (detected by refresh). Removing.", pid: pid) }
-                 
-                 monitoredInstances.removeAll { $0.pid == pid }
-                 
-                 // Notify owner to clean up detailed state for this PID
+                 Task { sessionLogger.log(level: .info, message: "Instance PID \\(pid) no longer running (detected by refresh). Removing.", pid: pid) }
                  owner?.didTerminateInstance(pid: pid)
             }
         }
-        // After removing defunct instances, scan for any new ones that might have appeared
-        // without a formal launch notification (e.g., if observers were temporarily down).
-        scanForExistingInstances() // Calls the local method
+        updatePublishedMonitoredApps() // Update published list
 
-        if let owner = self.owner, monitoredInstances.isEmpty, owner.isMonitoringActivePublic {
+        // Scan for new ones that might have appeared
+        scanForExistingInstances() // This also calls updatePublishedMonitoredApps
+
+        if let owner = self.owner, monitoredApps.isEmpty, owner.isMonitoringActivePublic {
             logger.info("No more Cursor instances after refresh. Signaling owner to stop monitoring loop.")
-            owner.stopMonitoringLoop() // Call on owner
+            owner.stopMonitoringLoop()
         }
+    }
+
+    // Helper to update the @Published monitoredApps array from runningAppInfo dictionary
+    private func updatePublishedMonitoredApps() {
+        monitoredApps = Array(runningAppInfo.values)
     }
 } 

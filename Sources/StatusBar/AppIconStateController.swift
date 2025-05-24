@@ -68,10 +68,10 @@ class AppIconStateController: ObservableObject {
             }
             .store(in: &cancellables)
 
-        // Observe CursorMonitor's monitoredInstances
-        cursorMonitor.$monitoredInstances
+        // Observe CursorMonitor's monitoredApps (previously monitoredInstances)
+        cursorMonitor.$monitoredApps // Use $monitoredApps
             .receive(on: DispatchQueue.main)
-            .sink { [weak self] _ in // We just need the trigger, will read monitoredInstances directly
+            .sink { [weak self] (_: [MonitoredAppInfo]) in // Explicitly type the sink parameter if needed, or just use _
                 guard let self = self else { return }
                 self.calculateAndApplyIconState()
             }
@@ -115,7 +115,7 @@ class AppIconStateController: ObservableObject {
             return
         }
 
-        let instances = monitor.monitoredInstances // Get array of MonitoredInstanceInfo
+        let instances = monitor.monitoredApps // Use monitoredApps
 
         if instances.isEmpty {
             currentIconState = .black // No instances, but monitoring is on

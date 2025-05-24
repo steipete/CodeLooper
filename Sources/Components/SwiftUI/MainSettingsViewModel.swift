@@ -274,38 +274,3 @@ public final class MainSettingsViewModel: ObservableObject {
         return nil
     }
 }
-
-enum SettingsTab: String, CaseIterable, Identifiable {
-    case general = "General"
-    case supervision = "Supervision"
-    case ruleSets = "Rule Sets"
-    case externalMCPs = "External MCPs"
-    // case appearance = "Appearance"
-    // case updates = "Updates"
-    case advanced = "Advanced"
-    case log = "Log"
-    case developer = "Developer"
-    // case about = "About"
-    // case debug = "Debug"
-    // case statistics = "Statistics"
-
-    var id: String { self.rawValue }
-
-    // Optional: Provide a system image name for each tab if your UI uses it
-    var systemImageName: String {
-        switch self {
-        case .general: return "gearshape"
-        case .supervision: return "eye"
-        case .ruleSets: return "list.star"
-        case .externalMCPs: return "server.rack"
-        // case .appearance: return "paintbrush"
-        // case .updates: return "arrow.down.circle"
-        case .advanced: return "slider.horizontal.3"
-        case .log: return "doc.text.fill"
-        case .developer: return "ladybug.fill"
-        // case .about: return "info.circle"
-        // case .debug: return "ant.circle"
-        // case .statistics: return "chart.bar.xaxis"
-        }
-    }
-}

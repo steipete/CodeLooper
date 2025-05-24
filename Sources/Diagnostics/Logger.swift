@@ -11,9 +11,11 @@ public enum LogDestination: Sendable {
     case none
 }
 
-// MARK: - Logging System Bootstrapping
+// MARK: - Logging System Setup
 
-private actor LoggingSystemSetup {
+/// Manages the bootstrapping of the logging system.
+/// This actor ensures that logging is set up safely and only once.
+public actor LoggingSystemSetup {
     // Ensures bootstrap is called only once.
     private var hasBeenBootstrapped = false
 

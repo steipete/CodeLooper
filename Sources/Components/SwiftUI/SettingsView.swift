@@ -63,9 +63,13 @@ struct SettingsView: View {
             .tabItem { Label("Developer", systemImage: SettingsTab.developer.systemImageName) }
             .tag(SettingsTab.developer)
             
+            AboutSettingsView()
+                .tabItem { Label("About", systemImage: SettingsTab.about.systemImageName) }
+                .tag(SettingsTab.about)
+            
         }
+        .fixedSize(horizontal: false, vertical: true)
         .padding(20)
-        .frame(width: 700, height: 450)
         // TODO: AXpectorView needs to be exposed from AXorcist package
         // .sheet(isPresented: $showingAXpectorView) {
         //     AXpectorView()

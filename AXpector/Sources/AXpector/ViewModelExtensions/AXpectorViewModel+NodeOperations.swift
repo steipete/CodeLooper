@@ -197,7 +197,7 @@ extension AXpectorViewModel {
     // This function is now largely replaced by the logic inside recursivelyFetchChildren
     // but might be kept if it's used for an initial full tree fetch.
     // For expanding nodes, recursivelyFetchChildren is more direct.
-    internal func mapAXElementToNode(_ axElementFromCollectAll: Element, pid: pid_t, currentDepth: Int, parentPath: String) -> AXPropertyNode {
+    internal func mapAXElementToNode(_ axElementFromCollectAll: AXorcist.Element, pid: pid_t, currentDepth: Int, parentPath: String) -> AXPropertyNode {
         // This mapping is for when Element comes from a broader collectAll operation,
         // which already has its children populated up to a certain depth.
         

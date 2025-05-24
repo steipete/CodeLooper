@@ -6,82 +6,102 @@ struct MainPopoverView: View {
     @StateObject private var cursorMonitor = CursorMonitor.shared
     @Default(.isGlobalMonitoringEnabled) private var isGlobalMonitoringEnabled
 
-    private func openSettings() {
-        NotificationCenter.default.post(name: .openSettingsWindow, object: nil)
-    }
-
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             Text("CodeLooper Supervision")
-                .font(.headline)
+                .font(.title2)
                 .padding(.bottom, 5)
 
-            Toggle("Enable Cursor Supervision", isOn: $isGlobalMonitoringEnabled)
-                .onChange(of: isGlobalMonitoringEnabled) { _, newValue in
-                    // Update Defaults to keep them in sync
-                    Defaults[.isGlobalMonitoringEnabled] = newValue
-                    
-                    // Update CursorMonitor state
-                    if newValue {
-                        cursorMonitor.startMonitoringLoop()
-                    } else {
-                        cursorMonitor.stopMonitoringLoop()
-                    }
-                }
+            Defaults.Toggle("Enable Cursor Supervision", key: .isGlobalMonitoringEnabled)
 
             Divider()
 
-            if cursorMonitor.monitoredInstances.isEmpty {
-                Text("No Cursor instances detected.")
-                    .foregroundColor(.secondary)
-            } else {
-                Text("Monitored Cursor Instances:")
+            // Display the single monitored Cursor app and its windows
+            // Assuming only one Cursor app instance is primarily monitored or relevant for this popover.
+            if let cursorApp = cursorMonitor.monitoredApps.first { // Get the first (and likely only) monitored Cursor app
+                Text("Monitored: \(cursorApp.displayName)")
                     .font(.subheadline)
-                List {
-                    ForEach(cursorMonitor.monitoredInstances) { instance in
-                        InstanceRowView(instance: instance, cursorMonitor: cursorMonitor)
-                    }
+                    .foregroundColor(isGlobalMonitoringEnabled ? .primary : .secondary) // Dim if not enabled
+                
+                if !isGlobalMonitoringEnabled {
+                    Text("  (Supervision Paused)")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                        .padding(.leading)
                 }
-                .listStyle(PlainListStyle())
-                .frame(maxHeight: 200) // Limit height of the list
+
+                if cursorApp.windows.isEmpty {
+                    Text("  No windows detected for this app.")
+                        .foregroundColor(.secondary)
+                        .padding(.leading)
+                } else {
+                    List(cursorApp.windows) { window in
+                        HStack {
+                            Text("    \(window.windowTitle ?? "Untitled Window")")
+                                .font(.system(.body, design: .monospaced))
+                                .foregroundColor(isGlobalMonitoringEnabled ? .primary : .secondary) // Dim if not enabled
+                            Spacer()
+                            Button {
+                                if window.isPaused {
+                                    cursorMonitor.resumeMonitoring(for: window.id, in: cursorApp.pid)
+                                } else {
+                                    cursorMonitor.pauseMonitoring(for: window.id, in: cursorApp.pid)
+                                }
+                            } label: {
+                                Image(systemName: window.isPaused ? "play.circle" : "pause.circle")
+                                    .foregroundColor(window.isPaused ? .green : .yellow)
+                            }
+                            .buttonStyle(.plain)
+                            .disabled(!isGlobalMonitoringEnabled) // Disable if global supervision is off
+                        }
+                        .listRowBackground(Color.clear)
+                    }
+                    .listStyle(.plain)
+                    .frame(minHeight: 50, maxHeight: 150) // Adjust size as needed
+                }
+            } else {
+                if isGlobalMonitoringEnabled { // Only show "No Cursor app detected" if monitoring is actually on
+                    Text("No Cursor app detected.")
+                        .foregroundColor(.secondary)
+                } else {
+                     Text("Cursor supervision is paused.")
+                        .foregroundColor(.secondary)
+                }
             }
 
             Divider()
-            
             Text("Session Interventions: \(cursorMonitor.totalAutomaticInterventionsThisSessionDisplay)")
                 .font(.caption)
-                .foregroundColor(.secondary)
 
             HStack {
+                // Replaced SettingsLink with Button
                 Button("Open Settings") {
-                    openSettings()
-                    // Close popover after clicking
-                    NSApp.deactivate()
+                    // Close popover first
+                    AppDelegate.shared.menuManager?.closePopover(sender: nil)
+                    // Then open settings
+                    NSApp.sendAction(Selector(("showSettingsWindow:")), to: nil, from: nil)
                 }
-                
-                Spacer()
-                
+
                 Button("Reset All Counters") {
-                    Task {
-                        await cursorMonitor.resetAllInstancesAndResume()
-                    }
-                    // Close popover after clicking
-                    NSApp.deactivate()
+                    Task { await CursorMonitor.shared.resetAllInstancesAndResume() }
                 }
-                
                 Spacer()
-                
                 Button("Quit") {
                     NSApp.terminate(nil)
                 }
-                .foregroundColor(.red)
             }
             .padding(.top, 5)
         }
         .padding()
-        .frame(width: 350)
+        .frame(width: 350) // Fixed width for the popover view
+        // Removed .listRowBackground(Color.clear) from VStack as it's not a List row
     }
 
+    // InstanceRowView and related helper methods (statusIndicator, iconAndColor, friendlyStatusDescription)
+    // are now OBSOLETE in this file if we are simplifying to just show window titles of a single app.
+    // They can be removed or refactored if a more detailed per-window view is desired later.
+    // For now, I will comment them out to avoid build errors and to indicate they need revisiting.
+    /*
     private var headerView: some View {
         HStack {
             Image("logo")
@@ -256,8 +276,12 @@ struct MainPopoverView: View {
             return "Not Running ⏹️"
         }
     }
+    */
 }
 
+// InstanceRowView struct is also likely obsolete or needs major refactor for windows.
+// Commenting out for now.
+/*
 struct InstanceRowView: View {
     let instance: MonitoredInstanceInfo
     let cursorMonitor: CursorMonitor
@@ -381,13 +405,53 @@ struct InstanceRowView: View {
         }
     }
 }
+*/
 
 // MARK: - Preview
 #if DEBUG
 struct MainPopoverView_Previews: PreviewProvider {
     static var previews: some View {
-        MainPopoverView()
-            .frame(width: 450, height: 580)
+        // Create mock data for preview
+        let mockMonitor = CursorMonitor.sharedForPreview // Use shared preview instance
+        
+        // Example with a monitored app and windows
+        let appPID = pid_t(12345)
+        let mockApp = MonitoredAppInfo(
+            id: appPID,
+            pid: appPID,
+            displayName: "Cursor (PID: 12345)",
+            status: .active,
+            isActivelyMonitored: true,
+            interventionCount: 2,
+            windows: [
+                MonitoredWindowInfo(id: "w1", windowTitle: "Document 1.txt", isPaused: false),
+                MonitoredWindowInfo(id: "w2", windowTitle: "Project Settings", isPaused: true),
+                MonitoredWindowInfo(id: "w3", windowTitle: nil, isPaused: false)
+            ]
+        )
+        // mockMonitor.monitoredApps = [mockApp] // This can be uncommented if needed for preview state
+        // mockMonitor.isMonitoringActivePublic = true // Ensure this line is commented or removed
+        // mockMonitor.totalAutomaticInterventionsThisSessionDisplay = 5 // This can be uncommented
+
+        // Example with no windows - This variable is unused, so it can be removed.
+        // var mockAppNoWindows = MonitoredAppInfo(
+        //     id: pid_t(54321),
+        //     pid: pid_t(54321),
+        //     displayName: "OtherApp (PID: 54321)",
+        //     status: .active, 
+        //     isActivelyMonitored: false, 
+        //     interventionCount: 0,
+        //     windows: []
+        // )
+
+        return MainPopoverView()
+            .environmentObject(mockMonitor) // Inject the mock monitor
+            .onAppear {
+                // Further simulate state for preview if needed
+                 mockMonitor.monitoredApps = [mockApp]
+                 // mockMonitor.isMonitoringActivePublic = true // Ensure this line is commented or removed
+                 // mockMonitor.totalAutomaticInterventionsThisSessionDisplay = 5 // This can be uncommented
+            }
     }
 }
 #endif 

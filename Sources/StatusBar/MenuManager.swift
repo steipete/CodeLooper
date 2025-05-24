@@ -32,6 +32,7 @@ final class MenuManager {
     private var popover: NSPopover
     private var eventMonitor: EventMonitor? // For closing popover on outside click
     private var cancellables = Set<AnyCancellable>()
+    @Default(.isGlobalMonitoringEnabled) private var isGlobalMonitoringEnabled // Observe this
 
     // MARK: - Initialization
 
@@ -40,8 +41,9 @@ final class MenuManager {
         
         // Initialize NSPopover BEFORE setupMenuBar, as button action will need it.
         self.popover = NSPopover()
-        popover.contentSize = NSSize(width: 420, height: 550) // Match MainPopoverView frame
-        popover.behavior = .transient
+        // Let MainPopoverView's frame define the width. Height can be adjusted by content.
+        popover.contentSize = NSSize(width: 350, height: 400) // Adjusted to match MainPopoverView width and a reasonable default height
+        popover.behavior = .transient // NEW - Default transient behavior
         popover.animates = true
         popover.contentViewController = NSHostingController(rootView: MainPopoverView())
 
@@ -74,9 +76,17 @@ final class MenuManager {
         // Observe tint color changes from AppIconStateController
         AppIconStateController.shared.$currentTintColor
             .receive(on: DispatchQueue.main)
-            .sink { [weak self] newTintColor in
-                self?.statusItem?.button?.contentTintColor = newTintColor
-                self?.logger.info("Applied tint color to status item: \(String(describing: newTintColor))")
+            .sink { [weak self] _ in // newTintColor is available if needed
+                self?.updateButtonTintColor()
+            }
+            .store(in: &cancellables)
+            
+        // Observe global monitoring state changes
+        Defaults.publisher(.isGlobalMonitoringEnabled)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] change in
+                self?.isGlobalMonitoringEnabled = change.newValue // Update local state
+                self?.updateButtonTintColor()
             }
             .store(in: &cancellables)
     }
@@ -94,8 +104,7 @@ final class MenuManager {
             button.image = NSImage(named: "MenuBarTemplateIcon")
             button.image?.isTemplate = true
             
-            // Set initial tint color from AppIconStateController
-            button.contentTintColor = AppIconStateController.shared.currentTintColor
+            updateButtonTintColor() // Set initial tint color
             
             // Configure button properties
             button.action = #selector(togglePopover) // Action is to toggle popover
@@ -117,9 +126,9 @@ final class MenuManager {
         }
         
         // Subscribe to cursor monitor updates to update the count
-        CursorMonitor.shared.$monitoredInstances
+        CursorMonitor.shared.$monitoredApps
             .receive(on: DispatchQueue.main)
-            .sink { [weak self] _ in
+            .sink { [weak self] (_: [MonitoredAppInfo]) in
                 self?.updateCursorInstanceCount()
             }
             .store(in: &cancellables)
@@ -157,7 +166,8 @@ final class MenuManager {
         }
     }
 
-    private func closePopover(sender: Any?) {
+    // Make this public to be called from MainPopoverView
+    public func closePopover(sender: Any?) {
         popover.performClose(sender)
         eventMonitor?.stop()
         if let button = statusItem?.button {
@@ -292,34 +302,34 @@ final class MenuManager {
     private func updateCursorInstanceCount() {
         guard let button = statusItem?.button else { return }
         
-        let count = CursorMonitor.shared.monitoredInstances.count
+        let count = CursorMonitor.shared.monitoredApps.count
         
-        // Create attributed string with icon and count
-        let attributedString = NSMutableAttributedString()
-        
-        // Add the icon as an attachment
-        if let image = NSImage(named: "MenuBarTemplateIcon") {
-            let attachment = NSTextAttachment()
-            attachment.image = image
-            // Scale the image to match text height
-            let iconSize = NSSize(width: 16, height: 16)
-            attachment.bounds = NSRect(x: 0, y: -2, width: iconSize.width, height: iconSize.height)
-            attributedString.append(NSAttributedString(attachment: attachment))
+        // Set the image (it should already be a template from setupMenuBar)
+        // The tintColor is handled by the AppIconStateController subscription.
+        if button.image == nil { // Only set if not already set, or reset if it was part of attributed title
+            let image = NSImage(named: "MenuBarTemplateIcon")
+            image?.isTemplate = true
+            button.image = image
         }
         
-        // Add space and count text
-        let countText = count > 0 ? " \(count)" : " 0"
-        let textAttributes: [NSAttributedString.Key: Any] = [
-            .font: NSFont.menuFont(ofSize: 14),
-            .foregroundColor: NSColor.controlTextColor
-        ]
-        attributedString.append(NSAttributedString(string: countText, attributes: textAttributes))
+        // Set the title for the count
+        button.title = " \(count)" // Add a space for padding
+        // Ensure attributedTitle is cleared if we are now using .image and .title
+        button.attributedTitle = NSAttributedString(string: "") 
+
+        logger.debug("Updated menu bar: image set, title to \(count)")
+    }
+
+    private func updateButtonTintColor() {
+        guard let button = statusItem?.button else { return }
         
-        // Set the attributed string as the button title
-        button.attributedTitle = attributedString
-        button.image = nil // Clear the image since we're using it in the attributed string
-        
-        logger.debug("Updated menu bar cursor count to: \(count)")
+        if isGlobalMonitoringEnabled {
+            button.contentTintColor = AppIconStateController.shared.currentTintColor
+            logger.info("Monitoring ON: Applied active tint color: \(String(describing: button.contentTintColor))")
+        } else {
+            button.contentTintColor = .secondaryLabelColor // Grey out when monitoring is OFF
+            logger.info("Monitoring OFF: Applied grey tint color.")
+        }
     }
 }
 

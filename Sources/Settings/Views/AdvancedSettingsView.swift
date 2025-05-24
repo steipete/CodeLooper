@@ -33,6 +33,26 @@ struct AdvancedSettingsView: View {
         "mainInputField": "e.g., {\"criteria\":[{\"key\":\"AXRole\",\"value\":\"AXTextArea\"},{\"key\":\"AXIdentifier\",\"value\":\"chat_input\"}]}"
     ]
 
+    private let commonSystemSounds: [String] = [
+        "", // Represents "Default" or user-selected in TextField
+        "Basso",
+        "Blow",
+        "Bottle",
+        "Frog",
+        "Funk",
+        "Glass",
+        "Hero",
+        "Morse",
+        "Ping",
+        "Pop",
+        "Purr",
+        "Sosumi",
+        "Submarine",
+        "Tink"
+    ]
+    
+    @State private var selectedSystemSound: String = "" // Will be initialized from Defaults
+
     var body: some View {
         Form {
             Section(header: Text("Supervision Tuning")) {
@@ -47,12 +67,37 @@ struct AdvancedSettingsView: View {
 
             Section(header: Text("Sound Configuration")) {
                 HStack {
-                    Text("Successful Intervention Sound:")
-                    TextField("Sound Name (e.g., Funk, Glass)", text: $successfulInterventionSoundName)
+                    Text("Intervention Sound:")
+                    Picker("", selection: $selectedSystemSound) {
+                        ForEach(commonSystemSounds, id: \.self) { soundName in
+                            Text(soundName.isEmpty ? "Default / Custom" : soundName).tag(soundName)
+                        }
+                    }
+                    .labelsHidden()
+                    .onChange(of: selectedSystemSound) {
+                        successfulInterventionSoundName = selectedSystemSound
+                    }
                 }
-                Text("Enter a system sound name (e.g., Funk, Glass, Sosumi) or a filename (e.g., my_sound.aiff) located in the app bundle's Sounds directory. Leave blank for default.")
+                Text("Select a common system sound from the list. For a custom sound, select \"Default / Custom\" and enter the sound name or filename (e.g., my_sound.aiff in app bundle Sounds) in the field below.")
                     .font(.caption)
                     .foregroundColor(.secondary)
+                
+                HStack {
+                    Text("Custom Sound Name:")
+                    TextField("Sound Name (e.g., Funk or my_sound.aiff)", text: $successfulInterventionSoundName)
+                        .disabled(!selectedSystemSound.isEmpty) // Disable if a system sound is chosen from Picker
+                }
+                Text("If using a custom sound file, ensure it's in the app bundle's 'Sounds' directory. Leave blank or use a system sound name from the list for standard sounds.")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+            }
+            .onAppear {
+                // Initialize selectedSystemSound based on current Defaults value
+                if commonSystemSounds.contains(successfulInterventionSoundName) {
+                    selectedSystemSound = successfulInterventionSoundName
+                } else {
+                    selectedSystemSound = "" // Default to "Custom" if not in common list
+                }
             }
 
             Section(header: Text("Custom Element Locators (JSON - Advanced)")) {
@@ -88,6 +133,34 @@ struct AdvancedSettingsView: View {
                 }
                 .foregroundColor(.orange)
                 .padding(.top)
+            }
+            
+            Section(header: Text("Developer Actions")) {
+                Button("View mcp.json") {
+                    let fileManager = FileManager.default
+                    let cursorConfigDir = fileManager.homeDirectoryForCurrentUser.appendingPathComponent(".cursor")
+                    let mcpJsonPath = cursorConfigDir.appendingPathComponent("mcp.json")
+
+                    if fileManager.fileExists(atPath: mcpJsonPath.path) {
+                        NSWorkspace.shared.open(mcpJsonPath)
+                    } else {
+                        // Optionally, show an alert if the file doesn't exist
+                        let alert = NSAlert()
+                        alert.messageText = "File Not Found"
+                        alert.informativeText = "The file mcp.json was not found at \(mcpJsonPath.path)."
+                        alert.alertStyle = .warning
+                        alert.addButton(withTitle: "OK")
+                        alert.runModal()
+                        print("mcp.json not found at \(mcpJsonPath.path)")
+                    }
+                }
+                Button("Open AXpector") {
+                    if let appDelegate = NSApp.delegate as? AppDelegate {
+                        appDelegate.showAXpectorWindow()
+                    } else {
+                        print("Error: Could not get AppDelegate to open AXpector window.")
+                    }
+                }
             }
         }
         .padding()
