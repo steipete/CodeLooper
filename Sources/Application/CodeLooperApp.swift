@@ -51,10 +51,14 @@ struct SettingsSceneView: View {
         loginItemManager: LoginItemManager.shared,
         updaterViewModel: UpdaterViewModel(sparkleUpdaterManager: nil)
     )
+    @Environment(\.openSettings) private var openSettings // For macOS 14+
     
     var body: some View {
         SettingsPanesContainerView()
             .environmentObject(mainSettingsViewModel)
+            .onReceive(SettingsService.openSettingsSubject) { _ in
+                openSettings()
+            }
     }
 }
 

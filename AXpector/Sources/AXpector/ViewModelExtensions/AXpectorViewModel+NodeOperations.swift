@@ -216,6 +216,17 @@ extension AXpectorViewModel {
         // TEMPORARY: Use a placeholder for axElementRef. This will break interactions.
         let placeholderRef = AXUIElementCreateApplication(pid) // This is NOT correct but makes it compile.
 
+        // Determine hasChildrenAXProperty based on the kAXChildrenAttribute in the JSON data
+        var hasChildren = false
+        if let childrenAttr = jsonElement.attributes?[AXAttributeNames.kAXChildrenAttribute]?.value {
+            if let childrenArray = childrenAttr as? [Any] {
+                hasChildren = !childrenArray.isEmpty
+            } else if let childrenNSArray = childrenAttr as? NSArray {
+                hasChildren = childrenNSArray.count > 0
+            }
+            // Add more checks if children can be other types that indicate presence
+        }
+
         let node = AXPropertyNode(
             id: UUID(), 
             axElementRef: placeholderRef, // Placeholder!
@@ -228,7 +239,7 @@ extension AXpectorViewModel {
             children: [], // Children need to be populated by a separate step that reconstructs hierarchy from flat list
             attributes: jsonElement.attributes ?? [:],
             actions: [], // Actions are not in AXElement struct
-            hasChildrenAXProperty: false, // Cannot determine from AXElement struct alone, assume false or determine later
+            hasChildrenAXProperty: hasChildren, // Updated based on kAXChildrenAttribute
             depth: currentDepth
         )
         node.areChildrenFullyLoaded = true // Since we are not populating children here from this map
