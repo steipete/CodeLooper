@@ -10,7 +10,20 @@ public struct AXpectorView: View {
 
     public var body: some View {
         // Check for Accessibility Permissions first
-        if viewModel.isAccessibilityEnabled == false { // Explicitly check for false
+        if viewModel.isAccessibilityEnabled == nil { // State when initially checking
+            VStack {
+                ProgressView("Checking Accessibility Permissions...")
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .onAppear {
+                // ViewModel init already calls checkAccessibilityPermissions(initialCheck: true).
+                // This onAppear might still be useful if the view can appear multiple times
+                // and a re-check (silent) is desired, but for initial load, it's covered.
+                // For simplicity now, we can rely on the ViewModel's init.
+                // If further checks are needed on view appearance, this can be re-enabled:
+                // Task { viewModel.checkAccessibilityPermissions() } 
+            }
+        } else if viewModel.isAccessibilityEnabled == false { // Explicitly check for false (permissions denied or not yet granted after initial prompt attempt)
             VStack(spacing: 20) {
                 Image(systemName: "lock.shield.fill")
                     .resizable()
@@ -36,16 +49,8 @@ public struct AXpectorView: View {
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
-        } else if viewModel.isAccessibilityEnabled == nil { // Still checking or unknown
-            VStack {
-                ProgressView("Checking Accessibility Permissions...")
-            }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .onAppear {
-                Task { // Wrap in Task
-                    viewModel.checkAccessibilityPermissions() // Attempt to check again if view appears in this state
-                }
-            }
+            // No .onAppear needed here specifically to trigger a prompt, 
+            // as the ViewModel's init handles the first auto-prompt attempt.
         } else { // Accessibility is enabled, show the main UI
             NavigationView {
                 VStack(alignment: .leading, spacing: 0) { // Added spacing: 0 for tighter control
@@ -53,7 +58,16 @@ public struct AXpectorView: View {
                     Picker("Application:", selection: $viewModel.selectedApplicationPID) {
                         Text("Select Application").tag(nil as pid_t?)
                         ForEach(viewModel.runningApplications, id: \.processIdentifier) { app in
-                            Text(app.localizedName ?? "Unknown App").tag(app.processIdentifier as pid_t?)
+                            HStack {
+                                if let icon = app.icon {
+                                    Image(nsImage: icon)
+                                        .resizable()
+                                        .aspectRatio(contentMode: .fit)
+                                        .frame(width: 16, height: 16) // Adjust size as needed
+                                }
+                                Text(app.localizedName ?? "Unknown App")
+                            }
+                            .tag(app.processIdentifier as pid_t?)
                         }
                     }
                     .padding(.horizontal)

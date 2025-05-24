@@ -57,5 +57,10 @@
     <string>YOUR_SPARKLE_PUBLIC_ED_KEY_HERE</string> <!-- TODO: Replace with actual public EdDSA key -->
     <key>SUEnableAutomaticChecks</key>
     <true/> <!-- This can be overridden by user preferences -->
+
+    <!-- Accessibility Permissions -->
+    <key>NSAccessibilityUsageDescription</key>
+    <string>CodeLooper requires Accessibility permissions to interact with UI elements for automation and to provide its full functionality.</string>
+
 </dict>
 </plist> 

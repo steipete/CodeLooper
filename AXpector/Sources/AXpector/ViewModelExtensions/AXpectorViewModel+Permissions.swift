@@ -5,22 +5,30 @@ import AXorcist // For AXPermissions
 
 // MARK: - Accessibility Permissions Check
 extension AXpectorViewModel {
-    func checkAccessibilityPermissions(promptIfNeeded: Bool = false) {
+    func checkAccessibilityPermissions(initialCheck: Bool = false, promptIfNeeded: Bool = false) {
         let trusted = AXTrustUtil.checkAccessibilityPermissions(promptIfNeeded: promptIfNeeded)
         
-        if self.isAccessibilityEnabled != trusted { 
+        let previousState = self.isAccessibilityEnabled
+        if self.isAccessibilityEnabled != trusted {
             self.isAccessibilityEnabled = trusted
-            if trusted {
-                axInfoLog("Accessibility API is enabled.")
-            } else {
+        }
+
+        if trusted {
+            if previousState == false || previousState == nil {
+                 axInfoLog("Accessibility API is now enabled.")
+            }
+        } else {
+            if previousState == true || previousState == nil {
                 axWarningLog("Accessibility API is NOT enabled. AXpector functionality will be limited.")
             }
-        } else if isAccessibilityEnabled == nil { 
-            self.isAccessibilityEnabled = trusted 
-            if trusted {
-                axInfoLog("Accessibility API is enabled (initial/nil check).")
-            } else {
-                 axWarningLog("Accessibility API is NOT enabled (initial/nil check). AXpector functionality will be limited.")
+            // If this was the initial silent check from init() and permissions are not granted,
+            // make a one-time attempt to prompt the user.
+            if initialCheck && !promptIfNeeded {
+                axInfoLog("Initial check failed, attempting to prompt for Accessibility permissions.")
+                // This call will prompt the system if appropriate.
+                // We don't need to immediately re-assign 'trusted' or 'isAccessibilityEnabled' here,
+                // as the user interaction will be async. The view can use 'Re-check' or will update on next view appearance.
+                _ = AXTrustUtil.checkAccessibilityPermissions(promptIfNeeded: true) 
             }
         }
     }

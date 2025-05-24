@@ -64,17 +64,24 @@ public class AppDelegate: NSObject, NSApplicationDelegate,
         if runningApps.count > 1 {
             logger.warning("Multiple instances of CodeLooper detected (\(runningApps.count)). Activating first instance and showing settings.")
             if let firstInstance = runningApps.first(where: { $0 != .current }) {
-                firstInstance.activate(options: [.activateAllWindows, .activateIgnoringOtherApps])
-                // Attempt to show settings on the other instance.
-                // This is tricky. A common way is via a custom URL scheme or distributed notifications.
-                // For now, we'll just activate it. If that instance is well-behaved, it might already have settings open
-                // or the user can open them. We'll try to send the action, though it might not work across processes directly.
-                // A more robust solution involves inter-process communication.
-                logger.info("Attempting to request settings window on first instance PID: \(firstInstance.processIdentifier)")
-                // This will show settings on the CURRENT app if the other app doesn't handle it.
-                // A proper IPC mechanism is needed for true remote control.
-                // For now, focus the other app and terminate this one.
-                NSApp.terminate(nil) // Terminate the current (duplicate) instance
+                // Corrected activation method for macOS 14+
+                var activationOptions: NSApplication.ActivationOptions = [.activateAllWindows]
+                if #available(macOS 10.15, *) {
+                    activationOptions.insert(.activateIgnoringOtherApps)
+                }
+                
+                // The new activate method is on NSRunningApplication and does not have a completion handler.
+                // It returns a Bool indicating success.
+                let activated = firstInstance.activate(options: activationOptions)
+                
+                if activated {
+                    self.logger.info("Successfully activated other instance.")
+                } else {
+                    self.logger.warning("Could not activate other instance.")
+                }
+
+                // Terminate the current instance after attempting to activate the other.
+                NSApp.terminate(nil)
                 return // Don't continue launching this instance
             } else {
                 // This case (count > 1 but no *other* instance) shouldn't happen but log it.
@@ -334,6 +341,16 @@ public class AppDelegate: NSObject, NSApplicationDelegate,
 
         notificationObservers.append(contentsOf: [menuBarObserver, highlightMenuBarObserver])
 
+        // Observer for showing AXpector Window
+        let axpectorObserver = NotificationCenter.default.addObserver(forName: .showAXpectorWindow, object: nil, queue: .main) { [weak self] _ in
+            // Ensure execution on the main actor
+            Task { @MainActor [weak self] in // Explicitly dispatch to MainActor
+                self?.logger.info("Received notification to show AXpector window.")
+                self?.showAXpectorWindow()
+            }
+        }
+        notificationObservers.append(axpectorObserver)
+
         logger.info("Application startup completed successfully")
     }
 
@@ -433,3 +450,32 @@ extension AppDelegate: WindowManagerDelegate {
     
     // Removed windowManagerRequestsAccessibilityPermissions as WindowManager handles it directly now
 }
+
+// MARK: - Menu Actions
+
+extension AppDelegate: MenuManagerDelegate {
+    func showSettings() {
+        logger.info("Settings menu item clicked")
+        // Use the new SwiftUI Settings scene
+        NSApp.sendAction(Selector(("showSettingsWindow:")), to: nil, from: nil)
+    }
+
+    func toggleStartAtLogin() {
+        logger.info("Toggle Start at Login menu item clicked")
+        Defaults[.startAtLogin].toggle()
+        loginItemManager?.syncLoginItemWithPreference()
+    }
+
+    func toggleDebugMenu() {
+        logger.info("Toggle Debug Menu item clicked")
+        Defaults[.showDebugMenu].toggle()
+        refreshUI() // Rebuilds the menu, which will show/hide debug items
+    }
+
+    func showAbout() {
+        logger.info("About menu item clicked")
+        windowManager?.showAboutWindow()
+    }
+}
+
+// MARK: - Other App Actions

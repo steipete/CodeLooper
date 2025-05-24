@@ -116,8 +116,21 @@ class WindowManager: ObservableObject {
     }
     
     @objc func showAXpectorWindow() {
-        logger.info("Showing AXpector Window.")
+        logger.info("Window Manager: Request to show AXpector window.")
+
+        // We can rely on AXpectorView to handle the UI for missing permissions.
+        // A silent check here is fine for initial logging or if AXpectorView needs it directly.
+        let isTrusted = AXTrustUtil.checkAccessibilityPermissions(promptIfNeeded: false)
+        logger.info("Silent accessibility check before showing AXpector: trusted = \(isTrusted)")
+
+        // AXpectorView has its own UI to handle missing permissions and guide the user
+        // to grant them, which should then trigger the system prompt via its own logic
+        // or by calling a method like userInitiatedAccessibilityPrompt() on this WindowManager.
+
+        // Proceed to show AXpector window regardless. 
+        // AXpectorView has its own UI to handle missing permissions.
         if axpectorWindowController == nil {
+            logger.info("Creating new AXpector window.")
             // Assuming AXpectorView is the main view from the AXpector module
             let axpectorView = AXpectorView() 
             let window = NSWindow(

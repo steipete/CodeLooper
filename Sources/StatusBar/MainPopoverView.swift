@@ -75,12 +75,21 @@ struct MainPopoverView: View {
 
             HStack {
                 // Replaced SettingsLink with Button
-                Button("Open Settings") {
-                    // Close popover first
-                    AppDelegate.shared?.menuManager?.closePopover(sender: nil)
-                    // Then open settings
-                    NSApp.sendAction(Selector(("showSettingsWindow:")), to: nil, from: nil)
+                SettingsLink {
+                    Text("Open Settings")
                 }
+                .onReceive(NotificationCenter.default.publisher(for: NSWindow.willCloseNotification)) { notification in
+                    // Optional: Add logic if something needs to happen when the settings window closes
+                    // For example, re-focusing the app or specific clean-up.
+                    // Ensure the notification object is the settings window if multiple windows are handled.
+                }
+                .simultaneousGesture(TapGesture().onEnded {
+                    // Close popover when settings link is tapped
+                    // Delay slightly to allow the settings window to open first
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                        AppDelegate.shared?.menuManager?.closePopover(sender: nil)
+                    }
+                })
 
                 Button("Reset All Counters") {
                     Task { await CursorMonitor.shared.resetAllInstancesAndResume() }

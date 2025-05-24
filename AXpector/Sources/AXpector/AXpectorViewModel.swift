@@ -175,7 +175,7 @@ class AXpectorViewModel: ObservableObject {
 
     // MARK: - Init / Deinit
     init() {
-        checkAccessibilityPermissions() 
+        checkAccessibilityPermissions(initialCheck: true, promptIfNeeded: false) 
         fetchRunningApplications()
         setupFilterDebouncer() 
         // Subscribe to GlobalAXLogger if needed for real-time log display in UI
@@ -435,8 +435,11 @@ extension AXpectorViewModel {
             return
         }
 
-        hoverUpdateTask?.cancel() // Cancel any existing task
-        hoverUpdateTask = Task {
+        // The hoverUpdateTask is managed by start/stopHoverMonitoring.
+        // This function is called by that task after debouncing.
+        // Do not cancel or reassign self.hoverUpdateTask here.
+
+        Task { // Create a new Task for the async work within updateHoveredElement
             let commandID = "hover_\(pid)_\(Int(mouseLocation.x))_\(Int(mouseLocation.y))_\(UUID().uuidString.prefix(4))"
             await GlobalAXLogger.shared.updateOperationDetails(commandID: commandID, appName: String(pid)) // Use pid for appName
 

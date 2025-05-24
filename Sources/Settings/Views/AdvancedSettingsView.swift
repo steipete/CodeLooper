@@ -53,11 +53,15 @@ struct AdvancedSettingsView: View {
     
     @State private var selectedSystemSound: String = "" // Will be initialized from Defaults
 
+    // State for mcp.json alert
+    @State private var showMcpJsonNotFoundAlert = false
+    @State private var mcpJsonNotFoundPath: String = ""
+
     var body: some View {
         Form {
             Section(header: Text("Supervision Tuning")) {
-                Stepper("Max 'Resume' clicks (Connection Issue): \\(maxConnectionIssueRetries)", value: $maxConnectionIssueRetries, in: 1...5)
-                Stepper("Max Recovery Cycles (Persistent Error): \\(maxConsecutiveRecoveryFailures)", value: $maxConsecutiveRecoveryFailures, in: 1...5)
+                Stepper("Max 'Resume' clicks (Connection Issue): \(maxConnectionIssueRetries)", value: $maxConnectionIssueRetries, in: 1...5)
+                Stepper("Max Recovery Cycles (Persistent Error): \(maxConsecutiveRecoveryFailures)", value: $maxConsecutiveRecoveryFailures, in: 1...5)
                 TextField("Observation Window Post-Intervention (s)", value: $postInterventionObservationWindowSeconds, formatter: NumberFormatter.timeIntervalFormatter) 
                     .frame(maxWidth: 150)
                 TextField("Stuck Detection Timeout (s)", value: $stuckDetectionTimeoutSeconds, formatter: NumberFormatter.generalSecondsFormatter)
@@ -65,6 +69,7 @@ struct AdvancedSettingsView: View {
                 Toggle("Send Notification on Persistent Error", isOn: $sendNotificationOnPersistentError)
             }
 
+            /*
             Section(header: Text("Sound Configuration")) {
                 HStack {
                     Text("Intervention Sound:")
@@ -99,7 +104,9 @@ struct AdvancedSettingsView: View {
                     selectedSystemSound = "" // Default to "Custom" if not in common list
                 }
             }
+            */
 
+            /*
             Section(header: Text("Custom Element Locators (JSON - Advanced)")) {
                 Text("Override default AXorcist.Locator JSON definitions. Invalid JSON or locators may break functionality. Leave blank to use app default.")
                     .font(.caption)
@@ -134,6 +141,7 @@ struct AdvancedSettingsView: View {
                 .foregroundColor(.orange)
                 .padding(.top)
             }
+            */
             
             Section(header: Text("Developer Actions")) {
                 Button("View mcp.json") {
@@ -143,30 +151,37 @@ struct AdvancedSettingsView: View {
 
                     if fileManager.fileExists(atPath: mcpJsonPath.path) {
                         NSWorkspace.shared.open(mcpJsonPath)
+                        print("Attempting to open mcp.json at \(mcpJsonPath.path)") // Simplified
                     } else {
-                        // Optionally, show an alert if the file doesn't exist
+                        print("mcp.json not found at \(mcpJsonPath.path)") // Simplified
+                        // Optionally, show an alert if the file doesn't exist - Temporarily removed for testing
+                        /*
                         let alert = NSAlert()
                         alert.messageText = "File Not Found"
                         alert.informativeText = "The file mcp.json was not found at \(mcpJsonPath.path)."
                         alert.alertStyle = .warning
                         alert.addButton(withTitle: "OK")
                         alert.runModal()
-                        print("mcp.json not found at \(mcpJsonPath.path)")
+                        */
+                        showMcpJsonNotFoundAlert = true
+                        mcpJsonNotFoundPath = mcpJsonPath.path
                     }
                 }
                 Button("Open AXpector") {
-                    if let appDelegate = NSApp.delegate as? AppDelegate {
-                        appDelegate.showAXpectorWindow()
-                    } else {
-                        print("Error: Could not get AppDelegate to open AXpector window.")
-                    }
+                    NotificationCenter.default.post(name: .showAXpectorWindow, object: nil)
                 }
             }
         }
         .padding()
         .frame(maxWidth: .infinity, maxHeight: .infinity) // Adjust frame as needed
+        .alert("File Not Found", isPresented: $showMcpJsonNotFoundAlert) {
+            Button("OK") { }
+        } message: {
+            Text("The file mcp.json was not found at \(mcpJsonNotFoundPath).")
+        }
     }
 
+    /*
     @ViewBuilder
     private func locatorEditor(title: String, textBinding: Binding<String>, key: Defaults.Key<String>, placeholder: String) -> some View {
         VStack(alignment: .leading) {
@@ -196,6 +211,7 @@ struct AdvancedSettingsView: View {
         }
         .padding(.bottom, 3)
     }
+    */
 }
 
 extension NumberFormatter {

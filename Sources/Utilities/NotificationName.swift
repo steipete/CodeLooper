@@ -44,4 +44,7 @@ public extension Notification.Name {
     static let showMenuBarIcon = Notification.Name("showMenuBarIconNotification")
     static let hideMenuBarIcon = Notification.Name("hideMenuBarIconNotification")
     static let mcpSettingsChanged = Notification.Name("mcpSettingsChanged")
+
+    // For AXpector
+    static let showAXpectorWindow = Notification.Name("me.steipete.codelooper.showAXpectorWindow")
 }

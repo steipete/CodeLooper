@@ -142,7 +142,9 @@ struct WelcomeStepView: View {
 
 struct AccessibilityStepView: View {
     var viewModel: WelcomeViewModel
-    @State private var accessibilityStatusMessage: String = "Status: Unknown"
+    @State private var accessibilityStatusMessage: String = "Status: Checking..."
+    @State private var accessibilityStatusColor: Color = .secondary // Add state for color
+    @State private var timer: Timer? // Add timer state
     
     var body: some View {
         VStack(spacing: 20) { // Consistent spacing
@@ -203,8 +205,13 @@ struct AccessibilityStepView: View {
                 VStack(spacing: 10) { // Adjusted spacing
                     Text(accessibilityStatusMessage)
                         .font(.callout.weight(.medium))
-                        .foregroundColor(accessibilityStatusMessage.contains("Granted") ? .green : (accessibilityStatusMessage.contains("Not Granted") ? .orange : .secondary))
-                        .onAppear { Task { await checkAccessibilityPermissions() } } // Check on appear
+                        .foregroundColor(accessibilityStatusColor) // Use dynamic color
+                        .onAppear {
+                            startPermissionChecks() // Start checks on appear
+                        }
+                        .onDisappear {
+                            stopPermissionChecks() // Stop checks on disappear
+                        }
                     
                     Button {
                         Task {
@@ -233,10 +240,30 @@ struct AccessibilityStepView: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .onAppear { // Initial check when the view appears
-            Task { await checkAccessibilityPermissions() }
+            // Task { await checkAccessibilityPermissions() } // Moved to startPermissionChecks
+            // startPermissionChecks() // Already called by Text's onAppear
+        }
+        .onDisappear { // Also ensure timer is stopped if view itself disappears
+            stopPermissionChecks()
         }
     }
     
+    private func startPermissionChecks() {
+        // Initial check
+        Task { await checkAccessibilityPermissions() }
+
+        // Start timer for periodic checks
+        timer?.invalidate() // Invalidate existing timer if any
+        timer = Timer.scheduledTimer(withTimeInterval: 0.5, repeats: true) { _ in
+            Task { await checkAccessibilityPermissions() }
+        }
+    }
+
+    private func stopPermissionChecks() {
+        timer?.invalidate()
+        timer = nil
+    }
+
     private func openAccessibilitySettings() {
         let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility")!
         NSWorkspace.shared.open(url)
@@ -247,8 +274,10 @@ struct AccessibilityStepView: View {
         let granted = AXIsProcessTrusted()
         if granted {
             accessibilityStatusMessage = "Status: Granted ✓"
+            accessibilityStatusColor = .green
         } else {
             accessibilityStatusMessage = "Status: Not Granted. Please enable in System Settings."
+            accessibilityStatusColor = .red // Changed to red for not granted
         }
     }
 }

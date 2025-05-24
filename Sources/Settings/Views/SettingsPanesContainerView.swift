@@ -77,15 +77,10 @@ struct SettingsPanesContainerView_Previews: PreviewProvider {
         // Create dummy UpdaterViewModel for the preview
         let dummySparkleUpdaterManager = SparkleUpdaterManager()
         let dummyUpdaterViewModel = UpdaterViewModel(sparkleUpdaterManager: dummySparkleUpdaterManager)
-        // Create dummy MainSettingsViewModel for the preview, now including UpdaterViewModel
-        let dummyMainSettingsViewModel = MainSettingsViewModel(
-            loginItemManager: LoginItemManager.shared, 
-            updaterViewModel: dummyUpdaterViewModel
-        )
 
         SettingsPanesContainerView()
-            .environmentObject(dummyMainSettingsViewModel) // Provide MainSettingsViewModel for preview
-            .environmentObject(SessionLogger.shared) // Provide mock/shared logger for preview
+            .environmentObject(MainSettingsViewModel(loginItemManager: LoginItemManager.shared, updaterViewModel: dummyUpdaterViewModel))
+            .environmentObject(SessionLogger.shared) // Provide a SessionLogger for the preview
     }
 }
 #endif 

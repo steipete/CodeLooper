@@ -107,7 +107,6 @@
 		BF010B6CD25240B33FE6AF36 /* SparkleUpdaterManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = AD3561279CC1D48D1FB0850F /* SparkleUpdaterManager.swift */; };
 		C38FC68EC5B5ABC820F98C3A /* Defaults in Frameworks */ = {isa = PBXBuildFile; productRef = 5EC9776FF97D257EE8DCC72B /* Defaults */; };
 		C3A35BD57103BE6A0024863B /* WelcomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9DF4FBC48BDEA24BA56013AC /* WelcomeView.swift */; };
-		C4FDEDABAA93FCA10ECE36A3 /* AppDelegate+MenuManagerDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6126F9E683179961A17F0C74 /* AppDelegate+MenuManagerDelegate.swift */; };
 		C71034B5F8225F447B7811CB /* IconAnimator.swift in Sources */ = {isa = PBXBuildFile; fileRef = A81EBBDD92B0209BC89FB02F /* IconAnimator.swift */; };
 		C92AD4CD2272BCBADB847418 /* LogManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 07D9EB121FEFC8BC7547D1F2 /* LogManager.swift */; };
 		C9E8E6A9360537846791A3BA /* WelcomeStep+Sendable.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A92381A60033FD16DC9AE63 /* WelcomeStep+Sendable.swift */; };
@@ -215,7 +214,6 @@
 		5B90EE899110CFF876B12F5C /* GeneralSettingsTab.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GeneralSettingsTab.swift; sourceTree = "<group>"; };
 		5FB3D5905219542395A694EB /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		606FD31E5CDAD9A2D805242B /* AXorcist */ = {isa = PBXFileReference; lastKnownFileType = folder; name = AXorcist; path = AXorcist; sourceTree = "<group>"; };
-		6126F9E683179961A17F0C74 /* AppDelegate+MenuManagerDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AppDelegate+MenuManagerDelegate.swift"; sourceTree = "<group>"; };
 		62F13848032738E908F5FD24 /* Diagnostics.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Diagnostics.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		6A3B1AEDB3C95CD8C6F4F57C /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		6B5F39834CB3F899CE8C064C /* MainSettingsCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainSettingsCoordinator.swift; sourceTree = "<group>"; };
@@ -582,7 +580,6 @@
 				55726BE7EF05884876CA0408 /* AboutView.swift */,
 				2D5FAB75EF6B072AB222608D /* AppDelegate.swift */,
 				E39DB740414D201FEBD3F42C /* AppDelegate+AppleScript.swift */,
-				6126F9E683179961A17F0C74 /* AppDelegate+MenuManagerDelegate.swift */,
 				A78799854F3184746818B6C8 /* AppEnvironment.swift */,
 				DF792AF940019971173C3D04 /* CodeLooperApp.swift */,
 				77BD422F9926B58B0FEF44C4 /* NotificationManager.swift */,
@@ -774,7 +771,6 @@
 				A5ECA3F4024535E30870CC0F /* TuistBundle+CodeLooper.swift in Sources */,
 				D36F6415E23A47171C215BB9 /* AboutView.swift in Sources */,
 				1BCD35C418A009821B5CA7CE /* AppDelegate+AppleScript.swift in Sources */,
-				C4FDEDABAA93FCA10ECE36A3 /* AppDelegate+MenuManagerDelegate.swift in Sources */,
 				60329453329B37E5AF93170D /* AppDelegate.swift in Sources */,
 				B3E5C470B686C17E153AB004 /* AppEnvironment.swift in Sources */,
 				844CE43E8F91643C896C901D /* CodeLooperApp.swift in Sources */,

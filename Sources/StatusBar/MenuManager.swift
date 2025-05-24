@@ -15,6 +15,7 @@ protocol MenuManagerDelegate: AnyObject, Sendable {
     func toggleStartAtLogin()
     func toggleDebugMenu()
     func showAbout()
+    func showAXpectorWindow()
 }
 
 // MARK: - Menu Manager
@@ -202,6 +203,13 @@ final class MenuManager {
 
         menu.addItem(NSMenuItem.separator())
 
+        // Add AXpector item
+        let axpectorItem = NSMenuItem(title: "Open AXpector", action: #selector(showAXpectorWindowClicked), keyEquivalent: "")
+        axpectorItem.target = self
+        menu.addItem(axpectorItem)
+
+        menu.addItem(NSMenuItem.separator())
+
         let startAtLoginItem = NSMenuItem(
             title: "Start at Login",
             action: #selector(toggleStartAtLoginClicked),
@@ -297,6 +305,11 @@ final class MenuManager {
     private func quitClicked() {
         logger.info("Quit menu item clicked. Terminating application.")
         NSApp.terminate(nil)
+    }
+
+    @objc private func showAXpectorWindowClicked() {
+        logger.info("AXpector menu item clicked")
+        delegate?.showAXpectorWindow()
     }
 
     private func updateCursorInstanceCount() {
