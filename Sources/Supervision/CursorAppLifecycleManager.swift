@@ -1,15 +1,16 @@
 import AppKit
 import Combine
-import OSLog
 import Defaults // Assuming CursorInstanceInfo might use it, or for future use
+import Diagnostics
 import Foundation
+import OSLog
 
 // Forward declare CursorMonitor if needed for the owner reference, or ensure it's imported if in a different module (not the case here)
 // class CursorMonitor {} // Placeholder if full import isn't desired yet, but direct reference is better.
 
 @MainActor
 public class CursorAppLifecycleManager: ObservableObject {
-    private let logger = Logger(label: String(describing: CursorAppLifecycleManager.self), category: .lifecycle)
+    private let logger = Logger(category: .lifecycle)
     
     // Constants
     private let cursorBundleIdentifier = "com.todesktop.230313mzl4w4u92"

@@ -1,6 +1,6 @@
 import AppKit
-import Foundation
 import Defaults
+import Foundation
 
 /// AppDelegate extension for AppleScript support
 @MainActor

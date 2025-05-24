@@ -1,6 +1,6 @@
-import SwiftUI
-import Defaults
 import AppKit
+import Defaults
+import SwiftUI
 
 struct MainPopoverView: View {
     @StateObject private var cursorMonitor = CursorMonitor.shared

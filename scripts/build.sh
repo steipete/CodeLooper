@@ -171,7 +171,7 @@ else
 fi
 
 # Get the built executable path
-EXECUTABLE_PATH=".build/$(swift package describe --type executable)/CodeLooper"
+EXECUTABLE_PATH="$(swift build $CONFIG_FLAGS $SWIFT_FLAGS --show-bin-path)/CodeLooper"
 
 if [ ! -f "$EXECUTABLE_PATH" ]; then
     log "Error: Built executable not found at $EXECUTABLE_PATH"

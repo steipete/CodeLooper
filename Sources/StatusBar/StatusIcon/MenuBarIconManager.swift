@@ -1,4 +1,5 @@
 import AppKit
+import Diagnostics
 import Foundation
 import OSLog
 
@@ -16,7 +17,7 @@ import OSLog
 class MenuBarIconManager {
     // MARK: - Properties
 
-    private let logger = Logger(label: "MenuBarIconManager", category: .statusBar)
+    private let logger = Logger(category: .statusBar)
     weak var statusItem: NSStatusItem?
     private var appearanceObserver: Any?
 

@@ -1,5 +1,6 @@
 import Combine
 import Defaults
+import Diagnostics
 import Foundation
 import Observation
 import OSLog
@@ -12,7 +13,10 @@ public final class MainSettingsViewModel: ObservableObject {
     // MARK: - Properties
 
     // Logger instance
-    private let logger = Logger(label: "MainSettingsViewModel", category: .settings)
+    private let logger = Logger(category: .settings)
+
+    // Selected Tab for the TabView
+    var selectedTab: SettingsTab = .general
 
     // Dependencies
     private let loginItemManager: LoginItemManager
@@ -53,11 +57,11 @@ public final class MainSettingsViewModel: ObservableObject {
     var xcodeBuildIncrementalBuilds: Bool = false
     var xcodeBuildSentryDisabled: Bool = false
 
-    // Rule Set Properties - @Observable handles changes
-    var projectDisplayName: String = "Selected Project"
-    var ruleSetStatusMessage: String = "Verify or Install Rule Set"
-    var selectedProjectURL: URL? = nil
-    var currentRuleSetStatus: MCPConfigManager.RuleSetStatus = .notInstalled
+    // Rule Set Properties - @Observable handles changes - These will be removed.
+    // var projectDisplayName: String = "Selected Project"
+    // var ruleSetStatusMessage: String = "Verify or Install Rule Set"
+    // var selectedProjectURL: URL?
+    // var currentRuleSetStatus: MCPConfigManager.RuleSetStatus = .notInstalled
 
     // Status for individual MCPs (raw boolean enabled/disabled)
     // These are now computed properties based on mcpConfigManager
@@ -83,7 +87,7 @@ public final class MainSettingsViewModel: ObservableObject {
         }
     }
 
-    var defaultsObservations: Set<AnyCancellable> = Set<AnyCancellable>()
+    var defaultsObservations = Set<AnyCancellable>()
 
     // MARK: - Initialization
 
@@ -249,59 +253,10 @@ public final class MainSettingsViewModel: ObservableObject {
         refreshAllMCPStatusMessages()
     }
 
-    // MARK: - Rule Set Management
+    // MARK: - Rule Set Management - This section will be removed.
 
-    public func verifyTerminatorRuleSetStatus(projectURL: URL?) {
-        guard let url = projectURL else {
-            logger.info("No project URL provided for rule set status verification.")
-            self.selectedProjectURL = nil
-            self.projectDisplayName = "Selected Project"
-            self.currentRuleSetStatus = .notInstalled
-            self.ruleSetStatusMessage = "Select a project to verify."
-            return
-        }
-        logger.info("Verifying Terminator Rule Set status for project: \(url.path)")
-        let status = mcpConfigManager.verifyTerminatorRuleSet(at: url)
-        
-        self.selectedProjectURL = url
-        self.projectDisplayName = url.lastPathComponent
-        self.currentRuleSetStatus = status
-        self.ruleSetStatusMessage = status.displayName
-        
-        logger.info("Rule set status for \(url.lastPathComponent): \(status.displayName)")
-    }
-
-    public func installTerminatorRuleSet(forProject projectURL: URL?) {
-        let resolvedURL: URL?
-        if projectURL == nil {
-            resolvedURL = promptForProjectDirectory(title: "Select Project for Terminator Rule Set Installation")
-        } else {
-            resolvedURL = projectURL
-        }
-
-        guard let url = resolvedURL else {
-            logger.info("Terminator Rule Set installation cancelled or no directory selected.")
-            // Update status to reflect no project is selected if a prompt was cancelled
-            if projectURL == nil { // Only if we prompted and got nothing
-                self.selectedProjectURL = nil
-                self.projectDisplayName = "Selected Project"
-                self.currentRuleSetStatus = .notInstalled
-                self.ruleSetStatusMessage = "Select a project to install."
-            }
-            return
-        }
-
-        logger.info("Attempting to install Terminator Rule Set to: \(url.path)")
-        if mcpConfigManager.installTerminatorRuleSet(to: url) {
-            logger.info("Terminator Rule Set installed successfully to \(url.lastPathComponent).")
-            AlertPresenter.shared.showInfo(title: "Installation Successful", message: "Terminator Rule Set installed successfully in \(url.lastPathComponent).")
-        } else {
-            logger.error("Failed to install Terminator Rule Set to \(url.lastPathComponent).")
-            AlertPresenter.shared.showAlert(title: "Installation Failed", message: "Could not install Terminator Rule Set in \(url.lastPathComponent). Check application logs for details.", style: .critical)
-        }
-        // After attempting installation, always re-verify the status for the affected URL.
-        verifyTerminatorRuleSetStatus(projectURL: url)
-    }
+    // public func verifyTerminatorRuleSetStatus(projectURL: URL?) { ... }
+    // public func installTerminatorRuleSet(forProject projectURL: URL?) { ... }
 
     // Helper to prompt for directory (could be in a utility class too)
     @MainActor // NSOpenPanel must be used on the main actor
@@ -317,5 +272,40 @@ public final class MainSettingsViewModel: ObservableObject {
             return panel.url
         }
         return nil
+    }
+}
+
+enum SettingsTab: String, CaseIterable, Identifiable {
+    case general = "General"
+    case supervision = "Supervision"
+    case ruleSets = "Rule Sets"
+    case externalMCPs = "External MCPs"
+    // case appearance = "Appearance"
+    // case updates = "Updates"
+    case advanced = "Advanced"
+    case log = "Log"
+    case developer = "Developer"
+    // case about = "About"
+    // case debug = "Debug"
+    // case statistics = "Statistics"
+
+    var id: String { self.rawValue }
+
+    // Optional: Provide a system image name for each tab if your UI uses it
+    var systemImageName: String {
+        switch self {
+        case .general: return "gearshape"
+        case .supervision: return "eye"
+        case .ruleSets: return "list.star"
+        case .externalMCPs: return "server.rack"
+        // case .appearance: return "paintbrush"
+        // case .updates: return "arrow.down.circle"
+        case .advanced: return "slider.horizontal.3"
+        case .log: return "doc.text.fill"
+        case .developer: return "ladybug.fill"
+        // case .about: return "info.circle"
+        // case .debug: return "ant.circle"
+        // case .statistics: return "chart.bar.xaxis"
+        }
     }
 }

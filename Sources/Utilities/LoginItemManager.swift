@@ -1,6 +1,7 @@
 import Combine
 import Defaults
 @preconcurrency import Foundation
+import Diagnostics
 import LaunchAtLogin
 import os.log
 

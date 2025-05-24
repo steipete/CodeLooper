@@ -29,7 +29,7 @@ public final class LogManager {
 
     /// Initialize the LogManager with a subsystem
     /// - Parameter subsystem: The OSLog subsystem identifier (typically bundle ID)
-    private init(subsystem: String = Constants.bundleIdentifier) {
+    private init(subsystem: String = Bundle.main.bundleIdentifier ?? "me.steipete.codelooper") {
         self.subsystem = subsystem
         fileLogger = FileLogger.shared
         configuration = LogConfiguration.shared

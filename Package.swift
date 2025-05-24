@@ -26,20 +26,30 @@ let package = Package(
         .package(url: "https://github.com/cpisciotta/xcbeautify", from: "2.28.0")
     ],
     targets: [
+        .target(
+            name: "Diagnostics",
+            dependencies: [
+                .product(name: "Logging", package: "swift-log"),
+                "Defaults"
+            ],
+            path: "Sources/Diagnostics"
+        ),
         .executableTarget(
             name: "CodeLooper",
             dependencies: [
                 "Defaults",
                 "LaunchAtLogin",
                 "KeyboardShortcuts",
+                "Diagnostics",
                 .product(name: "SwiftUIIntrospect", package: "SwiftUI-Introspect"),
                 .product(name: "Logging", package: "swift-log"),
-                .product(name: "AXorcistLib", package: "AXorcist"),
+                .product(name: "AXorcist", package: "AXorcist"),
                 .product(name: "Sparkle", package: "Sparkle")
             ],
             path: "Sources",
+            exclude: ["Diagnostics"],
             resources: [
-                .process("Utilities/Resources")
+                .copy("../Resources")
             ],
             swiftSettings: [
                 // Using complete concurrency checking for Swift 6 compatibility.

@@ -1,4 +1,5 @@
 @preconcurrency import Defaults
+import Diagnostics
 import Foundation
 
 extension Defaults.Keys {
@@ -108,7 +109,8 @@ extension Defaults.Keys {
     )
 
     // --- Logging Configuration (Spec 3.3.A / LogSettingsView) ---
-    static let selectedLogLevel = Key<LogLevel>("selectedLogLevel", default: .info)
+    // static let selectedLogLevel = Key<LogLevel>("selectedLogLevel", default: .info) // TODO: Make LogLevel conform to Defaults.Serializable
+    static let selectedLogLevel = Key<String>("selectedLogLevel", default: "info")
     static let verboseLogging = Key<Bool>("verboseLogging", default: false)
 
     // --- AXorcist Locators (Advanced Settings - Spec 3.3.A / AdvancedSettingsView) ---

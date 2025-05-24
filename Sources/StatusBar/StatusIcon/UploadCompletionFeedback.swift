@@ -1,4 +1,5 @@
 import AppKit
+import Diagnostics
 import Foundation
 import OSLog
 import UserNotifications
@@ -15,7 +16,7 @@ class UploadCompletionFeedback {
     private var tasks: [String: Task<Void, Error>] = [:]
 
     /// Logger for this class
-    private let logger = Logger(label: "UploadCompletionFeedback", category: .ui)
+    private let logger = Logger(category: .ui)
 
     // MARK: - Initialization
 

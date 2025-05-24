@@ -1,45 +1,70 @@
 import AppKit
-import AXorcistLib
+import ApplicationServices
+import AXorcist
 import Combine
 import Defaults
+import Diagnostics
 import Foundation
-import os
 import SwiftUI
-import ApplicationServices
 
 @MainActor
 protocol WindowManagerDelegate: AnyObject {
     func windowManagerDidFinishOnboarding()
-    func windowManagerRequestsAccessibilityPermissions(showPromptIfNeeded: Bool)
-    // Add other delegate methods if AppDelegate needs to be called back for other reasons
+    // Removed windowManagerRequestsAccessibilityPermissions as WindowManager handles it directly now
 }
 
 @MainActor
-class WindowManager {
-    private let logger = os.Logger(subsystem: Bundle.main.bundleIdentifier ?? "me.steipete.codelooper", category: "WindowManager")
+class WindowManager: ObservableObject {
+    // Standardized logger
+    private let logger = Logger(category: .app) // From Diagnostics module
+    private let sessionLogger: SessionLogger // Injected
+
+    private var settingsWindow: NSWindow?
+    private var welcomeWindow: NSWindow?
+    var mainSettingsCoordinator: MainSettingsCoordinator? // Keep if used by other parts
+
+    // Debouncer for window resize events (if still needed, otherwise remove)
+    private var resizeDebouncer = Debouncer(delay: 0.5)
+
+    // Store observation tokens
+    private var cancellables = Set<AnyCancellable>()
 
     // MARK: - Properties
     private var aboutWindowController: NSWindowController?
-    var welcomeWindowController: NSWindowController? // Made public for AppDelegate access if needed
+    var welcomeWindowController: NSWindowController?
 
     // Dependencies
     private let loginItemManager: LoginItemManager
-    private let sessionLogger: SessionLogger
-    weak var delegate: WindowManagerDelegate?
+    weak var delegate: WindowManagerDelegate? // Added delegate property
 
     // MARK: - Initialization
     init(loginItemManager: LoginItemManager, sessionLogger: SessionLogger, delegate: WindowManagerDelegate?) {
         self.loginItemManager = loginItemManager
-        self.sessionLogger = sessionLogger
-        self.delegate = delegate
+        self.sessionLogger = sessionLogger // Initialize injected sessionLogger
+        self.delegate = delegate         // Initialize injected delegate
+        
         logger.info("WindowManager initialized.")
+        setupDebugMenuObserver()
+        // Initial check for accessibility
+        checkAndPromptForAccessibilityPermissions()
+    }
+
+    private func setupDebugMenuObserver() {
+        Defaults.publisher(.showDebugMenu) // Get a publisher for the specific key
+            .sink { [weak self] change in // change is of type Defaults.KeyChange<Bool>
+                guard let self = self else { return }
+                // Access change.newValue directly as it's not a generic publisher change
+                self.logger.info("showDebugMenu changed to: \(change.newValue). Updating menu bar.")
+                NotificationCenter.default.post(name: .updateMenuBarExtras, object: nil)
+            }
+            .store(in: &cancellables)
     }
 
     // MARK: - Window Management
     @objc func showAboutWindow() {
         logger.info("Showing About Window.")
         if aboutWindowController == nil {
-            let aboutView = AboutView() // Assuming AboutView is accessible
+            let aboutView = AboutView()
             let window = NSWindow(
                 contentRect: NSRect(x: 0, y: 0, width: 400, height: 400),
                 styleMask: [.titled, .closable],
@@ -48,11 +73,11 @@ class WindowManager {
             )
             window.center()
             window.title = "About CodeLooper"
-            window.isReleasedWhenClosed = false
+            window.isReleasedWhenClosed = false // Important for NSWindowController
             window.contentView = NSHostingView(rootView: aboutView)
             aboutWindowController = NSWindowController(window: window)
         }
-        aboutWindowController?.showWindow(nil) // Pass nil for sender
+        aboutWindowController?.showWindow(nil)
         NSApp.activate(ignoringOtherApps: true)
         aboutWindowController?.window?.makeKeyAndOrderFront(nil)
     }
@@ -61,15 +86,15 @@ class WindowManager {
         logger.info("Showing Welcome Window.")
         if welcomeWindowController == nil {
             let welcomeViewModel = WelcomeViewModel(
-                loginItemManager: loginItemManager, 
-                windowManager: self
-            ) { [weak self] in
+                loginItemManager: loginItemManager,
+                windowManager: self // Pass self if WelcomeViewModel needs it
+            ) { [weak self] in // Completion handler
                 self?.welcomeWindowController?.close()
-                self?.welcomeWindowController = nil
+                self?.welcomeWindowController = nil // Release the controller
                 self?.logger.info("Welcome onboarding flow finished.")
-                self?.delegate?.windowManagerDidFinishOnboarding()
+                self?.delegate?.windowManagerDidFinishOnboarding() // Call delegate
             }
-            let welcomeView = WelcomeView(viewModel: welcomeViewModel) // Assuming WelcomeView is accessible
+            let welcomeView = WelcomeView(viewModel: welcomeViewModel)
             let window = NSWindow(
                 contentRect: NSRect(x: 0, y: 0, width: 700, height: 700),
                 styleMask: [.titled, .closable],
@@ -78,104 +103,96 @@ class WindowManager {
             )
             window.center()
             window.title = "Welcome to CodeLooper"
-            window.isReleasedWhenClosed = false
+            window.isReleasedWhenClosed = false // Important for NSWindowController
             window.contentView = NSHostingView(rootView: welcomeView)
             welcomeWindowController = NSWindowController(window: window)
         }
-        welcomeWindowController?.showWindow(nil) // Pass nil for sender
+        welcomeWindowController?.showWindow(nil)
         NSApp.activate(ignoringOtherApps: true)
         welcomeWindowController?.window?.makeKeyAndOrderFront(nil)
     }
     
+    // MARK: - Accessibility (Consolidated)
+
     /// Checks accessibility permissions and prompts the user if needed.
     func checkAndPromptForAccessibilityPermissions(showPromptIfNeeded: Bool = true) {
-        logger.info("Checking accessibility permissions (via WindowManager).")
-        var debugLogs: [String] = []
-        var permissionsGranted = false
+        logger.info("Checking accessibility permissions...")
         
         do {
-            // First, try without prompting to see current status
-            try AXorcistLib.checkAccessibilityPermissions(isDebugLoggingEnabled: false, currentDebugLogs: &debugLogs)
-            permissionsGranted = true
+            // Use the global AXorcist function
+            try checkAccessibilityPermissions()
             logger.info("Accessibility permissions already granted.")
-            Task { await sessionLogger.log(level: .info, message: "Accessibility permissions granted.") }
+            sessionLogger.log(level: .info, message: "Accessibility permissions granted.")
         } catch let error as AccessibilityError {
             if case .notAuthorized = error, showPromptIfNeeded {
-                logger.warning("Accessibility permissions not granted. Will attempt to trigger system prompt. Error: \(error.localizedDescription)")
-                Task { await sessionLogger.log(level: .warning, message: "Accessibility permissions not granted, triggering system prompt. Error: \(error.localizedDescription)") }
+                logger.warning("Accessibility permissions not granted. Triggering system prompt. Error: \(error.localizedDescription)")
+                sessionLogger.log(level: .warning, message: "Accessibility permissions not granted, triggering system prompt. Error: \(error.localizedDescription)")
                 
-                // **KEY FIX**: Make an actual accessibility API call to trigger the system prompt
-                // This will cause macOS to show the authorization dialog and add CodeLooper to the accessibility list
                 Task { @MainActor in
-                    await triggerAccessibilityPrompt()
+                    await triggerAccessibilityPromptViaAPI()
                 }
-                
-                // Also open the System Settings as a fallback
-                if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility") {
-                    NSWorkspace.shared.open(url)
-                }
-                
+                // Fallback: also open System Settings page
+                openAccessibilitySystemSettings()
             } else {
                 logger.error("Error checking accessibility permissions: \(error.localizedDescription)")
-                Task { await sessionLogger.log(level: .error, message: "Error checking accessibility permissions: \(error.localizedDescription)") }
+                sessionLogger.log(level: .error, message: "Error checking accessibility permissions: \(error.localizedDescription)")
                 if showPromptIfNeeded {
-                    if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility") {
-                        NSWorkspace.shared.open(url)
-                    }
+                    showAlert(title: "Accessibility Permissions Error", message: "CodeLooper encountered an error: \(error.localizedDescription). Please check System Settings.", style: .critical)
+                    openAccessibilitySystemSettings()
                 }
             }
-        } catch {
+        } catch { // Catch any other unexpected errors
             logger.error("An unexpected error occurred while checking accessibility permissions: \(error.localizedDescription)")
-            Task { await sessionLogger.log(level: .error, message: "Unexpected error checking accessibility permissions: \(error.localizedDescription)") }
+            sessionLogger.log(level: .error, message: "Unexpected error checking accessibility permissions: \(error.localizedDescription)")
             if showPromptIfNeeded {
-                if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility") {
-                    NSWorkspace.shared.open(url)
-                }
+                showAlert(title: "Accessibility Check Failed", message: "An unexpected error occurred: \(error.localizedDescription). Please check System Settings.", style: .critical)
+                openAccessibilitySystemSettings()
             }
-        }
-
-        if permissionsGranted {
-            // Delegate can decide if any specific action is needed upon confirmation
         }
     }
     
-    /// Triggers the accessibility prompt by making an actual accessibility API call
+    /// Triggers the accessibility prompt by making an actual accessibility API call.
     @MainActor
-    private func triggerAccessibilityPrompt() async {
-        logger.info("Triggering accessibility prompt by making AX API call...")
+    private func triggerAccessibilityPromptViaAPI() async {
+        logger.info("Attempting to trigger accessibility prompt via AX API call...")
+        let kAXTrustedCheckOptionPromptKey = "AXTrustedCheckOptionPrompt" // as CFString
+        let options = [kAXTrustedCheckOptionPromptKey as CFString: true as CFBoolean] as CFDictionary
         
-        // Method 1: Use AXIsProcessTrustedWithOptions with prompt option
-        // This is the standard way to trigger the accessibility permission prompt
-        // Using the same approach as AXorcist's AccessibilityPermissions.swift
-        let kAXTrustedCheckOptionPromptKey = "AXTrustedCheckOptionPrompt"
-        let options = [kAXTrustedCheckOptionPromptKey: true] as CFDictionary
+        // This call should trigger the prompt if permissions are not already granted.
         let isGranted = AXIsProcessTrustedWithOptions(options)
         
         if isGranted {
-            logger.info("Accessibility permissions granted after prompt trigger.")
-            Task { await sessionLogger.log(level: .info, message: "Accessibility permissions granted after prompt trigger.") }
+            logger.info("Accessibility permissions appear granted after prompt trigger.")
+            sessionLogger.log(level: .info, message: "Accessibility permissions granted after prompt trigger.")
         } else {
-            logger.info("Accessibility prompt displayed. User needs to manually grant permissions.")
-            Task { await sessionLogger.log(level: .info, message: "Accessibility prompt displayed. User needs to manually grant permissions.") }
+            logger.info("Accessibility prompt displayed or API call made. User action may be required in System Settings.")
+            sessionLogger.log(level: .info, message: "Accessibility prompt displayed or API call made.")
         }
-        
-        // Method 2: As a backup, try to create a system-wide AX element to ensure the prompt is triggered
-        let systemWideElement = AXUIElementCreateSystemWide()
-        var focusedElement: CFTypeRef?
-        let _ = AXUIElementCopyAttributeValue(systemWideElement, kAXFocusedUIElementAttribute as CFString, &focusedElement)
-        // This call will fail if permissions aren't granted, but it ensures the app appears in the accessibility list
-        
-        logger.info("Accessibility API calls completed to trigger system prompt.")
     }
 
+    private func openAccessibilitySystemSettings() {
+        if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility") {
+            NSWorkspace.shared.open(url)
+        }
+    }
+
+    // MARK: - Alert Helper
+    private func showAlert(title: String, message: String, style: NSAlert.Style) {
+        AlertPresenter.shared.showAlert(title: title, message: message, style: style)
+    }
+
+    // MARK: - First Launch Logic
     func handleFirstLaunchOrWelcomeScreen() {
-        logger.info("Checking if welcome guide should be shown (via WindowManager).")
+        logger.info("Checking if welcome guide should be shown.")
         if !Defaults[.hasShownWelcomeGuide] {
             logger.info("Welcome guide has not been shown. Displaying now.")
             showWelcomeWindow()
         } else {
-            logger.info("Welcome guide already shown. Checking accessibility permissions.")
-            delegate?.windowManagerRequestsAccessibilityPermissions(showPromptIfNeeded: true)
+            logger.info("Welcome guide already shown. Ensuring accessibility permissions are checked.")
+            // No direct delegate call here, checkAndPromptForAccessibilityPermissions is called in init
         }
     }
+    
+    // Remove the old checkAndHandleAccessibilityPermissions and ensureAccessibilityWithPrompt methods
+    // as their logic is now consolidated into checkAndPromptForAccessibilityPermissions.
 } 

@@ -3,7 +3,7 @@
 
 --swiftversion 6.0
 --disable redundantSelf
---indentation 4
+--indent 4
 --maxwidth 120
 --enable organizeDeclarations
 --enable sortImports

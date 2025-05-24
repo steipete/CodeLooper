@@ -1,12 +1,13 @@
 import AppKit
+import Diagnostics
 import Foundation
 import OSLog
 
 @MainActor
 extension MenuBarIconManager {
     // Use a dedicated logger for debugging
-    private var debugLogger: Logger {
-        Logger(label: "MenuBarIconManager+Debug", category: .statusBar)
+    private var debugLogger: Diagnostics.Logger {
+        Diagnostics.Logger(category: .statusBar)
     }
 
     /// Debug function to verify icon loading

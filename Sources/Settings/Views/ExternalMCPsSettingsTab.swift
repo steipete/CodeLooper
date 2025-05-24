@@ -1,6 +1,6 @@
-import SwiftUI
-import Defaults
 import AppKit
+import Defaults
+import SwiftUI
 
 // MARK: - MCP Identifier Enum
 enum MCPIdentifier: String, CaseIterable {
@@ -111,21 +111,20 @@ struct ExternalMCPsSettingsTab: View {
                 statusMessageBinding: $viewModel.claudeCodeStatusMessage,
                 detailsAction: { showClaudeCodeConfigSheet = true },
                 warningTitle: "Enable Claude Code Agent?",
-                warningMessage: "Enabling Claude Code allows CodeLooper to trigger a powerful command-line tool that can modify files, execute terminal commands, and interact with your system. Ensure you trust the source and understand the capabilities of the claude-code CLI before enabling. You are responsible for its installation and any actions it performs.",
-                onConfirmEnable: { viewModel.enableMCP(MCPIdentifier.claudeCode.rawValue) }
-            )
+                warningMessage: "Enabling Claude Code allows CodeLooper to trigger a powerful command-line tool that can modify files, execute terminal commands, and interact with your system. Ensure you trust the source and understand the capabilities of the claude-code CLI before enabling. You are responsible for its installation and any actions it performs."
+            )                { viewModel.enableMCP(MCPIdentifier.claudeCode.rawValue) }
             .sheet(isPresented: $showClaudeCodeConfigSheet) {
                 ClaudeCodeConfigView( // Corrected call
                     isPresented: $showClaudeCodeConfigSheet,
-                    customCliName: $viewModel.claudeCodeCustomCliName, // Bind to viewModel property
-                    onSave: { cliName in
+                    customCliName: $viewModel.claudeCodeCustomCliName
+                ) // Bind to viewModel property
+                    { cliName in
                         _ = viewModel.mcpConfigManager.updateMCPConfiguration(
                             mcpIdentifier: MCPIdentifier.claudeCode.rawValue,
                             params: ["customCliName": cliName]
                         )
                         viewModel.refreshAllMCPStatusMessages()
                     }
-                )
             }
 
             // macOS Automator MCP
@@ -136,9 +135,8 @@ struct ExternalMCPsSettingsTab: View {
                 statusMessageBinding: $viewModel.macOSAutomatorStatusMessage,
                 detailsAction: { showMacAutomatorConfigSheet = true },
                 warningTitle: "Enable macOS Automator MCP?",
-                warningMessage: "Enabling the macOS Automator MCP allows CodeLooper to execute arbitrary AppleScripts or JavaScript for Automation (JXA) scripts. These scripts can control applications, access data, and perform a wide range of actions on your Mac. Only enable this if you understand the security implications and trust the scripts that will be executed.",
-                onConfirmEnable: { viewModel.enableMCP(MCPIdentifier.macOSAutomator.rawValue) }
-            )
+                warningMessage: "Enabling the macOS Automator MCP allows CodeLooper to execute arbitrary AppleScripts or JavaScript for Automation (JXA) scripts. These scripts can control applications, access data, and perform a wide range of actions on your Mac. Only enable this if you understand the security implications and trust the scripts that will be executed."
+            )                { viewModel.enableMCP(MCPIdentifier.macOSAutomator.rawValue) }
             .sheet(isPresented: $showMacAutomatorConfigSheet) {
                 // Assuming a similar config view exists or will be created
                 MacAutomatorConfigView(isPresented: $showMacAutomatorConfigSheet) // Placeholder
@@ -152,9 +150,8 @@ struct ExternalMCPsSettingsTab: View {
                 statusMessageBinding: $viewModel.xcodeBuildStatusMessage,
                 detailsAction: { showXcodeBuildConfigSheet = true },
                 warningTitle: "Enable XcodeBuild MCP?",
-                warningMessage: "Enabling the XcodeBuild MCP allows CodeLooper to execute xcodebuild commands. These commands can compile code, run tests, and interact with your Xcode projects. Ensure you understand the commands that will be run and their potential impact on your projects and system.",
-                onConfirmEnable: { viewModel.enableMCP(MCPIdentifier.xcodeBuild.rawValue) }
-            )
+                warningMessage: "Enabling the XcodeBuild MCP allows CodeLooper to execute xcodebuild commands. These commands can compile code, run tests, and interact with your Xcode projects. Ensure you understand the commands that will be run and their potential impact on your projects and system."
+            )                { viewModel.enableMCP(MCPIdentifier.xcodeBuild.rawValue) }
             .sheet(isPresented: $showXcodeBuildConfigSheet) {
                 // Assuming a similar config view exists or will be created
                 XcodeBuildConfigView(isPresented: $showXcodeBuildConfigSheet) // Placeholder

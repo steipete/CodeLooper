@@ -1,5 +1,5 @@
-import SwiftUI
 import Defaults
+import SwiftUI
 
 struct AdvancedSettingsView: View {
     // Supervision Tuning Defaults
@@ -124,7 +124,6 @@ struct AdvancedSettingsView: View {
         .padding(.bottom, 3)
     }
 }
-
 
 extension NumberFormatter {
     static var generalSecondsFormatter: NumberFormatter {

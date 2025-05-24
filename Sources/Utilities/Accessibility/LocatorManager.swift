@@ -1,10 +1,11 @@
-import AXorcistLib // Use the library product
 import AppKit
 import ApplicationServices // Ensure this is imported for AX constants
+import AXorcist // Use the library product
 import Defaults // For UserDefaults access
 import Foundation
+import Diagnostics
 
-// AXorcistLib.Locator should be directly usable as `Locator` after import.
+// Locator should be directly usable after import.
 
 // MARK: - LocatorManager
 
@@ -17,10 +18,10 @@ public class LocatorManager {
 
     // Default locators - these are fallback locators if not overridden by user or found in session cache.
     // These should represent common, reasonably stable ways to find these elements.
-    private var defaultLocators: [LocatorType: AXorcistLib.Locator?] = [:]
+    private var defaultLocators: [LocatorType: Locator?] = [:]
 
     // Session cache for successfully used/discovered locators
-    private var sessionCache: [LocatorType: AXorcistLib.Locator] = [:]
+    private var sessionCache: [LocatorType: Locator] = [:]
 
     private init() {
         // Initialize AXorcist instance here or ensure it's passed if needed by discoverer directly.
@@ -34,9 +35,9 @@ public class LocatorManager {
         }
     }
 
-    public func getLocator(for type: LocatorType, pid: pid_t? = nil) async -> AXorcistLib.Locator? {
+    public func getLocator(for type: LocatorType, pid: pid_t? = nil) async -> Locator? {
         var jsonString: String?
-        let _ = type.rawValue // Unused variable
+        _ = type.rawValue // Unused variable
 
         // 1. Check UserDefaults for user override (JSON string)
         switch type {
@@ -54,11 +55,11 @@ public class LocatorManager {
         if let str = jsonString, !str.isEmpty,
             let jsonData = str.data(using: .utf8) {
             do {
-                let userLocator = try JSONDecoder().decode(AXorcistLib.Locator.self, from: jsonData)
-                await SessionLogger.shared.log(level: .debug, message: "Using user-defined locator for \(type.rawValue) from Defaults.", pid: pid)
+                let userLocator = try JSONDecoder().decode(Locator.self, from: jsonData)
+                SessionLogger.shared.log(level: .debug, message: "Using user-defined locator for \(type.rawValue) from Defaults.", pid: pid)
                 return userLocator
             } catch {
-                await SessionLogger.shared.log(
+                SessionLogger.shared.log(
                     level: .error,
                     message: "Failed to decode user-defined locator JSON for \(type.rawValue): " +
                         "\(error.localizedDescription). JSON: \(str)", pid: pid
@@ -68,18 +69,18 @@ public class LocatorManager {
 
         // 2. Check session cache
         if let cachedLocator = sessionCache[type] {
-            await SessionLogger.shared.log(level: .debug, message: "Using session-cached locator for \(type.rawValue).", pid: pid)
+            SessionLogger.shared.log(level: .debug, message: "Using session-cached locator for \(type.rawValue).", pid: pid)
             return cachedLocator
         }
 
         // 3. Return bundled default
         if defaultLocators[type] != nil {
-            await SessionLogger.shared.log(level: .debug, message: "Using bundled default locator for \(type.rawValue).", pid: pid)
+            SessionLogger.shared.log(level: .debug, message: "Using bundled default locator for \(type.rawValue).", pid: pid)
             // Attempt to use this locator once. If it fails, dynamic discovery might be tried next (implicitly by caller or explicitly here)
             // For now, just return it. Dynamic discovery is the next step if this doesn't work for the caller.
              // return bundledLocator // Old behavior: just return the bundled one
         } else {
-            await SessionLogger.shared.log(level: .warning, message: "No bundled default locator found for type: \(type.rawValue)", pid: pid)
+            SessionLogger.shared.log(level: .warning, message: "No bundled default locator found for type: \(type.rawValue)", pid: pid)
         }
         
         // 4. If PID is available, attempt dynamic discovery as a fallback
@@ -92,9 +93,9 @@ public class LocatorManager {
         // Let's try dynamic discovery if user & cache miss. Bundled is the ultimate fallback if discovery also fails.
 
         if let currentPid = pid {
-            await SessionLogger.shared.log(level: .info, message: "User/cached locator not found for \(type.rawValue). Attempting dynamic discovery for PID: \(currentPid).", pid: currentPid)
+            SessionLogger.shared.log(level: .info, message: "User/cached locator not found for \(type.rawValue). Attempting dynamic discovery for PID: \(currentPid).", pid: currentPid)
             if let discoveredLocator = await dynamicDiscoverer.discover(type: type, for: currentPid, axorcist: self.axorcistInstance) {
-                await SessionLogger.shared.log(level: .info, message: "Dynamic discovery successful for \(type.rawValue). Caching and returning.", pid: currentPid)
+                SessionLogger.shared.log(level: .info, message: "Dynamic discovery successful for \(type.rawValue). Caching and returning.", pid: currentPid)
                 updateSessionCache(for: type, with: discoveredLocator) // Use type directly
                 return discoveredLocator
             }
@@ -102,23 +103,23 @@ public class LocatorManager {
         
         // 5. If dynamic discovery also fails or no PID, fall back to bundled default (if it exists)
         if let bundledLocator = defaultLocators[type] {
-             await SessionLogger.shared.log(level: .debug, message: "Falling back to bundled default locator for \(type.rawValue) after other attempts.", pid: pid)
+             SessionLogger.shared.log(level: .debug, message: "Falling back to bundled default locator for \(type.rawValue) after other attempts.", pid: pid)
             return bundledLocator
         }
         
-        await SessionLogger.shared.log(level: .error, message: "Failed to find any locator for type: \(type.rawValue) after all attempts.", pid: pid)
+        SessionLogger.shared.log(level: .error, message: "Failed to find any locator for type: \(type.rawValue) after all attempts.", pid: pid)
         return nil // Absolute fallback
     }
 
-    public func updateSessionCache(for type: LocatorType, with locator: AXorcistLib.Locator) {
+    public func updateSessionCache(for type: LocatorType, with locator: Locator) {
         sessionCache[type] = locator
-        Task { // Fire and forget log
-            await SessionLogger.shared.log(level: .info, message: "Session cache updated for locator type: \(type.rawValue)")
-        }
+        // Task { // Fire and forget log // Removed Task wrapper as log is not async
+            SessionLogger.shared.log(level: .info, message: "Session cache updated for locator type: \(type.rawValue)")
+        // }
     }
 
     public func resetUserOverride(for type: LocatorType) {
-        let _ = type.rawValue // Unused variable
+        _ = type.rawValue // Unused variable
         switch type {
         case .generatingIndicatorText: Defaults.reset(.locatorJSONGeneratingIndicatorText)
         case .sidebarActivityArea: Defaults.reset(.locatorJSONSidebarActivityArea)
@@ -131,9 +132,9 @@ public class LocatorManager {
         // default: await SessionLogger.shared.log(level: .warning, message: "Attempted to reset unknown locator override: \(defaultsKeyName)")
         }
         sessionCache.removeValue(forKey: type)
-        Task { // Fire and forget log
-            await SessionLogger.shared.log(level: .info, message: "User override reset for locator type: \(type.rawValue) and cleared from session cache.")
-        }
+        // Task { // Fire and forget log // Removed Task wrapper
+            SessionLogger.shared.log(level: .info, message: "User override reset for locator type: \(type.rawValue) and cleared from session cache.")
+        // }
     }
 
     public func resetAllUserOverrides() {
@@ -148,9 +149,9 @@ public class LocatorManager {
             .locatorJSONMainInputField
         )
         sessionCache.removeAll()
-        Task { // Fire and forget log
-            await SessionLogger.shared.log(level: .info, message: "All user locator overrides reset and session cache cleared.")
-        }
+        // Task { // Fire and forget log // Removed Task wrapper
+            SessionLogger.shared.log(level: .info, message: "All user locator overrides reset and session cache cleared.")
+        // }
     }
 }
 

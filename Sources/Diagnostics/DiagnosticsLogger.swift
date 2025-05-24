@@ -2,9 +2,6 @@ import Foundation
 import os
 import OSLog
 
-// Make Defaults Sendable-compatible in Swift 6
-@preconcurrency import Defaults
-
 // No need for custom OSLogPrivacy extension - just use string interpolation without privacy modifiers
 
 /// DiagnosticsLogger provides enhanced logging capabilities with diagnostic information

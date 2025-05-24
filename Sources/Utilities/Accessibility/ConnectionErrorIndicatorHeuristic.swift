@@ -1,6 +1,6 @@
-import AXorcistLib
 import AppKit
 import ApplicationServices
+import AXorcist
 import Defaults
 import Foundation
 
@@ -9,48 +9,43 @@ import Foundation
 struct ConnectionErrorIndicatorHeuristic: AXElementHeuristic {
     let locatorType: LocatorType = .connectionErrorIndicator
 
-    @MainActor func discover(for pid: pid_t, axorcist: AXorcist) async -> AXorcistLib.Locator? {
-        var tempLogs: [String] = []
-
-        // Attempt 1: Look for "offline"
-        let locator1 = AXorcistLib.Locator(
-            match_all: false,
-            criteria: ["role": "AXStaticText", "computed_name_contains": "offline"]
+    @MainActor func discover(for pid: pid_t, axorcist: AXorcist) async -> Locator? {
+        // Strategy 1: Look for a static text element with title "Connection error"
+        let strategy1 = Locator(
+            matchAll: false,
+            criteria: ["role": "AXStaticText", "title": "Connection error"]
         )
         let queryResponse1 = await axorcist.handleQuery(
             for: String(pid),
-            locator: locator1,
-            pathHint: nil, maxDepth: nil, requestedAttributes: nil, outputFormat: nil,
-            isDebugLoggingEnabled: Defaults[.verboseLogging], currentDebugLogs: &tempLogs
+            locator: strategy1,
+            pathHint: nil, maxDepth: nil, requestedAttributes: nil, outputFormat: nil
         )
-        if queryResponse1.data != nil { return locator1 }
-
-        // Attempt 2: Look for "network error"
-        let locator2 = AXorcistLib.Locator(
-            match_all: false,
-            criteria: ["role": "AXStaticText", "computed_name_contains": "network error"]
+        if queryResponse1.data != nil { return strategy1 }
+        
+        // Strategy 2: Look for static text containing "Connection error"
+        let strategy2 = Locator(
+            matchAll: false,
+            criteria: ["role": "AXStaticText", "title_contains_any": "Connection error,Unable to connect,Network error"]
         )
         let queryResponse2 = await axorcist.handleQuery(
             for: String(pid),
-            locator: locator2,
-            pathHint: nil, maxDepth: nil, requestedAttributes: nil, outputFormat: nil,
-            isDebugLoggingEnabled: Defaults[.verboseLogging], currentDebugLogs: &tempLogs
+            locator: strategy2,
+            pathHint: nil, maxDepth: nil, requestedAttributes: nil, outputFormat: nil
         )
-        if queryResponse2.data != nil { return locator2 }
+        if queryResponse2.data != nil { return strategy2 }
 
-        // Attempt 3: Look for a generic error image - simplified from description_contains_any
-        let locator3 = AXorcistLib.Locator(
-            match_all: false,
-            criteria: ["role": "AXImage", "description": "error"]
+        // Strategy 3: Look for a generic error message pattern if more specific ones fail.
+        let strategy3 = Locator(
+            matchAll: false,
+            criteria: ["role": "AXStaticText", "value_contains_any": "error,failed"]
         )
         let queryResponse3 = await axorcist.handleQuery(
             for: String(pid),
-            locator: locator3,
-            pathHint: nil, maxDepth: nil, requestedAttributes: nil, outputFormat: nil,
-            isDebugLoggingEnabled: Defaults[.verboseLogging], currentDebugLogs: &tempLogs
+            locator: strategy3,
+            pathHint: nil, maxDepth: nil, requestedAttributes: nil, outputFormat: nil
         )
-        if queryResponse3.data != nil { return locator3 }
-
+        if queryResponse3.data != nil { return strategy3 }
+        
         return nil
     }
 } 

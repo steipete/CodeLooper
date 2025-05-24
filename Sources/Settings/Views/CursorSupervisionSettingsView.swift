@@ -1,5 +1,5 @@
-import SwiftUI
 import Defaults
+import SwiftUI
 
 struct CursorSupervisionSettingsView: View {
     @Default(.monitorSidebarActivity)

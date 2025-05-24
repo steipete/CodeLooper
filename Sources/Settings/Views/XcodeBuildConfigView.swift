@@ -1,5 +1,5 @@
-import SwiftUI
 import Defaults
+import SwiftUI
 
 struct XcodeBuildConfigView: View {
     @Binding var isPresented: Bool

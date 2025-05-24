@@ -1,38 +1,39 @@
 import AppKit
-import Combine
-import OSLog
-import AXorcistLib
-import os
-import Defaults
-import SwiftUI
-import Foundation
 import ApplicationServices
-import AXorcistLib
+import AXorcist
+import Combine
+import Defaults
+import Diagnostics
+import Foundation
+import os
+import SwiftUI
 
 // Assuming AXApplicationObserver is in a place where it can be imported, or its relevant notifications are used.
 
-// Constants previously here are now managed via Defaults.Keys
 // private let MONITORING_INTERVAL_SECONDS: TimeInterval = 5.0
 // private let MAX_INTERVENTIONS_PER_POSITIVE_ACTIVITY: Int = 3
 // private let MAX_CONNECTION_ISSUE_RETRIES: Int = 2
 // private let MAX_CONSECUTIVE_RECOVERY_FAILURES: Int = 3
 
-// AXElement is part of AXorcistLib, so it should be AXorcistLib.AXElement if not directly available
-// For clarity, let's use the fully qualified name or ensure AXElement is re-exported by AXorcistLib's top level.
-// Given the previous error, the typealias was not working. Let's assume AXElement is directly usable from AXorcistLib.
-// If not, we might need to use AXorcistLib.AXElement directly where AXElement is used.
-// For now, removing the typealias and will rely on direct usage or fix if AXElement is not found.
-
 @MainActor
 public class CursorMonitor: ObservableObject {
+    private let logger = Diagnostics.Logger(category: .supervision)
+    private var axApplicationObserver: AXApplicationObserver!
+    private var monitoringTask: Task<Void, Error>?
+    private let sessionLogger: SessionLogger
+    private let locatorManager: LocatorManager
+    private let instanceStateManager: CursorInstanceStateManager
+    
+    // Inject AXorcist from the main app dependency graph
+    // This will be the single instance shared across the app.
     public static let shared = CursorMonitor(
-        axorcist: AXorcistLib.AXorcist(), // Use the type from the library
-        sessionLogger: SessionLogger.shared,
-        locatorManager: LocatorManager.shared
+        axorcist: AXorcist(), 
+        sessionLogger: SessionLogger.shared, 
+        locatorManager: LocatorManager.shared,
+        instanceStateManager: CursorInstanceStateManager(sessionLogger: SessionLogger.shared)
     )
 
-    private let logger = Logger(category: .cursorMonitor)
-    public let axorcist: AXorcistLib.AXorcist // Explicitly type with Lib
+    public let axorcist: AXorcist
     @Published public var instanceInfo: [pid_t: CursorInstanceInfo] = [:]
     @Published public var monitoredInstances: [MonitoredInstanceInfo] = []
     
@@ -41,12 +42,14 @@ public class CursorMonitor: ObservableObject {
     // It will be kept in sync via a Combine subscription.
     @Published public var totalAutomaticInterventionsThisSessionDisplay: Int = 0
     
-    nonisolated(unsafe) private var cancellables = Set<AnyCancellable>()
-    private let sessionLogger: SessionLogger
-    private let locatorManager: LocatorManager
-    private let instanceStateManager: CursorInstanceStateManager // New
-    private var appLifecycleManager: CursorAppLifecycleManager!
-    private var interventionEngine: CursorInterventionEngine! // Added property
+    private var cancellables = Set<AnyCancellable>()
+    public var appLifecycleManager: CursorAppLifecycleManager!
+    private var interventionEngine: CursorInterventionEngine!
+    private var tickUseCases: [pid_t: ProcessMonitoringTickUseCase] = [:]
+
+    // These are accessed and mutated on the MainActor due to the class being @MainActor
+    var isMonitoringActive: Bool = false // Changed from private to internal (default)
+    public var isMonitoringActivePublic: Bool { isMonitoringActive } // For CursorAppLifecycleManager
 
     // private var manuallyPausedPIDs: Set<pid_t> = [:]
     // private var automaticInterventionsSincePositiveActivity: [pid_t: Int] = [:]
@@ -57,16 +60,12 @@ public class CursorMonitor: ObservableObject {
     // private var lastActivityTimestamp: [pid_t: Date] = [:]
     // private var pendingObservationForPID: [pid_t: (startTime: Date, initialInterventionCountWhenObservationStarted: Int)] = [:]
 
-    // These are accessed and mutated on the MainActor due to the class being @MainActor
-    private var monitoringTask: Task<Void, Never>?
-    var isMonitoringActive: Bool = false // Changed from private to internal (default)
-    public var isMonitoringActivePublic: Bool { isMonitoringActive } // For CursorAppLifecycleManager
-
-    public init(axorcist: AXorcistLib.AXorcist, sessionLogger: SessionLogger, locatorManager: LocatorManager) {
+    // Public initializer allowing AXorcist injection
+    public init(axorcist: AXorcist, sessionLogger: SessionLogger, locatorManager: LocatorManager, instanceStateManager: CursorInstanceStateManager) {
         self.axorcist = axorcist
         self.sessionLogger = sessionLogger
         self.locatorManager = locatorManager
-        self.instanceStateManager = CursorInstanceStateManager(sessionLogger: sessionLogger) // Initialize new manager
+        self.instanceStateManager = instanceStateManager
         self.appLifecycleManager = CursorAppLifecycleManager(owner: self, sessionLogger: sessionLogger)
         // Initialize interventionEngine
         self.interventionEngine = CursorInterventionEngine(
@@ -110,9 +109,11 @@ public class CursorMonitor: ObservableObject {
 
     deinit {
         logger.info("CursorMonitor deinitialized...")
-        cancellables.forEach { $0.cancel() }
-        Task { @MainActor [weak self] in
-            self?.stopMonitoringLoop()
+        Task { @MainActor [weak self] in // Task is now @MainActor
+            guard let strongSelf = self else { return }
+            strongSelf.cancellables.forEach { $0.cancel() }
+            strongSelf.cancellables.removeAll()
+            strongSelf.stopMonitoringLoop() // Consolidate stopMonitoringLoop call here too
         }
     }
 
@@ -301,7 +302,7 @@ public class CursorMonitor: ObservableObject {
         let attributeKeysInOrder: [String] = [
             kAXValueAttribute as String,
             kAXTitleAttribute as String,
-            kAXDescriptionAttribute as String,
+            kAXDescriptionAttribute as String
         ]
         for key in attributeKeysInOrder {
             if let anyCodableInstance = element.attributes?[key] {

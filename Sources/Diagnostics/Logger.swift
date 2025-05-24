@@ -2,25 +2,80 @@ import Foundation
 import Logging // From swift-log dependency
 import OSLog // For os.Logger
 
-// Global logging system setup
-private enum LoggingSetup {
-    static let initialized: Bool = {
-        LoggingSystem.bootstrap { label in
-            // Use our custom OSLogHandler
-            var handler = MyOSLogHandler(label: label, subsystem: Bundle.main.bundleIdentifier ?? "me.steipete.codelooper")
-            
-            // Set log level based on global settings or build configuration
-            #if DEBUG
-            handler.logLevel = .debug
-            #else
-            // TODO: Make this configurable via Defaults or a global setting
-            handler.logLevel = .info 
-            #endif
-            
-            return handler
+// MARK: - Log Destination Configuration
+
+public enum LogDestination: Sendable {
+    case console
+    case osLog
+    // case file(URL) // Future possibility
+    case none
+}
+
+// MARK: - Logging System Bootstrapping
+
+private actor LoggingSystemSetup {
+    // Ensures bootstrap is called only once.
+    private var hasBeenBootstrapped = false
+
+    // Default log level if not specified during bootstrap
+    #if DEBUG
+    public static let defaultBootstrapLogLevel: Logging.Logger.Level = .debug
+    #else
+    public static let defaultBootstrapLogLevel: Logging.Logger.Level = .info
+    #endif
+    
+    // Shared instance for the actor
+    public static let shared = LoggingSystemSetup()
+    
+    private init() {}
+
+    public func bootstrap(destination: LogDestination, minLevel: Logging.Logger.Level? = nil) {
+        guard !hasBeenBootstrapped else {
+            print("Warning: LoggingSystem.bootstrap called multiple times. Ignoring subsequent calls.")
+            return
         }
-        return true
-    }()
+
+        let effectiveMinLevel = minLevel ?? Self.defaultBootstrapLogLevel
+
+        LoggingSystem.bootstrap { label in
+            var handlers: [LogHandler] = []
+            
+            switch destination {
+            case .console:
+                var consoleHandler = StreamLogHandler.standardOutput(label: label)
+                consoleHandler.logLevel = effectiveMinLevel
+                handlers.append(consoleHandler)
+            case .osLog:
+                var osLogHandler = MyOSLogHandler(label: label, subsystem: Bundle.main.bundleIdentifier ?? "me.steipete.codelooper")
+                osLogHandler.logLevel = effectiveMinLevel
+                handlers.append(osLogHandler)
+            // case .file(let url):
+                // var fileHandler = try? FileLogHandler(label: label, localFile: url)
+                // if var handler = fileHandler {
+                //     handler.logLevel = effectiveMinLevel
+                //     handlers.append(handler)
+                // } else {
+                //     // Fallback or error
+                //     var fallbackHandler = StreamLogHandler.standardError(label: label)
+                //     fallbackHandler.logLevel = .error
+                //     handlers.append(fallbackHandler)
+                //     print("Error: Could not initialize file logger at \(url). Falling back to stderr for \(label).")
+                // }
+            case .none:
+                // Using SwiftLogNoOpLogHandler if it's available or simply an empty MultiplexLogHandler
+                // For an empty MultiplexLogHandler, no logs will be processed.
+                // If SwiftLogNoOpLogHandler is part of swift-log or a utility:
+                // multiplexHandler.addHandler(SwiftLogNoOpLogHandler())
+                // For now, an empty MultiplexLogHandler effectively means no logging for this setup.
+                // We can also set a very high log level on a NOP handler if one existed to ensure nothing passes.
+                // Effectively, an empty multiplex handler does the job of .none for now.
+                break // No handlers added means no output.
+            }
+            return MultiplexLogHandler(handlers)
+        }
+        hasBeenBootstrapped = true
+        print("Logging system bootstrapped to \(destination) with min level \(effectiveMinLevel).")
+    }
 }
 
 // Custom LogHandler that wraps os.Logger
@@ -42,35 +97,35 @@ private struct MyOSLogHandler: LogHandler {
         function: String,
         line: UInt
     ) {
-        let effectiveMetadata = self.metadata.merging(metadata ?? [:], uniquingKeysWith: { (_, new) in new })
+        guard level >= self.logLevel else { return }
+
+        let effectiveMetadata = self.metadata.merging(metadata ?? [:]) { _, new in new }
         
-        var logMessage = message.description
+        var richMessage = "[\(source)] \(message.description)"
         if !effectiveMetadata.isEmpty {
-            logMessage += " " + effectiveMetadata.map { element in "\\(element.key): \\(element.value)" }.joined(separator: ", ")
+            richMessage += " " + effectiveMetadata.map { "\($0.key): \($0.value)" }.joined(separator: ", ")
         }
 
         // Map swift-log levels to os.LogType
         let osLogType: OSLogType
         switch level {
-        case .trace:
+        case .trace: // trace is the lowest, often for detailed debugging
             osLogType = .debug // os.Logger doesn't have a direct 'trace', map to debug
-        case .debug:
+        case .debug: // for debug-level messages
             osLogType = .debug
-        case .info:
+        case .info: // for informational messages
             osLogType = .info
-        case .notice:
-            osLogType = .default // os.Logger 'notice' is often treated as default
-        case .warning:
-            osLogType = .error // os.Logger doesn't have 'warning', map to error
-        case .error:
+        case .notice: // for conditions that are not error conditions, but might need attention
+            osLogType = .default // os.Logger 'notice' is often treated as default log level
+        case .warning: // for warning conditions that might lead to errors
+            osLogType = .error // os.Logger doesn't have 'warning', map to error as it's more severe than .default
+        case .error: // for error conditions
             osLogType = .error
-        case .critical:
+        case .critical: // for critical conditions that will likely lead to termination
             osLogType = .fault // os.Logger 'critical' maps to fault
         }
         
-        // Include file, function, and line for more context, similar to how print captures it.
-        // os_log can take printf-style arguments.
-        osLogger.log(level: osLogType, "\\(file):\\(line) \\(function) - \\(logMessage, privacy: .public)")
+        osLogger.log(level: osLogType, "\(richMessage, privacy: .public)")
     }
 
     public subscript(metadataKey key: String) -> Logging.Logger.Metadata.Value? {
@@ -86,15 +141,26 @@ private struct MyOSLogHandler: LogHandler {
 public struct Logger: Sendable {
     private var swiftLogger: Logging.Logger // Changed to var
 
+    // Ensure bootstrap is called before any logger is initialized.
+    // This is a bit of a safety net, but explicit bootstrap at app start is better.
+    // private static let ensureBootstrap: Void = { // REMOVED
+    //     // This will attempt to bootstrap with default if not already done.
+    //     // Ideally, the app calls bootstrap explicitly first.
+    //     Task { // Call bootstrap asynchronously
+    //         await LoggingSystemSetup.shared.bootstrap(destination: .osLog) // Default to osLog if not explicitly set
+    //     }
+    //     return
+    // }()
+
     public init(label: String? = nil, category: LogCategory) {
-        _ = LoggingSetup.initialized // Ensures LoggingSystem.bootstrap is called at least once
-        
+        // _ = Logger.ensureBootstrap // REMOVED: Ensures LoggingSystem.bootstrap has been called
+
         let effectiveLabel: String
         if let label = label {
             effectiveLabel = label
         } else {
             // Construct a label from bundle ID and category if not provided
-            effectiveLabel = "\\(Bundle.main.bundleIdentifier ?? \"me.steipete.codelooper\").\\(category.rawValue)"
+            effectiveLabel = "\(Bundle.main.bundleIdentifier ?? "me.steipete.codelooper").\(category.rawValue)"
         }
         self.swiftLogger = Logging.Logger(label: effectiveLabel)
         self.swiftLogger.logLevel = determineInitialLogLevel(for: category)
@@ -162,6 +228,13 @@ public struct Logger: Sendable {
     public subscript(metadataKey metadataKey: String) -> Logging.Logger.Metadata.Value? {
         get { swiftLogger[metadataKey: metadataKey] }
         set { swiftLogger[metadataKey: metadataKey] = newValue }
+    }
+
+    // Static bootstrap function to be called from the application's entry point
+    public static func bootstrap(destination: LogDestination, minLevel: Logging.Logger.Level? = nil) {
+        Task { // Call bootstrap asynchronously
+            await LoggingSystemSetup.shared.bootstrap(destination: destination, minLevel: minLevel)
+        }
     }
 }
 

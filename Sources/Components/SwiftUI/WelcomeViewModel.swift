@@ -2,13 +2,14 @@ import Defaults
 import Observation
 import OSLog
 import SwiftUI
+import Diagnostics
 
 // MARK: - Welcome View Model
 
 @MainActor
 @Observable
 final class WelcomeViewModel: ObservableObject {
-    private let logger = Logger(label: "WelcomeViewModel", category: .onboarding)
+    private let logger = Logger(category: .onboarding)
     var currentStep: WelcomeStep = .welcome
 
     // Computed property for startAtLogin

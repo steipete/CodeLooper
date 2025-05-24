@@ -1,7 +1,7 @@
-import SwiftUI
+import AppKit // Required for NSApp to access AppDelegate
 import Defaults
 import KeyboardShortcuts // For KeyboardShortcuts.Recorder
-import AppKit // Required for NSApp to access AppDelegate
+import SwiftUI
 
 // Note: Ensure Notification.Name.menuBarVisibilityChanged is defined globally or accessible.
 // If not, it should be defined here or in a shared constants file.
@@ -57,14 +57,15 @@ struct GeneralSettingsView: View {
             Section {
                 Toggle("Launch CodeLooper at Login", isOn: $startAtLogin)
                 Toggle("Show Icon in Menu Bar", isOn: $showInMenuBar)
-                    .onChange(of: showInMenuBar) { oldValue, newValue in
+                    .onChange(of: showInMenuBar) { _, newValue in
                         NotificationCenter.default.post(
                             name: .menuBarVisibilityChanged, // Assuming this is defined
                             object: nil,
                             userInfo: ["visible": newValue]
                         )
                     }
-            } header: { Text("General Application Behavior") }
+            } header: { Text("General Application Behavior") 
+            }
 
             Section {
                 Text("Define a global keyboard shortcut to quickly toggle monitoring.")
@@ -74,7 +75,8 @@ struct GeneralSettingsView: View {
                 Text("Use standard symbols: ⌘ (Command), ⌥ (Option/Alt), ⇧ (Shift), ⌃ (Control). Example: ⌘⇧M")
                     .font(.caption2)
                     .foregroundColor(.gray)
-            } header: { Text("Global Shortcut Configuration") }
+            } header: { Text("Global Shortcut Configuration") 
+            }
 
             Section {
                 Toggle("Enable Global Monitoring", isOn: $isGlobalMonitoringEnabled)
@@ -100,7 +102,8 @@ struct GeneralSettingsView: View {
                     TextEditor(text: $textForCursorStopsRecovery)
                         .frame(height: 60)
                 }
-            } header: { Text("Supervision Core Settings") }
+            } header: { Text("Supervision Core Settings") 
+            }
 
             Section {
                 VStack(alignment: .leading) {
@@ -126,7 +129,8 @@ struct GeneralSettingsView: View {
                     }
                 }
                 // HStack { Text("CodeLooper Version: ...") } // Keep this commented for now
-            } header: { Text("Updates") }
+            } header: { Text("Updates") 
+            }
 
             Section {
                 Button("Reset Welcome Guide") {
@@ -166,7 +170,8 @@ struct GeneralSettingsView: View {
                     )
                 }
                 .foregroundColor(.red)
-            } header: { Text("Troubleshooting & Reset") }
+            } header: { Text("Troubleshooting & Reset") 
+            }
         }
         .padding()
         .frame(maxWidth: .infinity, maxHeight: .infinity) // Adjust frame as needed for settings pane

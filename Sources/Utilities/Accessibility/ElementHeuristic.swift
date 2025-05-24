@@ -1,4 +1,4 @@
-import AXorcistLib
+import AXorcist
 import Foundation
 
 // Define LocatorType based on the string keys used in LocatorManager
@@ -27,65 +27,65 @@ public enum LocatorType: String, CaseIterable, Codable {
     }
 
     // Default locators are defined here as part of the enum
-    var defaultLocator: AXorcistLib.Locator? {
+    var defaultLocator: Locator? {
         switch self {
         case .connectionErrorIndicator:
-            return AXorcistLib.Locator(
-                match_all: false,
+            return Locator(
+                matchAll: false,
                 criteria: ["role": "AXStaticText", "computed_name_contains_any": "offline,network error,connection failed"],
-                root_element_path_hint: nil,
+                rootElementPathHint: nil,
                 requireAction: nil
             )
         case .errorMessagePopup:
-            return AXorcistLib.Locator(
-                match_all: false,
+            return Locator(
+                matchAll: false,
                 criteria: ["role": "AXWindow", "subrole": "AXDialog", "description_contains_any": "error,failed,unable"],
-                root_element_path_hint: nil,
+                rootElementPathHint: nil,
                 requireAction: nil
             )
         case .forceStopResumeLink:
-            return AXorcistLib.Locator(
-                match_all: false,
+            return Locator(
+                matchAll: false,
                 criteria: ["role": "AXLink", "title_contains_any": "Force Stop,Resume"],
-                root_element_path_hint: nil,
+                rootElementPathHint: nil,
                 requireAction: "AXPressAction"
             )
         case .mainInputField:
-            return AXorcistLib.Locator(
-                match_all: false,
+            return Locator(
+                matchAll: false,
                 criteria: ["role": "AXTextArea", "placeholder_value_contains": "message"],
-                root_element_path_hint: nil,
+                rootElementPathHint: nil,
                 requireAction: nil
             )
         case .resumeConnectionButton:
-            return AXorcistLib.Locator(
-                match_all: false,
+            return Locator(
+                matchAll: false,
                 criteria: ["role": "AXButton", "title_contains_any": "Resume,Try Again,Reload"],
-                root_element_path_hint: nil,
+                rootElementPathHint: nil,
                 requireAction: "AXPressAction"
             )
         case .generatingIndicatorText:
-            return AXorcistLib.Locator(
-                match_all: false,
+            return Locator(
+                matchAll: false,
                 criteria: ["role": "AXStaticText"],
-                root_element_path_hint: nil,
+                rootElementPathHint: nil,
                 requireAction: nil,
-                computed_name_contains: "generating"
+                computedNameContains: "generating"
             )
         case .sidebarActivityArea:
-            return AXorcistLib.Locator(
-                match_all: false,
+            return Locator(
+                matchAll: false,
                 criteria: ["role": "AXScrollArea"],
-                root_element_path_hint: nil,
+                rootElementPathHint: nil,
                 requireAction: nil
             )
         case .stopGeneratingButton:
-            return AXorcistLib.Locator(
-                match_all: false,
+            return Locator(
+                matchAll: false,
                 criteria: ["role": "AXButton"],
-                root_element_path_hint: nil,
+                rootElementPathHint: nil,
                 requireAction: nil,
-                computed_name_contains: "Stop"
+                computedNameContains: "Stop"
             )
         }
     }
@@ -100,8 +100,8 @@ protocol AXElementHeuristic {
     /// - Parameters:
     ///   - pid: The process ID of the application to inspect.
     ///   - axorcist: An instance of `AXorcist` to perform queries.
-    /// - Returns: An `AXorcistLib.Locator` if discovery is successful, otherwise `nil`.
-    @MainActor func discover(for pid: pid_t, axorcist: AXorcist) async -> AXorcistLib.Locator?
+    /// - Returns: An `Locator` if discovery is successful, otherwise `nil`.
+    @MainActor func discover(for pid: pid_t, axorcist: AXorcist) async -> Locator?
 }
 
 // End of file, nothing should follow

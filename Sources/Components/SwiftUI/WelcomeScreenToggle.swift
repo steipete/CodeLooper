@@ -2,6 +2,7 @@ import AppKit
 import Defaults
 import os.log
 import SwiftUI
+import Diagnostics
 
 // Extension to force show the welcome window once on app startup
 /// Exposed C function to show the welcome window on startup for testing/debugging
@@ -22,7 +23,7 @@ public func forceTriggerWelcomeScreen() {
     Defaults[.isFirstLaunch] = true
 
     // Log the action
-    let logger = Logger(label: "WelcomeScreen", category: .ui)
+    let logger = Logger(category: .ui)
     logger.info("Setting flags and posting notification to show welcome window")
 
     // Post notification to show welcome window from main actor

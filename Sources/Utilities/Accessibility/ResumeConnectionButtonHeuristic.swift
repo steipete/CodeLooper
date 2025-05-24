@@ -1,6 +1,6 @@
-import AXorcistLib
 import AppKit
 import ApplicationServices
+import AXorcist
 import Defaults
 import Foundation
 
@@ -9,49 +9,43 @@ import Foundation
 struct ResumeConnectionButtonHeuristic: AXElementHeuristic {
     let locatorType: LocatorType = .resumeConnectionButton
 
-    @MainActor func discover(for pid: pid_t, axorcist: AXorcist) async -> AXorcistLib.Locator? {
-        var tempLogs: [String] = []
-
-        // Attempt 1: Look for a button with title "Resume Connection"
-        let locator1 = AXorcistLib.Locator(
-            match_all: false,
-            criteria: ["role": "AXButton", "title": "Resume Connection"]
+    @MainActor func discover(for pid: pid_t, axorcist: AXorcist) async -> Locator? {
+        // Strategy 1: Look for button with exact title "Resume connection"
+        let strategy1 = Locator(
+            matchAll: false, 
+            criteria: ["role": "AXButton", "title": "Resume connection"]
         )
         let queryResponse1 = await axorcist.handleQuery(
             for: String(pid),
-            locator: locator1,
-            pathHint: nil, maxDepth: nil, requestedAttributes: nil, outputFormat: nil,
-            isDebugLoggingEnabled: Defaults[.verboseLogging], currentDebugLogs: &tempLogs
+            locator: strategy1,
+            pathHint: nil, maxDepth: nil, requestedAttributes: nil, outputFormat: nil
         )
-        if queryResponse1.data != nil { return locator1 }
-
-        // Attempt 2: Look for a button with title containing "Resume"
-        let locator2 = AXorcistLib.Locator(
-            match_all: false,
+        if queryResponse1.data != nil { return strategy1 }
+        
+        // Strategy 2: Look for button containing "Resume"
+        let strategy2 = Locator(
+            matchAll: false, 
             criteria: ["role": "AXButton", "title_contains": "Resume"]
         )
         let queryResponse2 = await axorcist.handleQuery(
             for: String(pid),
-            locator: locator2,
-            pathHint: nil, maxDepth: nil, requestedAttributes: nil, outputFormat: nil,
-            isDebugLoggingEnabled: Defaults[.verboseLogging], currentDebugLogs: &tempLogs
+            locator: strategy2,
+            pathHint: nil, maxDepth: nil, requestedAttributes: nil, outputFormat: nil
         )
-        if queryResponse2.data != nil { return locator2 }
+        if queryResponse2.data != nil { return strategy2 }
 
-        // Attempt 3: Look for a generic button that might be a resume button (e.g., if localization changes title)
-        // This is a broader search, could be refined if specific patterns emerge
-        let locator3 = AXorcistLib.Locator(
-            match_all: false,
-            criteria: ["role": "AXButton", "enabled": "true"]
+        // Strategy 3: Look for any link containing "Resume"
+        let strategy3 = Locator(
+            matchAll: false,
+            criteria: ["role": "AXLink", "title_contains": "Resume"]
         )
         let queryResponse3 = await axorcist.handleQuery(
             for: String(pid),
-            locator: locator3,
-            pathHint: nil, maxDepth: nil, requestedAttributes: nil, outputFormat: nil,
-            isDebugLoggingEnabled: Defaults[.verboseLogging], currentDebugLogs: &tempLogs
+            locator: strategy3,
+            pathHint: nil, maxDepth: nil, requestedAttributes: nil, outputFormat: nil
         )
-        if queryResponse3.data != nil { return locator3 }
-
+        if queryResponse3.data != nil { return strategy3 }
+        
         return nil
     }
 } 

@@ -27,7 +27,8 @@ public extension Notification.Name {
     // Debug/Development features
     static let debugModeChanged = Notification.Name("debugModeChanged")
     static let verboseLoggingChanged = Notification.Name("verboseLoggingChanged")
-    static let menuBarVisibilityChanged = Notification.Name("menuBarVisibilityChanged")
+    static let menuBarVisibilityChanged = NSNotification.Name("menuBarVisibilityChanged")
+    static let updateMenuBarExtras = NSNotification.Name("updateMenuBarExtras")
 
     // Notification handling
     static let highlightMenuBarIcon = Notification.Name("highlightMenuBarIcon")

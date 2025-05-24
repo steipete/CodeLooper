@@ -1,11 +1,11 @@
-import Foundation
 import Combine
-import OSLog
 import Defaults
+import Diagnostics
+import Foundation
 
 @MainActor
 public class CursorInstanceStateManager: ObservableObject {
-    private let logger = Logger(category: .supervision)
+    private let logger = Diagnostics.Logger(category: .supervision) // Explicitly use Diagnostics.Logger
 
     // Moved from CursorMonitor
     @Published public var manuallyPausedPIDs: Set<pid_t> = []
@@ -76,9 +76,7 @@ public class CursorInstanceStateManager: ObservableObject {
         manuallyPausedPIDs.removeAll()
         
         totalAutomaticInterventionsThisSession = 0
-        Task {
-            await sessionLogger.log(level: .info, message: "All instance states and session counters have been reset.")
-        }
+        sessionLogger.log(level: .info, message: "All instance states and session counters have been reset.")
     }
 
     // MARK: - Manual Pause State

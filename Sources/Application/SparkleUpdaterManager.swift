@@ -1,11 +1,12 @@
-import Sparkle
 import Combine
+import Diagnostics
 import os
+import Sparkle
 
 @MainActor
 public class SparkleUpdaterManager: NSObject, SPUUpdaterDelegate, SPUStandardUserDriverDelegate, ObservableObject {
     // Use .appLifecycle as .updater is not available. Consider adding .updater to LogCategory later.
-    private let logger = os.Logger(subsystem: Bundle.main.bundleIdentifier ?? "me.steipete.codelooper", category: LogCategory.appLifecycle.rawValue)
+    private let logger = Logger(category: .appLifecycle)
     
     // Use lazy var to initialize after self is available
     public lazy var updaterController: SPUStandardUpdaterController = {

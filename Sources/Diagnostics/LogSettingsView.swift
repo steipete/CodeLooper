@@ -1,12 +1,11 @@
 import SwiftUI
-import OSLog // For LogLevel if it's defined there or needed for filtering
 // Assuming LogEntry and LogLevel are accessible, e.g., from the main app module or a shared module.
 
 @MainActor
 struct LogSettingsView: View {
     @ObservedObject private var sessionLogger = SessionLogger.shared
     @State private var searchText: String = ""
-    @State private var selectedLogLevelFilter: LogLevel? = nil // Allow 'nil' for all levels
+    @State private var selectedLogLevelFilter: LogLevel? // Allow 'nil' for all levels
     @State private var logEntries: [LogEntry] = []
 
     // Placeholder for actual log levels if LogLevel.allCases isn't directly usable
@@ -101,12 +100,12 @@ struct LogSettingsView: View {
         .task {
             await updateLogEntries()
         }
-        .onChange(of: selectedLogLevelFilter) { oldValue, newValue in
+        .onChange(of: selectedLogLevelFilter) { _, _ in
             Task {
                 await updateLogEntries()
             }
         }
-        .onChange(of: searchText) { oldValue, newValue in
+        .onChange(of: searchText) { _, _ in
             Task {
                 await updateLogEntries()
             }
@@ -165,7 +164,7 @@ struct LogSettingsView: View {
         Task {
             let entries = await sessionLogger.getEntries()
             let logText = entries.map { entry -> String in
-                let pidStringSegment = entry.instancePID.map { pidValue in "[PID: \\(pidValue)] " } ?? ""
+                let pidStringSegment = entry.instancePID.map { _ in "[PID: \\(pidValue)] " } ?? ""
                 return "\\(entry.timestamp.formatted(date: .omitted, time: .standard)) [\\(entry.level.displayName.uppercased())] " + pidStringSegment + entry.message
             }.joined(separator: "\n")
             
@@ -190,7 +189,7 @@ struct LogSettingsView: View {
                 if let url = savePanel.url {
                     var logContent = ""
                     for entry in entries.reversed() { // Export oldest first
-                        let pidStringSegment = entry.instancePID.map { pidValue in "[PID: \\(pidValue)] " } ?? ""
+                        let pidStringSegment = entry.instancePID.map { _ in "[PID: \\(pidValue)] " } ?? ""
                         logContent += "\\(entry.timestamp) [\\(entry.level.displayName.uppercased())] " + pidStringSegment + entry.message + "\n"
                     }
                     do {

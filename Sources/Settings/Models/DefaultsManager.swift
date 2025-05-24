@@ -1,6 +1,7 @@
 import AppKit
 @preconcurrency import Combine
 @preconcurrency import Defaults
+import Diagnostics
 @preconcurrency import Foundation
 @preconcurrency import OSLog
 import SwiftUI
@@ -15,7 +16,7 @@ final class DefaultsManager: @unchecked Sendable {
 
     // MARK: - Properties
 
-    private let logger = Logger(label: "DefaultsManager", category: .defaults)
+    private let logger = Logger(category: .defaults)
     private var observers: [AnyCancellable] = []
 
     // MARK: - Initialization

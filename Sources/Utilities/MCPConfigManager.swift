@@ -1,6 +1,7 @@
+import Defaults // For accessing default values if needed
+import Diagnostics
 import Foundation
 import OSLog
-import Defaults // For accessing default values if needed
 
 // Define simple structs for mcp.json structure (Spec 7)
 // These can be expanded as needed based on the actual mcp.json format
@@ -8,7 +9,7 @@ struct MCPRoot: Codable {
     var mcpServers: [String: MCPServerEntry]? // Dictionary of MCP server configurations
 
     // Initialize with empty servers and no shortcut if creating a new file
-    init(mcpServers: [String : MCPServerEntry]? = [:]) {
+    init(mcpServers: [String: MCPServerEntry]? = [:]) {
         self.mcpServers = mcpServers
     }
 }
@@ -266,24 +267,6 @@ class MCPConfigManager {
 
     // MARK: - Cursor Rule Set Management (Spec 3.3.C)
 
-    enum RuleSetStatus {
-        case notInstalled
-        case installed(version: String)
-        case updateAvailable(installedVersion: String, newVersion: String)
-        case corrupted // If file exists but version can't be read
-        case bundleResourceMissing // If the app's bundled rule is missing
-
-        var displayName: String {
-            switch self {
-            case .notInstalled: "Not Installed"
-            case .installed(let version): "Installed (v\(version))"
-            case .updateAvailable(let installed, let new): "Update Available (Installed: v\(installed), New: v\(new))"
-            case .corrupted: "Installed (Corrupted - Cannot Read Version)"
-            case .bundleResourceMissing: "Error: App's rule file missing"
-            }
-        }
-    }
-
     private func getVersion(from ruleFileContent: String) -> String? {
         // Simple version parsing: looks for "// Version: X.Y.Z"
         let lines = ruleFileContent.split(whereSeparator: \.isNewline)
@@ -296,125 +279,11 @@ class MCPConfigManager {
         return nil // No version found
     }
 
-    private func getBundledRuleInfo() -> (content: String, version: String)? {
-        guard let ruleSourceURL = Bundle.main.url(forResource: "codelooper_terminator_rule", withExtension: "mdc") else {
-            logger.error("Bundled Terminator rule file 'codelooper_terminator_rule.mdc' not found.")
-            return nil
-        }
-        do {
-            let content = try String(contentsOf: ruleSourceURL)
-            guard let version = getVersion(from: content) else {
-                // Assuming the bundled file *must* have a version for this mechanism to work
-                logger.error("Bundled Terminator rule file is missing a version string. This is a critical app resource issue.")
-                // Return a placeholder or handle as a fatal error for the update mechanism for this rule.
-                // For now, let's say it's "unknown" but this state should ideally not be reached in a production build.
-                return (content, "unknown_bundle_version_error") 
-            }
-            return (content, version)
-        } catch {
-            logger.error("Failed to read bundled Terminator rule file: \(error.localizedDescription)")
-            return nil
-        }
-    }
-
-    func installTerminatorRuleSet(to projectRootURL: URL) -> Bool {
-        logger.info("Attempting to install Terminator Rule Set to \(projectRootURL.path)")
-        
-        let scriptsDir = projectRootURL.appendingPathComponent(".cursor/scripts")
-        let rulesDir = projectRootURL.appendingPathComponent(".cursor/rules")
-
-        do {
-            // Create directories if they don't exist
-            try FileManager.default.createDirectory(at: scriptsDir, withIntermediateDirectories: true, attributes: nil)
-            try FileManager.default.createDirectory(at: rulesDir, withIntermediateDirectories: true, attributes: nil)
-
-            // Get paths to bundled resources (Spec 1.5)
-            guard let scriptSourcePath = Bundle.main.url(forResource: "terminator", withExtension: "scpt"),
-                  let ruleSourcePath = Bundle.main.url(forResource: "codelooper_terminator_rule", withExtension: "mdc") else {
-                logger.error("Bundled Terminator rule set files not found.")
-                return false
-            }
-
-            let scriptDestPath = scriptsDir.appendingPathComponent(scriptSourcePath.lastPathComponent)
-            let ruleDestPath = rulesDir.appendingPathComponent(ruleSourcePath.lastPathComponent)
-
-            // Copy files, overwrite if exist (as per Spec 3.3.C - "Prompts to overwrite")
-            // For simplicity here, we'll just overwrite. A real implementation would prompt.
-            if FileManager.default.fileExists(atPath: scriptDestPath.path) {
-                try FileManager.default.removeItem(at: scriptDestPath)
-            }
-            try FileManager.default.copyItem(at: scriptSourcePath, to: scriptDestPath)
-            logger.info("Copied \(scriptSourcePath.lastPathComponent) to \(scriptDestPath.path)")
-
-            if FileManager.default.fileExists(atPath: ruleDestPath.path) {
-                try FileManager.default.removeItem(at: ruleDestPath)
-            }
-            try FileManager.default.copyItem(at: ruleSourcePath, to: ruleDestPath)
-            logger.info("Copied \(ruleSourcePath.lastPathComponent) to \(ruleDestPath.path)")
-            
-            logger.info("Terminator Rule Set installed successfully to \(projectRootURL.path)")
-            return true
-        } catch {
-            logger.error("Failed to install Terminator Rule Set: \(error.localizedDescription)")
-            // Show alert to user (AlertPresenter.shared.showError...)
-            return false
-        }
-    }
-
-    func verifyTerminatorRuleSet(at projectRootURL: URL) -> RuleSetStatus { 
-        let scriptPath = projectRootURL.appendingPathComponent(".cursor/scripts/terminator.scpt")
-        let rulePath = projectRootURL.appendingPathComponent(".cursor/rules/codelooper_terminator_rule.mdc")
-
-        let scriptExists = FileManager.default.fileExists(atPath: scriptPath.path)
-        let ruleFileExists = FileManager.default.fileExists(atPath: rulePath.path)
-
-        guard let bundledInfo = getBundledRuleInfo() else {
-            return .bundleResourceMissing
-        }
-        // If bundled version itself indicates an error (e.g. missing version string in bundled file)
-        if bundledInfo.version == "unknown_bundle_version_error" {
-            return .bundleResourceMissing // Treat as if the resource isn't properly available for versioning
-        }
-        let bundledVersion = bundledInfo.version
-
-        if !scriptExists || !ruleFileExists {
-            return .notInstalled
-        }
-
-        do {
-            let installedRuleContent = try String(contentsOf: rulePath)
-            guard let installedVersion = getVersion(from: installedRuleContent) else {
-                return .corrupted 
-            }
-
-            // Basic semantic version comparison (major.minor.patch)
-            // This is a simplified comparison. For robust semver, a dedicated library is better.
-            let (installedMajor, installedMinor, installedPatch) = parseVersionString(installedVersion)
-            let (bundledMajor, bundledMinor, bundledPatch) = parseVersionString(bundledVersion)
-
-            if bundledMajor > installedMajor || 
-               (bundledMajor == installedMajor && bundledMinor > installedMinor) || 
-               (bundledMajor == installedMajor && bundledMinor == installedMinor && bundledPatch > installedPatch) {
-                return .updateAvailable(installedVersion: installedVersion, newVersion: bundledVersion)
-            } else if installedVersion == bundledVersion { // Or more comprehensively, if bundled is not newer
-                return .installed(version: installedVersion)
-            } else {
-                // Installed version is newer or different in a non-upgrade path (e.g. manual edit, dev version)
-                // Treat as installed, but log this unusual case.
-                logger.info("Installed rule set (v\(installedVersion)) is newer than or different from bundled (v\(bundledVersion)). Treating as installed.")
-                return .installed(version: installedVersion) 
-            }
-        } catch {
-            logger.error("Failed to read installed rule file at \(rulePath.path): \(error.localizedDescription)")
-            return .corrupted
-        }
-    }
-    
     // Helper for basic version string parsing (e.g., "1.0.0" -> (1,0,0) )
     private func parseVersionString(_ versionString: String) -> (major: Int, minor: Int, patch: Int) {
         let components = versionString.split(separator: ".").compactMap { Int($0) }
         return (
-            components.count > 0 ? components[0] : 0,
+            !components.isEmpty ? components[0] : 0,
             components.count > 1 ? components[1] : 0,
             components.count > 2 ? components[2] : 0
         )

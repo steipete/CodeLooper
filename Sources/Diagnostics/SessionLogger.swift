@@ -1,16 +1,15 @@
 import Foundation
 // OSLog import might still be useful for other purposes or if LogLevel itself uses it.
-import OSLog
 import AppKit // Added AppKit for NSWindowController, NSWindow etc.
+import OSLog
 import SwiftUI // Added SwiftUI for NSHostingView and LogSettingsView if it's SwiftUI
 
 // LogLevel is now imported from LogLevel.swift
-// public enum LogLevel: String, Codable, CaseIterable, Sendable { ... } // REMOVED
 
 public struct LogEntry: Identifiable, Codable, Sendable, Equatable {
     public let id: UUID
     public let timestamp: Date
-    public let level: LogLevel // Uses the existing LogLevel from LogLevel.swift
+    public let level: LogLevel 
     public let message: String
     public let instancePID: pid_t? // Process ID, optional
 
@@ -29,40 +28,29 @@ public struct LogEntry: Identifiable, Codable, Sendable, Equatable {
     }
 }
 
-// MARK: - Equatable Conformance for LogEntry (if not already provided by Codable synthesis)
-// Explicitly adding for clarity and ensuring it meets requirements.
 public func == (lhs: LogEntry, rhs: LogEntry) -> Bool {
     lhs.id == rhs.id
 }
 
-// To conform to ObservableObject, an actor needs to be careful about its published properties.
-// The mutations to @Published properties need to happen in a way that's safe with the actor's isolation.
-public actor SessionLogger: ObservableObject {
-    // @Published takes care of publishing changes on the MainActor for SwiftUI views.
+@MainActor // Ensure this class runs on the main thread as its @Published properties drive UI
+public final class SessionLogger: ObservableObject {
     @Published public private(set) var entries: [LogEntry] = []
-    private var logFileURL: URL?
-    private var fileHandle: FileHandle?
-    private var maxEntriesInMemory: Int // Changed to var to be set in init
+    // logFileURL and fileHandle removed as they were unused.
+    private var maxEntriesInMemory: Int
 
-    // Making shared static let is a common pattern for actor singletons.
     public static let shared = SessionLogger()
 
-    // Default initializer for the shared instance.
-    private init(maxEntries: Int = 2000) { // Default to 2000 to match previous constant
+    private init(maxEntries: Int = 2000) { 
         self.maxEntriesInMemory = maxEntries
     }
 
-    // Window controller for the log view - stored on MainActor since it's UI
-    @MainActor private static var logWindowController: NSWindowController?
+    // logWindowController is static and already marked @MainActor in its previous declaration.
+    // Making it private static as it's only used within showLogWindow.
+    private static var logWindowController: NSWindowController?
 
-    @MainActor // Ensure UI operations are on the main thread
-    public func showLogWindow() {
+    public func showLogWindow() { // Implicitly @MainActor
         if Self.logWindowController == nil {
-            // Assuming LogSettingsView is the view that displays logs.
-            // It might need access to self (SessionLogger) to display entries.
-            // If LogSettingsView is part of a larger SettingsView, this might need adjustment.
-            // For now, assume LogSettingsView can be presented on its own.
-            let logView = LogSettingsView() // This view needs access to the logger, typically via @EnvironmentObject or passed in.
+            let logView = LogSettingsView() 
             
             let window = NSWindow(
                 contentRect: NSRect(x: 0, y: 0, width: 800, height: 600),
@@ -73,7 +61,7 @@ public actor SessionLogger: ObservableObject {
             window.center()
             window.title = "Session Log"
             window.contentView = NSHostingView(rootView: logView.environmentObject(self))
-            window.isReleasedWhenClosed = false // We manage its lifecycle
+            window.isReleasedWhenClosed = false 
             
             Self.logWindowController = NSWindowController(window: window)
         }
@@ -81,31 +69,22 @@ public actor SessionLogger: ObservableObject {
         NSApp.activate(ignoringOtherApps: true)
     }
 
-    public func log(level: LogLevel, message: String, pid: pid_t? = nil) {
+    public func log(level: LogLevel, message: String, pid: pid_t? = nil) { // Implicitly @MainActor
         let entry = LogEntry(level: level, message: message, instancePID: pid)
-        // Append new entries to the end (FIFO for storage)
+        
         entries.append(entry)
-        // If over limit, remove the oldest entry (from the front)
         if entries.count > self.maxEntriesInMemory {
             entries.removeFirst()
         }
     }
 
-    public func clearLog() {
+    public func clearLog() { // Implicitly @MainActor
         entries.removeAll()
         log(level: .info, message: "Session log cleared by user.")
     }
     
-    // Provide a nonisolated way to access entries for observation if direct binding in SwiftUI isn't sufficient
-    // or if other non-actor parts of the app need to observe it. However, @ObservedObject typically handles this.
-    // For direct use with @ObservedObject or @StateObject, the @Published property is sufficient.
-
-    // Method to allow LogSettingsView to fetch entries for display
-    public nonisolated func getEntries() async -> [LogEntry] {
-        return await self.entries
+    public func getEntries() -> [LogEntry] {
+        return self.entries 
     }
-
-    deinit {
-        // ... existing code ...
-    }
+    // deinit removed as unused properties requiring cleanup are gone.
 }

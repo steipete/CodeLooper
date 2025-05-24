@@ -1,14 +1,15 @@
 import AppKit
-import AXorcistLib
+import ApplicationServices
+import AXorcist
 import Combine
 import Defaults
-import ApplicationServices
+import Diagnostics
 @preconcurrency import Foundation
+import KeyboardShortcuts
 import os
 @preconcurrency import OSLog
 @preconcurrency import ServiceManagement
 import SwiftUI
-import KeyboardShortcuts
 
 @objc(AppDelegate)
 @objcMembers
@@ -37,7 +38,7 @@ public class AppDelegate: NSObject, NSApplicationDelegate,
     var loginItemManager: LoginItemManager?
     var axApplicationObserver: AXApplicationObserver?
     var sparkleUpdaterManager: SparkleUpdaterManager?
-    private var axorcist: AXorcistLib.AXorcist?
+    private var axorcist: AXorcist?
     var updaterViewModel: UpdaterViewModel?
     var windowManager: WindowManager?
 
@@ -161,7 +162,6 @@ public class AppDelegate: NSObject, NSApplicationDelegate,
         // Stop the Cursor monitoring loop
         CursorMonitor.shared.stopMonitoringLoop()
 
-
         // Clean up menu manager
         menuManager?.cleanup()
 
@@ -238,7 +238,7 @@ public class AppDelegate: NSObject, NSApplicationDelegate,
     private func initializeServices() {
         logger.info("Initializing essential services...")
 
-        axorcist = AXorcistLib.AXorcist()
+        axorcist = AXorcist()
         if axorcist == nil {
             logger.error("Failed to initialize AXorcist instance.")
         }
@@ -251,7 +251,7 @@ public class AppDelegate: NSObject, NSApplicationDelegate,
         logger.info("LocatorManager accessed.")
         
         // Disabled until this is setup.
-        //sparkleUpdaterManager = SparkleUpdaterManager()
+        // sparkleUpdaterManager = SparkleUpdaterManager()
         logger.info("SparkleUpdaterManager initialized.")
 
         if let sparkleManager = self.sparkleUpdaterManager {
@@ -269,7 +269,7 @@ public class AppDelegate: NSObject, NSApplicationDelegate,
 
         if let loginMgr = self.loginItemManager {
             windowManager = WindowManager(loginItemManager: loginMgr, sessionLogger: self.sessionLogger, delegate: self)
-            logger.info("WindowManager initialized.")
+            logger.info("WindowManager initialized with sessionLogger and delegate.")
         } else {
             logger.error("LoginItemManager was nil, cannot initialize WindowManager.")
         }
@@ -398,8 +398,6 @@ public class AppDelegate: NSObject, NSApplicationDelegate,
         logger.info("Debug Overlay Toggled (Placeholder - No UI Change)")
     }
 
-
-
     // MARK: - AXServices and Permissions Management
 
     // New method to toggle monitoring state
@@ -421,13 +419,14 @@ public class AppDelegate: NSObject, NSApplicationDelegate,
     }
 }
 
+@MainActor
 extension AppDelegate: WindowManagerDelegate {
     func windowManagerDidFinishOnboarding() {
-        refreshUIStateAfterOnboarding()
+        logger.info("WindowManagerDelegate: Onboarding finished. Performing any post-onboarding tasks.")
+        // Example: Refresh UI or check for updates after onboarding
+        // refreshUI()
+        // sparkleUpdaterManager?.updaterController.checkForUpdates()
     }
-
-    func windowManagerRequestsAccessibilityPermissions(showPromptIfNeeded: Bool) {
-        logger.info("WindowManager requested accessibility check. WindowManager will handle it.")
-        windowManager?.checkAndPromptForAccessibilityPermissions(showPromptIfNeeded: showPromptIfNeeded)
-    }
+    
+    // Removed windowManagerRequestsAccessibilityPermissions as WindowManager handles it directly now
 }

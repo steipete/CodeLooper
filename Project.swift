@@ -45,6 +45,25 @@ let project = Project(
     ),
     targets: [
         .target(
+            name: "Diagnostics",
+            destinations: [.mac],
+            product: .staticFramework,
+            bundleId: "me.steipete.codelooper.Diagnostics",
+            deploymentTargets: .macOS("14.0"),
+            sources: ["Sources/Diagnostics/**", "Sources/Settings/Models/DefaultsKeys.swift", "Sources/Utilities/Constants.swift"],
+            dependencies: [
+                .package(product: "Logging")
+            ],
+            settings: .settings(
+                base: [
+                    "SWIFT_VERSION": "6.0",
+                    "MACOSX_DEPLOYMENT_TARGET": "14.0",
+                    "OTHER_SWIFT_FLAGS": "-strict-concurrency=complete",
+                    "ENABLE_STRICT_CONCURRENCY_CHECKS": "YES"
+                ]
+            )
+        ),
+        .target(
             name: "CodeLooper",
             destinations: [.mac],
             product: .app,
@@ -55,17 +74,24 @@ let project = Project(
                 "Sources/**"
             ],
             resources: [
-                "Resources/**",
+                "Resources/codelooper_terminator_rule.mdc",
+                "Resources/CodeLooper.sdef",
+                "Resources/menu-bar-icon.png",
+                "Resources/symbol-dark.png",
+                "Resources/symbol-light.png",
+                "Resources/symbol.png",
+                "Resources/MainMenu.nib",
                 "CodeLooper/Assets.xcassets",
                 "CodeLooper/Base.lproj/**"
             ],
             entitlements: .file(path: "CodeLooper/CodeLooper.entitlements"),
             dependencies: [
+                .target(name: "Diagnostics"),
                 .package(product: "Defaults"),
                 .package(product: "LaunchAtLogin"),
                 .package(product: "SwiftUIIntrospect"),
                 .package(product: "Logging"),
-                .package(product: "AXorcistLib"),
+                .package(product: "AXorcist"),
                 .package(product: "Sparkle"),
                 .package(product: "KeyboardShortcuts")
             ],

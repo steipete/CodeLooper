@@ -1,4 +1,5 @@
 import AppKit
+import Diagnostics
 import Foundation
 import OSLog
 
@@ -8,7 +9,7 @@ class IconAnimator {
     // MARK: - Properties
 
     /// Logger for this class
-    private let logger = Logger(label: "IconAnimator", category: .statusBar)
+    private let logger = Logger(category: .statusBar)
 
     /// Weak reference to status item to avoid reference cycles
     private weak var statusItem: NSStatusItem?
@@ -187,7 +188,7 @@ class IconAnimator {
 
         // Ensure we have a valid base image with the right size
         if baseImage.size.width < 1 || baseImage.size.height < 1 {
-            let logger = Logger(label: "IconAnimator", category: .statusBar)
+            let logger = Logger(category: .statusBar)
             logger.error("Invalid base image size: \(String(describing: baseImage.size))")
             return [baseImage] // Return just the base image to avoid crashes
         }

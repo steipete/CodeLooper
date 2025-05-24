@@ -1,6 +1,7 @@
 import Combine
 import Defaults
 import Foundation
+import Diagnostics
 import OSLog
 import SwiftUI
 

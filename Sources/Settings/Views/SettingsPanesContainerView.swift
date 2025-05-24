@@ -1,5 +1,6 @@
-import SwiftUI
 import Defaults
+import Diagnostics
+import SwiftUI
 
 // Ensure these are globally accessible or defined if not already
 // extension Notification.Name {
@@ -45,16 +46,16 @@ struct SettingsPanesContainerView: View {
                 }
                 .tag(SettingsTab.advanced)
             
-            LogSettingsView()
+            // LogSettingsView() // TODO: LogSettingsView is in Diagnostics module, need to expose it
                  // .environmentObject(sessionLogger) // Pass if LogSettingsView expects it as an EnvironmentObject and not from SessionLogger.shared
+            Text("Log View - Coming Soon")
                 .tabItem {
                     Label("Log", systemImage: "doc.text.fill")
                 }
                 .tag(SettingsTab.log)
         }
         .environmentObject(mainSettingsViewModel) // Provide to tabs that need it
-        .frame(minWidth: 650, idealWidth: 750, minHeight: 450, idealHeight: 550) // Adjusted size slightly
-        .padding()
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
 
         // Common Footer (Spec 3.3)
         Divider()
@@ -68,11 +69,6 @@ struct SettingsPanesContainerView: View {
         .padding(.bottom, 10)
         .font(.caption)
     }
-}
-
-// Enum to define tags for programmatic navigation if needed later
-enum SettingsTab: Hashable {
-    case general, supervision, ruleSets, externalMCPs, advanced, log
 }
 
 #if DEBUG

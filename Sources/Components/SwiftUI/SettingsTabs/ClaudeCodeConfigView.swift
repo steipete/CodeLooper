@@ -53,5 +53,5 @@ struct ClaudeCodeConfigView: View {
 }
 
 #Preview {
-    ClaudeCodeConfigView(isPresented: .constant(true), customCliName: .constant("claude-custom"), onSave: { name in print("Preview save: \(name)") })
+    ClaudeCodeConfigView(isPresented: .constant(true), customCliName: .constant("claude-custom")) { name in print("Preview save: \(name)") }
 } 

@@ -1,8 +1,9 @@
+import ApplicationServices
+import AXorcist
 import Defaults
+import KeyboardShortcuts
 import OSLog
 import SwiftUI
-import AXorcistLib
-import ApplicationServices
 
 // MARK: - Welcome View
 

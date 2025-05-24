@@ -1,5 +1,5 @@
-import SwiftUI
 import Defaults
+import SwiftUI
 
 struct WelcomeGuideView: View {
     @Default(.hasShownWelcomeGuide) var hasShownWelcomeGuide
@@ -94,9 +94,9 @@ struct FeatureHighlightView: View {
 #if DEBUG
 struct WelcomeGuideView_Previews: PreviewProvider {
     static var previews: some View {
-        WelcomeGuideView(onGetStarted: {
+        WelcomeGuideView {
             print("Get Started Clicked!")
-        })
+        }
     }
 }
 #endif 

@@ -1,14 +1,14 @@
-import AXorcistLib
+import AXorcist
 import Cocoa
 
 /// Observes application launch and termination events.
 class AXApplicationObserver {
-    private let axorcist: AXorcistLib.AXorcist?
+    private let axorcist: AXorcist?
     private var monitoredBundleIdentifiers: Set<String> = []
     private let notificationCenter = NSWorkspace.shared.notificationCenter
     // Logger instance will be added when integrating with main app
 
-    init(axorcist: AXorcistLib.AXorcist?) {
+    init(axorcist: AXorcist?) {
         self.axorcist = axorcist
         setupObservers()
     }

@@ -1,10 +1,11 @@
 import OSLog
 import SwiftUI
+import Diagnostics
 
 /// An observer that handles opening the settings scene programmatically
 struct OpenSettingsObserver: ViewModifier {
     // Logger for tracing settings operations
-    private let logger = Logger(label: "OpenSettingsObserver", category: .ui)
+    private let logger = Logger(category: .ui)
 
     // Access to open settings via environment
     @Environment(\.openSettings)

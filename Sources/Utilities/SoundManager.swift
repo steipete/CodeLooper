@@ -1,7 +1,8 @@
+import AppKit
 import AVFoundation
 import Defaults
+import Diagnostics
 import OSLog
-import AppKit
 
 public actor SoundManager {
     private static let logger = Logger(category: .sound)

@@ -1,33 +1,35 @@
 import AppKit
-import AXorcistLib
+import AXorcist
 import Combine
 import Defaults
+import Diagnostics
 import Foundation
-import OSLog
 import SwiftUI // For potential future UI-related models if necessary, but primarily for @MainActor
 
 @MainActor
 class ProcessMonitoringTickUseCase {
-    private let logger: Logger
+    private let logger: Diagnostics.Logger
     private let pid: pid_t
     private var currentInfo: CursorInstanceInfo // Use 'var' if it might be modified locally before returning
     private let runningApp: NSRunningApplication
-    private let axorcist: AXorcistLib.AXorcist
+    private let axorcist: AXorcist
     private let sessionLogger: SessionLogger
     private let locatorManager: LocatorManager
     private let instanceStateManager: CursorInstanceStateManager
     private let interventionEngine: CursorInterventionEngine
+    // private let appMonitor: AppMonitor // Commented out
 
     init(
         pid: pid_t,
         currentInfo: CursorInstanceInfo,
         runningApp: NSRunningApplication,
-        axorcist: AXorcistLib.AXorcist,
+        axorcist: AXorcist,
         sessionLogger: SessionLogger,
         locatorManager: LocatorManager,
         instanceStateManager: CursorInstanceStateManager,
         interventionEngine: CursorInterventionEngine,
-        parentLogger: Logger
+        // appMonitor: AppMonitor, // Commented out
+        parentLogger: Diagnostics.Logger
     ) {
         self.pid = pid
         self.currentInfo = currentInfo
@@ -37,7 +39,8 @@ class ProcessMonitoringTickUseCase {
         self.locatorManager = locatorManager
         self.instanceStateManager = instanceStateManager
         self.interventionEngine = interventionEngine
-        self.logger = Logger(label: "ProcessMonitoringTickUseCase_PID_\(pid)", category: .supervision)
+        // self.appMonitor = appMonitor // Commented out
+        self.logger = Diagnostics.Logger(category: .supervision)
         self.logger.info("Initialized for PID \(pid)")
     }
 
@@ -45,7 +48,7 @@ class ProcessMonitoringTickUseCase {
     /// - Returns: A tuple containing the new status, status message, and a boolean indicating if processing for this PID should stop for the current tick.
     func execute() async -> (newStatus: CursorInstanceStatus, newStatusMessage: String, shouldStopProcessingPID: Bool) {
         self.logger.debug("Executing monitoring tick for PID \(self.pid). Current status: \(String(describing: self.currentInfo.status))")
-        await self.sessionLogger.log(level: .debug, message: "Executing monitoring tick for Cursor instance (PID: \(self.pid)). Current status: \(String(describing: self.currentInfo.status))", pid: self.pid)
+        self.sessionLogger.log(level: .debug, message: "Executing monitoring tick for Cursor instance (PID: \(self.pid)). Current status: \(String(describing: self.currentInfo.status))", pid: self.pid)
 
         var newStatus: CursorInstanceStatus = self.currentInfo.status
         var newStatusMessage: String = self.currentInfo.statusMessage
@@ -64,7 +67,7 @@ class ProcessMonitoringTickUseCase {
                 if currentInterventionCount > 0 && currentInterventionCount >= observationInfo.initialInterventionCountWhenObservationStarted {
                     self.instanceStateManager.incrementConsecutiveRecoveryFailures(for: self.pid)
                     self.logger.info("PID \(self.pid): Post-intervention observation window ended without positive activity. Consecutive failures: \(self.instanceStateManager.getConsecutiveRecoveryFailures(for: self.pid))")
-                    await self.sessionLogger.log(level: .warning, message: "Post-intervention observation window ended without positive activity. Consecutive failures incremented.", pid: self.pid)
+                    self.sessionLogger.log(level: .warning, message: "Post-intervention observation window ended without positive activity. Consecutive failures incremented.", pid: self.pid)
                 }
                 self.instanceStateManager.clearPendingObservation(for: self.pid)
             }
@@ -93,21 +96,21 @@ class ProcessMonitoringTickUseCase {
                 self.instanceStateManager.resetAutomaticInterventions(for: self.pid)
                 self.instanceStateManager.resetConsecutiveRecoveryFailures(for: self.pid)
                 self.instanceStateManager.clearPendingObservation(for: self.pid)
-                await self.sessionLogger.log(level: .info, message: "PID \(self.pid) appears to be running normally after prior issue.", pid: self.pid)
+                self.sessionLogger.log(level: .info, message: "PID \(self.pid) appears to be running normally after prior issue.", pid: self.pid)
             } else if self.currentInfo.status.isRecovering() {
                 newStatus = .idle
                 newStatusMessage = "Running normally after recovery."
                 self.instanceStateManager.resetAutomaticInterventions(for: self.pid)
                 self.instanceStateManager.resetConsecutiveRecoveryFailures(for: self.pid)
                 self.instanceStateManager.clearPendingObservation(for: self.pid)
-                await self.sessionLogger.log(level: .info, message: "PID \(self.pid) appears to be running normally after recovery attempt.", pid: self.pid)
+                self.sessionLogger.log(level: .info, message: "PID \(self.pid) appears to be running normally after recovery attempt.", pid: self.pid)
             } else if case .paused = self.currentInfo.status {
                 newStatus = .idle
                 newStatusMessage = "Running normally after pause."
                 self.instanceStateManager.resetAutomaticInterventions(for: self.pid)
                 self.instanceStateManager.resetConsecutiveRecoveryFailures(for: self.pid)
                 self.instanceStateManager.clearPendingObservation(for: self.pid)
-                await self.sessionLogger.log(level: .info, message: "PID \(self.pid) appears to be running normally after being paused.", pid: self.pid)
+                self.sessionLogger.log(level: .info, message: "PID \(self.pid) appears to be running normally after being paused.", pid: self.pid)
             } else if self.currentInfo.status == .unknown {
                 newStatus = .idle
                 newStatusMessage = "Status now Idle."
@@ -122,7 +125,7 @@ class ProcessMonitoringTickUseCase {
         }
 
         self.logger.info("PID \(self.pid): Determined intervention type: \(String(describing: interventionType.rawValue))")
-        await self.sessionLogger.log(level: .info, message: "PID \(self.pid): Determined intervention type: \(String(describing: interventionType.rawValue))", pid: self.pid)
+        self.sessionLogger.log(level: .info, message: "PID \(self.pid): Determined intervention type: \(String(describing: interventionType.rawValue))", pid: self.pid)
 
         switch interventionType {
         case .connectionIssue:
@@ -173,7 +176,7 @@ class ProcessMonitoringTickUseCase {
             newStatus = .paused
             newStatusMessage = "Paused (Intervention Limit Reached)"
             self.logger.warning("PID \(self.pid) reached max interventions (\(Defaults[.maxInterventionsBeforePause])). Pausing automated interventions for this instance.")
-            await self.sessionLogger.log(level: .warning, message: "Reached max interventions. Pausing automated interventions for this instance.", pid: self.pid)
+            self.sessionLogger.log(level: .warning, message: "Reached max interventions. Pausing automated interventions for this instance.", pid: self.pid)
             if Defaults[.sendNotificationOnMaxInterventions] {
                 await UserNotificationManager.shared.sendNotification(
                     identifier: "max_interventions_\(self.pid)",
@@ -190,7 +193,7 @@ class ProcessMonitoringTickUseCase {
             newStatus = .unrecoverable(reason: "Max consecutive recovery failures reached.")
             newStatusMessage = "Unrecoverable: Max consecutive recovery failures reached (\(Defaults[.maxConsecutiveRecoveryFailures]))"
             self.logger.error("PID \(self.pid) has reached max consecutive recovery failures (\(Defaults[.maxConsecutiveRecoveryFailures])). Marking as unrecoverable.")
-            await self.sessionLogger.log(level: .error, message: "Reached max consecutive recovery failures. Marking as unrecoverable.", pid: self.pid)
+            self.sessionLogger.log(level: .error, message: "Reached max consecutive recovery failures. Marking as unrecoverable.", pid: self.pid)
             if Defaults[.sendNotificationOnPersistentError] {
                 await UserNotificationManager.shared.sendNotification(
                     identifier: "persistent_failure_\(self.pid)",

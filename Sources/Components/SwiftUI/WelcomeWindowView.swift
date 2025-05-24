@@ -1,5 +1,6 @@
 import AppKit
 import Combine
+import Diagnostics
 import OSLog
 import SwiftUI
 
@@ -8,7 +9,7 @@ import SwiftUI
     This wrapper helps manage the welcome window using pure SwiftUI APIs.
 */
 struct WelcomeWindowView: View {
-    private let logger = Logger(label: "WelcomeWindowView", category: .onboarding)
+    private let logger = Logger(category: .onboarding)
 
     // Services provided by AppDelegate
     private let loginItemManager: LoginItemManager

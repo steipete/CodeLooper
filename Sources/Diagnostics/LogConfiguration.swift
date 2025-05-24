@@ -1,4 +1,3 @@
-@preconcurrency import Defaults
 @preconcurrency import Foundation
 import os.log
 
@@ -28,40 +27,43 @@ public final class LogConfiguration: @unchecked Sendable {
     public var excludedCategories: Set<LogCategory> = []
 
     // Observer for notification changes
-    private var notificationObserver: NSObjectProtocol?
+    // private var notificationObserver: NSObjectProtocol? // REMOVED
 
     // MARK: - Initialization
 
     private init() {
         // Initialize with current setting from preferences
-        updateVerbosity(Defaults[.verboseLogging])
+        updateVerbosity(false) // Start with false, will be updated from settings later
 
-        // Set up notification observer for verboseLogging changes
-        notificationObserver = NotificationCenter.default.addObserver(
-            forName: .verboseLoggingChanged,
-            object: nil,
-            queue: .main
-        ) { [weak self] _ in
-            // Dispatch to MainActor to access Defaults and call isolated method
-            Task { @MainActor in
-                guard let self else { return }
-                let verbose = Defaults[.verboseLogging]
-                self.updateVerbosity(verbose)
-            }
-        }
+        // Note: We can't use Defaults observation here because DefaultsKeys are in the main target
+        // The main app will need to notify us of changes
+
+        // REMOVED old notification observer setup:
+        // notificationObserver = NotificationCenter.default.addObserver(
+        //     forName: .verboseLoggingChanged,
+        //     object: nil,
+        //     queue: .main
+        // ) { [weak self] _ in
+        //     // Dispatch to MainActor to access Defaults and call isolated method
+        //     Task { @MainActor in
+        //         guard let self else { return }
+        //         let verbose = Defaults[.verboseLogging]
+        //         self.updateVerbosity(verbose)
+        //     }
+        // }
     }
 
     deinit {
         // The deinit is non-isolated, so we can't directly access actor-isolated properties
         // This is a known pattern for cleanup in actors that need to handle deinit
-        let observer = notificationObserver
-        notificationObserver = nil
+        // let observer = notificationObserver // REMOVED
+        // notificationObserver = nil // REMOVED
 
-        if let observer {
-            Task { @MainActor in
-                NotificationCenter.default.removeObserver(observer)
-            }
-        }
+        // if let observer { // REMOVED
+        //     Task { @MainActor in // REMOVED
+        //         NotificationCenter.default.removeObserver(observer) // REMOVED
+        //     } // REMOVED
+        // } // REMOVED
     }
 
     // MARK: - Configuration Methods

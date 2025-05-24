@@ -1,5 +1,6 @@
 import AppKit
 import Combine
+import Diagnostics
 import os.log
 import SwiftUI
 
@@ -8,7 +9,7 @@ import SwiftUI
 public final class MainSettingsCoordinator: NSObject {
     // MARK: - Properties
 
-    private let logger = Logger(label: "MainSettingsCoordinator", category: .settings)
+    private let logger = Logger(category: .settings)
     private var cancellables = Set<AnyCancellable>()
     private let loginItemManager: LoginItemManager
     private let updaterViewModel: UpdaterViewModel

@@ -1,9 +1,10 @@
 import AppKit
-import SwiftUI // Added for NSHostingController and MainPopoverView
 import Combine // Added for Combine framework elements
 import Defaults
+import Diagnostics
 import Foundation
 import OSLog
+import SwiftUI // Added for NSHostingController and MainPopoverView
 
 // MARK: - Menu Manager Delegate
 
@@ -22,7 +23,7 @@ protocol MenuManagerDelegate: AnyObject, Sendable {
 final class MenuManager {
     // MARK: - Properties
 
-    let logger = Logger(label: "MenuManager", category: .statusBar)
+    let logger = Logger(category: .statusBar)
 
     var statusItem: NSStatusItem?
     // var progressIndicator: NSProgressIndicator? // Not used in current spec for popover
@@ -276,7 +277,6 @@ final class MenuManager {
         logger.info("Menu manager resources cleaned up")
     }
     
-    
     @objc
     private func showLogWindowClicked() {
         logger.info("Debug menu: Show Log Window clicked. Opening settings as Log view is a tab there.")
@@ -349,4 +349,3 @@ public class EventMonitor {
         }
     }
 }
-

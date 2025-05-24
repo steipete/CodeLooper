@@ -1,6 +1,7 @@
 import AppKit
 import Combine
 import Defaults
+import Diagnostics
 import OSLog
 import SwiftUI
 
@@ -27,15 +28,15 @@ enum AppIconState: Sendable { // Made Sendable
 
 @MainActor
 class AppIconStateController: ObservableObject {
-    private static let logger = Logger(label: "AppIconStateController", category: .statusBar)
+    private static let logger = Logger(category: .statusBar)
     
     public static let shared = AppIconStateController() // Added shared instance
 
-    @Published private(set) var currentTintColor: NSColor? = nil
+    @Published private(set) var currentTintColor: NSColor?
     @Published private(set) var isFlashing: Bool = false // New published property for flash state
     
     private var currentIconState: AppIconState = .gray // Internal logical state
-    private var preFlashTintColor: NSColor? = nil // Store tint color before flash
+    private var preFlashTintColor: NSColor? // Store tint color before flash
     private var cursorMonitor: CursorMonitor?
     private var globalMonitoringEnabled: Bool = false // Don't read Defaults during init
     private var cancellables = Set<AnyCancellable>()

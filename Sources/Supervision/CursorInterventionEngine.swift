@@ -1,14 +1,15 @@
-import Foundation
-import Combine
-import OSLog
-import Defaults
 import AppKit // For NSRunningApplication, AXUIElement etc.
-import AXorcistLib
 import ApplicationServices // Added for kAX constants
+import AXorcist
+import Combine
+import Defaults
+import Foundation
+import SwiftUI // For ObservableObject
+import Diagnostics // Add this import
 
 @MainActor
 public class CursorInterventionEngine: ObservableObject {
-    private let logger = Logger(label: String(describing: CursorInterventionEngine.self), category: .interventionEngine)
+    private let logger = Diagnostics.Logger(category: .interventionEngine)
 
     // MARK: - Constants & Thresholds
     // These will be populated from CursorMonitor.swift
@@ -44,7 +45,7 @@ public class CursorInterventionEngine: ObservableObject {
 
     // MARK: - Properties
     private weak var monitor: CursorMonitor? // Reference to the main monitor for callbacks/state access if needed
-    private let axorcist: AXorcistLib.AXorcist
+    private let axorcist: AXorcist
     private let sessionLogger: SessionLogger
     private let locatorManager: LocatorManager
     private let instanceStateManager: CursorInstanceStateManager
@@ -89,7 +90,7 @@ public class CursorInterventionEngine: ObservableObject {
     // MARK: - Initialization
     public init(
         monitor: CursorMonitor,
-        axorcist: AXorcistLib.AXorcist,
+        axorcist: AXorcist,
         sessionLogger: SessionLogger,
         locatorManager: LocatorManager,
         instanceStateManager: CursorInstanceStateManager
@@ -130,11 +131,9 @@ public class CursorInterventionEngine: ObservableObject {
         }
         
         // 5. Perform AX queries
-        var tempLogs: [String] = []
-        
         // 5a. Check for positive working state (generatingIndicatorText)
         if let generatingIndicatorLocator = await self.locatorManager.getLocator(for: .generatingIndicatorText, pid: pid) {
-            let response = await self.axorcist.handleQuery(for: nil, locator: generatingIndicatorLocator, pathHint: nil, maxDepth: 10, requestedAttributes: nil, outputFormat: nil, isDebugLoggingEnabled: true, currentDebugLogs: &tempLogs)
+            let response = await self.axorcist.handleQuery(for: nil, locator: generatingIndicatorLocator, pathHint: nil, maxDepth: 5, requestedAttributes: nil, outputFormat: nil)
             if let axData = response.data {
                 let textContent = self.getTextFromAXElement(axData)
                 if Self.positiveWorkKeywords.contains(where: { keyword in textContent.localizedCaseInsensitiveContains(keyword) }) {
@@ -145,7 +144,7 @@ public class CursorInterventionEngine: ObservableObject {
         
         // 5b. Check for error messages (errorMessagePopup)
         if let errorMessageLocator = await self.locatorManager.getLocator(for: .errorMessagePopup, pid: pid) {
-            let response = await self.axorcist.handleQuery(for: nil, locator: errorMessageLocator, pathHint: nil, maxDepth: 10, requestedAttributes: nil, outputFormat: nil, isDebugLoggingEnabled: true, currentDebugLogs: &tempLogs)
+            let response = await self.axorcist.handleQuery(for: nil, locator: errorMessageLocator, pathHint: nil, maxDepth: 5, requestedAttributes: nil, outputFormat: nil)
             if let axData = response.data {
                 let textContent = self.getTextFromAXElement(axData)
                 if Self.errorIndicatingKeywords.contains(where: { keyword in textContent.localizedCaseInsensitiveContains(keyword) }) {
@@ -157,7 +156,7 @@ public class CursorInterventionEngine: ObservableObject {
         // 5c. Check sidebar activity if enabled
         if Defaults[.monitorSidebarActivity] {
             if let sidebarLocator = await self.locatorManager.getLocator(for: .sidebarActivityArea, pid: pid) {
-                let response = await self.axorcist.handleQuery(for: nil, locator: sidebarLocator, pathHint: nil, maxDepth: 10, requestedAttributes: nil, outputFormat: nil, isDebugLoggingEnabled: true, currentDebugLogs: &tempLogs)
+                let response = await self.axorcist.handleQuery(for: nil, locator: sidebarLocator, pathHint: nil, maxDepth: 5, requestedAttributes: nil, outputFormat: nil)
                 if let axData = response.data {
                     let sidebarTextRepresentation = self.getTextualRepresentation(for: axData, depth: 0, maxDepth: 1)
                     let currentHash = sidebarTextRepresentation.hashValue
@@ -174,7 +173,7 @@ public class CursorInterventionEngine: ObservableObject {
         // 5d. Check for connection issues if enabled
         if Defaults[.enableConnectionIssuesRecovery] {
             if let connectionErrorLocator = await self.locatorManager.getLocator(for: .connectionErrorIndicator, pid: pid) {
-                let response = await self.axorcist.handleQuery(for: nil, locator: connectionErrorLocator, pathHint: nil, maxDepth: 10, requestedAttributes: nil, outputFormat: nil, isDebugLoggingEnabled: true, currentDebugLogs: &tempLogs)
+                let response = await self.axorcist.handleQuery(for: nil, locator: connectionErrorLocator, pathHint: nil, maxDepth: 5, requestedAttributes: nil, outputFormat: nil)
                 if let axData = response.data {
                     let textContent = self.getTextFromAXElement(axData)
                     if Self.connectionIssueKeywords.contains(where: { keyword in textContent.localizedCaseInsensitiveContains(keyword) }) {
@@ -201,29 +200,24 @@ public class CursorInterventionEngine: ObservableObject {
     // MARK: - Intervention Actions
 
     public func nudgeInstance(pid: pid_t, app: NSRunningApplication) async -> Bool {
-        var tempLogs: [String] = []
         self.logger.info("Attempting to nudge Cursor instance (PID: \\(String(describing: pid))) via InterventionEngine")
-        await self.sessionLogger.log(level: .info, message: "Attempting to nudge instance via engine.", pid: pid)
+        self.sessionLogger.log(level: .info, message: "Attempting to nudge instance via engine.", pid: pid)
 
         guard let nudgeLocator = await self.locatorManager.getLocator(for: .mainInputField, pid: pid) else {
             self.logger.warning("PID \\(String(describing: pid)): Nudge failed - chat input locator (.mainInputField) not found.")
-            await self.sessionLogger.log(level: .warning, message: "Nudge failed - chat input locator (.mainInputField) not found.", pid: pid)
-            // Monitor will update its own instanceInfo based on the false return
+            self.sessionLogger.log(level: .warning, message: "Nudge failed - chat input locator (.mainInputField) not found.", pid: pid)
             return false
         }
 
-        let axDebugLoggingEnabled = Defaults[.verboseLogging]
-
-        let focusResponse = await self.axorcist.handlePerformAction(for: nil, locator: nudgeLocator, pathHint: nil, actionName: AXActionNames.kAXRaiseAction, actionValue: nil, maxDepth: 10, isDebugLoggingEnabled: axDebugLoggingEnabled, currentDebugLogs: &tempLogs)
+        let focusResponse = await self.axorcist.handlePerformAction(for: nil, locator: nudgeLocator, actionName: AXActionNames.kAXRaiseAction, actionValue: nil, pathHint: nil, maxDepth: 10)
         if focusResponse.error != nil {
-            let _ = focusResponse.error ?? "Unknown error focusing"
             self.logger.warning("PID \\(String(describing: pid)): Failed to focus chat input before nudge: \\(String(describing: focusResponse.error))")
         }
 
-        let setValueResponse = await self.axorcist.handlePerformAction(for: nil, locator: nudgeLocator, pathHint: nil, actionName: AXActionNames.kAXSetValueAction, actionValue: AXorcistLib.AnyCodable(" "), maxDepth: 10, isDebugLoggingEnabled: axDebugLoggingEnabled, currentDebugLogs: &tempLogs)
+        let setValueResponse = await self.axorcist.handlePerformAction(for: nil, locator: nudgeLocator, actionName: AXActionNames.kAXSetValueAction, actionValue: AnyCodable(" "), pathHint: nil, maxDepth: 10)
         if setValueResponse.error == nil {
             self.logger.info("PID \\(String(describing: pid)): Nudge successful (sent space to chat input) via engine.")
-            await self.sessionLogger.log(level: .info, message: "Nudge successful via engine.", pid: pid)
+            self.sessionLogger.log(level: .info, message: "Nudge successful via engine.", pid: pid)
             
             // Update state via instanceStateManager
             self.instanceStateManager.incrementAutomaticInterventions(for: pid)
@@ -235,142 +229,156 @@ public class CursorInterventionEngine: ObservableObject {
             AppIconStateController.shared.flashIcon()
             return true
         } else {
-            let _ = setValueResponse.error ?? "Unknown error"
+            _ = setValueResponse.error ?? "Unknown error"
             self.logger.warning("PID \\(String(describing: pid)): Nudge failed - AXSetValue action failed: \\(String(describing: setValueResponse.error))")
-            await self.sessionLogger.log(level: .warning, message: "Nudge AXSetValue failed: \\(String(describing: setValueResponse.error))", pid: pid)
+            self.sessionLogger.log(level: .warning, message: "Nudge AXSetValue failed: \\(String(describing: setValueResponse.error))", pid: pid)
             return false
         }
     }
 
     public func attemptConnectionRecovery(for pid: pid_t, runningApp: NSRunningApplication) async -> Bool {
         self.logger.info("PID \\(String(describing: pid)): Attempting connection recovery.")
-        await self.sessionLogger.log(level: .info, message: "Attempting connection recovery.", pid: pid)
-        var tempLogs: [String] = []
-        let axDebugLoggingEnabled = Defaults[.verboseLogging]
+        self.sessionLogger.log(level: .info, message: "Attempting connection recovery.", pid: pid)
 
-        // Try to click "Resume Connection" button first
-        if let resumeButtonLocator = await self.locatorManager.getLocator(for: .resumeConnectionButton, pid: pid) {
-            self.logger.debug("PID \\(String(describing: pid)): Found locator for ResumeConnectionButton. Attempting click.")
-            let clickResponse = await self.axorcist.handlePerformAction(for: nil, locator: resumeButtonLocator, pathHint: nil, actionName: AXActionNames.kAXPressAction, actionValue: nil, maxDepth: 10, isDebugLoggingEnabled: axDebugLoggingEnabled, currentDebugLogs: &tempLogs)
-            if clickResponse.error == nil {
-                self.logger.info("PID \\(String(describing: pid)): Successfully clicked ResumeConnectionButton.")
-                await self.sessionLogger.log(level: .info, message: "Clicked ResumeConnectionButton.", pid: pid)
-                // Update state and return true
-                self.instanceStateManager.incrementAutomaticInterventions(for: pid)
-                self.instanceStateManager.incrementTotalAutomaticInterventionsThisSession()
-                self.instanceStateManager.resetConnectionIssueRetries(for: pid) // Reset since we took action
-                self.instanceStateManager.setLastActivityTimestamp(for: pid, date: Date())
-                self.instanceStateManager.startPendingObservation(for: pid, initialInterventionCount: self.instanceStateManager.getAutomaticInterventions(for: pid) - 1)
-                if Defaults[.playSoundOnIntervention] { await SoundManager.shared.playSound(soundName: Defaults[.successfulInterventionSoundName]) }
-                AppIconStateController.shared.flashIcon()
-                return true
-            } else {
-                self.logger.warning("PID \\(String(describing: pid)): Failed to click ResumeConnectionButton: \\(String(describing: clickResponse.error))")
-            }
-        } else {
-            self.logger.debug("PID \\(String(describing: pid)): Locator for ResumeConnectionButton not found.")
-        }
-
-        // If Resume button failed or not found, try "Force Stop Resume Link"
-        if let forceResumeLinkLocator = await self.locatorManager.getLocator(for: .forceStopResumeLink, pid: pid) {
-            self.logger.debug("PID \\(String(describing: pid)): Found locator for ForceStopResumeLink. Attempting click.")
-            let clickResponse = await self.axorcist.handlePerformAction(for: nil, locator: forceResumeLinkLocator, pathHint: nil, actionName: AXActionNames.kAXPressAction, actionValue: nil, maxDepth: 10, isDebugLoggingEnabled: axDebugLoggingEnabled, currentDebugLogs: &tempLogs)
-            if clickResponse.error == nil {
-                self.logger.info("PID \\(String(describing: pid)): Successfully clicked ForceStopResumeLink.")
-                await self.sessionLogger.log(level: .info, message: "Clicked ForceStopResumeLink.", pid: pid)
-                // Update state and return true
-                self.instanceStateManager.incrementAutomaticInterventions(for: pid)
-                self.instanceStateManager.incrementTotalAutomaticInterventionsThisSession()
-                self.instanceStateManager.resetConnectionIssueRetries(for: pid)
-                self.instanceStateManager.setLastActivityTimestamp(for: pid, date: Date())
-                self.instanceStateManager.startPendingObservation(for: pid, initialInterventionCount: self.instanceStateManager.getAutomaticInterventions(for: pid) - 1)
-                if Defaults[.playSoundOnIntervention] { await SoundManager.shared.playSound(soundName: Defaults[.successfulInterventionSoundName]) }
-                AppIconStateController.shared.flashIcon()
-                return true
-            } else {
-                self.logger.warning("PID \\(String(describing: pid)): Failed to click ForceStopResumeLink: \\(String(describing: clickResponse.error))")
-            }
-        } else {
-            self.logger.debug("PID \\(String(describing: pid)): Locator for ForceStopResumeLink not found.")
-        }
-        
-        // If both attempts fail
-        self.logger.warning("PID \\(String(describing: pid)): Connection recovery failed after trying all methods.")
-        await self.sessionLogger.log(level: .warning, message: "Connection recovery failed.", pid: pid)
-        self.instanceStateManager.incrementConnectionIssueRetries(for: pid) // Increment retries as this specific type of recovery failed.
-        return false
-    }
-
-    public func attemptStuckStateRecovery(for pid: pid_t, runningApp: NSRunningApplication) async -> Bool {
-        self.logger.info("PID \\(String(describing: pid)): Attempting stuck state recovery (force stop/resume).")
-        await self.sessionLogger.log(level: .info, message: "Attempting stuck state recovery (force stop/resume).", pid: pid)
-        var tempLogs: [String] = []
-        let axDebugLoggingEnabled = Defaults[.verboseLogging]
-
-        guard let forceResumeLinkLocator = await self.locatorManager.getLocator(for: .forceStopResumeLink, pid: pid) else {
-            self.logger.warning("PID \\(String(describing: pid)): Stuck state recovery failed - force stop/resume link locator not found.")
+        guard let resumeButtonLocator = await self.locatorManager.getLocator(for: .resumeConnectionButton, pid: pid) else {
+            self.logger.warning("PID \\(String(describing: pid)): Connection recovery failed - resume button locator (.resumeConnectionButton) not found.")
+            self.sessionLogger.log(level: .warning, message: "Connection recovery: Resume button locator not found.", pid: pid)
             return false
         }
 
-        let clickResponse = await self.axorcist.handlePerformAction(for: nil, locator: forceResumeLinkLocator, pathHint: nil, actionName: AXActionNames.kAXPressAction, actionValue: nil, maxDepth: 10, isDebugLoggingEnabled: axDebugLoggingEnabled, currentDebugLogs: &tempLogs)
+        self.logger.info("PID \\(String(describing: pid)): Found resume button locator. Attempting to press it.")
+        let pressResponse = await self.axorcist.handlePerformAction(for: nil, locator: resumeButtonLocator, actionName: AXActionNames.kAXPressAction, actionValue: nil, pathHint: nil, maxDepth: 10)
 
-        if clickResponse.error == nil {
-            self.logger.info("PID \\(String(describing: pid)): Clicked force stop/resume link successfully.")
-            // Update state and return true
+        if pressResponse.error == nil {
+            self.logger.info("PID \\(String(describing: pid)): Successfully pressed resume button.")
+            self.sessionLogger.log(level: .info, message: "Successfully pressed resume button.", pid: pid)
             self.instanceStateManager.incrementAutomaticInterventions(for: pid)
             self.instanceStateManager.incrementTotalAutomaticInterventionsThisSession()
-            self.instanceStateManager.resetConnectionIssueRetries(for: pid)
             self.instanceStateManager.setLastActivityTimestamp(for: pid, date: Date())
             self.instanceStateManager.startPendingObservation(for: pid, initialInterventionCount: self.instanceStateManager.getAutomaticInterventions(for: pid) - 1)
+
             if Defaults[.playSoundOnIntervention] { await SoundManager.shared.playSound(soundName: Defaults[.successfulInterventionSoundName]) }
             AppIconStateController.shared.flashIcon()
             return true
         } else {
-            self.logger.warning("PID \\(String(describing: pid)): Failed to click force stop/resume link: \\(String(describing: clickResponse.error))")
+            self.logger.warning("PID \\(String(describing: pid)): Failed to press resume button: \\(String(describing: pressResponse.error))")
+            self.sessionLogger.log(level: .warning, message: "Failed to press resume button: \\(String(describing: pressResponse.error))", pid: pid)
             return false
         }
     }
 
-    // MARK: - Helper methods (Private methods related to intervention logic)
+    public func attemptStuckStateRecovery(for pid: pid_t, runningApp: NSRunningApplication) async -> Bool {
+        self.logger.info("PID \\(String(describing: pid)): Attempting stuck state recovery.")
+        self.sessionLogger.log(level: .info, message: "Attempting stuck state recovery.", pid: pid)
+
+        // Try pressing "Force Stop/Resume" link first if available
+        if let forceStopLocator = await self.locatorManager.getLocator(for: .forceStopResumeLink, pid: pid) {
+            let pressForceStopResponse = await self.axorcist.handlePerformAction(for: nil, locator: forceStopLocator, actionName: AXActionNames.kAXPressAction, actionValue: nil, pathHint: nil, maxDepth: 10)
+            if pressForceStopResponse.error == nil {
+                self.logger.info("PID \\(String(describing: pid)): Pressed force stop/resume link.")
+                self.instanceStateManager.incrementAutomaticInterventions(for: pid)
+                self.instanceStateManager.incrementTotalAutomaticInterventionsThisSession()
+                self.instanceStateManager.setLastActivityTimestamp(for: pid, date: Date())
+                self.instanceStateManager.startPendingObservation(for: pid, initialInterventionCount: self.instanceStateManager.getAutomaticInterventions(for: pid) - 1)
+                self.sessionLogger.log(level: .info, message: "Pressed force stop/resume link.", pid: pid)
+                if Defaults[.playSoundOnIntervention] { await SoundManager.shared.playSound(soundName: Defaults[.successfulInterventionSoundName]) }
+                AppIconStateController.shared.flashIcon()
+                return true
+            }
+        }
+
+        // If "Force Stop/Resume" fails or not found, try "Stop Generating" button
+        if let stopGeneratingLocator = await self.locatorManager.getLocator(for: .stopGeneratingButton, pid: pid) {
+            let pressStopGeneratingResponse = await self.axorcist.handlePerformAction(for: nil, locator: stopGeneratingLocator, actionName: AXActionNames.kAXPressAction, actionValue: nil, pathHint: nil, maxDepth: 10)
+            if pressStopGeneratingResponse.error == nil {
+                self.logger.info("PID \\(String(describing: pid)): Pressed stop generating button.")
+                self.instanceStateManager.incrementAutomaticInterventions(for: pid)
+                self.instanceStateManager.incrementTotalAutomaticInterventionsThisSession()
+                self.instanceStateManager.setLastActivityTimestamp(for: pid, date: Date())
+                self.instanceStateManager.startPendingObservation(for: pid, initialInterventionCount: self.instanceStateManager.getAutomaticInterventions(for: pid) - 1)
+                self.sessionLogger.log(level: .info, message: "Pressed stop generating button.", pid: pid)
+                if Defaults[.playSoundOnIntervention] { await SoundManager.shared.playSound(soundName: Defaults[.successfulInterventionSoundName]) }
+                AppIconStateController.shared.flashIcon()
+                return true
+            }
+        }
+
+        self.logger.warning("PID \\(String(describing: pid)): All stuck state recovery attempts (Force Stop/Resume, Stop Generating) failed.")
+        self.sessionLogger.log(level: .warning, message: "All stuck state recovery attempts failed.", pid: pid)
+        return false
+    }
     
-    private func getTextFromAXElement(_ axElement: AXorcistLib.AXElement?) -> String {
-        guard let element = axElement else { return "" }
-        let attributeKeysInOrder: [String] = [
-            AXAttributeNames.kAXValueAttribute,
-            AXAttributeNames.kAXTitleAttribute,
-            AXAttributeNames.kAXDescriptionAttribute,
-            AXAttributeNames.kAXPlaceholderValueAttribute,
-            AXAttributeNames.kAXHelpAttribute
-        ]
-        for key in attributeKeysInOrder {
-            if let anyCodableInstance = element.attributes?[key] {
-                if let stringValue = anyCodableInstance.value as? String, !stringValue.isEmpty {
-                    return stringValue
+    public func attemptGeneralRecoveryByNudge(pid: pid_t, runningApp: NSRunningApplication) async -> Bool {
+        self.logger.info("PID \\(String(describing: pid)): Attempting general recovery by nudge as a last resort.")
+        self.sessionLogger.log(level: .info, message: "Attempting general recovery by nudge.", pid: pid)
+        
+        let nudgeSuccessful = await self.nudgeInstance(pid: pid, app: runningApp)
+        
+        if nudgeSuccessful {
+            self.logger.info("PID \\(String(describing: pid)): General recovery (nudge) successful.")
+            self.sessionLogger.log(level: .info, message: "General recovery (nudge) successful.", pid: pid)
+            return true
+        } else {
+            self.logger.warning("PID \\(String(describing: pid)): General recovery (nudge) failed.")
+            self.sessionLogger.log(level: .warning, message: "General recovery (nudge) failed.", pid: pid)
+            return false
+        }
+    }
+
+    // Helper to extract primary text from an AX element
+    // Updated to use AXElement.attributes
+    private func getTextFromAXElement(_ axData: AnyCodable?) -> String {
+        guard let data = axData?.value else { return "" }
+
+        if let element = data as? AXElement {
+            // Prioritize standard attributes for textual content
+            let textAttributes = [
+                kAXValueAttribute as String,
+                kAXTitleAttribute as String,
+                kAXDescriptionAttribute as String,
+                kAXPlaceholderValueAttribute as String, // For text fields
+                kAXStringForRangeParameterizedAttribute as String, // Though parameterized, sometimes holds full text
+                kAXHelpAttribute as String
+            ]
+            for attrKey in textAttributes {
+                if let attributeValue = element.attributes?[attrKey]?.value as? String, !attributeValue.isEmpty {
+                    return attributeValue
                 }
             }
+        } else if let stringValue = data as? String { // If AnyCodable directly wraps a string
+            return stringValue
         }
         return ""
     }
-    
-    private func getTextualRepresentation(for axElement: AXorcistLib.AXElement?, depth: Int = 0, maxDepth: Int = 1) -> String {
-        guard let element = axElement, depth <= maxDepth else { return "" }
 
-        var components: [String] = []
+    // Updated to use AXElement.attributes and fixed "N/A"
+    private func getTextualRepresentation(for axData: AnyCodable?, depth: Int, maxDepth: Int) -> String {
+        guard let data = axData?.value, depth <= maxDepth else { return "" }
 
-        let attributeKeysInOrder: [String] = [
-            AXAttributeNames.kAXValueAttribute,
-            AXAttributeNames.kAXTitleAttribute,
-            AXAttributeNames.kAXDescriptionAttribute,
-        ]
-        for key in attributeKeysInOrder {
-            if let anyCodableInstance = element.attributes?[key] {
-                if let stringValue = anyCodableInstance.value as? String, !stringValue.isEmpty {
-                    components.append(stringValue.trimmingCharacters(in: CharacterSet.whitespacesAndNewlines))
+        var representation = ""
+        let indent = String(repeating: "  ", count: depth)
+
+        if let element = data as? AXElement {
+            let roleText = element.attributes?[kAXRoleAttribute as String]?.value as? String ?? "N-A"
+            representation += "\(indent)Role: \(roleText)"
+
+            if let title = element.attributes?[kAXTitleAttribute as String]?.value as? String, !title.isEmpty { representation += ", Title: \(title)" }
+            if let value = element.attributes?[kAXValueAttribute as String]?.value as? String, !value.isEmpty { representation += ", Value: \(value)" }
+            if let desc = element.attributes?[kAXDescriptionAttribute as String]?.value as? String, !desc.isEmpty { representation += ", Desc: \(desc)" }
+            representation += "\n"
+            
+            // Recursively get representation for children
+            if depth < maxDepth, let childrenData = element.attributes?[kAXChildrenAttribute as String]?.value {
+                if let childrenArray = childrenData as? [Any?] { // Children might be an array of AXElement or AnyCodable
+                    for childData in childrenArray {
+                        representation += getTextualRepresentation(for: AnyCodable(childData), depth: depth + 1, maxDepth: maxDepth)
+                    }
                 }
             }
+        } else if let textVal = data as? String {
+            representation += "\(indent)\(textVal)\n"
         }
-        
-        return components.joined(separator: " | ")
+        return representation
     }
 
 } 

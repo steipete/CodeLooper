@@ -1,6 +1,5 @@
 import Foundation
 import OSLog
-import Defaults
 
 /// LogLevel defines the different levels of logs in the application
 /// This provides a type-safe way to categorize logs by severity
@@ -62,6 +61,3 @@ public enum LogLevel: Int, Comparable, Sendable, Codable, CaseIterable {
         }
     }
 }
-
-// Add explicit conformance to Defaults.Serializable
-extension LogLevel: Defaults.Serializable {}

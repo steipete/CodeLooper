@@ -1,6 +1,7 @@
 import AppKit
 import Combine
 import Defaults
+import Diagnostics
 import Foundation
 import OSLog
 import SwiftUI
@@ -16,7 +17,7 @@ class WelcomeWindowCoordinator: NSObject {
 
     static let shared = WelcomeWindowCoordinator()
 
-    private let logger = Logger(label: "WelcomeWindowCoordinator", category: .onboarding)
+    private let logger = Logger(category: .onboarding)
     // Make welcomeWindow internal so it can be directly checked from MenuManager
     var welcomeWindow: NSWindow?
     private var cancellables = Set<AnyCancellable>()
