@@ -111,13 +111,3 @@ struct SettingsSceneView: View {
             }
     }
 }
-
-// Ensure any necessary supporting structs or extensions (like KeyboardShortcuts.Name definitions
-// or Notification.Name definitions if not globally available) are accessible.
-// For example, if these are used by settings views:
-// extension KeyboardShortcuts.Name {
-//     static let toggleMonitoring = Self("toggleMonitoring", default: .init(.m, modifiers: [.command, .shift]))
-// }
-// extension Notification.Name {
-//    static let menuBarVisibilityChanged = Notification.Name("menuBarVisibilityChanged")
-// } 
