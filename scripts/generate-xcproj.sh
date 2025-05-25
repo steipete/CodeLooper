@@ -50,7 +50,7 @@ MAC_DIR="$(dirname "$SCRIPT_DIR")"
 cd "$MAC_DIR"
 
 echo "Running Tuist generate..."
-tuist generate --no-open
+tuist generate
 
 echo "Fixing Sendable compliance issues..."
 
@@ -219,4 +219,4 @@ echo "Project configuration complete"
 
 echo "Project generation and Sendable fixes complete!"
 echo "You can now open the Xcode project:"
-# echo "open CodeLooper.xcworkspace" # Commented out to prevent any misinterpretation
+echo "open CodeLooper.xcworkspace"

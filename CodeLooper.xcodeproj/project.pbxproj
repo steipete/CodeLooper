@@ -9,10 +9,8 @@
 /* Begin PBXBuildFile section */
 		01501E8BC44212DF76572035 /* NotificationName.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2735263696E5EA29D4C6F5A /* NotificationName.swift */; };
 		02839FB6666B71C1E10A80C6 /* LocatorManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0B33D5E2B6BDF11D0FB0E93 /* LocatorManager.swift */; };
-		0431C7E58895102FCC17D626 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5FB3D5905219542395A694EB /* SettingsView.swift */; };
 		075D5EA0F907BC3962117B66 /* SettingsSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = A89A61E85E7F94A82B8EB883 /* SettingsSection.swift */; };
 		082A720114F8D15ED0515726 /* LaunchAtLogin in Frameworks */ = {isa = PBXBuildFile; productRef = 7E3ECC987050217D4CA1A8FF /* LaunchAtLogin */; };
-		0E45F092AFABAE8B1A6165F6 /* AlertPresenting.swift in Sources */ = {isa = PBXBuildFile; fileRef = AD4C37256D4A7144D9681C56 /* AlertPresenting.swift */; };
 		0EF0A04BF8B2D11F081CBE91 /* UserNotificationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5155FDDF1B6AB290E77FE745 /* UserNotificationManager.swift */; };
 		13290A379685F6EF795F40A9 /* WindowPositionManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCAF8B6DB0B277CAE7371C70 /* WindowPositionManager.swift */; };
 		13ED50F2F28C4EEF3532770A /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = A5C24E574EF09764A411D6C4 /* Main.storyboard */; };
@@ -80,7 +78,6 @@
 		8BE6DF345987452B5C70A0F8 /* SwiftUIIntrospect in Frameworks */ = {isa = PBXBuildFile; productRef = 35EC1BE62E99DC3A9B3F78F2 /* SwiftUIIntrospect */; };
 		8F0314A4BCE80567A91812CD /* MenuBarIconManager+Debug.swift in Sources */ = {isa = PBXBuildFile; fileRef = EFF0E89AC6C44C8478328EB5 /* MenuBarIconManager+Debug.swift */; };
 		9762650D20B8F2DF934FFF7E /* Logging in Frameworks */ = {isa = PBXBuildFile; productRef = 5258361B849FE66B888D2295 /* Logging */; };
-		99E7653FAEC083C7FAA3D270 /* AlertPresenter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2A0DD407C2C7AAB9208F2D71 /* AlertPresenter.swift */; };
 		9D320E02C6E6574F7BDF2378 /* CNContactStore+Sendable.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A7BA47E47C6D7E4B47B351B /* CNContactStore+Sendable.swift */; };
 		A23B565C8A05C2C3CEF183C1 /* AXorcist in Frameworks */ = {isa = PBXBuildFile; productRef = 09EEC73F5A7F9C22F99EC8E1 /* AXorcist */; };
 		A356C9F6D66E203E908A838E /* KeyboardShortcuts in Frameworks */ = {isa = PBXBuildFile; productRef = 40627E5CA183F2FF0E4024E6 /* KeyboardShortcuts */; };
@@ -99,7 +96,6 @@
 		B92E920E52085CD9CAA29214 /* ProcessMonitoringTickUseCase.swift in Sources */ = {isa = PBXBuildFile; fileRef = DAF8DA55A413E13D1C78E19B /* ProcessMonitoringTickUseCase.swift */; };
 		BA0F55DB128F625F76084822 /* CursorInstanceModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = D8D75E06F92FADB6B0863FBA /* CursorInstanceModels.swift */; };
 		BB6863B2903AE67E5C9E4767 /* AboutSettingsTab.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93AC4CF1C997DD2788D389DF /* AboutSettingsTab.swift */; };
-		BC30579A4846AAB81176742C /* UserInterface.swift in Sources */ = {isa = PBXBuildFile; fileRef = F91D875E3D9A2EC1874763B3 /* UserInterface.swift */; };
 		BC5AEC7BDDCBC1ACC553B63E /* MainSettingsCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6B5F39834CB3F899CE8C064C /* MainSettingsCoordinator.swift */; };
 		BDA9C21C437EE2BB5BDE4630 /* AXpector in Frameworks */ = {isa = PBXBuildFile; productRef = C82404169CD50D644E1ED271 /* AXpector */; };
 		BE1E2B0D4EF60BB8E67EE87B /* ShortcutNames.swift in Sources */ = {isa = PBXBuildFile; fileRef = 429F3143DECE0A4487E6973D /* ShortcutNames.swift */; };
@@ -126,7 +122,6 @@
 		DF279AF8DF13DAB70CCA1E3D /* AdvancedSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 59AF93DA0CFACAFC2421E6F7 /* AdvancedSettingsView.swift */; };
 		E181286E4F24A0FC75337765 /* UpdaterViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 95BFDCF5E5317C3B7F256B9F /* UpdaterViewModel.swift */; };
 		E219ED9DE7B48A17CDB17769 /* Task+Timeout.swift in Sources */ = {isa = PBXBuildFile; fileRef = D38E89BF0F0DB36C2E7D658B /* Task+Timeout.swift */; };
-		E6F97BA181144DDF77ACDA56 /* ProgramEntry.swift in Sources */ = {isa = PBXBuildFile; fileRef = FEE054A119C16C0058C8AC17 /* ProgramEntry.swift */; };
 		E8D96FAA47286A50222A8E62 /* DefaultsKeys.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51FC857EE374CA0BDF9C759A /* DefaultsKeys.swift */; };
 		E9027FB959A9D70C0CFDB9D4 /* ExternalMCPsSettingsTab.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9965BF9A674918B31A6F3318 /* ExternalMCPsSettingsTab.swift */; };
 		EA5012D1FD36D8FF398A8577 /* CustomObservation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6C1EE04870CCBE096DCED567 /* CustomObservation.swift */; };
@@ -190,7 +185,6 @@
 		1EFADA1713C359300C3593C1 /* MainPopoverView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainPopoverView.swift; sourceTree = "<group>"; };
 		2211667F248167934388EAC1 /* Debouncer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Debouncer.swift; sourceTree = "<group>"; };
 		280180EAB3BF6DE88BF80470 /* WindowManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WindowManager.swift; sourceTree = "<group>"; };
-		2A0DD407C2C7AAB9208F2D71 /* AlertPresenter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AlertPresenter.swift; sourceTree = "<group>"; };
 		2A2EFD0769BAEA511922A2C3 /* StatsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatsView.swift; sourceTree = "<group>"; };
 		2B5D657B4F2DC18192DB9A40 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/Main.storyboard; sourceTree = "<group>"; };
 		2B6278C5464E1B76A5CFCB11 /* RadioButtonRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RadioButtonRow.swift; sourceTree = "<group>"; };
@@ -214,7 +208,6 @@
 		5A7BA47E47C6D7E4B47B351B /* CNContactStore+Sendable.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "CNContactStore+Sendable.swift"; sourceTree = "<group>"; };
 		5ABEF7DF05613D31FB3F18B9 /* Diagnostics-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = "Diagnostics-Info.plist"; sourceTree = "<group>"; };
 		5B90EE899110CFF876B12F5C /* GeneralSettingsTab.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GeneralSettingsTab.swift; sourceTree = "<group>"; };
-		5FB3D5905219542395A694EB /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		606FD31E5CDAD9A2D805242B /* AXorcist */ = {isa = PBXFileReference; lastKnownFileType = folder; name = AXorcist; path = AXorcist; sourceTree = "<group>"; };
 		62F13848032738E908F5FD24 /* Diagnostics.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Diagnostics.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		6A3B1AEDB3C95CD8C6F4F57C /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
@@ -259,7 +252,6 @@
 		AC9202C465435F6995F1BFF0 /* AXInspectorLogView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AXInspectorLogView.swift; sourceTree = "<group>"; };
 		AD3561279CC1D48D1FB0850F /* SparkleUpdaterManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SparkleUpdaterManager.swift; sourceTree = "<group>"; };
 		AD3D3F9DC82E84CC1168DE90 /* MonitoredInstanceInfo.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MonitoredInstanceInfo.swift; sourceTree = "<group>"; };
-		AD4C37256D4A7144D9681C56 /* AlertPresenting.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AlertPresenting.swift; sourceTree = "<group>"; };
 		AF84978ED668053955A7191A /* SessionLogger.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionLogger.swift; sourceTree = "<group>"; };
 		B0B33D5E2B6BDF11D0FB0E93 /* LocatorManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocatorManager.swift; sourceTree = "<group>"; };
 		C467BB1503BCC53AF2CAB88D /* SoundManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SoundManager.swift; sourceTree = "<group>"; };
@@ -286,10 +278,8 @@
 		F595B21BD668B28B8EE19311 /* CursorInterventionEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CursorInterventionEngine.swift; sourceTree = "<group>"; };
 		F5BD9EF679B7DBA11587C4CB /* CursorSupervisionSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CursorSupervisionSettingsView.swift; sourceTree = "<group>"; };
 		F76A8B32002E47FF25D7AB4F /* MainInputFieldHeuristic.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainInputFieldHeuristic.swift; sourceTree = "<group>"; };
-		F91D875E3D9A2EC1874763B3 /* UserInterface.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserInterface.swift; sourceTree = "<group>"; };
 		F932E34F2F38DD2F304866AB /* CursorAppLifecycleManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CursorAppLifecycleManager.swift; sourceTree = "<group>"; };
 		FE445F08ECA9AE0063E2AA49 /* LoginItemManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginItemManager.swift; sourceTree = "<group>"; };
-		FEE054A119C16C0058C8AC17 /* ProgramEntry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProgramEntry.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -374,9 +364,7 @@
 		0DB10DB8A502BE88E37428D0 /* Components */ = {
 			isa = PBXGroup;
 			children = (
-				C56BC0CDFAC506C140141F02 /* Alert */,
 				710715513B9395BD7B3BC312 /* SwiftUI */,
-				F91D875E3D9A2EC1874763B3 /* UserInterface.swift */,
 			);
 			path = Components;
 			sourceTree = "<group>";
@@ -479,7 +467,6 @@
 				86E260B66207064C7D367FF1 /* MainSettingsViewModel.swift */,
 				2B6278C5464E1B76A5CFCB11 /* RadioButtonRow.swift */,
 				A89A61E85E7F94A82B8EB883 /* SettingsSection.swift */,
-				5FB3D5905219542395A694EB /* SettingsView.swift */,
 				8BB499FA597CE3DA1BAAE20B /* WelcomeScreenToggle.swift */,
 				9DF4FBC48BDEA24BA56013AC /* WelcomeView.swift */,
 				D5A01E3EDC3ABDDD848DFD80 /* WelcomeViewModel.swift */,
@@ -561,15 +548,6 @@
 			path = Derived;
 			sourceTree = "<group>";
 		};
-		C56BC0CDFAC506C140141F02 /* Alert */ = {
-			isa = PBXGroup;
-			children = (
-				2A0DD407C2C7AAB9208F2D71 /* AlertPresenter.swift */,
-				AD4C37256D4A7144D9681C56 /* AlertPresenting.swift */,
-			);
-			path = Alert;
-			sourceTree = "<group>";
-		};
 		D666E60EA2730514C3FFA236 /* Resources */ = {
 			isa = PBXGroup;
 			children = (
@@ -588,7 +566,6 @@
 				A78799854F3184746818B6C8 /* AppEnvironment.swift */,
 				DF792AF940019971173C3D04 /* CodeLooperApp.swift */,
 				77BD422F9926B58B0FEF44C4 /* NotificationManager.swift */,
-				FEE054A119C16C0058C8AC17 /* ProgramEntry.swift */,
 				7F9EAD76C5C89A6F3A55977D /* SettingsService.swift */,
 				429F3143DECE0A4487E6973D /* ShortcutNames.swift */,
 				AD3561279CC1D48D1FB0850F /* SparkleUpdaterManager.swift */,
@@ -781,7 +758,6 @@
 				B3E5C470B686C17E153AB004 /* AppEnvironment.swift in Sources */,
 				844CE43E8F91643C896C901D /* CodeLooperApp.swift in Sources */,
 				6F8706A905A33CAE6099C572 /* NotificationManager.swift in Sources */,
-				E6F97BA181144DDF77ACDA56 /* ProgramEntry.swift in Sources */,
 				D9394D3B16CA3E7478DA6236 /* SettingsService.swift in Sources */,
 				BE1E2B0D4EF60BB8E67EE87B /* ShortcutNames.swift in Sources */,
 				BF010B6CD25240B33FE6AF36 /* SparkleUpdaterManager.swift in Sources */,
@@ -790,8 +766,6 @@
 				AC86747DE4D2D8A2669E58A5 /* WelcomeWindowCoordinator.swift in Sources */,
 				D47A468A7532556136027150 /* WindowManager.swift in Sources */,
 				13290A379685F6EF795F40A9 /* WindowPositionManager.swift in Sources */,
-				99E7653FAEC083C7FAA3D270 /* AlertPresenter.swift in Sources */,
-				0E45F092AFABAE8B1A6165F6 /* AlertPresenting.swift in Sources */,
 				F2BF45CB229B5E11283F78A6 /* MainSettingsViewModel.swift in Sources */,
 				2E9F8879A48D4AF242B32AB1 /* RadioButtonRow.swift in Sources */,
 				075D5EA0F907BC3962117B66 /* SettingsSection.swift in Sources */,
@@ -800,12 +774,10 @@
 				EC007E2B27D262FA76FD5573 /* ClaudeCodeConfigView.swift in Sources */,
 				448BF52934BF1A3DE9A966A2 /* GeneralSettingsTab.swift in Sources */,
 				CB33BAB501D1924C0BD4F7DB /* MacOSAutomatorConfigView.swift in Sources */,
-				0431C7E58895102FCC17D626 /* SettingsView.swift in Sources */,
 				A5D3EE25DF8EF0F87EE4068E /* WelcomeScreenToggle.swift in Sources */,
 				C3A35BD57103BE6A0024863B /* WelcomeView.swift in Sources */,
 				FEA48230B190D98CAC2EB8ED /* WelcomeViewModel.swift in Sources */,
 				CFA48B0C2F2A226CFCF63C89 /* WelcomeWindowView.swift in Sources */,
-				BC30579A4846AAB81176742C /* UserInterface.swift in Sources */,
 				2C097F19FBB4FB77E6863B9F /* DiagnosticContext.swift in Sources */,
 				5885F3752C9613EEB9DF2B4B /* DiagnosticsLogger.swift in Sources */,
 				7966667DD781154A9E50A0A5 /* FileLogger.swift in Sources */,
