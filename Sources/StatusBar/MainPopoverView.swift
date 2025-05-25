@@ -1,11 +1,7 @@
 import AppKit
 import Defaults
 import SwiftUI
-import Combine // Added for PassthroughSubject
-
-// Ensure SettingsService is accessible, you might need to ensure its module is imported
-// if it's in a different one and not globally available via @testable or similar.
-// For CodeLooper, SettingsService is in the Application module, which should be accessible.
+import Combine
 
 struct MainPopoverView: View {
     @StateObject private var cursorMonitor = CursorMonitor.shared
@@ -17,7 +13,6 @@ struct MainPopoverView: View {
                 .font(.title2)
                 .padding(.bottom, 5)
             
-            // Permissions section
             PermissionsView(showTitle: false, compact: true)
                 .padding(.bottom, 5)
 
@@ -25,12 +20,10 @@ struct MainPopoverView: View {
 
             Divider()
 
-            // Display the single monitored Cursor app and its windows
-            // Assuming only one Cursor app instance is primarily monitored or relevant for this popover.
-            if let cursorApp = cursorMonitor.monitoredApps.first { // Get the first (and likely only) monitored Cursor app
+            if let cursorApp = cursorMonitor.monitoredApps.first {
                 Text("Monitored: \(cursorApp.displayName)")
                     .font(.subheadline)
-                    .foregroundColor(isGlobalMonitoringEnabled ? .primary : .secondary) // Dim if not enabled
+                    .foregroundColor(isGlobalMonitoringEnabled ? .primary : .secondary)
                 
                 if !isGlobalMonitoringEnabled {
                     Text("  (Supervision Paused)")
@@ -48,7 +41,7 @@ struct MainPopoverView: View {
                         HStack {
                             Text("    \(window.windowTitle ?? "Untitled Window")")
                                 .font(.system(.body, design: .monospaced))
-                                .foregroundColor(isGlobalMonitoringEnabled ? .primary : .secondary) // Dim if not enabled
+                                .foregroundColor(isGlobalMonitoringEnabled ? .primary : .secondary)
                             Spacer()
                             Button {
                                 if window.isPaused {
@@ -61,15 +54,15 @@ struct MainPopoverView: View {
                                     .foregroundColor(window.isPaused ? .green : .yellow)
                             }
                             .buttonStyle(.plain)
-                            .disabled(!isGlobalMonitoringEnabled) // Disable if global supervision is off
+                            .disabled(!isGlobalMonitoringEnabled)
                         }
                         .listRowBackground(Color.clear)
                     }
                     .listStyle(.plain)
-                    .frame(minHeight: 50, maxHeight: 150) // Adjust size as needed
+                    .frame(minHeight: 50, maxHeight: 150)
                 }
             } else {
-                if isGlobalMonitoringEnabled { // Only show "No Cursor app detected" if monitoring is actually on
+                if isGlobalMonitoringEnabled {
                     Text("No Cursor app detected.")
                         .foregroundColor(.secondary)
                 } else {
@@ -111,10 +104,7 @@ struct MainPopoverView: View {
 #if DEBUG
 struct MainPopoverView_Previews: PreviewProvider {
     static var previews: some View {
-        // Create mock data for preview
-        let mockMonitor = CursorMonitor.sharedForPreview // Use shared preview instance
-        
-        // Example with a monitored app and windows
+        let mockMonitor = CursorMonitor.sharedForPreview
         let appPID = pid_t(12345)
         let mockApp = MonitoredAppInfo(
             id: appPID,
@@ -129,28 +119,11 @@ struct MainPopoverView_Previews: PreviewProvider {
                 MonitoredWindowInfo(id: "w3", windowTitle: nil, isPaused: false)
             ]
         )
-        // mockMonitor.monitoredApps = [mockApp] // This can be uncommented if needed for preview state
-        // mockMonitor.isMonitoringActivePublic = true // Ensure this line is commented or removed
-        // mockMonitor.totalAutomaticInterventionsThisSessionDisplay = 5 // This can be uncommented
-
-        // Example with no windows - This variable is unused, so it can be removed.
-        // var mockAppNoWindows = MonitoredAppInfo(
-        //     id: pid_t(54321),
-        //     pid: pid_t(54321),
-        //     displayName: "OtherApp (PID: 54321)",
-        //     status: .active, 
-        //     isActivelyMonitored: false, 
-        //     interventionCount: 0,
-        //     windows: []
-        // )
 
         return MainPopoverView()
-            .environmentObject(mockMonitor) // Inject the mock monitor
+            .environmentObject(mockMonitor)
             .onAppear {
-                // Further simulate state for preview if needed
                  mockMonitor.monitoredApps = [mockApp]
-                 // mockMonitor.isMonitoringActivePublic = true // Ensure this line is commented or removed
-                 // mockMonitor.totalAutomaticInterventionsThisSessionDisplay = 5 // This can be uncommented
             }
     }
 }
