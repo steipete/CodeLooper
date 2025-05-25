@@ -109,10 +109,6 @@ public class CursorAppLifecycleManager: ObservableObject {
         Task {
             sessionLogger.log(level: .info, message: "Cursor instance launched (PID: \\(pid)). Manager processed launch.", pid: pid)
         }
-        
-        if let owner = self.owner, !owner.isMonitoringActivePublic {
-             owner.startMonitoringLoop()
-        }
     }
 
     func handleCursorTermination(_ app: NSRunningApplication) {
@@ -128,11 +124,6 @@ public class CursorAppLifecycleManager: ObservableObject {
         logger.info("Cursor instance terminated (PID: \\(pid)). Manager processed termination.")
         Task {
             sessionLogger.log(level: .info, message: "Cursor instance terminated (PID: \\(pid)). Manager processed termination.", pid: pid)
-        }
-        
-        if let owner = self.owner, monitoredApps.isEmpty, owner.isMonitoringActivePublic { // Check new published list
-            logger.info("No more Cursor instances. Signaling owner to stop monitoring loop.")
-            owner.stopMonitoringLoop()
         }
     }
 
@@ -154,11 +145,6 @@ public class CursorAppLifecycleManager: ObservableObject {
 
         // Scan for new ones that might have appeared
         scanForExistingInstances() // This also calls updatePublishedMonitoredApps
-
-        if let owner = self.owner, monitoredApps.isEmpty, owner.isMonitoringActivePublic {
-            logger.info("No more Cursor instances after refresh. Signaling owner to stop monitoring loop.")
-            owner.stopMonitoringLoop()
-        }
     }
 
     // Helper to update the @Published monitoredApps array from runningAppInfo dictionary

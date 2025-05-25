@@ -156,6 +156,23 @@ public class CursorMonitor: ObservableObject {
                 // For example, if an app was just added, call `updateWindows` for it.
             }
             .store(in: &cancellables)
+            
+        // NEW: Subscribe to own monitoredApps to manage the monitoring loop
+        $monitoredApps
+            .receive(on: DispatchQueue.main) // Ensure changes are processed on main thread
+            .sink { [weak self] apps in
+                guard let self = self else { return }
+                if !apps.isEmpty && !self.isMonitoringActive {
+                    self.logger.info("Monitored apps list became non-empty. Starting monitoring loop.")
+                    self.startMonitoringLoop()
+                } else if apps.isEmpty && self.isMonitoringActive {
+                    // The loop itself also has a check to stop if monitoredApps becomes empty,
+                    // but this provides a more immediate stop if the list clears due to external factors.
+                    self.logger.info("Monitored apps list became empty. Stopping monitoring loop.")
+                    self.stopMonitoringLoop()
+                }
+            }
+            .store(in: &cancellables)
     }
 
     deinit {

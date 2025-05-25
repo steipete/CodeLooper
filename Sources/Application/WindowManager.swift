@@ -147,10 +147,8 @@ class WindowManager: ObservableObject {
         logger.info("Before axpectorWindowController.showWindow(nil)")
         axpectorWindowController?.showWindow(nil)
         logger.info("After axpectorWindowController.showWindow(nil)")
-        // NSApp.activate(ignoringOtherApps: true)
-        // Replace deprecated activate call with a modern equivalent if necessary, or rely on makeKeyAndOrderFront
         if let window = axpectorWindowController?.window {
-            NSApp.activate() // General activation
+            NSApp.activate()
             window.makeKeyAndOrderFront(nil)
             logger.info("After axpectorWindowController.window.makeKeyAndOrderFront(nil)")
         } else {

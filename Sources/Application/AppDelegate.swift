@@ -298,8 +298,6 @@ public class AppDelegate: NSObject, NSApplicationDelegate,
         sparkleUpdaterManager?.updaterController.checkForUpdates(sender)
     }
 
-    // Placeholder for debug overlay functionality
-    // TODO: Implement actual debug overlay logic if needed
     func toggleDebugOverlay() {
         logger.info("Debug Overlay Toggled (Placeholder - No UI Change)")
     }
@@ -315,10 +313,6 @@ public class AppDelegate: NSObject, NSApplicationDelegate,
 
     private func refreshUIStateAfterOnboarding() {
         logger.info("Onboarding complete. Refreshing UI state.")
-        if Defaults[.isGlobalMonitoringEnabled] && !CursorMonitor.shared.isMonitoringActive {
-            logger.info("Global monitoring is enabled, starting monitor loop after onboarding.")
-            CursorMonitor.shared.startMonitoringLoop()
-        }
     }
     
     // MARK: - Window Restoration

@@ -23,7 +23,7 @@ struct CodeLooperApp: App {
     @Default(.isGlobalMonitoringEnabled) private var isGlobalMonitoringEnabled
     @Default(.showDebugMenu) private var showDebugMenu // For the debug menu items
     @Default(.startAtLogin) private var startAtLogin // For the menu item state
-    @State private var isMenuPresented: Bool = false // tracks menu presentation for MenuBarExtraAccess
+    @State private var isMenuPresented: Bool = false // For MenuBarExtraAccess
 
     // Logger for CodeLooperApp
     private let logger = Logger(category: .app)
@@ -33,15 +33,10 @@ struct CodeLooperApp: App {
     init() {
         // Perform one-time setup for the logging system.
         Diagnostics.Logger.bootstrap(destination: .console, minLevel: .debug)
-        // If osLog is also desired:
-        // Diagnostics.Logger.bootstrap(destination: .osLog, minLevel: .debug)
-        // Note: swift-log's LoggingSystem.bootstrap typically replaces the handler factory.
-        // To use multiple handlers, MultiplexLogHandler should be configured within LoggingSystemSetup.
 
         logger.info("CodeLooperApp initialized. ScenePhase: \(scenePhase)")
         
-        // HACK: Opens settings right when app starts.
-        // We use this for speeding up the debug loop
+        // Opens settings automatically in debug builds for faster development
         #if DEBUG
         DispatchQueue.main.async { [self] in
             openSettings()
@@ -55,44 +50,49 @@ struct CodeLooperApp: App {
             .environmentObject(sessionLogger)
             .environmentObject(cursorMonitor)
     }
-    
-    @ViewBuilder
-    private func menuBarLabelView(cursorMonitor: CursorMonitor) -> some View {
-        HStack(spacing: 2) {
-            Image("MenuBarTemplateIcon")
-                .renderingMode(.template)
-                .foregroundColor(isGlobalMonitoringEnabled ? Color(appIconStateController.currentTintColor ?? NSColor.controlAccentColor) : .gray.opacity(0.7))
-            
-            let count = cursorMonitor.monitoredApps.count
-            if count > 0 {
-                Text(" \\(count)") // Add space for padding from icon
-                    .font(.system(size: 12)) // Consistent with typical menu bar extras
-                    .foregroundColor(isGlobalMonitoringEnabled ? .primary : .secondary)
-            }
-        }
-        .contentShape(Rectangle())
-    }
 
     var body: some Scene {
         MenuBarExtra {
-            // This is the content for the popover (left-click)
             menuBarContent
         } label: {
-            menuBarLabelView(cursorMonitor: cursorMonitor)
+            MenuBarIconView() // Use the new struct for the label
+                .environmentObject(cursorMonitor) 
+                .environmentObject(appIconStateController)
         }
-        
-        .menuBarExtraStyle(.window) // Makes the content (MainPopoverView) a popover
-        .menuBarExtraAccess(isPresented: $isMenuPresented) { statusItem in
-            // This block is now only for direct NSStatusItem manipulation if needed in the future,
-            // but we are not calling MenuBarStatusRightClickHelper.shared.attach here anymore.
-            // logger.info("StatusItem available: \(statusItem)")
+        .menuBarExtraStyle(.window)
+        .menuBarExtraAccess(isPresented: $isMenuPresented) { _ in
         }
 
         Settings {
             SettingsSceneView()
                 .environmentObject(sessionLogger)
         }
-        
+    }
+}
+
+struct MenuBarIconView: View {
+    @EnvironmentObject var cursorMonitor: CursorMonitor
+    @EnvironmentObject var appIconStateController: AppIconStateController
+    
+    @Default(.isGlobalMonitoringEnabled) private var isGlobalMonitoringEnabled
+    @State private var monitoredAppCount: Int = 0
+
+    var body: some View {
+        HStack(spacing: 2) {
+            Image("MenuBarTemplateIcon")
+                .renderingMode(.template)
+                .foregroundColor(isGlobalMonitoringEnabled ? Color(appIconStateController.currentTintColor ?? NSColor.controlAccentColor) : .gray.opacity(0.7))
+            
+            if monitoredAppCount > 0 {
+                Text(" \(monitoredAppCount)")
+                    .font(.system(size: 12))
+                    .foregroundColor(isGlobalMonitoringEnabled ? .primary : .secondary)
+            }
+        }
+        .contentShape(Rectangle())
+        .onReceive(cursorMonitor.$monitoredApps) { apps in
+            self.monitoredAppCount = apps.count
+        }
     }
 }
 

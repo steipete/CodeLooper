@@ -17,8 +17,8 @@ This file provides guidance to AI assistants when working with code in this repo
 - To run any terminal command, use `osascript .cursor/scripts/terminator.scpt`.
   Call it without arguments to understand syntax.
 
-
 - When I say "regenerate" then use `./scripts/generate-xcproj.sh` to regen the xcodeproj and use `xcodebuild` to test that it builds.
+- "fix build" means using `xcodebuild` with `CodeLooper.xcodeproj`. When you added/removed/changed files, regenerate first.
 
 
 ## Project Overview
