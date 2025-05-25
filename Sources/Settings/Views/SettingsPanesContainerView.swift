@@ -33,16 +33,19 @@ struct SettingsPanesContainerView: View {
     @EnvironmentObject var mainSettingsViewModel: MainSettingsViewModel
     @EnvironmentObject var sessionLogger: SessionLogger // Assuming SessionLogger is provided higher up
     @State private var idealContentHeight: CGFloat = 450 // Default/initial height, adjusted slightly
+    @FocusState private var focusedTab: SettingsTab? // Added for keyboard focus
 
     var body: some View {
         VStack(spacing: 0) { // Use VStack to manage TabView and Footer
-            TabView {
+            TabView(selection: $mainSettingsViewModel.selectedTab) { // Bind selection to ViewModel
                 GeneralSettingsView(updaterViewModel: mainSettingsViewModel.updaterViewModel)
                     .readHeight() // Apply readHeight
                     .tabItem {
                         Label("General", systemImage: "gear")
                     }
                     .tag(SettingsTab.general)
+                    .focusable() // Added for keyboard focus
+                    .focused($focusedTab, equals: .general) // Added for keyboard focus
                 
                 CursorSupervisionSettingsView()
                     .readHeight() // Apply readHeight
@@ -50,6 +53,8 @@ struct SettingsPanesContainerView: View {
                         Label("Supervision", systemImage: "eye.fill")
                     }
                     .tag(SettingsTab.supervision)
+                    .focusable() // Added for keyboard focus
+                    .focused($focusedTab, equals: .supervision) // Added for keyboard focus
                 
                 CursorRuleSetsSettingsView()
                     .readHeight() // Apply readHeight
@@ -57,6 +62,8 @@ struct SettingsPanesContainerView: View {
                         Label("Rule Sets", systemImage: "list.star")
                     }
                     .tag(SettingsTab.ruleSets)
+                    .focusable() // Added for keyboard focus
+                    .focused($focusedTab, equals: .ruleSets) // Added for keyboard focus
                 
                 ExternalMCPsSettingsView()
                     .readHeight() // Apply readHeight
@@ -64,6 +71,8 @@ struct SettingsPanesContainerView: View {
                         Label("External MCPs", systemImage: "server.rack")
                     }
                     .tag(SettingsTab.externalMCPs)
+                    .focusable() // Added for keyboard focus
+                    .focused($focusedTab, equals: .externalMCPs) // Added for keyboard focus
                 
                 AdvancedSettingsView()
                     .readHeight() // Apply readHeight
@@ -71,6 +80,8 @@ struct SettingsPanesContainerView: View {
                         Label("Advanced", systemImage: "slider.horizontal.3")
                     }
                     .tag(SettingsTab.advanced)
+                    .focusable() // Added for keyboard focus
+                    .focused($focusedTab, equals: .advanced) // Added for keyboard focus
                 
                 AXInspectorLogView() // Renamed from Text(...)
                     .readHeight() // Apply readHeight
@@ -78,6 +89,8 @@ struct SettingsPanesContainerView: View {
                         Label("Log", systemImage: "doc.text.fill")
                     }
                     .tag(SettingsTab.log)
+                    .focusable() // Added for keyboard focus
+                    .focused($focusedTab, equals: .log) // Added for keyboard focus
             }
             .environmentObject(mainSettingsViewModel) // Provide to tabs that need it
             // .frame(maxWidth: .infinity, maxHeight: .infinity) // Remove fixed max height
@@ -89,6 +102,12 @@ struct SettingsPanesContainerView: View {
                 }
             }
             .animation(.default, value: idealContentHeight) // Animate height changes
+            .onChange(of: mainSettingsViewModel.selectedTab) { oldValue, newValue in // Changed to observe ViewModel's selectedTab
+                focusedTab = newValue // Update focus state when tab changes
+            }
+            .onAppear { // Set initial focus
+                focusedTab = mainSettingsViewModel.selectedTab
+            }
             // Potentially add .fixedSize(horizontal: false, vertical: true) to TabView if needed
 
             // Common Footer (Spec 3.3)

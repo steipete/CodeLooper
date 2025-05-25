@@ -142,9 +142,6 @@ struct WelcomeStepView: View {
 
 struct AccessibilityStepView: View {
     var viewModel: WelcomeViewModel
-    @State private var accessibilityStatusMessage: String = "Status: Checking..."
-    @State private var accessibilityStatusColor: Color = .secondary
-    @State private var permissionTask: Task<Void, Never>?
     
     var body: some View {
         VStack(spacing: 20) { // Consistent spacing
@@ -162,12 +159,6 @@ struct AccessibilityStepView: View {
             }
             .padding(.bottom, 20)
             
-            // Title and description (using .title3 for consistency with other potential step titles)
-            // Title is now handled by the parent WelcomeView if the new structure is kept.
-            // Text("Accessibility Permissions")
-            // .font(.title3.weight(.semibold))
-            // .padding(.bottom, 8)
-            
             Text("CodeLooper needs Accessibility permissions to monitor and interact with other applications on your behalf. This is essential for its core functionality.")
                 .font(.headline.weight(.regular))
                 .foregroundColor(.secondary)
@@ -175,85 +166,13 @@ struct AccessibilityStepView: View {
                 .padding(.horizontal, 40) // Adjusted padding
                 .padding(.bottom, 30)
             
-            // Permission settings section
-            VStack(spacing: 15) { // Adjusted spacing
-                // Open settings button
-                Button {
-                    viewModel.handleOpenAccessibilitySettingsAndPrompt()
-                } label: {
-                    HStack {
-                        Image(systemName: "gearshape.fill")
-                        Text("Open System Accessibility Settings")
-                    }
-                    .fontWeight(.medium)
-                    .frame(maxWidth: 300) // Consistent button width
-                    .padding()
-                    .background(Color.accentColor)
-                    .foregroundColor(.white)
-                    .cornerRadius(10)
-                }
-                .buttonStyle(.plain)
-                .keyboardShortcut(.defaultAction)
-                
-                Text("After opening settings, find CodeLooper in the list and enable the switch.")
-                    .font(.caption)
-                    .foregroundColor(.gray)
-                    .multilineTextAlignment(.center)
-                    .padding(.horizontal, 20)
-                
-                // Status section
-                VStack(spacing: 10) { // Adjusted spacing
-                    Text(accessibilityStatusMessage)
-                        .font(.callout.weight(.medium))
-                        .foregroundColor(accessibilityStatusColor) // Use dynamic color
-                    
-                    Button {
-                        updatePermissionStatus(AXPermissions.currentStatus)
-                    } label: {
-                        Text("Re-check Permissions")
-                            .font(.caption.weight(.medium))
-                    }
-                }
-                .padding(.top, 5)
-            }
-            .padding(.vertical, 20) // Adjusted padding
-            .padding(.horizontal, 30)
-            .padding(.horizontal, 20)
+            // Use the reusable PermissionsView component
+            PermissionsView(showTitle: false, compact: false)
+                .padding(.horizontal, 40)
             
             Spacer(minLength: 10)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .onAppear {
-            startMonitoringPermissions()
-        }
-        .onDisappear {
-            stopMonitoringPermissions()
-        }
-    }
-    
-    private func startMonitoringPermissions() {
-        permissionTask = Task {
-            for await isGranted in AXPermissions.statusUpdates {
-                guard !Task.isCancelled else { break }
-                updatePermissionStatus(isGranted)
-            }
-        }
-    }
-    
-    private func stopMonitoringPermissions() {
-        permissionTask?.cancel()
-        permissionTask = nil
-    }
-    
-    @MainActor
-    private func updatePermissionStatus(_ isGranted: Bool) {
-        if isGranted {
-            accessibilityStatusMessage = "Status: Granted ✓"
-            accessibilityStatusColor = .green
-        } else {
-            accessibilityStatusMessage = "Status: Not Granted. Please enable in System Settings."
-            accessibilityStatusColor = .red
-        }
     }
 }
 

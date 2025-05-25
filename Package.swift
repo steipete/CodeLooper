@@ -25,6 +25,8 @@ let package = Package(
         .package(path: "DesignSystem"),
         // Auto-updater
         .package(url: "https://github.com/sparkle-project/Sparkle.git", .upToNextMajor(from: "2.0.0")),
+        // MenuBarExtra enhancements
+        .package(url: "https://github.com/orchetect/MenuBarExtraAccess.git", .upToNextMajor(from: "1.2.1")),
         // Development-only dependencies
         .package(url: "https://github.com/cpisciotta/xcbeautify", from: "2.28.0")
     ],
@@ -49,7 +51,8 @@ let package = Package(
                 .product(name: "AXorcist", package: "AXorcist"),
                 .product(name: "AXpector", package: "AXpector"),
                 .product(name: "Sparkle", package: "Sparkle"),
-                .product(name: "DesignSystem", package: "DesignSystem")
+                .product(name: "DesignSystem", package: "DesignSystem"),
+                .product(name: "MenuBarExtraAccess", package: "MenuBarExtraAccess")
             ],
             path: "Sources",
             exclude: ["Diagnostics"],

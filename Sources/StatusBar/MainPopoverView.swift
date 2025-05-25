@@ -16,6 +16,10 @@ struct MainPopoverView: View {
             Text("CodeLooper Supervision")
                 .font(.title2)
                 .padding(.bottom, 5)
+            
+            // Permissions section
+            PermissionsView(showTitle: false, compact: true)
+                .padding(.bottom, 5)
 
             Defaults.Toggle("Enable Cursor Supervision", key: .isGlobalMonitoringEnabled)
 

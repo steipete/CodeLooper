@@ -5,7 +5,7 @@ import SwiftUI
 import DesignSystem
 
 struct GeneralSettingsView: View {
-    @Default(.startAtLogin) var startAtLogin
+    @EnvironmentObject var mainSettingsViewModel: MainSettingsViewModel
     @Default(.automaticallyCheckForUpdates) var automaticallyCheckForUpdates
     @Default(.isGlobalMonitoringEnabled) var isGlobalMonitoringEnabled
     @Default(.monitoringIntervalSeconds) var monitoringIntervalSeconds
@@ -32,11 +32,19 @@ struct GeneralSettingsView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: Spacing.xLarge) {
+                // Accessibility Permissions
+                DSSettingsSection("Permissions") {
+                    PermissionsView(showTitle: false, compact: false)
+                }
+                
                 // General Application Behavior
                 DSSettingsSection("General") {
                     DSToggle(
                         "Launch CodeLooper at Login",
-                        isOn: $startAtLogin,
+                        isOn: Binding(
+                            get: { mainSettingsViewModel.startAtLogin },
+                            set: { mainSettingsViewModel.updateStartAtLogin($0) }
+                        ),
                         description: "Automatically start CodeLooper when you log in to your Mac"
                     )
                 }

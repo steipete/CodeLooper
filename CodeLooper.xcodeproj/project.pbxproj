@@ -27,6 +27,7 @@
 		2C097F19FBB4FB77E6863B9F /* DiagnosticContext.swift in Sources */ = {isa = PBXBuildFile; fileRef = 058D5B17115DFB0CA47BD2CD /* DiagnosticContext.swift */; };
 		2D7504C3FD8BB70F4D844481 /* SessionLogger.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF84978ED668053955A7191A /* SessionLogger.swift */; };
 		2E31D0C9CDE66FDA592DB52A /* LogLevel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 590FE71833D8A3A3DFB21388 /* LogLevel.swift */; };
+		2E3C05865BABF6FCD093D1AB /* PermissionsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 495E51B8F7A1CB99E64DD6F4 /* PermissionsView.swift */; };
 		2E9F8879A48D4AF242B32AB1 /* RadioButtonRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2B6278C5464E1B76A5CFCB11 /* RadioButtonRow.swift */; };
 		2FD00A2FC1AF559BA0259DE1 /* UploadCompletionFeedback.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0F76062C8A2C8BF8BE5EBD49 /* UploadCompletionFeedback.swift */; };
 		331F6CD8C749119B13B13423 /* DiagnosticContext.swift in Sources */ = {isa = PBXBuildFile; fileRef = 058D5B17115DFB0CA47BD2CD /* DiagnosticContext.swift */; };
@@ -124,6 +125,7 @@
 		DE48FA5991B2B8014A28B837 /* LogManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 07D9EB121FEFC8BC7547D1F2 /* LogManager.swift */; };
 		DEDB0493943E70A7906C2638 /* XcodeBuildConfigView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 11B22B91FDE5D7C57D8C8330 /* XcodeBuildConfigView.swift */; };
 		DF279AF8DF13DAB70CCA1E3D /* AdvancedSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 59AF93DA0CFACAFC2421E6F7 /* AdvancedSettingsView.swift */; };
+		E15A3D14D1BF829CCBE2FC25 /* MenuBarExtraAccess in Frameworks */ = {isa = PBXBuildFile; productRef = 06D663B62700F815A9F0BEB6 /* MenuBarExtraAccess */; };
 		E181286E4F24A0FC75337765 /* UpdaterViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 95BFDCF5E5317C3B7F256B9F /* UpdaterViewModel.swift */; };
 		E219ED9DE7B48A17CDB17769 /* Task+Timeout.swift in Sources */ = {isa = PBXBuildFile; fileRef = D38E89BF0F0DB36C2E7D658B /* Task+Timeout.swift */; };
 		E8D96FAA47286A50222A8E62 /* DefaultsKeys.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51FC857EE374CA0BDF9C759A /* DefaultsKeys.swift */; };
@@ -198,6 +200,7 @@
 		3C69CC949209A6B0F3D95D5C /* GeneralSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GeneralSettingsView.swift; sourceTree = "<group>"; };
 		429F3143DECE0A4487E6973D /* ShortcutNames.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShortcutNames.swift; sourceTree = "<group>"; };
 		47BFE5F8FF03A80E28157AE6 /* NSImage+ResourceLoader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "NSImage+ResourceLoader.swift"; sourceTree = "<group>"; };
+		495E51B8F7A1CB99E64DD6F4 /* PermissionsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PermissionsView.swift; sourceTree = "<group>"; };
 		4CF963411BEA680C49738A53 /* AXApplicationObserver.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AXApplicationObserver.swift; sourceTree = "<group>"; };
 		4DB132BCA2278BD3DE926C89 /* InfoKey.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InfoKey.swift; sourceTree = "<group>"; };
 		50370C5EF387D999615EAE4E /* ForceStopResumeLinkHeuristic.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ForceStopResumeLinkHeuristic.swift; sourceTree = "<group>"; };
@@ -301,6 +304,7 @@
 				38FF90E01CFF033181A8A1EB /* Sparkle in Frameworks */,
 				A356C9F6D66E203E908A838E /* KeyboardShortcuts in Frameworks */,
 				6AD6BA226B1BA06E85100263 /* DesignSystem in Frameworks */,
+				E15A3D14D1BF829CCBE2FC25 /* MenuBarExtraAccess in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -472,6 +476,7 @@
 			children = (
 				9F6844B122B73F116ABB586A /* SettingsTabs */,
 				86E260B66207064C7D367FF1 /* MainSettingsViewModel.swift */,
+				495E51B8F7A1CB99E64DD6F4 /* PermissionsView.swift */,
 				2B6278C5464E1B76A5CFCB11 /* RadioButtonRow.swift */,
 				A89A61E85E7F94A82B8EB883 /* SettingsSection.swift */,
 				8BB499FA597CE3DA1BAAE20B /* WelcomeScreenToggle.swift */,
@@ -687,6 +692,7 @@
 				ACF0DC933CEF5FED0549B6AD /* Sparkle */,
 				40627E5CA183F2FF0E4024E6 /* KeyboardShortcuts */,
 				9B1F7BAF768299D7040A748A /* DesignSystem */,
+				06D663B62700F815A9F0BEB6 /* MenuBarExtraAccess */,
 			);
 			productName = CodeLooper;
 			productReference = 72CAF9D1E03CFD28069B089F /* CodeLooper.app */;
@@ -714,6 +720,7 @@
 			mainGroup = 976832951D3F36585540720A;
 			packageReferences = (
 				A9F285E059E774EA69CFE3E4 /* XCRemoteSwiftPackageReference "swift-log" */,
+				41AB18DBE856539B065F5C79 /* XCRemoteSwiftPackageReference "MenuBarExtraAccess" */,
 				F977A8B24E9041EEA9D06982 /* XCRemoteSwiftPackageReference "Defaults" */,
 				06BB1D02BB1753D2B3E2EF52 /* XCRemoteSwiftPackageReference "KeyboardShortcuts" */,
 				0E03DC693D5E087D24CDDBB3 /* XCRemoteSwiftPackageReference "LaunchAtLogin" */,
@@ -777,6 +784,7 @@
 				D47A468A7532556136027150 /* WindowManager.swift in Sources */,
 				13290A379685F6EF795F40A9 /* WindowPositionManager.swift in Sources */,
 				F2BF45CB229B5E11283F78A6 /* MainSettingsViewModel.swift in Sources */,
+				2E3C05865BABF6FCD093D1AB /* PermissionsView.swift in Sources */,
 				2E9F8879A48D4AF242B32AB1 /* RadioButtonRow.swift in Sources */,
 				075D5EA0F907BC3962117B66 /* SettingsSection.swift in Sources */,
 				BB6863B2903AE67E5C9E4767 /* AboutSettingsTab.swift in Sources */,
@@ -952,6 +960,7 @@
 				CODE_SIGN_IDENTITY = "-";
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 2;
+				DEVELOPMENT_TEAM = Y5PE65HELJ;
 				ENABLE_PREVIEWS = YES;
 				INFOPLIST_FILE = CodeLooper/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -1107,9 +1116,11 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = CodeLooper/CodeLooper.entitlements;
-				CODE_SIGN_IDENTITY = "-";
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 2;
+				DEVELOPMENT_TEAM = Y5PE65HELJ;
 				ENABLE_PREVIEWS = YES;
 				INFOPLIST_FILE = CodeLooper/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -1228,6 +1239,14 @@
 				minimumVersion = 5.0.0;
 			};
 		};
+		41AB18DBE856539B065F5C79 /* XCRemoteSwiftPackageReference "MenuBarExtraAccess" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/orchetect/MenuBarExtraAccess.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 1.2.1;
+			};
+		};
 		56A4A40657C281F3F49F82F0 /* XCRemoteSwiftPackageReference "SwiftUI-Introspect" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/siteline/SwiftUI-Introspect.git";
@@ -1263,6 +1282,10 @@
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
+		06D663B62700F815A9F0BEB6 /* MenuBarExtraAccess */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = MenuBarExtraAccess;
+		};
 		09EEC73F5A7F9C22F99EC8E1 /* AXorcist */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = AXorcist;

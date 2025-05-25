@@ -48,7 +48,7 @@ class WindowManager: ObservableObject {
         
         logger.info("WindowManager initialized.")
         setupDebugMenuObserver()
-        checkAndPromptForAccessibilityPermissions(showPromptIfNeeded: true)
+        checkAndPromptForAccessibilityPermissions(showPromptIfNeeded: false)
     }
 
     private func setupDebugMenuObserver() {

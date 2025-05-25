@@ -19,6 +19,7 @@ let project = Project(
         .remote(url: "https://github.com/sindresorhus/LaunchAtLogin", requirement: .upToNextMajor(from: "5.0.0")),
         .remote(url: "https://github.com/sparkle-project/Sparkle.git", requirement: .upToNextMajor(from: "2.0.0")),
         .remote(url: "https://github.com/sindresorhus/KeyboardShortcuts", requirement: .upToNextMajor(from: "2.0.0")),
+        .remote(url: "https://github.com/orchetect/MenuBarExtraAccess.git", requirement: .upToNextMajor(from: "1.2.1")),
         .local(path: "AXorcist"),
         .local(path: "AXpector"),
         .local(path: "DesignSystem")
@@ -92,7 +93,8 @@ let project = Project(
                 .package(product: "AXpector"),
                 .package(product: "Sparkle"),
                 .package(product: "KeyboardShortcuts"),
-                .package(product: "DesignSystem")
+                .package(product: "DesignSystem"),
+                .package(product: "MenuBarExtraAccess")
             ],
             settings: .settings(
                 base: [
@@ -100,6 +102,19 @@ let project = Project(
                     "PRODUCT_BUNDLE_IDENTIFIER": "me.steipete.codelooper",
                     "MARKETING_VERSION": "2025.5.2",
                     "CURRENT_PROJECT_VERSION": "2"
+                    // Team ID will be inherited from project-level if not specified per target/config
+                ],
+                configurations: [
+                    .debug(name: "Debug", settings: [
+                        "CODE_SIGN_IDENTITY": "Apple Development",
+                        "CODE_SIGN_STYLE": "Automatic",
+                        "DEVELOPMENT_TEAM": "Y5PE65HELJ" // Updated with your Team ID
+                    ]),
+                    .release(name: "Release", settings: [
+                        // Release signing settings can be more specific if needed, e.g., Apple Distribution
+                        // "CODE_SIGN_IDENTITY": "Apple Distribution",
+                        "DEVELOPMENT_TEAM": "Y5PE65HELJ" // Updated with your Team ID for consistency
+                    ])
                 ]
             )
         )

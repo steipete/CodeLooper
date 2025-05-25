@@ -76,6 +76,9 @@ public class AppDelegate: NSObject, NSApplicationDelegate,
         // Initialize core services FIRST
         initializeServices() // Ensure windowManager and other services are ready
 
+        // Sync login item state with user preference after services are up
+        loginItemManager?.syncLoginItemWithPreference()
+
         // Setup main application components
         setupNotificationObservers()
         // setupSupervision() // Commenting out for now - CursorMonitor.shared might handle its own start via Defaults observation
@@ -159,10 +162,6 @@ public class AppDelegate: NSObject, NSApplicationDelegate,
 
     // MARK: - Window Management
 
-    // private var aboutWindowController: NSWindowController? // Moved to WindowManager
-
-    // @objc func showAboutWindow() { ... } // Moved to WindowManager
-
     @objc func showAXpectorWindow() { // New method
         logger.info("AppDelegate: Request to show AXpector window.")
         if windowManager == nil {
@@ -172,7 +171,7 @@ public class AppDelegate: NSObject, NSApplicationDelegate,
         windowManager?.showAXpectorWindow()
     }
 
-    // MARK: - App Initialization Methods
+    // MARK: - Exception Handling
 
     private func setupExceptionHandling() {
         logger.info("Setting up exception handling")
@@ -186,6 +185,8 @@ public class AppDelegate: NSObject, NSApplicationDelegate,
             exceptionLogger.critical("Stack trace: \(callStack.joined(separator: "\n"))")
         }
     }
+
+    // MARK: - Service Initialization
 
     @MainActor
     private func initializeServices() {
@@ -230,6 +231,8 @@ public class AppDelegate: NSObject, NSApplicationDelegate,
         logger.info("Essential services initialization complete.")
     }
 
+    // MARK: - Helper Methods
+
     private func syncLoginItemStatus() {
         logger.info("Syncing login item status")
         guard let loginItemManager else {
@@ -238,6 +241,8 @@ public class AppDelegate: NSObject, NSApplicationDelegate,
         }
         loginItemManager.syncLoginItemWithPreference()
     }
+
+    // MARK: - Notification Observers
 
     private func setupNotificationObservers() {
         logger.info("Setting up notification observers")
@@ -272,14 +277,7 @@ public class AppDelegate: NSObject, NSApplicationDelegate,
         }
     }
 
-    // MARK: - Accessibility Permissions
-
-    // /// Checks accessibility permissions and prompts the user if needed.
-    // /// This function is essential for AXorcist to operate correctly.
-    // func checkAndPromptForAccessibilityPermissions(showPromptIfNeeded: Bool = true) { ... } // Moved to WindowManager
-
-    // MARK: - MenuManagerDelegate Conformance
-    // Methods implemented in AppDelegate+MenuManagerDelegate.swift
+    // MARK: - Cleanup
 
     deinit {
         MainActor.assumeIsolated {
@@ -306,7 +304,7 @@ public class AppDelegate: NSObject, NSApplicationDelegate,
         logger.info("Debug Overlay Toggled (Placeholder - No UI Change)")
     }
 
-    // MARK: - AXServices and Permissions Management
+    // MARK: - Monitoring State Management
 
     // New method to toggle monitoring state
     @objc private func toggleMonitoringState() {
@@ -315,7 +313,6 @@ public class AppDelegate: NSObject, NSApplicationDelegate,
         logger.info("Global monitoring toggled via shortcut: \(state)")
     }
 
-    // Helper function to refresh state after onboarding is complete
     private func refreshUIStateAfterOnboarding() {
         logger.info("Onboarding complete. Refreshing UI state.")
         if Defaults[.isGlobalMonitoringEnabled] && !CursorMonitor.shared.isMonitoringActive {
@@ -323,11 +320,15 @@ public class AppDelegate: NSObject, NSApplicationDelegate,
             CursorMonitor.shared.startMonitoringLoop()
         }
     }
-
+    
+    // MARK: - Window Restoration
+    
     private func handleWindowRestorationAndFirstLaunch() {
         // ... existing code ...
     }
 }
+
+// MARK: - WindowManagerDelegate
 
 @MainActor
 extension AppDelegate: WindowManagerDelegate {
@@ -338,36 +339,3 @@ extension AppDelegate: WindowManagerDelegate {
     // Removed windowManagerRequestsAccessibilityPermissions as WindowManager handles it directly now
 }
 
-// MARK: - Menu Actions
-
-// REMOVING MenuManagerDelegate extension as MenuBarExtra handles menu actions directly
-/*
-extension AppDelegate: MenuManagerDelegate {
-    func showSettings() {
-        logger.info("Settings menu item clicked (from old delegate path)")
-        // This path might still be used if other AppKit parts call it.
-        // Otherwise, MenuBarExtra uses SettingsLink or appKitOpenSettingsSubject.
-        SettingsService.appKitOpenSettingsSubject.send()
-        logger.info("Requested settings open via SettingsService from menu (AppKit bridge - old delegate path).")
-    }
-
-    func toggleStartAtLogin() {
-        logger.info("Toggle Start at Login menu item clicked (from old delegate path)")
-        Defaults[.startAtLogin].toggle()
-        loginItemManager?.syncLoginItemWithPreference()
-    }
-
-    func toggleDebugMenu() {
-        logger.info("Toggle Debug Menu item clicked (from old delegate path)")
-        Defaults[.showDebugMenu].toggle()
-        refreshUI() 
-    }
-
-    func showAbout() {
-        logger.info("About menu item clicked (from old delegate path)")
-        windowManager?.showAboutWindow()
-    }
-}
-*/
-
-// MARK: - Other App Actions
