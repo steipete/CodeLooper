@@ -22,6 +22,11 @@
 
 set -e
 
+# Quit Xcode before regenerating
+echo "Attempting to quit Xcode..."
+osascript -e 'tell application "Xcode" to quit saving no'
+echo "Xcode quit command sent. Continuing with script..."
+
 if ! command -v tuist &> /dev/null
 then
     echo "Tuist not found. Attempting to install with Homebrew..."
