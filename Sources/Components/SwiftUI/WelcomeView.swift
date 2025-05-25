@@ -143,8 +143,8 @@ struct WelcomeStepView: View {
 struct AccessibilityStepView: View {
     var viewModel: WelcomeViewModel
     @State private var accessibilityStatusMessage: String = "Status: Checking..."
-    @State private var accessibilityStatusColor: Color = .secondary // Add state for color
-    @State private var timer: Timer? // Add timer state
+    @State private var accessibilityStatusColor: Color = .secondary
+    @State private var permissionTask: Task<Void, Never>?
     
     var body: some View {
         VStack(spacing: 20) { // Consistent spacing
@@ -206,78 +206,53 @@ struct AccessibilityStepView: View {
                     Text(accessibilityStatusMessage)
                         .font(.callout.weight(.medium))
                         .foregroundColor(accessibilityStatusColor) // Use dynamic color
-                        .onAppear {
-                            startPermissionChecks() // Start checks on appear
-                        }
-                        .onDisappear {
-                            stopPermissionChecks() // Stop checks on disappear
-                        }
                     
                     Button {
-                        Task {
-                            await checkAccessibilityPermissions()
-                        }
+                        updatePermissionStatus(AXPermissions.currentStatus)
                     } label: {
                         Text("Re-check Permissions")
                             .font(.caption.weight(.medium))
-                            // .foregroundColor(Color.accentColor)
-                            // .padding(.horizontal, 12)
-                            // .padding(.vertical, 6)
-                            // .background(Color.accentColor.opacity(0.1))
-                            // .cornerRadius(6)
                     }
-                    // .buttonStyle(PlainButtonStyle()) // Using default link style now
                 }
                 .padding(.top, 5)
             }
             .padding(.vertical, 20) // Adjusted padding
             .padding(.horizontal, 30)
-            // .background(Color(.windowBackgroundColor).brightness(-0.03)) // Removing background
-            // .cornerRadius(12) // Removing corner radius
             .padding(.horizontal, 20)
             
             Spacer(minLength: 10)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .onAppear { // Initial check when the view appears
-            // Task { await checkAccessibilityPermissions() } // Moved to startPermissionChecks
-            // startPermissionChecks() // Already called by Text's onAppear
+        .onAppear {
+            startMonitoringPermissions()
         }
-        .onDisappear { // Also ensure timer is stopped if view itself disappears
-            stopPermissionChecks()
+        .onDisappear {
+            stopMonitoringPermissions()
         }
     }
     
-    private func startPermissionChecks() {
-        // Initial check
-        Task { await checkAccessibilityPermissions() }
-
-        // Start timer for periodic checks
-        timer?.invalidate() // Invalidate existing timer if any
-        timer = Timer.scheduledTimer(withTimeInterval: 0.5, repeats: true) { _ in
-            Task { await checkAccessibilityPermissions() }
+    private func startMonitoringPermissions() {
+        permissionTask = Task {
+            for await isGranted in AXPermissions.statusUpdates {
+                guard !Task.isCancelled else { break }
+                updatePermissionStatus(isGranted)
+            }
         }
     }
-
-    private func stopPermissionChecks() {
-        timer?.invalidate()
-        timer = nil
-    }
-
-    private func openAccessibilitySettings() {
-        let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility")!
-        NSWorkspace.shared.open(url)
+    
+    private func stopMonitoringPermissions() {
+        permissionTask?.cancel()
+        permissionTask = nil
     }
     
     @MainActor
-    private func checkAccessibilityPermissions() async {
-        let granted = AXIsProcessTrusted()
-        if granted {
+    private func updatePermissionStatus(_ isGranted: Bool) {
+        if isGranted {
             accessibilityStatusMessage = "Status: Granted ✓"
             accessibilityStatusColor = .green
         } else {
             accessibilityStatusMessage = "Status: Not Granted. Please enable in System Settings."
-            accessibilityStatusColor = .red // Changed to red for not granted
+            accessibilityStatusColor = .red
         }
     }
 }

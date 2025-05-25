@@ -13,7 +13,7 @@ let project = Project(
         )
     ),
     packages: [
-        .remote(url: "https://github.com/sindresorhus/Defaults", requirement: .upToNextMajor(from: "7.3.1")),
+        .remote(url: "https://github.com/sindresorhus/Defaults", requirement: .upToNextMajor(from: "9.0.2")),
         .remote(url: "https://github.com/siteline/SwiftUI-Introspect.git", requirement: .upToNextMajor(from: "0.9.0")),
         .remote(url: "https://github.com/apple/swift-log.git", requirement: .upToNextMajor(from: "1.5.0")),
         .remote(url: "https://github.com/sindresorhus/LaunchAtLogin", requirement: .upToNextMajor(from: "5.0.0")),
@@ -98,8 +98,8 @@ let project = Project(
                 base: [
                     "INFOPLIST_FILE": "CodeLooper/Info.plist",
                     "PRODUCT_BUNDLE_IDENTIFIER": "me.steipete.codelooper",
-                    "MARKETING_VERSION": "1.0",
-                    "CURRENT_PROJECT_VERSION": "1"
+                    "MARKETING_VERSION": "2025.5.2",
+                    "CURRENT_PROJECT_VERSION": "2"
                 ]
             )
         )

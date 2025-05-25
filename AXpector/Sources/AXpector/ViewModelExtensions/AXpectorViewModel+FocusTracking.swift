@@ -51,8 +51,9 @@ extension AXpectorViewModel {
         }
     }
 
-    private func handleFocusNotificationFromAXorcist(focusedElement: AXUIElement, pid: pid_t) {
-        axDebugLog("AXpectorVM.handleFocusNotification: Element: \(focusedElement), PID: \(pid)") // CHANGED
+    @MainActor
+    private func handleFocusNotificationFromAXorcist(focusedElement: Element, pid: pid_t, notification: AXNotification) {
+        axDebugLog("AXpectorVM.handleFocusNotification: Element: \(focusedElement.briefDescription()), PID: \(pid), Notification: \(notification.rawValue)")
         
         if let selectedPID = selectedApplicationPID, selectedPID != pid {
             axInfoLog("Focus change in PID \(pid) ignored as different PID (\(selectedPID)) is selected in AXpector.") // CHANGED
@@ -75,12 +76,11 @@ extension AXpectorViewModel {
             }
         }
 
-        let axLibElement = Element(focusedElement) // CHANGED from AXElement to Element
         let appElementForPath = AXUIElementCreateApplication(pid)
 
-        let role = axLibElement.role()
-        let title = axLibElement.title()
-        let pathArray = axLibElement.generatePathArray(upTo: Element(appElementForPath))
+        let role = focusedElement.role()
+        let title = focusedElement.title()
+        let pathArray = focusedElement.generatePathArray(upTo: Element(appElementForPath))
         // PathComponent in AXorcist.Element's Path struct might have a better string representation.
         // Assuming generatePathArray returns [String] for now, or that Path.PathComponent.description is suitable.
         // For now, using map { $0.isEmpty ? "(empty)" : $0 } as was originally there for String arrays.
@@ -93,7 +93,7 @@ extension AXpectorViewModel {
         self.focusedElementInfo = infoParts.joined(separator: "\n")
 
         if let appTree = self.accessibilityTree.first, appTree.pid == pid, 
-           let foundNode = findNodeByAXElement(focusedElement, in: [appTree]) { 
+           let foundNode = findNodeByAXElement(focusedElement.underlyingElement, in: [appTree]) { 
             self.temporarilySelectedNodeIDByFocus = foundNode.id 
             _ = expandParents(for: foundNode.id, in: self.accessibilityTree) 
             updateHighlightForNode(foundNode, isFocusHighlight: true) 

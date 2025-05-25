@@ -48,9 +48,7 @@ class WindowManager: ObservableObject {
         
         logger.info("WindowManager initialized.")
         setupDebugMenuObserver()
-        // Initial check for accessibility - DO NOT PROMPT HERE.
-        // Prompting should only happen on user action from Welcome/Settings.
-        checkAndPromptForAccessibilityPermissions(showPromptIfNeeded: false)
+        checkAndPromptForAccessibilityPermissions(showPromptIfNeeded: true)
     }
 
     private func setupDebugMenuObserver() {

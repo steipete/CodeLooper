@@ -81,6 +81,7 @@ class AXpectorViewModel: ObservableObject {
     // Permissions
     @Published var isAccessibilityEnabled: Bool? = nil
     private var permissionCheckTimer: Timer?
+    internal var permissionTask: Task<Void, Never>?
 
     // Fetch Depths
     internal let initialFetchDepth = 3
@@ -151,14 +152,33 @@ class AXpectorViewModel: ObservableObject {
     @Published var searchInDescription: Bool = true { didSet { applyFilter() } }
     @Published var searchInPath: Bool = true { didSet { applyFilter() } }
 
+    // Application monitoring
+    internal var appLaunchObserver: NSObjectProtocol?
+    internal var appTerminateObserver: NSObjectProtocol?
+    
     // MARK: - Init / Deinit
     init() {
         setupFilterDebouncer()
+        startMonitoringPermissions()
+        setupApplicationMonitoring()
+        // Fetch initial list of applications
+        fetchRunningApplications()
     }
 
     deinit {
         permissionCheckTimer?.invalidate()
         permissionCheckTimer = nil
+        permissionTask?.cancel()
+        permissionTask = nil
+        
+        // Remove app observers
+        if let observer = appLaunchObserver {
+            NotificationCenter.default.removeObserver(observer)
+        }
+        if let observer = appTerminateObserver {
+            NotificationCenter.default.removeObserver(observer)
+        }
+        
         Task { @MainActor [weak self] in
             guard let self = self else { return }
             self.stopHoverMonitoring() // This will be in an extension
@@ -234,13 +254,13 @@ class AXpectorViewModel: ObservableObject {
             self.treeLoadingError = "No application selected."
             return
         }
-        guard let app = runningApplications.first(where: { $0.processIdentifier == pid }) else {
+        guard let app = RunningApplicationHelper.runningApplication(pid: pid) else {
             axWarningLog("Application with PID \(pid) not found.")
             self.treeLoadingError = "Application with PID \(pid) not found."; self.accessibilityTree = []; self.originalAccessibilityTree = []; self.filteredAccessibilityTree = []
             self.isLoadingTree = false
             return
         }
-        let appName = app.localizedName ?? app.bundleIdentifier ?? "App PID \(pid)"
+        let appName = RunningApplicationHelper.displayName(for: app)
         axInfoLog("Fetching accessibility tree for: \(appName) (PID: \(pid)) with depth \(self.initialFetchDepth)")
         self.isLoadingTree = true; self.treeLoadingError = nil; self.accessibilityTree = []; self.originalAccessibilityTree = []; self.filteredAccessibilityTree = []
         let currentAppName = appName; let currentPid = pid

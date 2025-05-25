@@ -951,7 +951,7 @@
 				CODE_SIGN_ENTITLEMENTS = CodeLooper/CodeLooper.entitlements;
 				CODE_SIGN_IDENTITY = "-";
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 2;
 				ENABLE_PREVIEWS = YES;
 				INFOPLIST_FILE = CodeLooper/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -959,7 +959,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
-				MARKETING_VERSION = 1.0;
+				MARKETING_VERSION = 2025.5.2;
 				PRODUCT_BUNDLE_IDENTIFIER = me.steipete.codelooper;
 				PRODUCT_NAME = CodeLooper;
 				SDKROOT = macosx;
@@ -1109,7 +1109,7 @@
 				CODE_SIGN_ENTITLEMENTS = CodeLooper/CodeLooper.entitlements;
 				CODE_SIGN_IDENTITY = "-";
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 2;
 				ENABLE_PREVIEWS = YES;
 				INFOPLIST_FILE = CodeLooper/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -1117,7 +1117,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
-				MARKETING_VERSION = 1.0;
+				MARKETING_VERSION = 2025.5.2;
 				PRODUCT_BUNDLE_IDENTIFIER = me.steipete.codelooper;
 				PRODUCT_NAME = CodeLooper;
 				SDKROOT = macosx;
@@ -1257,7 +1257,7 @@
 			repositoryURL = "https://github.com/sindresorhus/Defaults";
 			requirement = {
 				kind = upToNextMajorVersion;
-				minimumVersion = 7.3.1;
+				minimumVersion = 9.0.2;
 			};
 		};
 /* End XCRemoteSwiftPackageReference section */

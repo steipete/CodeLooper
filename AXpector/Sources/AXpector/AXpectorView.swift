@@ -62,6 +62,8 @@ private struct PermissionRequiredView: View {
                 if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility") {
                     NSWorkspace.shared.open(url)
                 }
+                // Also request access to trigger the system prompt
+                AXPermissions.requestAccess()
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
