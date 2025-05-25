@@ -4,6 +4,7 @@ import KeyboardShortcuts
 import os
 import SwiftUI
 import Logging
+import Combine // For .onReceive
 
 @main
 struct CodeLooperApp: App {
@@ -12,10 +13,15 @@ struct CodeLooperApp: App {
     // Use @NSApplicationDelegateAdaptor to connect AppDelegate
     @NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
     @Environment(\.scenePhase) private var scenePhase
+    @Environment(\.openSettings) private var openSettings // For opening settings
 
     // Access the shared instance of CursorMonitor
     @StateObject private var cursorMonitor = CursorMonitor.shared
     @StateObject private var sessionLogger = SessionLogger.shared
+    @StateObject private var appIconStateController = AppIconStateController.shared // Renamed for clarity
+    @Default(.isGlobalMonitoringEnabled) private var isGlobalMonitoringEnabled
+    @Default(.showDebugMenu) private var showDebugMenu // For the debug menu items
+    @Default(.startAtLogin) private var startAtLogin // For the menu item state
 
     // Logger for CodeLooperApp
     private let logger = Logger(category: .app)
@@ -31,18 +37,91 @@ struct CodeLooperApp: App {
         // To use multiple handlers, MultiplexLogHandler should be configured within LoggingSystemSetup.
 
         logger.info("CodeLooperApp initialized. ScenePhase: \(scenePhase)")
+        
+        // HACK: Opens settings right when app starts.
+        // We use this for speeding up the debug loop
+        #if DEBUG
+        DispatchQueue.main.async { [self] in
+            openSettings()
+        }
+        #endif
+    }
+
+    @ViewBuilder
+    private var menuBarContent: some View {
+        MainPopoverView()
+            .environmentObject(sessionLogger)
+            .environmentObject(cursorMonitor)
+    }
+    
+    private var menuBarLabelView: some View { // Renamed for clarity as it's a View
+        HStack(spacing: 2) {
+            Image("MenuBarTemplateIcon")
+                .renderingMode(.template)
+                // Use .foregroundColor for template images for proper tinting
+                .foregroundColor(isGlobalMonitoringEnabled ? Color(appIconStateController.currentTintColor ?? NSColor.controlAccentColor) : .gray.opacity(0.7))
+            
+            let count = cursorMonitor.monitoredApps.count
+            if count > 0 {
+                Text(" \(count)") // Add space for padding from icon
+                    .font(.system(size: 12)) // Consistent with typical menu bar extras
+                    // Text color should ideally adapt to the effective appearance (dark/light mode)
+                    // or match the icon's tint logic if it implies status.
+                    .foregroundColor(isGlobalMonitoringEnabled ? .primary : .secondary)
+            }
+        }
+        .contextMenu { // This will be the "right-click" menu
+            SettingsLink { Text("Settings...") }
+            
+            Button(action: {
+                startAtLogin.toggle()
+                // Ensure AppDelegate and its services are available
+                AppDelegate.shared?.loginItemManager?.syncLoginItemWithPreference()
+                logger.info("Toggled Start at Login to: \(startAtLogin)")
+            }) {
+                HStack {
+                    Text("Start CodeLooper at Login")
+                    Spacer()
+                    if startAtLogin { Image(systemName: "checkmark") }
+                }
+            }
+
+            Divider()
+            
+            if showDebugMenu {
+                Menu("Debug Options") {
+                    Button("Debug Action 1") { logger.info("Debug Action 1 Tapped") }
+                    Button("Toggle AXpector") { NotificationCenter.default.post(name: .showAXpectorWindow, object: nil) }
+                }
+                Divider()
+            }
+
+            Button("About CodeLooper") {
+                // Ensure AppDelegate and its windowManager are available
+                AppDelegate.shared?.windowManager?.showAboutWindow()
+                logger.info("About CodeLooper menu item tapped.")
+            }
+
+            Divider()
+            Button("Quit CodeLooper") { NSApp.terminate(nil) }
+        }
     }
 
     var body: some Scene {
-        // The main application UI is primarily a MenuBarExtra app.
-        // No main WindowGroup is defined here as per typical MenuBarExtra app structure.
-        // If you had a main window, it would be defined here.
+        MenuBarExtra {
+            // This is the content for the popover (left-click)
+            menuBarContent
+        } label: {
+            menuBarLabelView // The label now includes the context menu
+        }
+        
+        .menuBarExtraStyle(.window) // Makes the content (MainPopoverView) a popover
 
-        // Define the Settings scene
         Settings {
             SettingsSceneView()
                 .environmentObject(sessionLogger)
         }
+        
     }
 }
 
@@ -51,13 +130,13 @@ struct SettingsSceneView: View {
         loginItemManager: LoginItemManager.shared,
         updaterViewModel: UpdaterViewModel(sparkleUpdaterManager: nil)
     )
-    @Environment(\.openSettings) private var openSettings // For macOS 14+
+    @Environment(\.openSettings) private var openSettingsInternal // For macOS 14+
     
     var body: some View {
-        SettingsPanesContainerView()
+        SettingsContainerView()
             .environmentObject(mainSettingsViewModel)
             .onReceive(SettingsService.openSettingsSubject) { _ in
-                openSettings()
+                openSettingsInternal()
             }
     }
 }

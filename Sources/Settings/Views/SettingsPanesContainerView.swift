@@ -51,14 +51,14 @@ struct SettingsPanesContainerView: View {
                     }
                     .tag(SettingsTab.supervision)
                 
-                CursorRuleSetsSettingsTab(viewModel: mainSettingsViewModel)
+                CursorRuleSetsSettingsView()
                     .readHeight() // Apply readHeight
                     .tabItem {
                         Label("Rule Sets", systemImage: "list.star")
                     }
                     .tag(SettingsTab.ruleSets)
                 
-                ExternalMCPsSettingsTab()
+                ExternalMCPsSettingsView()
                     .readHeight() // Apply readHeight
                     .tabItem {
                         Label("External MCPs", systemImage: "server.rack")

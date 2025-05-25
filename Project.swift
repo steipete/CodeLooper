@@ -20,7 +20,8 @@ let project = Project(
         .remote(url: "https://github.com/sparkle-project/Sparkle.git", requirement: .upToNextMajor(from: "2.0.0")),
         .remote(url: "https://github.com/sindresorhus/KeyboardShortcuts", requirement: .upToNextMajor(from: "2.0.0")),
         .local(path: "AXorcist"),
-        .local(path: "AXpector")
+        .local(path: "AXpector"),
+        .local(path: "DesignSystem")
     ],
     settings: .settings(
         base: [
@@ -90,7 +91,8 @@ let project = Project(
                 .package(product: "AXorcist"),
                 .package(product: "AXpector"),
                 .package(product: "Sparkle"),
-                .package(product: "KeyboardShortcuts")
+                .package(product: "KeyboardShortcuts"),
+                .package(product: "DesignSystem")
             ],
             settings: .settings(
                 base: [

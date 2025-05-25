@@ -1,6 +1,11 @@
 import AppKit
 import Defaults
 import SwiftUI
+import Combine // Added for PassthroughSubject
+
+// Ensure SettingsService is accessible, you might need to ensure its module is imported
+// if it's in a different one and not globally available via @testable or similar.
+// For CodeLooper, SettingsService is in the Application module, which should be accessible.
 
 struct MainPopoverView: View {
     @StateObject private var cursorMonitor = CursorMonitor.shared
@@ -74,22 +79,21 @@ struct MainPopoverView: View {
                 .font(.caption)
 
             HStack {
-                // Replaced SettingsLink with Button
+                // SettingsLink is still useful here for convenience from within the popover.
                 SettingsLink {
                     Text("Open Settings")
                 }
                 .tint(.accentColor)
-                .onReceive(NotificationCenter.default.publisher(for: NSWindow.willCloseNotification)) { notification in
-                    // Optional: Add logic if something needs to happen when the settings window closes
-                    // For example, re-focusing the app or specific clean-up.
-                    // Ensure the notification object is the settings window if multiple windows are handled.
-                }
+                // The onReceive for NSWindow.willCloseNotification can remain if it serves a purpose.
                 .simultaneousGesture(TapGesture().onEnded {
-                    // Close popover when settings link is tapped
-                    // Delay slightly to allow the settings window to open first
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                        AppDelegate.shared?.menuManager?.closePopover(sender: nil)
-                    }
+                    // This popover closing logic needs re-evaluation.
+                    // If CodeLooperApp now controls popover visibility via $showPopover,
+                    // this direct call to AppDelegate might conflict or be unnecessary.
+                    // It might be better to set showPopover to false here, if a binding is passed.
+                    // For now, let's comment out the direct AppDelegate call.
+                    // DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                    //     AppDelegate.shared?.menuManager?.closePopover(sender: nil)
+                    // }
                 })
 
                 Button("Reset All Counters") {
@@ -104,7 +108,6 @@ struct MainPopoverView: View {
         }
         .padding()
         .frame(width: 350) // Fixed width for the popover view
-        // Removed .listRowBackground(Color.clear) from VStack as it's not a List row
     }
 
     // InstanceRowView and related helper methods (statusIndicator, iconAndColor, friendlyStatusDescription)

@@ -33,8 +33,8 @@ public final class MainSettingsCoordinator: NSObject {
     public func showSettings() {
         logger.info("Showing settings window")
 
-        // Use the native Settings framework
-        logger.info("Showing settings using native SwiftUI Settings framework")
+        // Use the native Settings framework with our custom SettingsContainerView
+        logger.info("Showing settings using native SwiftUI Settings framework with design system")
         NSApp.sendAction(Selector(("showSettingsWindow:")), to: nil, from: nil)
     }
 

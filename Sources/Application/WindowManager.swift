@@ -7,6 +7,7 @@ import Diagnostics
 import Foundation
 import SwiftUI
 import AXpector
+import DesignSystem
 
 @MainActor
 protocol WindowManagerDelegate: AnyObject {
@@ -132,7 +133,7 @@ class WindowManager: ObservableObject {
         if axpectorWindowController == nil {
             logger.info("Creating new AXpector window.")
             // Assuming AXpectorView is the main view from the AXpector module
-            let axpectorView = AXpectorView() 
+            let axpectorView = AXpectorView().withDesignSystem() 
             let window = NSWindow(
                 contentRect: NSRect(x: 0, y: 0, width: 800, height: 600), // Adjust size as needed
                 styleMask: [.titled, .closable, .resizable, .miniaturizable],

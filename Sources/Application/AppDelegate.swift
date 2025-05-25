@@ -32,7 +32,6 @@ public class AppDelegate: NSObject, NSApplicationDelegate,
     // MARK: - Properties
 
     // Services - initialized directly in AppDelegate
-    var menuManager: MenuManager?
     var loginItemManager: LoginItemManager?
     var axApplicationObserver: AXApplicationObserver?
     var sparkleUpdaterManager: SparkleUpdaterManager?
@@ -50,7 +49,6 @@ public class AppDelegate: NSObject, NSApplicationDelegate,
     let sessionLogger = SessionLogger.shared
     private lazy var locatorManager = LocatorManager.shared
     private var cancellables = Set<AnyCancellable>()
-    private var settingsWindow: NSWindow?
 
     // MARK: - App Lifecycle
 
@@ -75,8 +73,6 @@ public class AppDelegate: NSObject, NSApplicationDelegate,
         initializeServices() // Ensure windowManager and other services are ready
 
         // Setup main application components
-        // setupMenuBarExtras() // Replaced by setupMenuBar if it serves the same purpose or if extra functionality moved elsewhere
-        setupMenuBar() // Assuming this is the correct replacement
         setupNotificationObservers()
         // setupSupervision() // Commenting out for now - CursorMonitor.shared might handle its own start via Defaults observation
 
@@ -89,7 +85,6 @@ public class AppDelegate: NSObject, NSApplicationDelegate,
 
         #if DEBUG
         // Automatically open settings for faster debugging in DEBUG builds
-        Timer.scheduledTimer(withTimeInterval: 0.1, repeats: false) { _ in
             Task { @MainActor in
                 // Ensure windowManager is available and settings can be opened.
                 // This assumes windowManager is initialized and ready.
@@ -106,7 +101,6 @@ public class AppDelegate: NSObject, NSApplicationDelegate,
                 // NSApp.sendAction(Selector(("showSettingsWindow:")), to: nil, from: nil)
                 SettingsService.openSettingsSubject.send()
                 self.logger.info("DEBUG: Requested settings open via SettingsService.")
-            }
         }
         #endif
     }
@@ -145,9 +139,6 @@ public class AppDelegate: NSObject, NSApplicationDelegate,
         // Stop the Cursor monitoring loop
         CursorMonitor.shared.stopMonitoringLoop()
 
-        // Clean up menu manager
-        menuManager?.cleanup()
-
         // Remove all notification observers
         for observer in notificationObservers {
             NotificationCenter.default.removeObserver(observer)
@@ -160,40 +151,6 @@ public class AppDelegate: NSObject, NSApplicationDelegate,
     func refreshUI() {
         logger.info("Refreshing UI components")
         loginItemManager?.syncLoginItemWithPreference()
-        menuManager?.refreshMenu()
-    }
-
-    /// Updates the visibility of the menu bar icon
-    /// - Parameter isVisible: Whether the menu bar icon should be visible
-    func updateMenuBarVisibility(_ isVisible: Bool) {
-        logger.info("Updating menu bar visibility: \(isVisible)")
-
-        // If the status item should be hidden and it exists, remove it
-        if !isVisible {
-            if menuManager?.statusItem != nil {
-                logger.info("Removing status item from menu bar")
-                // Remove the status item from the system status bar
-                if let statusItem = menuManager?.statusItem {
-                    NSStatusBar.system.removeStatusItem(statusItem)
-                    menuManager?.statusItem = nil
-                }
-            }
-        } else if menuManager?.statusItem == nil {
-            // If status item should be visible but doesn't exist, create it
-            logger.info("Restoring status item to menu bar")
-            menuManager?.setupMenuBar()
-        } else {
-            // If the status item exists and should be visible, ensure it's properly set up
-            logger.info("Status item already exists and should be visible, refreshing menu")
-            menuManager?.refreshMenu()
-        }
-
-        // Store the preference
-        Defaults[.showInMenuBar] = isVisible
-
-        // Log the change for debugging purposes
-        let statusItemExists = menuManager?.statusItem != nil
-        logger.info("Menu bar visibility updated: isVisible=\(isVisible), statusItem=\(String(describing: statusItemExists))")
     }
 
     // MARK: - Window Management
@@ -278,25 +235,12 @@ public class AppDelegate: NSObject, NSApplicationDelegate,
         loginItemManager.syncLoginItemWithPreference()
     }
 
-    private func setupMenuBar() {
-        logger.info("Setting up menu bar")
-
-        if menuManager == nil {
-            menuManager = MenuManager(delegate: self)
-        }
-
-        logger.info("Menu bar setup complete - MenuManager handles popover")
-    }
-
-    // Remove togglePopover from AppDelegate - MenuManager handles this
-
     private func setupNotificationObservers() {
         logger.info("Setting up notification observers")
 
-        let menuBarObserver = setupMenuBarVisibilityObserver()
         let highlightMenuBarObserver = setupHighlightMenuBarObserver()
 
-        notificationObservers.append(contentsOf: [menuBarObserver, highlightMenuBarObserver])
+        notificationObservers.append(highlightMenuBarObserver)
 
         // Observer for showing AXpector Window
         let axpectorObserver = NotificationCenter.default.addObserver(forName: .showAXpectorWindow, object: nil, queue: .main) { [weak self] _ in
@@ -320,23 +264,6 @@ public class AppDelegate: NSObject, NSApplicationDelegate,
             Task { @MainActor [weak self] in
                 self?.logger.info("Highlighting menu bar icon based on notification (.highlightMenuBarIcon received)")
                 AppIconStateController.shared.flashIcon()
-            }
-        }
-    }
-
-    private func setupMenuBarVisibilityObserver() -> NSObjectProtocol {
-        NotificationCenter.default.addObserver(
-            forName: .menuBarVisibilityChanged,
-            object: nil,
-            queue: .main
-        ) { [weak self] notification in
-            guard let self else { return }
-
-            if let userInfo = notification.userInfo,
-                let isVisible = userInfo["visible"] as? Bool {
-                Task { @MainActor in
-                    self.updateMenuBarVisibility(isVisible)
-                }
             }
         }
     }
@@ -382,7 +309,6 @@ public class AppDelegate: NSObject, NSApplicationDelegate,
         Defaults[.isGlobalMonitoringEnabled].toggle()
         let state = Defaults[.isGlobalMonitoringEnabled] ? "enabled" : "disabled"
         logger.info("Global monitoring toggled via shortcut: \(state)")
-        menuManager?.refreshMenu()
     }
 
     // Helper function to refresh state after onboarding is complete
@@ -392,7 +318,6 @@ public class AppDelegate: NSObject, NSApplicationDelegate,
             logger.info("Global monitoring is enabled, starting monitor loop after onboarding.")
             CursorMonitor.shared.startMonitoringLoop()
         }
-        menuManager?.refreshMenu()
     }
 
     private func handleWindowRestorationAndFirstLaunch() {
@@ -404,9 +329,6 @@ public class AppDelegate: NSObject, NSApplicationDelegate,
 extension AppDelegate: WindowManagerDelegate {
     func windowManagerDidFinishOnboarding() {
         logger.info("WindowManagerDelegate: Onboarding finished. Performing any post-onboarding tasks.")
-        // Example: Refresh UI or check for updates after onboarding
-        // refreshUI()
-        // sparkleUpdaterManager?.updaterController.checkForUpdates()
     }
     
     // Removed windowManagerRequestsAccessibilityPermissions as WindowManager handles it directly now
@@ -414,33 +336,35 @@ extension AppDelegate: WindowManagerDelegate {
 
 // MARK: - Menu Actions
 
+// REMOVING MenuManagerDelegate extension as MenuBarExtra handles menu actions directly
+/*
 extension AppDelegate: MenuManagerDelegate {
     func showSettings() {
-        logger.info("Settings menu item clicked")
-        // Use the new SwiftUI Settings scene
-        // NSApp.sendAction(Selector(("showSettingsWindow:")), to: nil, from: nil)
-        // NSApp.sendAction(Selector(("showSettingsWindow:")), to: nil, from: nil)
-        SettingsService.openSettingsSubject.send()
-        logger.info("Requested settings open via SettingsService from menu.")
+        logger.info("Settings menu item clicked (from old delegate path)")
+        // This path might still be used if other AppKit parts call it.
+        // Otherwise, MenuBarExtra uses SettingsLink or appKitOpenSettingsSubject.
+        SettingsService.appKitOpenSettingsSubject.send()
+        logger.info("Requested settings open via SettingsService from menu (AppKit bridge - old delegate path).")
     }
 
     func toggleStartAtLogin() {
-        logger.info("Toggle Start at Login menu item clicked")
+        logger.info("Toggle Start at Login menu item clicked (from old delegate path)")
         Defaults[.startAtLogin].toggle()
         loginItemManager?.syncLoginItemWithPreference()
     }
 
     func toggleDebugMenu() {
-        logger.info("Toggle Debug Menu item clicked")
+        logger.info("Toggle Debug Menu item clicked (from old delegate path)")
         Defaults[.showDebugMenu].toggle()
-        refreshUI() // Rebuilds the menu, which will show/hide debug items
+        refreshUI() 
     }
 
     func showAbout() {
-        logger.info("About menu item clicked")
+        logger.info("About menu item clicked (from old delegate path)")
         windowManager?.showAboutWindow()
     }
 }
+*/
 
 // MARK: - Other App Actions
 

@@ -1,395 +1,499 @@
 import SwiftUI
-import AXorcist // For AXPropertyNode if it's moved or directly used
+import AXorcist
+import DesignSystem
 
 @MainActor
 public struct AXpectorView: View {
     @StateObject private var viewModel = AXpectorViewModel()
     @State private var selectedNodeID: AXPropertyNode.ID?
 
-    public init() {} // Add public initializer
+    public init() {}
 
     public var body: some View {
         // Check for Accessibility Permissions first
-        if viewModel.isAccessibilityEnabled == nil { // State when initially checking
-            VStack {
-                ProgressView("Checking Accessibility Permissions...")
-            }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .onAppear {
-                // ViewModel init already calls checkAccessibilityPermissions(initialCheck: true).
-                // This onAppear might still be useful if the view can appear multiple times
-                // and a re-check (silent) is desired, but for initial load, it's covered.
-                // For simplicity now, we can rely on the ViewModel's init.
-                // If further checks are needed on view appearance, this can be re-enabled:
-                // Task { viewModel.checkAccessibilityPermissions() } 
-            }
-        } else if viewModel.isAccessibilityEnabled == false { // Explicitly check for false (permissions denied or not yet granted after initial prompt attempt)
-            VStack(spacing: 20) {
-                Image(systemName: "lock.shield.fill")
-                    .resizable()
-                    .aspectRatio(contentMode: .fit)
-                    .frame(width: 50, height: 50)
-                    .foregroundColor(.red)
-                Text("Accessibility Permissions Required")
-                    .font(.title2)
-                Text("AXpector needs Accessibility permissions to inspect other applications. Please enable it for CodeLooper (or your development app) in System Settings.")
-                    .multilineTextAlignment(.center)
-                    .padding(.horizontal)
-                Button("Open Privacy & Security Settings") {
-                    // macOS 13 and later: x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility
-                    // Older macOS: com.apple.preference.security?Privacy_Accessibility
-                    // A more generic approach for modern macOS:
-                    if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility") {
-                        NSWorkspace.shared.open(url)
-                    }
-                }
-                .padding(.top)
-            }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-            // No .onAppear needed here specifically to trigger a prompt, 
-            // as the ViewModel's init handles the first auto-prompt attempt.
-        } else { // Accessibility is enabled, show the main UI
-            NavigationView {
-                VStack(alignment: .leading, spacing: 0) { // Added spacing: 0 for tighter control
-                    // Application Picker
-                    Picker("Application:", selection: $viewModel.selectedApplicationPID) {
-                        Text("Select Application").tag(nil as pid_t?)
-                        ForEach(viewModel.runningApplications, id: \.processIdentifier) { app in
-                            HStack {
-                                if let icon = app.icon {
-                                    Image(nsImage: icon)
-                                        .resizable()
-                                        .aspectRatio(contentMode: .fit)
-                                        .frame(width: 16, height: 16) // Adjust size as needed
-                                }
-                                Text(app.localizedName ?? "Unknown App")
-                            }
-                            .tag(app.processIdentifier as pid_t?)
-                        }
-                    }
-                    .padding(.horizontal)
-                    .padding(.top)
-                    .padding(.bottom, 8) // Add some space below picker
-                    .onChange(of: viewModel.selectedApplicationPID) {
-                        selectedNodeID = nil 
-                        viewModel.selectedNode = nil
-                        // viewModel.temporarilySelectedNodeIDByHover is reset by the viewModel itself
-                    }
-
-                    // Refresh Button - Placed below the picker
-                    if viewModel.selectedApplicationPID != nil {
-                        Button(action: { viewModel.fetchAccessibilityTreeForSelectedApp() }) {
-                            HStack {
-                                Image(systemName: "arrow.clockwise")
-                                Text("Refresh Tree")
-                            }
-                            .frame(maxWidth: .infinity)
-                        }
-                        .padding(.horizontal)
-                        .padding(.bottom, 8)
-                        .disabled(viewModel.isLoadingTree) // Disable if already loading
-                    }
-
-                    // Hover Mode Controls
-                    VStack(alignment: .leading, spacing: 4) {
-                        Button(action: { viewModel.toggleHoverMode() }) {
-                            Text(viewModel.isHoverModeActive ? "Stop Hover Inspect" : "Start Hover Inspect")
-                                .frame(maxWidth: .infinity) // Make button wider
-                                .padding(EdgeInsets(top: 5, leading: 10, bottom: 5, trailing: 10)) // Add some padding inside
-                                .background(viewModel.isHoverModeActive ? Color.accentColor : Color.clear)
-                                .foregroundColor(viewModel.isHoverModeActive ? .white : .accentColor)
-                                .cornerRadius(5)
-                                .overlay(
-                                    RoundedRectangle(cornerRadius: 5)
-                                        .stroke(Color.accentColor, lineWidth: viewModel.isHoverModeActive ? 0 : 1)
-                                )
-                        }
-                        .buttonStyle(.plain) // Use plain button style to allow custom background/overlay
-                        .padding(.horizontal)
-                        
-                        Text(viewModel.hoveredElementInfo)
-                            .font(.caption)
-                            .foregroundColor(.secondary)
-                            .padding(.horizontal)
-                            .frame(minHeight: 30, alignment: .topLeading) // Give it some space
-                            .lineLimit(3) // Allow a few lines for info
-                    }
-                    .padding(.bottom, 8)
-                    
-                    // Focus Tracking Mode Controls
-                    VStack(alignment: .leading, spacing: 4) {
-                        Button(action: { viewModel.toggleFocusTrackingMode() }) {
-                            Text(viewModel.isFocusTrackingModeActive ? "Stop Focus Tracking" : "Start Focus Tracking")
-                                .frame(maxWidth: .infinity)
-                                .padding(EdgeInsets(top: 5, leading: 10, bottom: 5, trailing: 10))
-                                .background(viewModel.isFocusTrackingModeActive ? Color.blue : Color.clear) // Different color for active state
-                                .foregroundColor(viewModel.isFocusTrackingModeActive ? .white : .blue)
-                                .cornerRadius(5)
-                                .overlay(
-                                    RoundedRectangle(cornerRadius: 5)
-                                        .stroke(Color.blue, lineWidth: viewModel.isFocusTrackingModeActive ? 0 : 1)
-                                )
-                        }
-                        .buttonStyle(.plain)
-                        .padding(.horizontal)
-                        
-                        Toggle("Auto-select focused app", isOn: $viewModel.autoSelectFocusedApp)
-                            .font(.caption)
-                            .padding(.horizontal)
-                            // Only show this toggle if focus tracking *could* be active (i.e., an app could be observed)
-                            // Or always show it if the mode can be toggled regardless of current app selection.
-                            // For simplicity, show if focus tracking mode itself could be toggled by the user.
-                            // No, better to show it when focus tracking IS active, or when it *can* be active.
-                            // Let's show it within the Focus Tracking VStack.
-
-                        Text(viewModel.focusedElementInfo)
-                            .font(.caption)
-                            .foregroundColor(.secondary)
-                            .padding(.horizontal)
-                            .frame(minHeight: 30, alignment: .topLeading)
-                            .lineLimit(3)
-                    }
-                    .padding(.bottom, 8)
-                    
-                    // Search/Filter Field
-                    HStack { // Use HStack for TextField and potential Clear button
-                        TextField("Filter tree (e.g., role:button title:Save)", text: $viewModel.filterText)
-                            .textFieldStyle(.roundedBorder)
-                            .autocorrectionDisabled(true)
-                        
-                        if !viewModel.filterText.isEmpty {
-                            Button(action: { viewModel.filterText = "" }) { // Action to clear text
-                                Image(systemName: "xmark.circle.fill")
-                            }
-                            .buttonStyle(.borderless) // Make it look like part of the text field
-                            .padding(.trailing, 5) // Add some space for the clear button
-                        }
-                    }
-                    .padding(.horizontal)
-                    .padding(.bottom, 8)
-                    
-                    DisclosureGroup("Filter Syntax Help") {
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text("Key-Value: key:value (e.g., role:button title:Open)").font(.caption)
-                            Text("Supported Keys: role, title, value, desc, path, id").font(.caption)
-                            Text("Negation: !key:value or -key:value (e.g., !role:window)").font(.caption)
-                            Text("Regex: key:regex:pattern or regex:pattern for general terms").font(.caption)
-                            Text("  (e.g., title:regex:^Save.* or regex:^Confirm)").font(.caption)
-                            Text("General terms are space-separated words/phrases.").font(.caption)
-                            Text("All criteria/terms are ANDed. Use Search Fields toggles for general terms.").font(.caption)
-                        }
-                        .padding(.leading)
-                        .frame(maxWidth: .infinity, alignment: .leading) // Ensure VStack takes width
-                    }
-                    .padding(.horizontal)
-                    .padding(.bottom, 8)
-                    
-                    DisclosureGroup("Search Fields for General Terms") {
-                        VStack(alignment: .leading) {
-                            Toggle("Display Name", isOn: $viewModel.searchInDisplayName)
-                            Toggle("Role", isOn: $viewModel.searchInRole)
-                            Toggle("Title", isOn: $viewModel.searchInTitle)
-                            Toggle("Value", isOn: $viewModel.searchInValue)
-                            Toggle("Description", isOn: $viewModel.searchInDescription)
-                            Toggle("Path", isOn: $viewModel.searchInPath)
-                        }
-                        .padding(.leading) // Indent toggles under disclosure group
-                    }
-                    .padding(.horizontal)
-                    .padding(.bottom, 8)
-                    
-                    Divider() // Separator before the tree
-
-                    // Accessibility Tree
-                    if viewModel.isLoadingTree {
-                        ProgressView("Loading Accessibility Tree...")
-                            .frame(maxWidth: .infinity, maxHeight: .infinity)
-                            .padding()
-                    } else if let errorMessage = viewModel.treeLoadingError {
-                        VStack {
-                            Image(systemName: "exclamationmark.triangle.fill")
-                                .resizable()
-                                .aspectRatio(contentMode: .fit)
-                                .frame(width: 40, height: 40)
-                                .foregroundColor(.red)
-                            Text("Error Loading Tree")
-                                .font(.headline)
-                            Text(errorMessage)
-                                .foregroundColor(.secondary)
-                                .multilineTextAlignment(.center)
-                        }
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
-                        .padding()
-                    } else if viewModel.accessibilityTree.isEmpty && viewModel.selectedApplicationPID != nil && viewModel.filterText.isEmpty { // Added filterText check
-                        // This case is kept for when loading is done, no error, but tree is genuinely empty and no filter applied.
-                        Text("Accessibility tree is empty or not available.")
-                            .foregroundColor(.secondary)
-                            .frame(maxWidth: .infinity, maxHeight: .infinity)
-                            .padding()
-                    } else if viewModel.filteredAccessibilityTree.isEmpty && !viewModel.filterText.isEmpty && viewModel.selectedApplicationPID != nil { // New case for empty filtered results
-                        Text("No elements match your filter: \"\(viewModel.filterText)\"")
-                            .foregroundColor(.secondary)
-                            .frame(maxWidth: .infinity, maxHeight: .infinity)
-                            .padding()
-                    } else if viewModel.selectedApplicationPID == nil {
-                         Text("Select an application to inspect.")
-                            .frame(maxWidth: .infinity, maxHeight: .infinity)
-                            .padding()
-                    } else {
-                        ScrollViewReader { scrollViewProxy in // Wrap List in ScrollViewReader
-                            List(selection: $selectedNodeID) {
-                                ForEach(viewModel.filteredAccessibilityTree) { rootNode in
-                                    RecursiveNodeView(node: rootNode, selectedNodeID: $selectedNodeID, viewModel: viewModel)
-                                }
-                            }
-                            .id("\(viewModel.selectedApplicationPID?.description ?? "nil")-\(viewModel.filterText)") // Change ID based on PID and filterText to help SwiftUI redraw/reset state
-                            .listStyle(.sidebar) 
-                            .onChange(of: selectedNodeID) { oldValue, newValue in
-                                if !viewModel.isHoverModeActive {
-                                    // When selecting from filtered tree, find node in original tree to keep selectedNode consistent
-                                    if let newID = newValue { // Use newValue
-                                        viewModel.selectedNode = viewModel.findNode(by: newID, in: viewModel.filteredAccessibilityTree) // Changed to filtered tree
-                                    }
-                                } else {
-                                    // Deselect if in hover mode and user clicks, to avoid confusion
-                                    // Or, allow selection but make hover highlight distinct
-                                    // For now, click selection is disabled in hover mode by NodeLabel's onTapGesture
-                                }
-                            }
-                            .onChange(of: viewModel.temporarilySelectedNodeIDByHover) { oldValue, newValue in
-                                if let idToScrollTo = newValue { // Use newValue
-                                    withAnimation(.easeInOut(duration: 0.3)) { // Optional animation
-                                        scrollViewProxy.scrollTo(idToScrollTo, anchor: .center) // Scroll to the center
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-                .frame(minWidth: 300) 
-
-                // Details View
-                if let selectedNode = viewModel.selectedNode, !viewModel.isHoverModeActive {
-                    ScrollView {
-                        VStack(alignment: .leading, spacing: 10) {
-                            Text("Details for: \(selectedNode.displayName)")
-                                .font(.headline)
-                                .padding(.bottom, 5)
-
-                            Group {
-                                Text("Role:").font(.caption).foregroundColor(.secondary)
-                                Text(selectedNode.role)
-                                Text("Title:").font(.caption).foregroundColor(.secondary)
-                                Text(selectedNode.title.isEmpty ? "N/A" : selectedNode.title)
-                                Text("Description:").font(.caption).foregroundColor(.secondary)
-                                Text(selectedNode.descriptionText.isEmpty ? "N/A" : selectedNode.descriptionText)
-                                Text("Value:").font(.caption).foregroundColor(.secondary)
-                                Text(selectedNode.value.isEmpty ? "N/A" : selectedNode.value)
-                                Text("Path:").font(.caption).foregroundColor(.secondary)
-                                Text(selectedNode.fullPath)
-                                Text("AXElementRef:").font(.caption).foregroundColor(.secondary)
-                                Text("\(selectedNode.axElementRef)")
-                                Text("PID:").font(.caption).foregroundColor(.secondary)
-                                Text("\(selectedNode.pid)")
-                            }
-                            .padding(.leading)
-
-                            Divider()
-
-                            Text("Attributes (\(selectedNode.attributes.count))")
-                                .font(.subheadline)
-                            // Display attribute update status message
-                            if let status = viewModel.attributeUpdateStatusMessage {
-                                Text(status)
-                                    .font(.caption)
-                                    .foregroundColor(status.starts(with: "Failed") || status.starts(with: "Error") ? .red : .green)
-                                    .padding(.leading)
-                                    .padding(.bottom, 2)
-                            }
-
-                            if selectedNode.attributes.isEmpty {
-                                Text("No attributes available.").foregroundColor(.secondary).padding(.leading)
-                            } else {
-                                ForEach(selectedNode.attributes.sorted(by: { $0.key < $1.key }), id: \.key) { key, value in
-                                    AttributeRowView(viewModel: viewModel, node: selectedNode, attributeKey: key, attributeValue: value)
-                                }
-                            }
-                        }
-                        .padding()
-                    }
-                    .frame(minWidth: 350, maxWidth: .infinity) 
-                } else {
-                    // Show placeholder if no node is click-selected or if hover mode is ON
-                    Text(viewModel.isHoverModeActive ? "Hover mode active. Hover over elements to see info above." : (viewModel.selectedApplicationPID == nil ? "Select an application to begin." : "Select an element to see details. Or enable Hover Inspect mode."))
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
-                        .padding() // Added padding for better spacing
-                }
-            }
-            .frame(minHeight: 400, idealHeight: 600) 
+        if viewModel.isAccessibilityEnabled == nil {
+            LoadingView(message: "Checking Accessibility Permissions...")
+        } else if viewModel.isAccessibilityEnabled == false {
+            PermissionRequiredView()
+        } else {
+            MainContentView(viewModel: viewModel, selectedNodeID: $selectedNodeID)
         }
     }
 }
 
-// RecursiveNodeView has been moved to its own file: AXpector/Sources/AXpector/Views/RecursiveNodeView.swift
-
-// NodeLabel has been moved to its own file: AXpector/Sources/AXpector/Views/NodeLabel.swift
-
-// AttributeRowView has been moved to its own file: AXpector/Sources/AXpector/Views/AttributeRowView.swift
-
-#if DEBUG
-@MainActor
-struct AXpectorView_Previews: PreviewProvider {
-    static var previews: some View {
-        let mockViewModel = AXpectorViewModel()
-        // Setup mockViewModel with some data for preview
-        // Create a root node
-        let rootNode = AXPropertyNode(
-            id: UUID(), axElementRef: AXUIElementCreateApplication(0), pid: 0,
-            role: "window", title: "Preview Window", descriptionText: "", value: "", fullPath: "App/Preview Window",
-            children: [], attributes: [:], actions: [], hasChildrenAXProperty: true, depth: 0
-        )
-        // Create a child for the root, that itself can have children
-        let childNode1 = AXPropertyNode(
-            id: UUID(), axElementRef: AXUIElementCreateApplication(0), pid: 0,
-            role: "group", title: "Child Group 1", descriptionText: "", value: "", fullPath: "App/Preview Window/Child Group 1",
-            children: [], attributes: [:], actions: [], hasChildrenAXProperty: true, depth: 1
-        )
-        // Create a grandchild, this one has no further children reported by AX
-        let grandChildNode1 = AXPropertyNode(
-            id: UUID(), axElementRef: AXUIElementCreateApplication(0), pid: 0,
-            role: "button", title: "Grandchild Button A", descriptionText: "", value: "", fullPath: "App/Preview Window/Child Group 1/Button A",
-            children: [], attributes: [:], actions: ["Press"], hasChildrenAXProperty: false, depth: 2
-        )
-        childNode1.children = [grandChildNode1]
-        childNode1.areChildrenFullyLoaded = true // Simulate they were loaded
-        
-        // Create another child for the root that is not yet expanded/loaded
-        let childNode2 = AXPropertyNode(
-            id: UUID(), axElementRef: AXUIElementCreateApplication(0), pid: 0,
-            role: "table", title: "Child Table (Not Loaded)", descriptionText: "", value: "", fullPath: "App/Preview Window/Child Table",
-            children: [], attributes: [:], actions: [], hasChildrenAXProperty: true, depth: 1
-        )
-        childNode2.areChildrenFullyLoaded = false // Simulate not loaded
-
-        rootNode.children = [childNode1, childNode2]
-        // For root, we assume its direct children (childNode1, childNode2) are loaded up to initialFetchDepth
-        // If initialFetchDepth was, say, 1, then rootNode.areChildrenFullyLoaded would be true
-        // but childNode1.areChildrenFullyLoaded could be false if its own children weren't fetched.
-        rootNode.areChildrenFullyLoaded = true 
-        rootNode.isExpanded = true // Start with root expanded in preview
-
-        mockViewModel.accessibilityTree = [rootNode]
-        mockViewModel.runningApplications = [NSRunningApplication.current]
-        mockViewModel.selectedApplicationPID = NSRunningApplication.current.processIdentifier
-        mockViewModel.selectedNode = childNode1 // Select a node for detail view
-        mockViewModel.hoveredElementInfo = "Preview: Hover info here...\nRole: button\nTitle: OK" // Example hover info
-        mockViewModel.isHoverModeActive = true // Example with hover mode active
-        mockViewModel.temporarilySelectedNodeIDByHover = grandChildNode1.id // Example hover selection
-
-        return AXpectorView().environmentObject(mockViewModel) // Inject if AXpectorView uses @EnvironmentObject
-                                                            // If using @StateObject, this won't work directly.
-                                                            // Preview needs to be adapted if viewModel is @StateObject.
-                                                            // For this test, let's assume AXpectorView can take a VM.
+// MARK: - Loading View
+private struct LoadingView: View {
+    let message: String
+    
+    var body: some View {
+        VStack(spacing: Spacing.medium) {
+            ProgressView()
+                .controlSize(.large)
+            Text(message)
+                .font(Typography.body())
+                .foregroundColor(ColorPalette.textSecondary)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(ColorPalette.background)
     }
 }
-#endif 
+
+// MARK: - Permission Required View
+private struct PermissionRequiredView: View {
+    var body: some View {
+        VStack(spacing: Spacing.large) {
+            Image(systemName: "lock.shield.fill")
+                .resizable()
+                .aspectRatio(contentMode: .fit)
+                .frame(width: 60, height: 60)
+                .foregroundColor(ColorPalette.error)
+            
+            Text("Accessibility Permissions Required")
+                .font(Typography.title3(.semibold))
+                .foregroundColor(ColorPalette.text)
+            
+            Text("AXpector needs Accessibility permissions to inspect other applications. Please enable it for CodeLooper in System Settings.")
+                .font(Typography.body())
+                .foregroundColor(ColorPalette.textSecondary)
+                .multilineTextAlignment(.center)
+                .frame(maxWidth: 400)
+            
+            DSButton("Open Privacy & Security Settings", style: .primary) {
+                if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility") {
+                    NSWorkspace.shared.open(url)
+                }
+            }
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(ColorPalette.background)
+    }
+}
+
+// MARK: - Main Content View
+private struct MainContentView: View {
+    @ObservedObject var viewModel: AXpectorViewModel
+    @Binding var selectedNodeID: AXPropertyNode.ID?
+    
+    var body: some View {
+        NavigationView {
+            // Tree View
+            TreeSidebarView(viewModel: viewModel, selectedNodeID: $selectedNodeID)
+                .frame(minWidth: 350)
+            
+            // Details View
+            if let selectedNode = viewModel.selectedNode, !viewModel.isHoverModeActive {
+                NodeDetailsView(viewModel: viewModel, node: selectedNode)
+                    .frame(minWidth: 400, maxWidth: .infinity)
+            } else {
+                EmptyStateView(
+                    isHoverMode: viewModel.isHoverModeActive,
+                    hasSelectedApp: viewModel.selectedApplicationPID != nil
+                )
+            }
+        }
+        .frame(minHeight: 600, idealHeight: 800)
+        .background(ColorPalette.background)
+    }
+}
+
+// MARK: - Tree Sidebar View
+private struct TreeSidebarView: View {
+    @ObservedObject var viewModel: AXpectorViewModel
+    @Binding var selectedNodeID: AXPropertyNode.ID?
+    
+    var body: some View {
+        VStack(spacing: 0) {
+            // Header Controls
+            VStack(spacing: Spacing.medium) {
+                // Application Picker
+                DSPicker(
+                    "Application",
+                    selection: Binding(
+                        get: { viewModel.selectedApplicationPID ?? -1 },
+                        set: { newValue in
+                            viewModel.selectedApplicationPID = newValue == -1 ? nil : newValue
+                        }
+                    ),
+                    options: [(pid_t(-1), "Select Application")] + viewModel.runningApplications.map { app in
+                        (app.processIdentifier, app.localizedName ?? "Unknown App")
+                    }
+                )
+                
+                // Refresh Button
+                if viewModel.selectedApplicationPID != nil {
+                    DSButton("Refresh Tree", style: .secondary, size: .small) {
+                        viewModel.fetchAccessibilityTreeForSelectedApp()
+                    }
+                    .disabled(viewModel.isLoadingTree)
+                    .frame(maxWidth: .infinity)
+                }
+                
+                // Mode Controls
+                ModeControlsView(viewModel: viewModel)
+                
+                // Search Field
+                DSTextField(
+                    "Filter tree (e.g., role:button title:Save)",
+                    text: $viewModel.filterText,
+                    showClearButton: true
+                )
+                
+                // Filter Help
+                DisclosureGroup("Filter Syntax Help") {
+                    FilterHelpView()
+                }
+                .font(Typography.caption1())
+                
+                // Search Fields
+                DisclosureGroup("Search Fields") {
+                    SearchFieldsView(viewModel: viewModel)
+                }
+                .font(Typography.caption1())
+            }
+            .padding(Spacing.medium)
+            .background(ColorPalette.backgroundSecondary)
+            
+            DSDivider()
+            
+            // Tree Content
+            TreeContentView(viewModel: viewModel, selectedNodeID: $selectedNodeID)
+        }
+        .background(ColorPalette.background)
+    }
+}
+
+// MARK: - Mode Controls View
+private struct ModeControlsView: View {
+    @ObservedObject var viewModel: AXpectorViewModel
+    
+    var body: some View {
+        VStack(spacing: Spacing.small) {
+            // Hover Mode
+            DSButton(
+                viewModel.isHoverModeActive ? "Stop Hover Inspect" : "Start Hover Inspect",
+                style: viewModel.isHoverModeActive ? .primary : .secondary,
+                size: .small
+            ) {
+                viewModel.toggleHoverMode()
+            }
+            .frame(maxWidth: .infinity)
+            
+            if !viewModel.hoveredElementInfo.isEmpty {
+                Text(viewModel.hoveredElementInfo)
+                    .font(Typography.caption2())
+                    .foregroundColor(ColorPalette.textSecondary)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .lineLimit(3)
+            }
+            
+            // Focus Tracking
+            DSButton(
+                viewModel.isFocusTrackingModeActive ? "Stop Focus Tracking" : "Start Focus Tracking",
+                style: viewModel.isFocusTrackingModeActive ? .primary : .secondary,
+                size: .small
+            ) {
+                viewModel.toggleFocusTrackingMode()
+            }
+            .frame(maxWidth: .infinity)
+            
+            DSToggle(
+                "Auto-select focused app",
+                isOn: $viewModel.autoSelectFocusedApp
+            )
+            
+            if !viewModel.focusedElementInfo.isEmpty {
+                Text(viewModel.focusedElementInfo)
+                    .font(Typography.caption2())
+                    .foregroundColor(ColorPalette.textSecondary)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .lineLimit(3)
+            }
+        }
+    }
+}
+
+// MARK: - Filter Help View
+private struct FilterHelpView: View {
+    var body: some View {
+        VStack(alignment: .leading, spacing: Spacing.xxSmall) {
+            Text("• Key-Value: key:value (e.g., role:button)")
+                .font(Typography.caption2())
+            Text("• Keys: role, title, value, desc, path, id")
+                .font(Typography.caption2())
+            Text("• Negation: !key:value or -key:value")
+                .font(Typography.caption2())
+            Text("• Regex: key:regex:pattern")
+                .font(Typography.caption2())
+            Text("• All criteria are ANDed")
+                .font(Typography.caption2())
+        }
+        .foregroundColor(ColorPalette.textSecondary)
+        .padding(.leading, Spacing.small)
+    }
+}
+
+// MARK: - Search Fields View
+private struct SearchFieldsView: View {
+    @ObservedObject var viewModel: AXpectorViewModel
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: Spacing.xxSmall) {
+            DSToggle("Display Name", isOn: $viewModel.searchInDisplayName)
+            DSToggle("Role", isOn: $viewModel.searchInRole)
+            DSToggle("Title", isOn: $viewModel.searchInTitle)
+            DSToggle("Value", isOn: $viewModel.searchInValue)
+            DSToggle("Description", isOn: $viewModel.searchInDescription)
+            DSToggle("Path", isOn: $viewModel.searchInPath)
+        }
+        .padding(.leading, Spacing.small)
+    }
+}
+
+// MARK: - Tree Content View
+private struct TreeContentView: View {
+    @ObservedObject var viewModel: AXpectorViewModel
+    @Binding var selectedNodeID: AXPropertyNode.ID?
+    
+    var body: some View {
+        Group {
+            if viewModel.isLoadingTree {
+                LoadingView(message: "Loading Accessibility Tree...")
+            } else if let errorMessage = viewModel.treeLoadingError {
+                ErrorStateView(message: errorMessage)
+            } else if viewModel.filteredAccessibilityTree.isEmpty {
+                EmptyTreeView(
+                    hasFilter: !viewModel.filterText.isEmpty,
+                    filterText: viewModel.filterText,
+                    hasSelectedApp: viewModel.selectedApplicationPID != nil
+                )
+            } else {
+                ScrollViewReader { scrollViewProxy in
+                    List(selection: $selectedNodeID) {
+                        ForEach(viewModel.filteredAccessibilityTree) { rootNode in
+                            RecursiveNodeView(
+                                node: rootNode,
+                                selectedNodeID: $selectedNodeID,
+                                viewModel: viewModel
+                            )
+                        }
+                    }
+                    .listStyle(.sidebar)
+                    .onChange(of: selectedNodeID) { oldValue, newValue in
+                        if !viewModel.isHoverModeActive, let newID = newValue {
+                            viewModel.selectedNode = viewModel.findNode(by: newID, in: viewModel.filteredAccessibilityTree)
+                        }
+                    }
+                    .onChange(of: viewModel.temporarilySelectedNodeIDByHover) { oldValue, newValue in
+                        if let idToScrollTo = newValue {
+                            withAnimation(.easeInOut(duration: 0.3)) {
+                                scrollViewProxy.scrollTo(idToScrollTo, anchor: .center)
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+}
+
+// MARK: - Error State View
+private struct ErrorStateView: View {
+    let message: String
+    
+    var body: some View {
+        VStack(spacing: Spacing.medium) {
+            Image(systemName: "exclamationmark.triangle.fill")
+                .resizable()
+                .aspectRatio(contentMode: .fit)
+                .frame(width: 40, height: 40)
+                .foregroundColor(ColorPalette.error)
+            
+            Text("Error Loading Tree")
+                .font(Typography.headline())
+                .foregroundColor(ColorPalette.text)
+            
+            Text(message)
+                .font(Typography.body())
+                .foregroundColor(ColorPalette.textSecondary)
+                .multilineTextAlignment(.center)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .padding()
+    }
+}
+
+// MARK: - Empty Tree View
+private struct EmptyTreeView: View {
+    let hasFilter: Bool
+    let filterText: String
+    let hasSelectedApp: Bool
+    
+    var body: some View {
+        VStack(spacing: Spacing.medium) {
+            Image(systemName: hasFilter ? "magnifyingglass" : "tree")
+                .resizable()
+                .aspectRatio(contentMode: .fit)
+                .frame(width: 40, height: 40)
+                .foregroundColor(ColorPalette.textTertiary)
+            
+            Text(emptyMessage)
+                .font(Typography.body())
+                .foregroundColor(ColorPalette.textSecondary)
+                .multilineTextAlignment(.center)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .padding()
+    }
+    
+    private var emptyMessage: String {
+        if hasFilter {
+            return "No elements match your filter: \"\(filterText)\""
+        } else if !hasSelectedApp {
+            return "Select an application to inspect"
+        } else {
+            return "Accessibility tree is empty or not available"
+        }
+    }
+}
+
+// MARK: - Empty State View
+private struct EmptyStateView: View {
+    let isHoverMode: Bool
+    let hasSelectedApp: Bool
+    
+    var body: some View {
+        VStack(spacing: Spacing.medium) {
+            Image(systemName: isHoverMode ? "cursorarrow.rays" : "sidebar.right")
+                .resizable()
+                .aspectRatio(contentMode: .fit)
+                .frame(width: 60, height: 60)
+                .foregroundColor(ColorPalette.textTertiary)
+            
+            Text(message)
+                .font(Typography.body())
+                .foregroundColor(ColorPalette.textSecondary)
+                .multilineTextAlignment(.center)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .padding()
+        .background(ColorPalette.background)
+    }
+    
+    private var message: String {
+        if isHoverMode {
+            return "Hover mode active.\nHover over elements to see info."
+        } else if !hasSelectedApp {
+            return "Select an application to begin."
+        } else {
+            return "Select an element to see details.\nOr enable Hover Inspect mode."
+        }
+    }
+}
+
+// MARK: - Node Details View
+private struct NodeDetailsView: View {
+    @ObservedObject var viewModel: AXpectorViewModel
+    let node: AXPropertyNode
+    
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: Spacing.large) {
+                // Header
+                VStack(alignment: .leading, spacing: Spacing.xSmall) {
+                    Text("Details")
+                        .font(Typography.title3(.semibold))
+                        .foregroundColor(ColorPalette.text)
+                    
+                    Text(node.displayName)
+                        .font(Typography.headline())
+                        .foregroundColor(ColorPalette.textSecondary)
+                }
+                
+                DSDivider()
+                
+                // Properties
+                VStack(alignment: .leading, spacing: Spacing.medium) {
+                    PropertyRow(label: "Role", value: node.role)
+                    PropertyRow(label: "Title", value: node.title.isEmpty ? "N/A" : node.title)
+                    PropertyRow(label: "Description", value: node.descriptionText.isEmpty ? "N/A" : node.descriptionText)
+                    PropertyRow(label: "Value", value: node.value.isEmpty ? "N/A" : node.value)
+                    PropertyRow(label: "Path", value: node.fullPath)
+                    PropertyRow(label: "AXElementRef", value: "\(node.axElementRef)")
+                    PropertyRow(label: "PID", value: "\(node.pid)")
+                }
+                
+                DSDivider()
+                
+                // Attributes
+                VStack(alignment: .leading, spacing: Spacing.small) {
+                    HStack {
+                        Text("Attributes")
+                            .font(Typography.headline())
+                            .foregroundColor(ColorPalette.text)
+                        
+                        Text("(\(node.attributes.count))")
+                            .font(Typography.body())
+                            .foregroundColor(ColorPalette.textSecondary)
+                    }
+                    
+                    if let status = viewModel.attributeUpdateStatusMessage {
+                        DSBadge(
+                            text: status,
+                            style: status.contains("Failed") || status.contains("Error") ? .error : .success
+                        )
+                    }
+                    
+                    if node.attributes.isEmpty {
+                        Text("No attributes available.")
+                            .font(Typography.body())
+                            .foregroundColor(ColorPalette.textSecondary)
+                    } else {
+                        VStack(alignment: .leading, spacing: Spacing.xSmall) {
+                            ForEach(node.attributes.sorted(by: { $0.key < $1.key }), id: \.key) { key, value in
+                                AttributeRowView(
+                                    viewModel: viewModel,
+                                    node: node,
+                                    attributeKey: key,
+                                    attributeValue: value
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+            .padding(Spacing.large)
+        }
+        .background(ColorPalette.background)
+    }
+}
+
+// MARK: - Property Row
+private struct PropertyRow: View {
+    let label: String
+    let value: String
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: Spacing.xxxSmall) {
+            Text(label)
+                .font(Typography.caption1(.medium))
+                .foregroundColor(ColorPalette.textSecondary)
+            
+            Text(value)
+                .font(Typography.body())
+                .foregroundColor(ColorPalette.text)
+                .textSelection(.enabled)
+        }
+    }
+}
+
+// MARK: - Preview
+#if DEBUG
+struct AXpectorView_Previews: PreviewProvider {
+    static var previews: some View {
+        AXpectorView()
+            .frame(width: 900, height: 700)
+            .withDesignSystem()
+    }
+}
+#endif

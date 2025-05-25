@@ -1,204 +1,212 @@
-import AppKit // Required for NSApp to access AppDelegate
+import AppKit
 import Defaults
-import KeyboardShortcuts // For KeyboardShortcuts.Recorder
+import KeyboardShortcuts
 import SwiftUI
-
-// Note: Ensure Notification.Name.menuBarVisibilityChanged is defined globally or accessible.
-// If not, it should be defined here or in a shared constants file.
-// For example:
-/*
- extension Notification.Name {
- static let menuBarVisibilityChanged = Notification.Name("menuBarVisibilityChanged")
- }
- */
+import DesignSystem
 
 struct GeneralSettingsView: View {
-    @Default(.startAtLogin)
-    var startAtLogin
-    @Default(.showInMenuBar)
-    var showInMenuBar
-    @Default(.automaticallyCheckForUpdates)
-    var automaticallyCheckForUpdates
-    @Default(.isGlobalMonitoringEnabled)
-    var isGlobalMonitoringEnabled
-    @Default(.monitoringIntervalSeconds)
-    var monitoringIntervalSeconds
-    @Default(.maxInterventionsBeforePause)
-    var maxInterventionsBeforePause
-    @Default(.maxConnectionIssueRetries)
-    var maxConnectionIssueRetries
-    @Default(.maxConsecutiveRecoveryFailures)
-    var maxConsecutiveRecoveryFailures
-    @Default(.playSoundOnIntervention)
-    var playSoundOnIntervention
-    @Default(.sendNotificationOnPersistentError)
-    var sendNotificationOnPersistentError: Bool
-    @Default(.textForCursorStopsRecovery)
-    var textForCursorStopsRecovery
-    @Default(.monitorSidebarActivity)
-    var monitorSidebarActivity
-    @Default(.postInterventionObservationWindowSeconds)
-    var postInterventionObservationWindowSeconds
-    @Default(.stuckDetectionTimeoutSeconds)
-    var stuckDetectionTimeoutSeconds: TimeInterval
-    @Default(.showDebugMenu)
-    var showDebugMenu
+    @Default(.startAtLogin) var startAtLogin
+    @Default(.automaticallyCheckForUpdates) var automaticallyCheckForUpdates
+    @Default(.isGlobalMonitoringEnabled) var isGlobalMonitoringEnabled
+    @Default(.monitoringIntervalSeconds) var monitoringIntervalSeconds
+    @Default(.maxInterventionsBeforePause) var maxInterventionsBeforePause
+    @Default(.maxConnectionIssueRetries) var maxConnectionIssueRetries
+    @Default(.maxConsecutiveRecoveryFailures) var maxConsecutiveRecoveryFailures
+    @Default(.playSoundOnIntervention) var playSoundOnIntervention
+    @Default(.sendNotificationOnPersistentError) var sendNotificationOnPersistentError
+    @Default(.textForCursorStopsRecovery) var textForCursorStopsRecovery
+    @Default(.monitorSidebarActivity) var monitorSidebarActivity
+    @Default(.postInterventionObservationWindowSeconds) var postInterventionObservationWindowSeconds
+    @Default(.stuckDetectionTimeoutSeconds) var stuckDetectionTimeoutSeconds
+    @Default(.showDebugMenu) var showDebugMenu
     @ObservedObject var updaterViewModel: UpdaterViewModel
 
     private var appVersion: String {
         Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "N/A"
     }
+    
     private var appBuild: String {
         Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "N/A"
     }
 
     var body: some View {
-        Form {
-            Section {
-                Toggle("Launch CodeLooper at Login", isOn: $startAtLogin)
-                Toggle("Show Icon in Menu Bar", isOn: $showInMenuBar)
-                    .onChange(of: showInMenuBar) { _, newValue in
-                        NotificationCenter.default.post(
-                            name: .menuBarVisibilityChanged, // Assuming this is defined
-                            object: nil,
-                            userInfo: ["visible": newValue]
-                        )
-                    }
-            } header: { 
-                Text("General Application Behavior").padding(.top)
-            }
-            .padding(.bottom)
-
-            Section {
-                Text("Define a global keyboard shortcut to quickly toggle monitoring.")
-                    .font(.caption)
-                    .foregroundColor(.secondary)
-                KeyboardShortcuts.Recorder("Toggle Monitoring Shortcut:", name: .toggleMonitoring)
-                Text("Use standard symbols: ⌘ (Command), ⌥ (Option/Alt), ⇧ (Shift), ⌃ (Control). Example: ⌘⇧M")
-                    .font(.caption2)
-                    .foregroundColor(.gray)
-            } header: { 
-                Text("Global Shortcut Configuration").padding(.top)
-            }
-            .padding(.bottom)
-
-            Section {
-                Toggle("Enable Global Monitoring", isOn: $isGlobalMonitoringEnabled)
-                HStack {
-                    Text("Monitoring Interval (seconds):")
-                    TextField(
-                        "", // Label is now separate
-                        value: $monitoringIntervalSeconds,
-                        formatter: NumberFormatter.timeIntervalFormatter
+        ScrollView {
+            VStack(alignment: .leading, spacing: Spacing.xLarge) {
+                // General Application Behavior
+                DSSettingsSection("General") {
+                    DSToggle(
+                        "Launch CodeLooper at Login",
+                        isOn: $startAtLogin,
+                        description: "Automatically start CodeLooper when you log in to your Mac"
                     )
                 }
-                Stepper(
-                    "Max Auto-Interventions Per Instance: \(maxInterventionsBeforePause)",
-                    value: $maxInterventionsBeforePause,
-                    in: 1...25
-                )
-                Toggle("Play Sound on Intervention", isOn: $playSoundOnIntervention)
-
-                VStack(alignment: .leading) {
-                    Text("Text for 'Cursor Stops' Recovery (when CodeLooper nudges Cursor):")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                    TextEditor(text: $textForCursorStopsRecovery)
-                        .frame(height: 60)
+                
+                // Global Shortcut Configuration
+                DSSettingsSection("Keyboard Shortcuts") {
+                    VStack(alignment: .leading, spacing: Spacing.small) {
+                        HStack {
+                            VStack(alignment: .leading, spacing: Spacing.xxxSmall) {
+                                Text("Toggle Monitoring")
+                                    .font(Typography.body())
+                                    .foregroundColor(ColorPalette.text)
+                                
+                                Text("Define a global keyboard shortcut to quickly toggle monitoring")
+                                    .font(Typography.caption1())
+                                    .foregroundColor(ColorPalette.textSecondary)
+                            }
+                            
+                            Spacer()
+                            
+                            KeyboardShortcuts.Recorder(for: .toggleMonitoring)
+                                .fixedSize()
+                        }
+                        
+                        Text("Use standard symbols: ⌘ (Command), ⌥ (Option/Alt), ⇧ (Shift), ⌃ (Control)")
+                            .font(Typography.caption1())
+                            .foregroundColor(ColorPalette.textTertiary)
+                    }
                 }
-            } header: { 
-                Text("Supervision Core Settings").padding(.top)
-            }
-            .padding(.bottom)
-
-            Section {
-                VStack(alignment: .leading) {
-                    Toggle("Automatically Check for Updates", isOn: $automaticallyCheckForUpdates)
-                    Button("Check for Updates Now") {
+                
+                // Supervision Core Settings
+                DSSettingsSection("Monitoring") {
+                    DSToggle(
+                        "Enable Global Monitoring",
+                        isOn: $isGlobalMonitoringEnabled,
+                        description: "Monitor Cursor instances across all applications"
+                    )
+                    
+                    DSDivider()
+                    
+                    DSSlider(
+                        value: $monitoringIntervalSeconds,
+                        in: 0.5...5.0,
+                        step: 0.5,
+                        label: "Monitoring Interval",
+                        showValue: true,
+                        valueFormatter: { String(format: "%.1fs", $0) }
+                    )
+                    
+                    DSDivider()
+                    
+                    HStack {
+                        Text("Max Auto-Interventions Per Instance")
+                            .font(Typography.body())
+                        Spacer()
+                        Stepper(
+                            "\(maxInterventionsBeforePause)",
+                            value: $maxInterventionsBeforePause,
+                            in: 1...25
+                        )
+                        .labelsHidden()
+                        .fixedSize()
+                    }
+                    
+                    DSDivider()
+                    
+                    DSToggle(
+                        "Play Sound on Intervention",
+                        isOn: $playSoundOnIntervention
+                    )
+                    
+                    DSDivider()
+                    
+                    VStack(alignment: .leading, spacing: Spacing.xSmall) {
+                        Text("Recovery Text")
+                            .font(Typography.body(.medium))
+                        Text("Text sent when CodeLooper nudges Cursor to recover")
+                            .textStyle(TextStyles.captionLarge)
+                        
+                        TextEditor(text: $textForCursorStopsRecovery)
+                            .font(Typography.monospaced(.small))
+                            .frame(height: 80)
+                            .cornerRadiusDS(Layout.CornerRadius.medium)
+                            .borderDS(ColorPalette.border)
+                    }
+                }
+                
+                // Updates
+                DSSettingsSection("Updates") {
+                    DSToggle(
+                        "Automatically Check for Updates",
+                        isOn: $automaticallyCheckForUpdates
+                    )
+                    
+                    DSButton("Check for Updates Now", style: .secondary) {
                         if let appDelegate = NSApp.delegate as? AppDelegate {
                             appDelegate.checkForUpdates(nil)
-                        } else {
-                            print("Error: Could not get AppDelegate to check for updates.")
                         }
                     }
                     .disabled(updaterViewModel.isUpdateInProgress)
                 }
-            } header: { 
-                Text("Updates").padding(.top)
-            }
-            .padding(.bottom)
-
-            Section {
-                Button("Reset Welcome Guide") {
-                    Defaults[.hasShownWelcomeGuide] = false
-                    // Similar to above, this relies on AppDelegate.
-                    if let appDelegate = NSApp.delegate as? AppDelegate {
-                        appDelegate.windowManager?.showWelcomeWindow()
-                    } else {
-                         print("Error: Could not get AppDelegate to reset welcome guide.")
+                
+                // Troubleshooting & Reset
+                DSSettingsSection("Troubleshooting") {
+                    DSButton("Reset Welcome Guide", style: .tertiary) {
+                        Defaults[.hasShownWelcomeGuide] = false
+                        if let appDelegate = NSApp.delegate as? AppDelegate {
+                            appDelegate.windowManager?.showWelcomeWindow()
+                        }
+                    }
+                    
+                    DSDivider()
+                    
+                    DSButton("Reset All Settings to Default", style: .destructive) {
+                        resetAllSettings()
                     }
                 }
-                .foregroundColor(.orange)
-
-                Button("Reset All User Settings to Default") {
-                    Defaults.reset(
-                        .startAtLogin,
-                        .showInMenuBar,
-                        .automaticallyCheckForUpdates,
-                        .isGlobalMonitoringEnabled,
-                        .monitoringIntervalSeconds,
-                        .maxInterventionsBeforePause,
-                        .maxConnectionIssueRetries,
-                        .maxConsecutiveRecoveryFailures,
-                        .playSoundOnIntervention,
-                        .sendNotificationOnPersistentError,
-                        .textForCursorStopsRecovery,
-                        .monitorSidebarActivity,
-                        .postInterventionObservationWindowSeconds,
-                        .stuckDetectionTimeoutSeconds,
-                        .showDebugMenu
-                        // Add any other relevant keys here that are part of "General Settings"
-                    )
-                    NotificationCenter.default.post(
-                        name: .menuBarVisibilityChanged, // Assuming this is defined
-                        object: nil,
-                        userInfo: ["visible": Defaults[.showInMenuBar]]
-                    )
+                
+                // Version info
+                HStack {
+                    Spacer()
+                    Text("Version \(appVersion) (\(appBuild))")
+                        .textStyle(TextStyles.captionMedium)
+                    Spacer()
                 }
-                .foregroundColor(.red)
-            } header: { Text("Troubleshooting & Reset") 
+                .padding(.top, Spacing.large)
             }
+            .padding(Spacing.xLarge)
         }
-        .padding()
-        .frame(maxWidth: .infinity, maxHeight: .infinity) // Adjust frame as needed for settings pane
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(ColorPalette.background)
+        .withDesignSystem()
+    }
+    
+    private func resetAllSettings() {
+        Defaults.reset(
+            .startAtLogin,
+            .showInMenuBar,
+            .automaticallyCheckForUpdates,
+            .isGlobalMonitoringEnabled,
+            .monitoringIntervalSeconds,
+            .maxInterventionsBeforePause,
+            .maxConnectionIssueRetries,
+            .maxConsecutiveRecoveryFailures,
+            .playSoundOnIntervention,
+            .sendNotificationOnPersistentError,
+            .textForCursorStopsRecovery,
+            .monitorSidebarActivity,
+            .postInterventionObservationWindowSeconds,
+            .stuckDetectionTimeoutSeconds,
+            .showDebugMenu
+        )
+        NotificationCenter.default.post(
+            name: .menuBarVisibilityChanged,
+            object: nil,
+            userInfo: ["visible": Defaults[.showInMenuBar]]
+        )
     }
 }
 
-extension NumberFormatter {
-    static var timeIntervalFormatter: NumberFormatter {
-        let formatter = NumberFormatter()
-        formatter.numberStyle = .decimal
-        formatter.minimum = 0.5
-        formatter.maximum = 5.0 // Or a more appropriate max based on your app's needs
-        formatter.maximumFractionDigits = 1
-        return formatter
-    }
-}
-
-// Optional: Add a PreviewProvider if desired
+// Preview
 #if DEBUG
 struct GeneralSettingsView_Previews: PreviewProvider {
     static var previews: some View {
-        // Create a dummy LoginItemManager for the preview
-        let dummyLoginItemManager = LoginItemManager.shared // Or a mock if available
-        // Create a dummy SparkleUpdaterManager for the preview
-        let dummySparkleUpdaterManager = SparkleUpdaterManager()
-        // Create a dummy UpdaterViewModel for the preview
-        let dummyUpdaterViewModel = UpdaterViewModel(sparkleUpdaterManager: dummySparkleUpdaterManager)
-
-        GeneralSettingsView(updaterViewModel: dummyUpdaterViewModel) // Pass the dummy view model
-            .environmentObject(dummyLoginItemManager) // If LoginItemManager is used as an EnvironmentObject elsewhere
-            .frame(width: 450, height: 400)
+        GeneralSettingsView(
+            updaterViewModel: UpdaterViewModel(
+                sparkleUpdaterManager: SparkleUpdaterManager()
+            )
+        )
+        .frame(width: 500, height: 700)
     }
 }
-#endif 
+#endif

@@ -21,6 +21,8 @@ let package = Package(
         // Accessibility utilities
         .package(path: "AXorcist"),
         .package(path: "AXpector"),
+        // Design System
+        .package(path: "DesignSystem"),
         // Auto-updater
         .package(url: "https://github.com/sparkle-project/Sparkle.git", .upToNextMajor(from: "2.0.0")),
         // Development-only dependencies
@@ -46,7 +48,8 @@ let package = Package(
                 .product(name: "Logging", package: "swift-log"),
                 .product(name: "AXorcist", package: "AXorcist"),
                 .product(name: "AXpector", package: "AXpector"),
-                .product(name: "Sparkle", package: "Sparkle")
+                .product(name: "Sparkle", package: "Sparkle"),
+                .product(name: "DesignSystem", package: "DesignSystem")
             ],
             path: "Sources",
             exclude: ["Diagnostics"],
