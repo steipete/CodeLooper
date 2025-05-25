@@ -35,6 +35,7 @@ playground.xcworkspace
 .build/
 .swiftpm/
 DerivedData/
+build/
 xcuserdata/
 package.xcworkspace
 Package.resolved

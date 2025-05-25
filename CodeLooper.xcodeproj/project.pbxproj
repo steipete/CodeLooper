@@ -54,6 +54,7 @@
 		5DDDE5EC2D1C274D80731182 /* NSImage+ResourceLoader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47BFE5F8FF03A80E28157AE6 /* NSImage+ResourceLoader.swift */; };
 		60329453329B37E5AF93170D /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2D5FAB75EF6B072AB222608D /* AppDelegate.swift */; };
 		61409D0116033AF22C0F7682 /* LogConfiguration.swift in Sources */ = {isa = PBXBuildFile; fileRef = 34339A12627520D195994567 /* LogConfiguration.swift */; };
+		623B91BBBFF6F9A13A91A77E /* SingleInstanceLock.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7CB42AA3921D5AB47CB70203 /* SingleInstanceLock.swift */; };
 		63169EF8DD3EF86F5B345C29 /* Color+Swift6.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6C40A6D501C2A6FECE921C16 /* Color+Swift6.swift */; };
 		6754DA4FD34332D937F7FC1D /* ResumeConnectionButtonHeuristic.swift in Sources */ = {isa = PBXBuildFile; fileRef = 10A7A335B8AAB7AEE8632F01 /* ResumeConnectionButtonHeuristic.swift */; };
 		689862F3C2C1F565B766D868 /* ErrorMessagePopupHeuristic.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3A933DA0E286DD8E1B13FDA9 /* ErrorMessagePopupHeuristic.swift */; };
@@ -224,6 +225,7 @@
 		7A2AAC76A058C92903902067 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		7A92381A60033FD16DC9AE63 /* WelcomeStep+Sendable.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "WelcomeStep+Sendable.swift"; sourceTree = "<group>"; };
 		7B425EA51475F4BEC7D5140A /* CursorMonitor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CursorMonitor.swift; sourceTree = "<group>"; };
+		7CB42AA3921D5AB47CB70203 /* SingleInstanceLock.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SingleInstanceLock.swift; sourceTree = "<group>"; };
 		7F9EAD76C5C89A6F3A55977D /* SettingsService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsService.swift; sourceTree = "<group>"; };
 		7FC1B35DF6546A73EF154B3C /* LogSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LogSettingsView.swift; sourceTree = "<group>"; };
 		80F621C4145AB08008EA4340 /* SharedUserInfo.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SharedUserInfo.swift; sourceTree = "<group>"; };
@@ -573,6 +575,7 @@
 				77BD422F9926B58B0FEF44C4 /* NotificationManager.swift */,
 				7F9EAD76C5C89A6F3A55977D /* SettingsService.swift */,
 				429F3143DECE0A4487E6973D /* ShortcutNames.swift */,
+				7CB42AA3921D5AB47CB70203 /* SingleInstanceLock.swift */,
 				AD3561279CC1D48D1FB0850F /* SparkleUpdaterManager.swift */,
 				95BFDCF5E5317C3B7F256B9F /* UpdaterViewModel.swift */,
 				D55420A573BE5102A6E97F14 /* WelcomeGuideView.swift */,
@@ -766,6 +769,7 @@
 				6F8706A905A33CAE6099C572 /* NotificationManager.swift in Sources */,
 				D9394D3B16CA3E7478DA6236 /* SettingsService.swift in Sources */,
 				BE1E2B0D4EF60BB8E67EE87B /* ShortcutNames.swift in Sources */,
+				623B91BBBFF6F9A13A91A77E /* SingleInstanceLock.swift in Sources */,
 				BF010B6CD25240B33FE6AF36 /* SparkleUpdaterManager.swift in Sources */,
 				E181286E4F24A0FC75337765 /* UpdaterViewModel.swift in Sources */,
 				AB2E7E0511A16888212AE65C /* WelcomeGuideView.swift in Sources */,

@@ -59,14 +59,18 @@ public class AppDelegate: NSObject, NSApplicationDelegate,
 
         // Single instance check
         singleInstanceLock = SingleInstanceLock(identifier: "me.steipete.codelooper.instance")
-        if !singleInstanceLock!.isPrimaryInstance {
-            logger.warning("Another instance of CodeLooper is already running. Terminating this instance.")
-            // Optionally, bring the other instance to the front
-            if let runningApp = NSRunningApplication.runningApplications(withBundleIdentifier: Bundle.main.bundleIdentifier!).first(where: { $0 != NSRunningApplication.current }) {
-                runningApp.activate(options: [.activateAllWindows])
+        
+        // Wait for the async check to complete
+        Task {
+            // Give the SingleInstanceLock time to check
+            try? await Task.sleep(nanoseconds: 600_000_000) // 0.6 seconds
+            
+            if !singleInstanceLock!.isPrimaryInstance {
+                logger.warning("Another instance of CodeLooper is already running. Terminating this instance.")
+                // Bring the other instance to the front
+                singleInstanceLock!.activateExistingInstance()
+                NSApp.terminate(nil)
             }
-            NSApp.terminate(nil)
-            return // Important to return here
         }
 
         // Initialize core services FIRST
@@ -367,79 +371,3 @@ extension AppDelegate: MenuManagerDelegate {
 */
 
 // MARK: - Other App Actions
-
-/// A helper class to ensure only one instance of the application is running.
-/// This uses a file lock to detect other instances.
-@MainActor
-private class SingleInstanceLock {
-    private let identifier: String
-    private var fileHandle: FileHandle?
-    let isPrimaryInstance: Bool
-
-    init(identifier: String) {
-        self.identifier = identifier
-        #if !DEBUG // Only enforce single instance lock in Release builds
-        let lockFileName = "\(identifier).lock"
-        let tempDir = FileManager.default.temporaryDirectory
-        let lockFilePath = tempDir.appendingPathComponent(lockFileName).path
-
-        if FileManager.default.fileExists(atPath: lockFilePath) {
-            // Try to open the lock file for reading. If it succeeds, another instance holds the lock.
-            // If it fails, the other instance might have crashed without cleaning up.
-            if let handle = FileHandle(forReadingAtPath: lockFilePath) {
-                // Check if the process holding the lock is still running
-                // This is a basic check; more robust methods might involve PID checking.
-                // For simplicity, we assume if the file exists and is readable, another instance is active.
-                self.isPrimaryInstance = false
-                handle.closeFile() // Close the handle, we don't need to keep it open.
-                self.fileHandle = nil // This instance doesn't hold the lock
-                AppDelegate.shared?.logger.info("Lock file exists at \(lockFilePath). Another instance is likely running.")
-                return
-            } else {
-                // File exists but can't be opened for reading (e.g., stale lock file)
-                // Attempt to remove it and become the primary.
-                AppDelegate.shared?.logger.warning("Stale lock file found at \(lockFilePath). Attempting to remove.")
-                try? FileManager.default.removeItem(atPath: lockFilePath)
-            }
-        }
-
-        // Attempt to create and lock the file
-        if FileManager.default.createFile(atPath: lockFilePath, contents: nil, attributes: nil) {
-            self.fileHandle = FileHandle(forWritingAtPath: lockFilePath)
-            if self.fileHandle != nil {
-                // Successfully created and got a handle to the lock file. This is the primary instance.
-                self.isPrimaryInstance = true
-                AppDelegate.shared?.logger.info("Successfully acquired instance lock at \(lockFilePath). This is the primary instance.")
-            } else {
-                // Failed to get a handle even after creating the file (should be rare)
-                self.isPrimaryInstance = false
-                AppDelegate.shared?.logger.error("Failed to get file handle for lock file at \(lockFilePath) even after creation.")
-            }
-        } else {
-            // Failed to create the lock file (e.g., permissions issue, or another instance just created it)
-            self.isPrimaryInstance = false
-            AppDelegate.shared?.logger.error("Failed to create lock file at \(lockFilePath).")
-        }
-        #else // For DEBUG builds, always assume primary instance
-        self.isPrimaryInstance = true
-        self.fileHandle = nil // No actual file lock in debug
-        AppDelegate.shared?.logger.info("DEBUG build: Single instance lock is bypassed.")
-        #endif
-    }
-
-    deinit {
-        #if !DEBUG // Only manage lock file in Release builds
-        // Release the lock if this was the primary instance
-        if isPrimaryInstance, let handle = fileHandle {
-            handle.closeFile()
-            let lockFileName = "\(identifier).lock"
-            let tempDir = FileManager.default.temporaryDirectory
-            let lockFilePath = tempDir.appendingPathComponent(lockFileName).path
-            try? FileManager.default.removeItem(atPath: lockFilePath)
-            Task { @MainActor in
-                AppDelegate.shared?.logger.info("Released instance lock and removed lock file at \(lockFilePath).")
-            }
-        }
-        #endif
-    }
-}

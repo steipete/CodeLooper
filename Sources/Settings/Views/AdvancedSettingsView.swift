@@ -92,10 +92,12 @@ struct AdvancedSettingsView: View {
                     DSButton("View mcp.json", style: .secondary, size: .small) {
                         viewMcpJson()
                     }
+                    .frame(maxWidth: .infinity)
                     
                     DSButton("Open AXpector", style: .secondary, size: .small) {
                         NotificationCenter.default.post(name: .showAXpectorWindow, object: nil)
                     }
+                    .frame(maxWidth: .infinity)
                 }
             }
             
@@ -119,10 +121,12 @@ struct AdvancedSettingsView: View {
                             DSButton("Reset All Preferences", style: .destructive, size: .small) {
                                 showResetConfirmation = true
                             }
+                            .frame(maxWidth: .infinity)
                             
                             DSButton("Clear All Data", style: .destructive, size: .small) {
                                 clearAllData()
                             }
+                            .frame(maxWidth: .infinity)
                         }
                         .padding(.top, Spacing.xSmall)
                     }
