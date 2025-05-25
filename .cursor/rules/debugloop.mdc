@@ -1,0 +1,171 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+# Debug Loop: Interacting with Cursor's Input Field via Accessibility
+
+This document tracks the strategy and learnings for programmatically finding and interacting with the main text input field in the Cursor application (the "Search, build anything..." prompt) using accessibility tools.
+
+## 1. Goal
+
+The primary objective is to:
+1.  Identify the accessibility element representing Cursor's main chat/prompt input field.
+2.  Programmatically set focus to this field.
+3.  Programmatically enter text into this field.
+4.  (Future) Programmatically trigger the "send" action for the entered text.
+5.  (Future) Cache the path or a stable identifier to this element for faster future access.
+
+## 2. Target Application: Cursor
+
+-   **Bundle Identifier:** `com.todesktop.230313mzl4w4u92`
+
+## 3. Obtaining Cursor's Process ID (PID)
+
+-   **Method:** AppleScript executed via `mcp_automator_execute_script`.
+-   **Status:** Successful.
+-   **Example PID Obtained:** `5248` (Note: This PID is dynamic and will change with each application launch).
+-   **AppleScript:**
+    ```applescript
+    tell application "System Events"
+        try
+            set appProcesses to every application process whose bundle identifier is "com.todesktop.230313mzl4w4u92"
+            if (count of appProcesses) > 0 then
+                set appProcess to first item of appProcesses
+                return unix id of appProcess
+            else
+                return "Error: Application with bundle ID com.todesktop.230313mzl4w4u92 not found."
+            end if
+        on error errMsg number errNum
+            return "AppleScript Error: " & errMsg & " (Number: " & errNum & ")"
+        end try
+    end tell
+    ```
+
+## 4. Accessibility Exploration: `axorc` CLI Tool
+
+-   **Tool:** `axorc`, the command-line interface for the `AXorcist` library.
+-   **Invocation:** `swift run --package-path AXorcist axorc [axorc_arguments...]` (from workspace root `/Users/steipete/Projects/CodeLooper`).
+-   **Status:** Successfully invoked.
+-   **JSON Command Input:** `axorc` expects commands via a JSON payload, e.g., using the `--json` argument.
+    -   **Decoder Issue (Locator):** The `locator` object in the JSON command requires a `criteria` field (e.g., `"criteria": {}`), even if `type` is `"application"` and criteria might seem redundant. Failure to provide this results in a JSON decoding error (`keyNotFound: criteria`).
+    -   **Decoder Issue (OutputFormat):** The `outputFormat` field in the `CommandEnvelope` (used by `collectAll`) does not accept the string `"json"` directly. Omitting the field works and seems to default to a JSON output for `collectAll`.
+    -   **Application Targeting:** Using `"application": "pid:<PID>"` resulted in "Application not found". Using `"application": "<BUNDLE_ID>"` (e.g., `"com.todesktop.230313mzl4w4u92"`) works correctly.
+
+-   **Successful `collectAll` command to list top-level app elements:**
+    ```json
+    {
+      "commandId": "cmd_collect_all_windows_005",
+      "command": "collectAll",
+      "application": "com.todesktop.230313mzl4w4u92",
+      "locator": {
+        "type": "application",
+        "criteria": {}
+      },
+      "maxDepth": 1,
+      "attributes": ["kAXRoleAttribute", "kAXTitleAttribute", "kAXIdentifierAttribute", "kAXSubroleAttribute", "kAXFocusedAttribute", "kAXEnabledAttribute", "kAXSizeAttribute", "kAXPositionAttribute"]
+    }
+    ```
+    **Invocation:**
+    ```bash
+    swift run --package-path AXorcist axorc --json '{"commandId": "cmd_collect_all_windows_005", ..., "kAXPositionAttribute"]}'
+    ```
+    **Result:** Successfully listed top-level elements (application, windows, menu bar). However, the requested attributes (e.g., `kAXRoleAttribute`, `kAXTitleAttribute`) were returned as `null` in the `collectAll` output, though `ComputedName` was present.
+
+## 5. Next Steps for Exploration
+
+1.  **Investigate Attribute Fetching:** Determine why `collectAll` returns `null` for requested attributes. Options:
+    *   Try the `getAttributes` command on a specific window element identified by its path from the `collectAll` output (e.g., `window 0`, `window 1`).
+    *   Use `describeElement` on a specific window element.
+    *   Check if the attributes in the `collectAll` command's `attributes` array need to be prefixed (e.g., `AXRoleAttribute` instead of `kAXRoleAttribute`) or if different attribute constants should be used for querying via `axorc` vs. direct Swift/AX API calls.
+
+2.  **Identify Main Chat Window:** From the `collectAll` output, determine which window corresponds to the main Cursor interface containing the chat/prompt area. This might be based on title or by exploring its children further.
+
+3.  **Explore Window Hierarchy:** Once the main window is identified (e.g., as `window 0` or `window 1` from the perspective of `axorc` if it uses 0-based indexing for children), query its children recursively using `collectAll` or `query` with increased `maxDepth`.
+    ```json
+    // Example: Explore children of the first window
+    {
+      "commandId": "explore_window_0_children",
+      "command": "collectAll", // or "query"
+      "application": "com.todesktop.230313mzl4w4u92",
+      "locator": {
+        "type": "path", // Or another suitable locator type for a specific window
+        "path": ["application", "window 0"] // Placeholder - actual path format TBD
+      },
+      "maxDepth": 5, // Or adjust as needed
+      "attributes": ["kAXRoleAttribute", "kAXTitleAttribute", "kAXIdentifierAttribute", "kAXPlaceholderValueAttribute", "kAXValueAttribute", "kAXDescriptionAttribute"]
+    }
+    ```
+    Look for roles `AXTextArea`, `AXTextField`, etc., and relevant placeholder/value attributes.
+
+4.  **Refine Path & Identify Target Element.**
+5.  **Test Interaction (CLI).**
+6.  **Verify with Peekaboo.**
+
+## 6. Future Steps (Integration into CodeLooper)
+
+-   Translate successful `axorc` commands into `AXorcist` Swift library calls.
+-   Develop a robust method for locating the target element.
+-   Implement path/identifier caching if feasible.
+
+
+# AXORC Debug Loop & Learnings (Session 2)
+
+## Goal: Find and interact with Cursor's main input field
+
+## Key Learnings & `axorc`/`AXorcist` Improvements:
+
+1.  **`AnyCodable.swift` Enhancements (AXorcist Core):**
+    *   Successfully added handlers to `AnyCodable.swift` to correctly serialize various previously problematic attribute types into JSON:
+        *   `CGPoint`: Encoded as `{"x": ..., "y": ...}`
+        *   `CGSize`: Encoded as `{"width": ..., "height": ...}`
+        *   `CGRect`: Encoded as `{"x": ..., "y": ..., "width": ..., "height": ...}`
+        *   `NSURL`: Encoded as its `absoluteString`.
+        *   Opaque `__NSCFType` instances (wrapping types like `AXUIElementRef`, `AXTextMarkerRef`): Encoded using their `String(describing: value)`, e.g., `"<AXUIElement ...>"`.
+    *   This dramatically improved the reliability and completeness of JSON output from `axorc` commands like `query` and `collectAll`.
+
+2.  **`axorc` JSON Command Structure Insights & Quirks:**
+    *   **Mandatory `criteria`:** When defining a `locator` in a command, even if `type` is `"application"` or `"path"`, an empty `criteria: {}` object is currently required. Omitting it causes a JSON decoding error in `axorc`. (Improvement target for `axorc`).
+    *   **`outputFormat` field:** Earlier issues with `outputFormat: "json"` seem resolved or less prevalent after `AnyCodable` fixes. Best practice is often to omit it and let `axorc` use its default (which is JSON).
+
+3.  **Strategies for Targeting Elements:**
+    *   **`locator.type: "firstMatch"`:** This is currently the most reliable method for targeting specific elements using a dictionary of `criteria` (e.g., `{"AXRole": "AXWebArea", "AXTitle": "window_title"}`).
+    *   **`locator.type: "path"`:** This remains problematic. The exact string format required for path segments (e.g., `"role:AXRole,AXTitle:SomeTitle"`) and the resolution logic within `AXorcist` (likely involving `PathHintComponent.swift`) needs further investigation and potential fixes. Current attempts to use it often default to an application-wide search.
+    *   **`collectAll` for Exploration:** Using `collectAll` with a `locator` for a known parent element (like an `AXWebArea`) and a sufficient `maxDepth` (e.g., 5-7) is effective for dumping a large portion of the UI tree for inspection. Ensure the initial `locator` for the parent is correct and specific.
+
+4.  **Cursor Application Specifics (Observations):**
+    *   Window titles (e.g., `"agent.mdc — claude-code-mcp"`) are crucial for targeting elements within a specific Cursor window. These titles can change based on the open file/tab.
+    *   The main content area within a Cursor window is typically an `AXWebArea` which often shares the same `AXTitle` as its parent `AXWindow`.
+    *   Identifying the main chat input field via `AXPlaceholderValue` proved difficult (exact value unknown, partial matches failed). It's likely necessary to find it by its `AXRole` (e.g., `AXTextArea`, `AXTextField`, or a custom web role) in conjunction with other attributes (`AXIdentifier`, `AXDOMIdentifier`, `AXDescription`) or its structural position within the `AXWebArea`. Manual inspection of comprehensive `collectAll` output is the current best approach.
+
+5.  **Debugging Workflow for `axorc` and Accessibility:**
+    *   When `axorc` JSON output fails or is incomplete, suspect `AnyCodable` issues. Add debug prints in `AnyCodable.swift` to identify unhandled types, then add specific handlers for them.
+    *   Verify locators: Before using a complex locator in `collectAll` or `performAction`, test it with a simple `query` command to ensure it correctly identifies the intended element.
+    *   If a `locator` for a specific element (e.g., `AXWebArea` with a certain title) fails, it might be because the element's properties (like title) have changed in the target application. Re-discover the element's current properties (e.g., list all windows to get current titles).
+
+## Next Steps for Original Goal:
+
+1.  Generate a full UI tree dump of the relevant Cursor window's `AXWebArea` using `collectAll` and save it to a file (e.g., `cursor_ui_tree.json`).
+    ```json
+    // Example collectAll command for this:
+    {
+      "commandId": "collect_full_webarea_for_inspection",
+      "command": "collectAll",
+      "application": "com.todesktop.230313mzl4w4u92",
+      "locator": {
+        "type": "firstMatch",
+        "criteria": { "AXRole": "AXWebArea", "AXTitle": "CURRENT_CURSOR_WINDOW_TITLE" }
+      },
+      "maxDepth": 7, // Adjust as needed
+      "requestedAttributes": [/* Comprehensive list including kAXChildrenAttribute */]
+    }
+    ```
+2.  Manually inspect `cursor_ui_tree.json` to find the chat input element and its unique, stable attributes.
+3.  Use these attributes in a `query` to confirm, then in `performAction` to interact (set focus, set value).
+
+## Planned `axorc`/`AXorcist` Improvements:
+
+*   Fix `AXElementLocator` decoding in `axorc` to make `criteria: {}` truly optional for `path` and `application` locator types.
+*   Enhance `AXElementMatcher.swift` in `AXorcist` to support flexible string matching (e.g., "contains", "startsWith") for criteria values.
+*   Further investigate and stabilize `locator.type: "path"` functionality.
+```
