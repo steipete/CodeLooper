@@ -4,35 +4,28 @@
   <img src="assets/banner.png" alt="CodeLooper Banner">
 </p>
 
-**A macOS menubar app that keeps your Cursor IDE in the loop** 🔄
+**A macOS menubar app that keeps your agents working in Cursor** 🔄
 
-CodeLooper is a native macOS application that sits in your menubar, constantly looping through checks on Cursor IDE's behavior. When Cursor breaks out of its productive loop – getting stuck generating code, dropping connections, or hitting errors – CodeLooper loops back in to restore the flow using macOS accessibility APIs:
+CodeLooper is a native macOS application that sits in your menubar, checking the the status of each Cursor window.
+When Cursor breaks out of its productive loop – getting stuck generating code, dropping connections, or hitting errors – CodeLooper loops back in to restore the flow using macOS accessibility APIs:
 
-- **🔄 Loop-breaking detection**: Spots when code generation gets stuck in an endless loop
-- **🔄 Connection loop restoration**: Automatically resumes dropped connections to keep the loop alive  
-- **🔄 Error loop interruption**: Dismisses dialogs that break your development loop
-- **🔄 Process loop recovery**: Restarts stuck processes to get back in the loop
-- **🔄 UI loop monitoring**: Continuously loops through accessibility element checks
+It resolves these situations:
 
-The app runs its own monitoring loop in the background, ready to jump in whenever Cursor falls out of its productive loop – keeping you looped in and flowing smoothly.
+- **Plain Stop:** Cursor just stops, even though the text indicates that there's more to do.
+- **Connection Issues**: "We're having trouble connecting to the model provider."
+- **Stop after 25 Loops**: It automatically presses resume.
 
-## Key Features 🌟
+## Automatic MCP Installation
 
-- **🔄 Loop Intelligence**: Smart detection when Cursor breaks out of its productive development loop
-- **⚡ Loop Recovery**: Instantly jumps back into action to restore broken workflows  
-- **🎯 Loop Precision**: Only intervenes when the loop is genuinely broken, staying in the background otherwise
-- **📊 Loop Status**: Shows your current loop health and recent loop-fixing actions in the menubar
-- **🔧 Multi-Loop Support**: Handles various loop breaks - generation loops, connection loops, error loops
-- **👁️ Loop Watching**: Continuously monitors the loop state using accessibility APIs
+CodeLooper can install various MCP's that help Cursor to build with fewer manual interventions:
 
-## Core Features
+- [Peekaboo](https://github.com/steipete/Peekaboo): Enables your IDE to make screenshots and ask questions about images.
+- [Terminator](https://github.com/steipete/Terminator): Manages a Terminal outside of the loop, so processes that might get stuck don't break the loop.
+- [Claude Code](https://github.com/steipete/claude-code-mcp): A buddy for your IDE that your agent can ask if he's stuck. Can do coding task and offer "a pair of fresh eyes" that often un-stucks the loop.
+- [Conduit](https://github.com/steipete/conduit-mcp): Advanced file manipulation for faster refactoring.
+- [Automator](https://github.com/steipete/macos-automator-mcp): AppleScript for your IDE.
 
-- **Menu Bar Integration**: Quick access to loop status and controls
-- **Accessibility Automation**: Remote control Cursor IDE through system APIs  
-- **Smart Monitoring**: Detects when Cursor needs assistance
-- **Launch at Login**: Starts automatically to maintain continuous supervision
-- **Settings Management**: Fine-tune your supervision preferences
-- **Native macOS**: Built specifically for Mac with system-level integration
+Warning: These tools give your agent full power over your system, so integrate at your own risk.
 
 ## System Requirements
 
@@ -40,69 +33,8 @@ The app runs its own monitoring loop in the background, ready to jump in wheneve
 - **Architecture**: Universal Binary (Apple Silicon and Intel)
 - **Accessibility**: Requires accessibility permissions for IDE automation
 
-## Technology Stack
-
-- **Swift 5.10**: Modern language features and concurrency
-- **SwiftUI 5.0**: Modern declarative UI where appropriate
-- **AppKit**: For system integration and certain UI components
-- **Accessibility APIs**: For remote control and automation
-- **Swift Concurrency**: async/await for background monitoring
-- **Swift Observation**: Observable macro for state management
-
-### Core System Integration
-
-- **Accessibility Framework**: For automated IDE interaction
-- **LoginItems API**: For launch-at-login functionality
-- **Notification Center**: For system notifications
-- **Menu Bar Integration**: Native macOS menu bar support
-
-## Key Dependencies
-
-- **[Defaults](https://github.com/sindresorhus/Defaults)** - Type-safe user defaults access
-- **[LaunchAtLogin](https://github.com/sindresorhus/LaunchAtLogin)** - Reliable startup at login functionality
-- **[SwiftUI-Introspect](https://github.com/siteline/SwiftUI-Introspect)** - SwiftUI introspection capabilities
-- **[Swift-log](https://github.com/apple/swift-log)** - Unified logging API
-
-## Development
-
-This app is written in Swift using SwiftUI and AppKit. It targets macOS 14+ (Sonoma) and uses modern Swift concurrency features for seamless background operation.
-
 ### Getting Started
 
-1. Clone the repository
-2. Run the build script to build the app
-3. Grant accessibility permissions when prompted
-4. Watch CodeLooper keep your Cursor IDE in the loop!
+Download one of the releases from GitHub's Release section.
 
-### Key Commands
-
-```bash
-# Build the app
-./build.sh
-
-# Format code and fix Swift code style issues
-./lint.sh
-
-# Format Swift code only
-./run-swiftformat.sh --format
-
-# Validate Swift code without making changes
-./scripts/swift-check.sh
-```
-
-## Documentation
-
-For detailed documentation, see:
-
-- [Overview](docs/README.md) - Overview of the macOS app
-- [Building Guide](docs/BUILD.md) - How to build the app
-- [Dependencies](docs/DEPENDENCIES.md) - External libraries and dependencies
-- [CI/CD Systems](docs/CI.md) - Continuous integration and delivery
-- [Compatibility](docs/COMPATIBILITY.md) - System requirements and compatibility
-- [SwiftLint](docs/SWIFTLINT.md) - Code quality enforcement
-- [Menu Best Practices](docs/MENU-BEST-PRACTICES.md) - Menu implementation guidelines
-- [Notarization](docs/NOTARIZATION.md) - App notarization process and automation
-
-## License
-
-Copyright © Peter Steinberger. All rights reserved.
+Note: This is currently under active development and doesn't yet work.
