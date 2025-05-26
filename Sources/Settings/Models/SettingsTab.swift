@@ -9,6 +9,7 @@ public enum SettingsTab: String, CaseIterable, Identifiable, Sendable {
     case advanced = "Advanced"
     case log = "Log"
     case developer = "Developer"
+    case cursorInputWatcher = "Cursor Input Watcher"
     case about = "About"
 
     public var id: String { self.rawValue }
@@ -22,6 +23,7 @@ public enum SettingsTab: String, CaseIterable, Identifiable, Sendable {
         case .advanced: return "slider.horizontal.3"
         case .log: return "doc.text"
         case .developer: return "hammer"
+        case .cursorInputWatcher: return "eyeglass"
         case .about: return "info.circle"
         }
     }

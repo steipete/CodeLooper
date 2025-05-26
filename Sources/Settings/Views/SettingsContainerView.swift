@@ -15,6 +15,7 @@ struct SettingsContainerView: View {
         (.ruleSets, "Rules", "checklist"),
         (.externalMCPs, "Extensions", "puzzlepiece.extension"),
         (.advanced, "Advanced", "wrench.and.screwdriver"),
+        (.cursorInputWatcher, "Input Watcher", "eyeglass"),
         (.about, "About", "info.circle")
     ]
     
@@ -88,6 +89,12 @@ struct SettingsContainerView: View {
                 ))
         case .advanced:
             AdvancedSettingsView()
+                .transition(.asymmetric(
+                    insertion: .move(edge: .trailing).combined(with: .opacity),
+                    removal: .move(edge: .leading).combined(with: .opacity)
+                ))
+        case .cursorInputWatcher:
+            CursorInputWatcherView()
                 .transition(.asymmetric(
                     insertion: .move(edge: .trailing).combined(with: .opacity),
                     removal: .move(edge: .leading).combined(with: .opacity)
