@@ -11,14 +11,14 @@ When Cursor breaks out of its productive loop – getting stuck generating code,
 
 It resolves these situations:
 
-- **Plain Stop:** Cursor just stops, even though the text indicates that there's more to do.
-  <img src="assets/cursor-stopped.png" alt="Cursor Stopped" width="300">
+- **Plain Stop:** Cursor just stops, even though the text indicates that there's more to do.<br>
+  <img src="assets/cursor-stopped.png" alt="Cursor Stopped" width="600">
 
-- **Connection Issues**: "We're having trouble connecting to the model provider."
-  <img src="assets/trouble.png" alt="Connection Trouble" width="300">
+- **Connection Issues**: "We're having trouble connecting to the model provider."<br>
+  <img src="assets/trouble.png" alt="Connection Trouble" width="600">
 
-- **Stop after 25 Loops**: It automatically presses resume.
-  <img src="assets/default-stop-25.png" alt="Default Stop at 25 loops" width="300">
+- **Stop after 25 Loops**: It automatically presses resume.<br>
+  <img src="assets/default-stop-25.png" alt="Default Stop at 25 loops" width="600">
 
 ## Automatic MCP Installation
 
