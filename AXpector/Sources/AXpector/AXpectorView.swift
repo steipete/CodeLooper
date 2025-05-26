@@ -77,24 +77,248 @@ private struct MainContentView: View {
     @Binding var selectedNodeID: AXPropertyNode.ID?
     
     var body: some View {
-        NavigationView {
-            // Tree View
-            TreeSidebarView(viewModel: viewModel, selectedNodeID: $selectedNodeID)
-                .frame(minWidth: 350)
-            
-            // Details View
-            if let selectedNode = viewModel.selectedNode, !viewModel.isHoverModeActive {
-                NodeDetailsView(viewModel: viewModel, node: selectedNode)
-                    .frame(minWidth: 400, maxWidth: .infinity)
-            } else {
-                EmptyStateView(
-                    isHoverMode: viewModel.isHoverModeActive,
-                    hasSelectedApp: viewModel.selectedApplicationPID != nil
-                )
+        VStack(spacing: 0) {
+            Picker("Mode", selection: $viewModel.currentMode) {
+                ForEach(AXpectorMode.allCases) { mode in
+                    Text(mode.rawValue.capitalized).tag(mode)
+                }
+            }
+            .pickerStyle(SegmentedPickerStyle())
+            .padding([.horizontal, .top])
+            .background(ColorPalette.background)
+
+            switch viewModel.currentMode {
+            case .inspector:
+                NavigationView {
+                    // Tree View
+                    TreeSidebarView(viewModel: viewModel, selectedNodeID: $selectedNodeID)
+                        .frame(minWidth: 350)
+                    
+                    // Details View
+                    if let selectedNode = viewModel.selectedNode, !viewModel.isHoverModeActive {
+                        NodeDetailsView(viewModel: viewModel, node: selectedNode)
+                            .frame(minWidth: 400, maxWidth: .infinity)
+                    } else {
+                        EmptyStateView(
+                            isHoverMode: viewModel.isHoverModeActive,
+                            hasSelectedApp: viewModel.selectedApplicationPID != nil
+                        )
+                    }
+                }
+            case .observer:
+                ObserverView(viewModel: viewModel)
             }
         }
         .frame(minHeight: 600, idealHeight: 800)
         .background(ColorPalette.background)
+    }
+}
+
+// Placeholder for ObserverView
+private struct ObserverView: View {
+    @ObservedObject var viewModel: AXpectorViewModel
+    @State private var observerSelectedNodeID: AXPropertyNode.ID? 
+
+    var body: some View {
+        HSplitView {
+            VStack(spacing: 0) {
+                // Header Controls for Observer Mode
+                VStack(spacing: Spacing.medium) {
+                    ApplicationPickerView(viewModel: viewModel)
+                    
+                    if viewModel.selectedApplicationPID != nil {
+                        DSButton("Refresh Tree", style: .secondary, size: .small) {
+                            viewModel.fetchAccessibilityTreeForSelectedApp() // Re-use existing fetch
+                        }
+                        .disabled(viewModel.isLoadingTree)
+                        .frame(maxWidth: .infinity)
+                    }
+                    // Filter field for observer mode
+                    DSTextField(
+                        "Filter tree...",
+                        text: $viewModel.filterText, // Re-use existing filterText
+                        showClearButton: true
+                    )
+                }
+                .padding(Spacing.medium)
+                .background(ColorPalette.backgroundSecondary)
+                
+                DSDivider()
+                
+                // Tree Content for Observer Mode
+                Group { // Group to handle conditional logic for tree display
+                    if viewModel.isLoadingTree {
+                        LoadingView(message: "Loading Accessibility Tree...")
+                    } else if let error = viewModel.treeLoadingError {
+                        ErrorView(message: "Failed to load tree: \(error)")
+                    } else if viewModel.selectedApplicationPID == nil {
+                        EmptyStateView(message: "Select an application to view its accessibility tree.")
+                    } else if viewModel.filteredAccessibilityTree.isEmpty && !viewModel.filterText.isEmpty { // Use filteredAccessibilityTree
+                         EmptyStateView(message: "No elements match your filter: \"\(viewModel.filterText)\"")
+                    } else if viewModel.accessibilityTree.isEmpty { // Check original tree if no filter
+                         EmptyStateView(message: "No accessibility elements found for the selected application, or the tree is empty.")
+                    } else {
+                        // Pass the observer-specific selectedNodeID binding
+                        TreeContentView(viewModel: viewModel, selectedNodeID: $observerSelectedNodeID) 
+                    }
+                }
+                .frame(minWidth: 300) // Ensure tree has some minimum width
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .background(ColorPalette.background)
+
+            // Observer Node Details View
+            if let selectedID = observerSelectedNodeID,
+               let node = viewModel.findNode(by: selectedID, in: viewModel.filteredAccessibilityTree.isEmpty && viewModel.filterText.isEmpty ? viewModel.accessibilityTree : viewModel.filteredAccessibilityTree) {
+                ObserverNodeDetailsView(node: node)
+                    .frame(minWidth: 300) // Ensure details view has some minimum width
+            } else {
+                EmptyStateView(message: "Select an element from the tree to see its details.")
+                    .frame(minWidth: 300)
+            }
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        // Removed redundant background from HSplitView children, HSplitView itself has no background property
+    }
+}
+
+// Helper for Error View (can be made more generic later)
+private struct ErrorView: View {
+    let message: String
+    var body: some View {
+        VStack {
+            Image(systemName: "exclamationmark.triangle.fill")
+                .resizable()
+                .aspectRatio(contentMode: .fit)
+                .frame(width: 40, height: 40)
+                .foregroundColor(ColorPalette.error)
+            Text(message)
+                .font(Typography.body())
+                .foregroundColor(ColorPalette.textSecondary)
+                .multilineTextAlignment(.center)
+                .padding()
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(ColorPalette.background)
+    }
+}
+
+// Extended EmptyStateView for Observer Mode
+private struct EmptyStateView: View {
+    var message: String? = nil // Optional message for observer mode
+    var isHoverMode: Bool = false
+    var hasSelectedApp: Bool = false
+
+    var body: some View {
+        VStack(spacing: Spacing.medium) {
+            Image(systemName: "sidebar.squares.left") // Generic icon
+                .resizable()
+                .aspectRatio(contentMode: .fit)
+                .frame(width: 50, height: 50)
+                .foregroundColor(ColorPalette.textTertiary)
+
+            if let message = message {
+                Text(message)
+                    .font(Typography.title3(.regular))
+                    .foregroundColor(ColorPalette.textSecondary)
+                    .multilineTextAlignment(.center)
+            } else {
+                // Original EmptyStateView logic
+                if isHoverMode {
+                    Text("Hover Inspecting Active")
+                        .font(Typography.title3(.regular))
+                        .foregroundColor(ColorPalette.textSecondary)
+                    Text("Tree selection and details are disabled during hover inspect.")
+                        .font(Typography.body())
+                        .foregroundColor(ColorPalette.textTertiary)
+                } else if !hasSelectedApp {
+                    Text("No Application Selected")
+                        .font(Typography.title3(.regular))
+                        .foregroundColor(ColorPalette.textSecondary)
+                    Text("Select an application from the picker above to view its accessibility tree.")
+                        .font(Typography.body())
+                        .foregroundColor(ColorPalette.textTertiary)
+                } else {
+                    Text("No Element Selected")
+                        .font(Typography.title3(.regular))
+                        .foregroundColor(ColorPalette.textSecondary)
+                    Text("Select an element from the tree on the left to see its details.")
+                        .font(Typography.body())
+                        .foregroundColor(ColorPalette.textTertiary)
+                }
+            }
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .padding()
+        .background(ColorPalette.background)
+    }
+}
+
+// MARK: - Application Picker View
+private struct ApplicationPickerView: View {
+    @ObservedObject var viewModel: AXpectorViewModel
+    
+    var body: some View {
+        HStack {
+            Text("Application")
+                .font(Typography.body())
+                .foregroundColor(ColorPalette.text)
+            
+            Spacer()
+            
+            Menu {
+                Button("Select Application") {
+                    viewModel.selectedApplicationPID = nil
+                }
+                .disabled(viewModel.selectedApplicationPID == nil)
+                
+                Divider()
+                
+                ForEach(viewModel.runningApplications, id: \.processIdentifier) { app in
+                    Button(action: {
+                        viewModel.selectedApplicationPID = app.processIdentifier
+                    }) {
+                        HStack {
+                            if let icon = app.icon {
+                                Image(nsImage: icon)
+                                    .resizable()
+                                    .frame(width: 16, height: 16)
+                            }
+                            Text(app.localizedName ?? "Unknown App")
+                            if app.processIdentifier == viewModel.selectedApplicationPID {
+                                Image(systemName: "checkmark")
+                            }
+                        }
+                    }
+                }
+            } label: {
+                HStack(spacing: Spacing.xSmall) {
+                    if let selectedApp = viewModel.runningApplications.first(where: { $0.processIdentifier == viewModel.selectedApplicationPID }),
+                       let icon = selectedApp.icon {
+                        Image(nsImage: icon)
+                            .resizable()
+                            .frame(width: 16, height: 16)
+                    }
+                    Text(selectedAppName)
+                        .font(Typography.body())
+                    Image(systemName: "chevron.down")
+                        .font(.system(size: 10))
+                }
+                .padding(.horizontal, Spacing.small)
+                .padding(.vertical, Spacing.xSmall)
+                .background(ColorPalette.backgroundSecondary)
+                .cornerRadius(6)
+            }
+            .menuStyle(.borderlessButton)
+        }
+    }
+    
+    private var selectedAppName: String {
+        if let pid = viewModel.selectedApplicationPID,
+           let app = viewModel.runningApplications.first(where: { $0.processIdentifier == pid }) {
+            return app.localizedName ?? "Unknown App"
+        }
+        return "Select Application"
     }
 }
 
@@ -108,18 +332,7 @@ private struct TreeSidebarView: View {
             // Header Controls
             VStack(spacing: Spacing.medium) {
                 // Application Picker
-                DSPicker(
-                    "Application",
-                    selection: Binding(
-                        get: { viewModel.selectedApplicationPID ?? -1 },
-                        set: { newValue in
-                            viewModel.selectedApplicationPID = newValue == -1 ? nil : newValue
-                        }
-                    ),
-                    options: [(pid_t(-1), "Select Application")] + viewModel.runningApplications.map { app in
-                        (app.processIdentifier, app.localizedName ?? "Unknown App")
-                    }
-                )
+                ApplicationPickerView(viewModel: viewModel)
                 
                 // Refresh Button
                 if viewModel.selectedApplicationPID != nil {
@@ -210,6 +423,22 @@ private struct ModeControlsView: View {
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .lineLimit(3)
             }
+            
+            // Display detailed focused element attributes
+            if viewModel.isFocusTrackingModeActive, let attributesDesc = viewModel.focusedElementAttributesDescription {
+                ScrollView {
+                    Text(attributesDesc)
+                        .font(Typography.caption2())
+                        .foregroundColor(ColorPalette.text)
+                        .padding(Spacing.xSmall)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .background(ColorPalette.backgroundSecondary.opacity(0.5))
+                        .cornerRadius(4)
+                        .textSelection(.enabled)
+                }
+                .frame(maxHeight: 150) // Limit height to prevent oversized view
+                .padding(.top, Spacing.xSmall)
+            }
         }
     }
 }
@@ -281,7 +510,7 @@ private struct TreeContentView: View {
                     }
                     .listStyle(.sidebar)
                     .onChange(of: selectedNodeID) { oldValue, newValue in
-                        if !viewModel.isHoverModeActive, let newID = newValue {
+                        if viewModel.currentMode == .inspector, !viewModel.isHoverModeActive, let newID = newValue {
                             viewModel.selectedNode = viewModel.findNode(by: newID, in: viewModel.filteredAccessibilityTree)
                         }
                     }
@@ -355,40 +584,6 @@ private struct EmptyTreeView: View {
             return "Select an application to inspect"
         } else {
             return "Accessibility tree is empty or not available"
-        }
-    }
-}
-
-// MARK: - Empty State View
-private struct EmptyStateView: View {
-    let isHoverMode: Bool
-    let hasSelectedApp: Bool
-    
-    var body: some View {
-        VStack(spacing: Spacing.medium) {
-            Image(systemName: isHoverMode ? "cursorarrow.rays" : "sidebar.right")
-                .resizable()
-                .aspectRatio(contentMode: .fit)
-                .frame(width: 60, height: 60)
-                .foregroundColor(ColorPalette.textTertiary)
-            
-            Text(message)
-                .font(Typography.body())
-                .foregroundColor(ColorPalette.textSecondary)
-                .multilineTextAlignment(.center)
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .padding()
-        .background(ColorPalette.background)
-    }
-    
-    private var message: String {
-        if isHoverMode {
-            return "Hover mode active.\nHover over elements to see info."
-        } else if !hasSelectedApp {
-            return "Select an application to begin."
-        } else {
-            return "Select an element to see details.\nOr enable Hover Inspect mode."
         }
     }
 }
@@ -486,6 +681,53 @@ private struct PropertyRow: View {
                 .foregroundColor(ColorPalette.text)
                 .textSelection(.enabled)
         }
+    }
+}
+
+// MARK: - Observer Node Details View (Read-Only)
+private struct ObserverNodeDetailsView: View {
+    let node: AXPropertyNode
+
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: Spacing.medium) {
+                Text("Selected Element (Observer)")
+                    .font(Typography.headline())
+                    .foregroundColor(ColorPalette.text)
+                
+                PropertyRow(label: "Display Name", value: node.displayName)
+                PropertyRow(label: "Role", value: node.role)
+                PropertyRow(label: "Title", value: node.title.isEmpty ? "N/A" : node.title)
+                PropertyRow(label: "Value", value: node.value.isEmpty ? "N/A" : node.value)
+                PropertyRow(label: "Description", value: node.descriptionText.isEmpty ? "N/A" : node.descriptionText)
+                PropertyRow(label: "Path", value: node.fullPath)
+                
+                if !node.attributes.isEmpty {
+                    DSDivider()
+                    Text("All Attributes (\(node.attributes.count)")
+                        .font(Typography.subheadline(.semibold))
+                        .foregroundColor(ColorPalette.text)
+                        .padding(.top, Spacing.small)
+                    
+                    ForEach(node.attributes.sorted(by: { $0.key < $1.key }), id: \.key) { key, attrInfo in
+                        VStack(alignment: .leading, spacing: Spacing.xxxSmall) {
+                            Text(key)
+                                .font(Typography.caption1(.semibold))
+                                .foregroundColor(ColorPalette.textSecondary)
+                            Text(String(describing: attrInfo.value))
+                                .font(Typography.caption1())
+                                .foregroundColor(ColorPalette.text)
+                                .textSelection(.enabled)
+                        }
+                        .padding(.bottom, Spacing.xxSmall)
+                    }
+                }
+            }
+            .padding(Spacing.medium)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(ColorPalette.backgroundSecondary) // Differentiate from main tree background
+        .border(ColorPalette.border, width: 1)
     }
 }
 

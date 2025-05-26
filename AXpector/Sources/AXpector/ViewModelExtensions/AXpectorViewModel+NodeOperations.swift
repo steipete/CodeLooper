@@ -100,7 +100,7 @@ extension AXpectorViewModel {
         }
     }
 
-    private func recursivelyFetchChildren(
+    internal func recursivelyFetchChildren(
         forElement elementToFetchChildrenFor: Element,
         pid: pid_t,
         depthOfElementToFetchChildrenFor: Int, // This is the depth in the overall tree of the element whose children we are fetching
@@ -153,7 +153,7 @@ extension AXpectorViewModel {
                 attributes: childAttributes,
                 actions: childAX.supportedActions() ?? [], 
                 // Use childAX.children() to check if it *can* have children from AX perspective
-                hasChildrenAXProperty: childAX.children()?.isEmpty == false, 
+                hasChildrenAXProperty: (childAX.children() != nil && !(childAX.children()?.isEmpty ?? true)) || (childAttributes[AXAttributeNames.kAXChildrenAttribute] != nil), 
                 depth: depthOfElementToFetchChildrenFor + 1 // Depth of this new child node in the tree
             )
             propertyNode.areChildrenFullyLoaded = !grandChildrenPropertyNodes.isEmpty || (currentExpansionLevel + 1 >= maxExpansionLevels)

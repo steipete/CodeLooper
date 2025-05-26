@@ -149,7 +149,6 @@ extension AXpectorViewModel {
         let response = await axorcist.handleQuery(
             for: appIdentifier,
             locator: locator,
-            pathHint: nil,
             maxDepth: 0,
             requestedAttributes: AXpectorViewModel.defaultFetchAttributes,
             outputFormat: .smart

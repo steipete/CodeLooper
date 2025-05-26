@@ -92,11 +92,33 @@ extension AXpectorViewModel {
         if let t = title, !t.isEmpty { infoParts.append("Title: \(t)") }
         self.focusedElementInfo = infoParts.joined(separator: "\n")
 
+        // Populate detailed attributes description
+        var attributesText = "Focused Element Attributes:\n"
+        
+        // Explicitly fetch attributes for the focusedElement using the global getElementAttributes function
+        // from AXorcist module (assuming it's accessible globally or via an AXorcist instance method that calls it).
+        // AXpectorViewModel.defaultFetchAttributes should be accessible as Self.defaultFetchAttributes here.
+        let (fetchedAttributes, _) = getElementAttributes(
+            element: focusedElement, 
+            attributes: Self.defaultFetchAttributes, // Use the class's static list of attributes
+            outputFormat: .smart // .smart or .jsonString, .smart is likely better for display
+        )
+
+        if !fetchedAttributes.isEmpty {
+            for (key, value) in fetchedAttributes.sorted(by: { $0.key < $1.key }) {
+                let valueString = String(describing: value.value) 
+                attributesText += "  • \(key): \(valueString)\n"
+            }
+        } else {
+            attributesText += "  (No attributes could be fetched for the focused element)"
+        }
+        self.focusedElementAttributesDescription = attributesText
+
         if let appTree = self.accessibilityTree.first, appTree.pid == pid, 
            let foundNode = findNodeByAXElement(focusedElement.underlyingElement, in: [appTree]) { 
             self.temporarilySelectedNodeIDByFocus = foundNode.id 
             _ = expandParents(for: foundNode.id, in: self.accessibilityTree) 
-            updateHighlightForNode(foundNode, isFocusHighlight: true) 
+            updateHighlightForNode(foundNode, isHover: false, isFocusHighlight: true) 
             axInfoLog("Focus tracked to node: \(foundNode.displayName)") // CHANGED
         } else {
             if self.accessibilityTree.first?.pid != pid && !autoSelectFocusedApp {

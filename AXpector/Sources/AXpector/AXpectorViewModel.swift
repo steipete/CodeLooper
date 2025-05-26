@@ -9,10 +9,37 @@ extension Defaults.Keys {
     static let verboseLogging_axpector = Key<Bool>("verboseLogging", default: false)
 }
 
+enum AXpectorMode: String, CaseIterable, Identifiable {
+    case inspector
+    case observer
+
+    var id: String { self.rawValue }
+}
+
 @MainActor
 class AXpectorViewModel: ObservableObject {
     // MARK: - Properties
     internal let axorcist = AXorcist()
+
+    @Published var currentMode: AXpectorMode = .inspector {
+        didSet {
+            if oldValue != currentMode {
+                // If switching away from inspector, or to observer, disable active interaction modes
+                if currentMode == .observer || oldValue == .inspector {
+                    if isHoverModeActive {
+                        //stopHoverMonitoring() // Already called by isHoverModeActive.didSet
+                        isHoverModeActive = false
+                    }
+                    if isFocusTrackingModeActive {
+                        //stopFocusTrackingMonitoring() // Already called by isFocusTrackingModeActive.didSet
+                        isFocusTrackingModeActive = false
+                    }
+                }
+                // Potentially clear tree or selection if switching modes makes current state irrelevant
+                // For now, tree is re-used, selection is mode-specific via different @State vars in View
+            }
+        }
+    }
 
     // Application List and Selection
     @Published var runningApplications: [NSRunningApplication] = []
@@ -136,6 +163,7 @@ class AXpectorViewModel: ObservableObject {
     }
     @Published var focusedElementInfo: String = "Enable focus tracking mode."
     @Published var temporarilySelectedNodeIDByFocus: AXPropertyNode.ID?
+    @Published var focusedElementAttributesDescription: String? = nil
     internal var focusObserver: AXObserver?
     internal var appActivationObserver: AnyObject?
     internal var observedPIDForFocus: pid_t = 0
@@ -155,6 +183,7 @@ class AXpectorViewModel: ObservableObject {
     // Application monitoring
     internal var appLaunchObserver: NSObjectProtocol?
     internal var appTerminateObserver: NSObjectProtocol?
+    internal var windowRefreshTimer: Timer?
     
     // MARK: - Init / Deinit
     init() {
@@ -178,6 +207,9 @@ class AXpectorViewModel: ObservableObject {
         if let observer = appTerminateObserver {
             NotificationCenter.default.removeObserver(observer)
         }
+        
+        windowRefreshTimer?.invalidate()
+        windowRefreshTimer = nil
         
         Task { @MainActor [weak self] in
             guard let self = self else { return }
@@ -254,13 +286,13 @@ class AXpectorViewModel: ObservableObject {
             self.treeLoadingError = "No application selected."
             return
         }
-        guard let app = RunningApplicationHelper.runningApplication(pid: pid) else {
+        guard let app = NSRunningApplication(processIdentifier: pid) else {
             axWarningLog("Application with PID \(pid) not found.")
             self.treeLoadingError = "Application with PID \(pid) not found."; self.accessibilityTree = []; self.originalAccessibilityTree = []; self.filteredAccessibilityTree = []
             self.isLoadingTree = false
             return
         }
-        let appName = RunningApplicationHelper.displayName(for: app)
+        let appName = app.localizedName ?? "Unknown App"
         axInfoLog("Fetching accessibility tree for: \(appName) (PID: \(pid)) with depth \(self.initialFetchDepth)")
         self.isLoadingTree = true; self.treeLoadingError = nil; self.accessibilityTree = []; self.originalAccessibilityTree = []; self.filteredAccessibilityTree = []
         let currentAppName = appName; let currentPid = pid
@@ -272,23 +304,61 @@ class AXpectorViewModel: ObservableObject {
     }
 
     private func performTreeFetchAndProcess(appName: String, pid: Int32, commandID: String) async {
-        func processResponse(json: String) -> (nodes: [AXPropertyNode]?, error: String?) {
-            guard let jsonData = json.data(using: .utf8) else { return (nil, "JSON to Data conversion failed.") }
-            do {
-                let output = try JSONDecoder().decode(CollectAllOutput.self, from: jsonData)
-                if output.success { return (output.collectedElements.map { self.mapJsonAXElementToNode($0, pid: pid, currentDepth: 0, parentPath: "") }, nil) } 
-                else { return (nil, output.errorMessage ?? "Unknown AXorcist error.") }
-            } catch { return (nil, "JSON Decode error: \\(error.localizedDescription).") }
-        }
         await GlobalAXLogger.shared.updateOperationDetails(commandID: commandID, appName: appName)
-        let jsonResponse = axorcist.handleCollectAll(for: appName, locator: nil, pathHint: nil, maxDepth: initialFetchDepth, requestedAttributes: Self.defaultFetchAttributes, outputFormat: .jsonString, commandId: commandID)
-        let result = processResponse(json: jsonResponse)
+        
+        // Create the application element directly
+        let appElement = AXUIElementCreateApplication(pid)
+        let rootElement = Element(appElement)
+        
+        // Fetch the tree structure directly using Element objects
+        let nodes = await recursivelyFetchChildren(
+            forElement: rootElement,
+            pid: pid,
+            depthOfElementToFetchChildrenFor: 0,
+            currentExpansionLevel: 0,
+            maxExpansionLevels: initialFetchDepth,
+            pathOfElementToFetchChildrenFor: ""
+        )
+        
         await MainActor.run {
-            self.isLoadingTree = false; self.treeLoadingError = result.error
-            if let nodes = result.nodes { self.accessibilityTree = nodes; self.originalAccessibilityTree = nodes } 
-            else { self.accessibilityTree = []; self.originalAccessibilityTree = [] }
-            self.applyFilter() 
+            self.isLoadingTree = false
+            self.treeLoadingError = nil
+            
+            if !nodes.isEmpty {
+                // Create a root node for the application
+                let appAttributes = getElementAttributes(
+                    element: rootElement,
+                    attributes: Self.defaultFetchAttributes,
+                    outputFormat: .jsonString
+                ).0
+                
+                let appNode = AXPropertyNode(
+                    id: UUID(),
+                    axElementRef: appElement,
+                    pid: pid,
+                    role: appAttributes[AXAttributeNames.kAXRoleAttribute]?.value as? String ?? "Application",
+                    title: appName,
+                    descriptionText: "",
+                    value: "",
+                    fullPath: appName,
+                    children: nodes,
+                    attributes: appAttributes,
+                    actions: rootElement.supportedActions() ?? [],
+                    hasChildrenAXProperty: !nodes.isEmpty,
+                    depth: 0
+                )
+                appNode.areChildrenFullyLoaded = true
+                
+                self.accessibilityTree = [appNode]
+                self.originalAccessibilityTree = [appNode]
+            } else {
+                self.accessibilityTree = []
+                self.originalAccessibilityTree = []
+            }
+            
+            self.applyFilter()
         }
+        
         await GlobalAXLogger.shared.updateOperationDetails(commandID: nil, appName: nil)
     }
 
