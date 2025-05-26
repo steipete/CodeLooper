@@ -133,7 +133,7 @@ public class CursorInterventionEngine: ObservableObject {
         // 5. Perform AX queries
         // 5a. Check for positive working state (generatingIndicatorText)
         if let generatingIndicatorLocator = await self.locatorManager.getLocator(for: .generatingIndicatorText, pid: pid) {
-            let response = await self.axorcist.handleQuery(for: nil, locator: generatingIndicatorLocator, pathHint: nil, maxDepth: 5, requestedAttributes: nil, outputFormat: nil)
+            let response = await self.axorcist.handleQuery(for: nil, locator: generatingIndicatorLocator, maxDepth: 5, requestedAttributes: nil, outputFormat: nil)
             if let axData = response.data {
                 let textContent = self.getTextFromAXElement(axData)
                 if Self.positiveWorkKeywords.contains(where: { keyword in textContent.localizedCaseInsensitiveContains(keyword) }) {
@@ -144,7 +144,7 @@ public class CursorInterventionEngine: ObservableObject {
         
         // 5b. Check for error messages (errorMessagePopup)
         if let errorMessageLocator = await self.locatorManager.getLocator(for: .errorMessagePopup, pid: pid) {
-            let response = await self.axorcist.handleQuery(for: nil, locator: errorMessageLocator, pathHint: nil, maxDepth: 5, requestedAttributes: nil, outputFormat: nil)
+            let response = await self.axorcist.handleQuery(for: nil, locator: errorMessageLocator, maxDepth: 5, requestedAttributes: nil, outputFormat: nil)
             if let axData = response.data {
                 let textContent = self.getTextFromAXElement(axData)
                 if Self.errorIndicatingKeywords.contains(where: { keyword in textContent.localizedCaseInsensitiveContains(keyword) }) {
@@ -156,7 +156,7 @@ public class CursorInterventionEngine: ObservableObject {
         // 5c. Check sidebar activity if enabled
         if Defaults[.monitorSidebarActivity] {
             if let sidebarLocator = await self.locatorManager.getLocator(for: .sidebarActivityArea, pid: pid) {
-                let response = await self.axorcist.handleQuery(for: nil, locator: sidebarLocator, pathHint: nil, maxDepth: 5, requestedAttributes: nil, outputFormat: nil)
+                let response = await self.axorcist.handleQuery(for: nil, locator: sidebarLocator, maxDepth: 5, requestedAttributes: nil, outputFormat: nil)
                 if let axData = response.data {
                     let sidebarTextRepresentation = self.getTextualRepresentation(for: axData, depth: 0, maxDepth: 1)
                     let currentHash = sidebarTextRepresentation.hashValue
@@ -173,7 +173,7 @@ public class CursorInterventionEngine: ObservableObject {
         // 5d. Check for connection issues if enabled
         if Defaults[.enableConnectionIssuesRecovery] {
             if let connectionErrorLocator = await self.locatorManager.getLocator(for: .connectionErrorIndicator, pid: pid) {
-                let response = await self.axorcist.handleQuery(for: nil, locator: connectionErrorLocator, pathHint: nil, maxDepth: 5, requestedAttributes: nil, outputFormat: nil)
+                let response = await self.axorcist.handleQuery(for: nil, locator: connectionErrorLocator, maxDepth: 5, requestedAttributes: nil, outputFormat: nil)
                 if let axData = response.data {
                     let textContent = self.getTextFromAXElement(axData)
                     if Self.connectionIssueKeywords.contains(where: { keyword in textContent.localizedCaseInsensitiveContains(keyword) }) {
@@ -209,12 +209,12 @@ public class CursorInterventionEngine: ObservableObject {
             return false
         }
 
-        let focusResponse = await self.axorcist.handlePerformAction(for: nil, locator: nudgeLocator, actionName: AXActionNames.kAXRaiseAction, actionValue: nil, pathHint: nil, maxDepth: 10)
+        let focusResponse = await self.axorcist.handlePerformAction(for: nil, locator: nudgeLocator, actionName: AXActionNames.kAXRaiseAction, actionValue: nil, maxDepth: 10)
         if focusResponse.error != nil {
             self.logger.warning("PID \\(String(describing: pid)): Failed to focus chat input before nudge: \\(String(describing: focusResponse.error))")
         }
 
-        let setValueResponse = await self.axorcist.handlePerformAction(for: nil, locator: nudgeLocator, actionName: AXActionNames.kAXSetValueAction, actionValue: AnyCodable(" "), pathHint: nil, maxDepth: 10)
+        let setValueResponse = await self.axorcist.handlePerformAction(for: nil, locator: nudgeLocator, actionName: AXActionNames.kAXSetValueAction, actionValue: AnyCodable(" "), maxDepth: 10)
         if setValueResponse.error == nil {
             self.logger.info("PID \\(String(describing: pid)): Nudge successful (sent space to chat input) via engine.")
             self.sessionLogger.log(level: .info, message: "Nudge successful via engine.", pid: pid)
@@ -247,7 +247,7 @@ public class CursorInterventionEngine: ObservableObject {
         }
 
         self.logger.info("PID \\(String(describing: pid)): Found resume button locator. Attempting to press it.")
-        let pressResponse = await self.axorcist.handlePerformAction(for: nil, locator: resumeButtonLocator, actionName: AXActionNames.kAXPressAction, actionValue: nil, pathHint: nil, maxDepth: 10)
+        let pressResponse = await self.axorcist.handlePerformAction(for: nil, locator: resumeButtonLocator, actionName: AXActionNames.kAXPressAction, actionValue: nil, maxDepth: 10)
 
         if pressResponse.error == nil {
             self.logger.info("PID \\(String(describing: pid)): Successfully pressed resume button.")
@@ -273,7 +273,7 @@ public class CursorInterventionEngine: ObservableObject {
 
         // Try pressing "Force Stop/Resume" link first if available
         if let forceStopLocator = await self.locatorManager.getLocator(for: .forceStopResumeLink, pid: pid) {
-            let pressForceStopResponse = await self.axorcist.handlePerformAction(for: nil, locator: forceStopLocator, actionName: AXActionNames.kAXPressAction, actionValue: nil, pathHint: nil, maxDepth: 10)
+            let pressForceStopResponse = await self.axorcist.handlePerformAction(for: nil, locator: forceStopLocator, actionName: AXActionNames.kAXPressAction, actionValue: nil, maxDepth: 10)
             if pressForceStopResponse.error == nil {
                 self.logger.info("PID \\(String(describing: pid)): Pressed force stop/resume link.")
                 self.instanceStateManager.incrementAutomaticInterventions(for: pid)
@@ -289,7 +289,7 @@ public class CursorInterventionEngine: ObservableObject {
 
         // If "Force Stop/Resume" fails or not found, try "Stop Generating" button
         if let stopGeneratingLocator = await self.locatorManager.getLocator(for: .stopGeneratingButton, pid: pid) {
-            let pressStopGeneratingResponse = await self.axorcist.handlePerformAction(for: nil, locator: stopGeneratingLocator, actionName: AXActionNames.kAXPressAction, actionValue: nil, pathHint: nil, maxDepth: 10)
+            let pressStopGeneratingResponse = await self.axorcist.handlePerformAction(for: nil, locator: stopGeneratingLocator, actionName: AXActionNames.kAXPressAction, actionValue: nil, maxDepth: 10)
             if pressStopGeneratingResponse.error == nil {
                 self.logger.info("PID \\(String(describing: pid)): Pressed stop generating button.")
                 self.instanceStateManager.incrementAutomaticInterventions(for: pid)

@@ -20,7 +20,7 @@ struct ErrorMessagePopupHeuristic: AXElementHeuristic {
         let queryResponse1 = await axorcist.handleQuery(
             for: String(pid),
             locator: locator1,
-            pathHint: nil, maxDepth: nil, requestedAttributes: nil, outputFormat: nil
+            maxDepth: nil, requestedAttributes: nil, outputFormat: nil
         )
         if queryResponse1.data != nil { return locator1 }
         
@@ -32,7 +32,7 @@ struct ErrorMessagePopupHeuristic: AXElementHeuristic {
         let queryResponse2 = await axorcist.handleQuery(
             for: String(pid),
             locator: locator2,
-            pathHint: nil, maxDepth: nil, requestedAttributes: nil, outputFormat: nil
+            maxDepth: nil, requestedAttributes: nil, outputFormat: nil
         )
         if queryResponse2.data != nil { return locator2 }
 
@@ -44,7 +44,7 @@ struct ErrorMessagePopupHeuristic: AXElementHeuristic {
         let queryResponse3 = await axorcist.handleQuery(
             for: String(pid),
             locator: locator3,
-            pathHint: nil, maxDepth: nil, requestedAttributes: nil, outputFormat: nil
+            maxDepth: nil, requestedAttributes: nil, outputFormat: nil
         )
         if queryResponse3.data != nil { return locator3 }
 

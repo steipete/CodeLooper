@@ -17,7 +17,7 @@ struct SidebarActivityAreaHeuristic: AXElementHeuristic {
         let queryResponse1 = await axorcist.handleQuery(
             for: nil,
             locator: locator1,
-            pathHint: nil, maxDepth: nil, requestedAttributes: nil, outputFormat: nil
+            maxDepth: nil, requestedAttributes: nil, outputFormat: nil
         )
         if queryResponse1.data != nil { return locator1 }
 
@@ -28,7 +28,7 @@ struct SidebarActivityAreaHeuristic: AXElementHeuristic {
         let queryResponse2 = await axorcist.handleQuery(
             for: nil,
             locator: locator2,
-            pathHint: nil, maxDepth: nil, requestedAttributes: nil, outputFormat: nil
+            maxDepth: nil, requestedAttributes: nil, outputFormat: nil
         )
         if queryResponse2.data != nil { return locator2 }
 
@@ -40,7 +40,7 @@ struct SidebarActivityAreaHeuristic: AXElementHeuristic {
         let queryResponse3 = await axorcist.handleQuery(
             for: nil,
             locator: locator3,
-            pathHint: nil, maxDepth: nil, requestedAttributes: nil, outputFormat: nil
+            maxDepth: nil, requestedAttributes: nil, outputFormat: nil
         )
         if queryResponse3.data != nil { return locator3 }
 

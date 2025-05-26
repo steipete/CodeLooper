@@ -18,7 +18,7 @@ struct MainInputFieldHeuristic: AXElementHeuristic {
         let queryResponse1 = await axorcist.handleQuery(
             for: String(pid),
             locator: strategy1,
-            pathHint: nil, maxDepth: nil, requestedAttributes: nil, outputFormat: nil
+            maxDepth: nil, requestedAttributes: nil, outputFormat: nil
         )
         if queryResponse1.data != nil { return strategy1 }
         
@@ -30,7 +30,7 @@ struct MainInputFieldHeuristic: AXElementHeuristic {
         let queryResponse2 = await axorcist.handleQuery(
             for: String(pid),
             locator: strategy2,
-            pathHint: nil, maxDepth: nil, requestedAttributes: nil, outputFormat: nil
+            maxDepth: nil, requestedAttributes: nil, outputFormat: nil
         )
         if queryResponse2.data != nil { return strategy2 }
 
@@ -47,7 +47,7 @@ struct MainInputFieldHeuristic: AXElementHeuristic {
         let queryResponse3 = await axorcist.handleQuery(
             for: String(pid),
             locator: strategy3,
-            pathHint: nil, maxDepth: nil, requestedAttributes: nil, outputFormat: nil
+            maxDepth: nil, requestedAttributes: nil, outputFormat: nil
         )
         if queryResponse3.data != nil { return strategy3 }
         

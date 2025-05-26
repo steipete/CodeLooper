@@ -18,7 +18,6 @@ struct GeneratingIndicatorTextHeuristic: AXElementHeuristic {
         let queryResponse1 = await axorcist.handleQuery(
             for: nil,
             locator: locator1,
-            pathHint: nil,
             maxDepth: nil,
             requestedAttributes: nil,
             outputFormat: nil
@@ -34,7 +33,6 @@ struct GeneratingIndicatorTextHeuristic: AXElementHeuristic {
         let queryResponse2 = await axorcist.handleQuery(
             for: nil,
             locator: locator2,
-            pathHint: nil,
             maxDepth: nil,
             requestedAttributes: nil,
             outputFormat: nil
@@ -49,7 +47,6 @@ struct GeneratingIndicatorTextHeuristic: AXElementHeuristic {
         let queryResponse3 = await axorcist.handleQuery(
             for: nil,
             locator: locator3,
-            pathHint: nil,
             maxDepth: nil,
             requestedAttributes: nil,
             outputFormat: nil
