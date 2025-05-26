@@ -22,48 +22,48 @@ struct PermissionsView: View {
             }
             
             if !(compact && viewModel.hasPermissions) {
-                HStack(spacing: 12) {
-                    Image(systemName: viewModel.hasPermissions ? "checkmark.circle.fill" : "exclamationmark.triangle.fill")
-                        .foregroundColor(viewModel.hasPermissions ? .green : .orange)
-                        .font(.system(size: compact ? 16 : 20))
+            HStack(spacing: 12) {
+                Image(systemName: viewModel.hasPermissions ? "checkmark.circle.fill" : "exclamationmark.triangle.fill")
+                    .foregroundColor(viewModel.hasPermissions ? .green : .orange)
+                    .font(.system(size: compact ? 16 : 20))
+                
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(viewModel.hasPermissions ? "Permissions Granted" : "Permissions Required")
+                        .font(compact ? .callout : .body)
+                        .fontWeight(.medium)
                     
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text(viewModel.hasPermissions ? "Permissions Granted" : "Permissions Required")
-                            .font(compact ? .callout : .body)
-                            .fontWeight(.medium)
-                        
-                        if !compact {
-                            Text(viewModel.hasPermissions 
-                                ? "CodeLooper has the necessary accessibility permissions."
-                                : "CodeLooper needs accessibility permissions to monitor and assist with Cursor.")
-                                .font(.caption)
-                                .foregroundColor(.secondary)
-                        }
-                    }
-                    
-                    Spacer()
-                    
-                    if !viewModel.hasPermissions {
-                        Button(action: viewModel.requestPermissions) {
-                            Text("Grant Permissions")
-                                .font(compact ? .caption : .callout)
-                        }
-                        .buttonStyle(.borderedProminent)
+                    if !compact {
+                        Text(viewModel.hasPermissions 
+                            ? "CodeLooper has the necessary accessibility permissions."
+                            : "CodeLooper needs accessibility permissions to monitor and assist with Cursor.")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
                     }
                 }
-                .padding(compact ? 8 : 12)
-                .background(
-                    RoundedRectangle(cornerRadius: 8)
-                        .fill(viewModel.hasPermissions 
-                            ? Color.green.opacity(0.1) 
-                            : Color.orange.opacity(0.1))
-                )
-                .overlay(
-                    RoundedRectangle(cornerRadius: 8)
-                        .stroke(viewModel.hasPermissions 
-                            ? Color.green.opacity(0.3) 
-                            : Color.orange.opacity(0.3), lineWidth: 1)
-                )
+                
+                Spacer()
+                
+                if !viewModel.hasPermissions {
+                    Button(action: viewModel.requestPermissions) {
+                        Text("Grant Permissions")
+                            .font(compact ? .caption : .callout)
+                    }
+                    .buttonStyle(.borderedProminent)
+                }
+            }
+            .padding(compact ? 8 : 12)
+            .background(
+                RoundedRectangle(cornerRadius: 8)
+                    .fill(viewModel.hasPermissions 
+                        ? Color.green.opacity(0.1) 
+                        : Color.orange.opacity(0.1))
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 8)
+                    .stroke(viewModel.hasPermissions 
+                        ? Color.green.opacity(0.3) 
+                        : Color.orange.opacity(0.3), lineWidth: 1)
+            )
             }
         }
     }
