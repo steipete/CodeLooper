@@ -29,6 +29,8 @@ This is the **CodeLooper** project, a Swift macOS menu bar application that prov
 - macOS accessibility automation via AXorcist integration
 - Comprehensive logging and diagnostics system
 - SwiftUI-based settings interface with AppKit foundation
+- AXorcist is based on C-API that is synchronous and main-thread only. Therefore basically nothing in there should use async.
+- Refactor and improve code while you fix up things, don't go for the easy route, do it properly.
 
 ## Architecture
 
