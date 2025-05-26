@@ -82,7 +82,8 @@ struct AXInspectorLogView: View { // Renamed
                 .pickerStyle(.menu)
 
                 Button {
-                    Task { await axClearLogs(); logEntries = [] }
+                    axClearLogs()
+                    self.logEntries = []
                 } label: {
                     Image(systemName: "trash")
                 }
@@ -116,10 +117,8 @@ struct AXInspectorLogView: View { // Renamed
     
     @MainActor
     private func loadEntries() {
-        Task {
-            let currentEntries = await axGetLogEntries()
-            self.logEntries = currentEntries
-        }
+        let currentEntries = axGetLogEntries()
+        self.logEntries = currentEntries
     }
 }
 
@@ -128,7 +127,7 @@ struct AXInspectorLogView: View { // Renamed
 struct AXInspectorLogView_Previews: PreviewProvider { // Renamed
     static var previews: some View {
         Task {
-            await axClearLogs()
+            axClearLogs()
             axDebugLog("Debug message for preview", details: ["key": "value"])
             axInfoLog("Info message for preview")
             try? await Task.sleep(for: .milliseconds(10))

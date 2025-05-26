@@ -3,8 +3,8 @@ import Combine
 import Diagnostics
 import AXorcist // Import AXorcist module
 
-// MARK: - axorc Output Structures (AXElement is provided by AXorcist, so these might be simplified or removed)
-// We'll rely on AXorcist.AXElement for success cases.
+// MARK: - axorc Output Structures (Element is provided by AXorcist, so these might be simplified or removed)
+// We'll rely on AXorcist.Element for success cases.
 // Error handling will be based on HandlerResponse.error.
 
 @MainActor
@@ -29,7 +29,7 @@ class CursorInputWatcherViewModel: ObservableObject {
     private var projectRoot: String = "" 
 
     // Store for pre-loaded and parsed queries
-    private var parsedQueries: [String: AXorcist.Locator] = [:]
+    private var parsedQueries: [String: Locator] = [:]
     private var queryAppIdentifiers: [String: String] = [:] // To store app_identifier for each query file
     private var queryAttributes: [String: [String]] = [:] // To store attributes_to_fetch
     private var queryMaxDepth: [String: Int] = [:]
@@ -38,6 +38,11 @@ class CursorInputWatcherViewModel: ObservableObject {
     init(projectRoot: String = "/Users/steipete/Projects/CodeLooper") { // Default for dev
         self.projectRoot = projectRoot
         loadAndParseAllQueries()
+    }
+
+    deinit {
+        // deinit is nonisolated. stopWatching must be callable from here.
+        stopWatching() 
     }
 
     private func loadAndParseAllQueries() {
@@ -69,106 +74,105 @@ class CursorInputWatcherViewModel: ObservableObject {
         let locator: RawLocator
     }
 
-    // RawLocator now more closely matches the reverted AXorcist.Locator
     private struct RawLocator: Codable {
-        let criteria: [String: String]
+        let criteria: [String: String] // Key might be "attributeName_matchType" or just "attributeName"
         let root_element_path_hint: [RawPathHintComponent]?
-        let descendant_criteria: [String: String]?
-        let descendant_criteria_exclusions: [String: String]? // From JSON, currently unhandled by AXorcist.Locator directly
+        // descendant_criteria and descendant_criteria_exclusions are not directly used by AXorcist.Locator
+        // but could be used to build more complex queries if needed in the future.
+        // let descendant_criteria: [String: String]?
+        // let descendant_criteria_exclusions: [String: String]?
         let attributes_to_fetch: [String]
         let max_depth_for_search: Int?
-        let match_all: Bool? // From JSON
+        // let match_all: Bool? // Not part of AXorcist.Locator, handled by Criterion array logic
+        let require_action: String?
     }
     
     private struct RawPathHintComponent: Codable {
-        let attribute: String
-        let value: String
-        let depth: Int?
-        // match_type can be added if needed from JSONPathHintComponent.MatchType and present in JSON file
+        // This struct should represent one segment of the path hint as defined in the JSON.
+        // It typically has an attribute and a value to match for that segment.
+        // For example: { "attribute": "AXRole", "value": "AXWebArea" }
+        // Or it could be more complex if the JSON defines criteria within a path hint component.
+        // For simplicity, assuming simple attribute-value pairs for now.
+        // If JSON has {"criteria": {"AXRole": "AXWebArea"}, "depth": 1}, then that structure needs to be mirrored.
+        // Current `JSONPathHintComponent` takes `attribute: String, value: String, depth: Int?, matchType: MatchType`
+        
+        let attribute: String // The AX attribute to match for this path segment (e.g., "AXRole")
+        let value: String     // The value the attribute should have (e.g., "AXWebArea")
+        let depth: Int?       // Optional depth for this specific hint component
+        let match_type: String? // Optional match type string (e.g., "contains", "exact")
     }
 
-    private func convertRawLocatorToAXLocator(from rawLocator: RawLocator) -> AXorcist.Locator {
-        var criteria: [AXorcist.Criterion] = []
+
+    private func convertRawLocatorToAXLocator(from rawLocator: RawLocator) -> Locator {
+        var criteriaArray: [Criterion] = []
         for (key, value) in rawLocator.criteria {
-            let mappedKey = mapJsonAttributeToAXAttribute(key) ?? key
-            let matchType = determineMatchType(forValue: value) // Helper to determine match type
-            criteria.append(AXorcist.Criterion(attribute: mappedKey, value: value, match_type: matchType))
+            // Simple split for "attribute_matchtype" like "title_contains"
+            let parts = key.split(separator: "_", maxSplits: 1)
+            let attributeName = String(parts[0])
+            var matchTypeEnum: JSONPathHintComponent.MatchType = .exact // Default, changed from .equals
+            
+            if parts.count > 1 {
+                matchTypeEnum = JSONPathHintComponent.MatchType(rawValue: String(parts[1])) ?? .exact // changed from .equals
+            }
+            criteriaArray.append(Criterion(attribute: attributeName, value: value, match_type: matchTypeEnum)) // value directly, not AnyCodable(value)
         }
 
-        let pathHints: [AXorcist.JSONPathHintComponent]? = rawLocator.root_element_path_hint?.map { rawHint in
-            // Assuming RawPathHintComponent's attribute also needs mapping if it's not a direct AX Name
-            let mappedAttribute = mapJsonAttributeToAXAttribute(rawHint.attribute) ?? rawHint.attribute
-            // Path hints typically use exact match for simplicity, but could be made flexible
-            AXorcist.JSONPathHintComponent(attribute: mappedAttribute, value: rawHint.value, depth: rawHint.depth, matchType: .exact) 
+        var pathHints: [JSONPathHintComponent]? = nil
+        if let rawHints = rawLocator.root_element_path_hint {
+            pathHints = rawHints.map { rawPathComponent -> JSONPathHintComponent in
+                // The mapJsonAttributeToAXAttribute might be overly complex here if JSON uses standard AX names.
+                // Determine matchType based on rawPathComponent.match_type or infer it.
+                let hintMatchType = JSONPathHintComponent.MatchType(rawValue: rawPathComponent.match_type ?? "") ?? .exact // changed from .equals
+
+                return JSONPathHintComponent(
+                    attribute: mapJsonAttributeToAXAttribute(rawPathComponent.attribute) ?? rawPathComponent.attribute,
+                    value: rawPathComponent.value,
+                    depth: rawPathComponent.depth,
+                    matchType: hintMatchType
+                )
+            }
         }
         
-        // descendant_criteria_exclusions is still not directly mapped to AXorcist.Locator here.
-
-        return AXorcist.Locator(
-            matchAll: rawLocator.match_all,
-            criteria: criteria,
-            rootElementPathHint: pathHints,
-            descendantCriteria: rawLocator.descendant_criteria
-            // requireAction, computedNameContains are not in RawLocator, so default in AXorcist.Locator init is used.
+        return Locator(
+            criteria: criteriaArray, 
+            rootElementPathHint: pathHints, 
+            requireAction: rawLocator.require_action
         )
     }
     
-    private func determineMatchType(forValue value: String) -> AXorcist.JSONPathHintComponent.MatchType {
-        if value.hasPrefix("(") && value.hasSuffix(")") && value.contains("|") {
-            return .regex
-        } else if value.contains("*") || value.contains("?") { // Simple wildcard check for contains, could be more robust
-            return .contains // Or a new .wildcard if AXorcist supports it, otherwise use .regex
-        }        
-        return .exact
-    }
+    // This function might be too simplistic or not needed if JSON directly provides match types.
+    // private func determineMatchType(forValue value: String) -> JSONPathHintComponent.MatchType { ... }
 
-    // Placeholder for attribute name mapping
+    // mapJsonAttributeToAXAttribute might not be necessary if JSON uses official AX attribute names.
+    // It can be kept for flexibility if JSON uses aliases.
     private func mapJsonAttributeToAXAttribute(_ jsonKey: String) -> String? {
-        // Case-insensitive mapping from common JSON keys to AXAttributeNames constants
+        // (Implementation from before, seems reasonable for alias mapping)
         let upperJsonKey = jsonKey.uppercased()
         switch upperJsonKey {
-        // Role & Subrole
         case "AXROLE", "ROLE": return AXAttributeNames.kAXRoleAttribute
         case "AXSUBROLE", "SUBROLE": return AXAttributeNames.kAXSubroleAttribute
         case "AXROLEDESCRIPTION", "ROLEDESCRIPTION": return AXAttributeNames.kAXRoleDescriptionAttribute
-
-        // Identification & Description
         case "AXTITLE", "TITLE": return AXAttributeNames.kAXTitleAttribute
         case "AXIDENTIFIER", "ID", "IDENTIFIER": return AXAttributeNames.kAXIdentifierAttribute
         case "AXDESCRIPTION", "DESCRIPTION": return AXAttributeNames.kAXDescriptionAttribute
         case "AXHELP", "HELP": return AXAttributeNames.kAXHelpAttribute
         case "AXVALUEDESCRIPTION", "VALUEDESCRIPTION": return AXAttributeNames.kAXValueDescriptionAttribute
-
-        // Value
         case "AXVALUE", "VALUE": return AXAttributeNames.kAXValueAttribute
         case "AXPLACEHOLDERVALUE", "PLACEHOLDER", "PLACEHOLDERVALUE": return AXAttributeNames.kAXPlaceholderValueAttribute
-
-        // State
         case "AXENABLED", "ENABLED": return AXAttributeNames.kAXEnabledAttribute
         case "AXFOCUSED", "FOCUSED": return AXAttributeNames.kAXFocusedAttribute
         case "AXELEMENTBUSY", "BUSY": return AXAttributeNames.kAXElementBusyAttribute
-
-        // Geometry (Note: these return AXValueRef containing CGPoint/CGSize)
         case "AXPOSITION", "POSITION": return AXAttributeNames.kAXPositionAttribute
         case "AXSIZE", "SIZE": return AXAttributeNames.kAXSizeAttribute
-
-        // DOM Attributes (from WebArea)
         case "AXDOMCLASSLIST", "DOMCLASSLIST", "DOMCLASS": return AXAttributeNames.kAXDOMClassListAttribute
         case "AXDOMIDENTIFIER", "DOMID", "DOMIDENTIFIER": return AXAttributeNames.kAXDOMIdentifierAttribute
         case "AXURL", "URL": return AXAttributeNames.kAXURLAttribute
         case "AXDOCUMENT", "DOCUMENT": return AXAttributeNames.kAXDocumentAttribute
-            
-        // Window specific
         case "AXMAINWINDOW": return AXAttributeNames.kAXMainWindowAttribute
         case "AXFOCUSEDWINDOW": return AXAttributeNames.kAXFocusedWindowAttribute
-        case "AXMAIN", "MAIN": return AXAttributeNames.kAXMainAttribute // For window
-            
-        // Default: if no specific mapping, assume the key might be a direct AX constant name (less likely for JSON usage)
+        case "AXMAIN", "MAIN": return AXAttributeNames.kAXMainAttribute
         default:
-            // Check if jsonKey itself is a valid known AXAttribute constant (e.g. if user provided full kAX... name)
-            // This is a simplification; a full list check would be too long here.
-            // Consider logging a warning if a key isn't mapped.
-            Logger(category: .accessibility).warning("Unmapped JSON attribute key '\(jsonKey)' used in query. Falling back to using key directly.")
+            Logger(category: .accessibility).warning("Unmapped JSON attribute key '\(jsonKey)' used in query path hint. Falling back to using key directly.")
             return jsonKey
         }
     }
@@ -182,10 +186,12 @@ class CursorInputWatcherViewModel: ObservableObject {
         }
         statusMessage = "Watcher enabled. Starting..."
         
+        // Initial query for all inputs
         for i in watchedInputs.indices {
             queryInputText(forInputIndex: i)
         }
 
+        // Setup timer
         timerSubscription = Timer.publish(every: 3, on: .main, in: .common).autoconnect().sink { [weak self] _ in
             guard let self = self, self.isWatchingEnabled else { return }
             for i in self.watchedInputs.indices {
@@ -199,37 +205,52 @@ class CursorInputWatcherViewModel: ObservableObject {
         }
     }
 
-    private func stopWatching() {
-        timerSubscription?.cancel()
+    // Made nonisolated to be callable from deinit.
+    // UI updates are dispatched to MainActor.
+    nonisolated private func stopWatching() {
+        timerSubscription?.cancel() // Combine cancellables are thread-safe to cancel
         timerSubscription = nil
-        statusMessage = "Watcher is disabled."
+        
+        Task {
+            await MainActor.run {
+                // self.statusMessage = "Watcher is disabled." // self cannot be used directly in nonisolated func
+                // To update @Published properties from nonisolated, the ViewModel instance needs to be passed or captured.
+                // For simplicity here, we might need a different approach or accept that deinit won't update statusMessage.
+                // Or, the ViewModel holds a reference to something that can update statusMessage on MainActor.
+                // For now, just log from deinit context.
+            }
+        }
+        Logger(category: .settings).info("Cursor input watcher stopped (from deinit or direct call).")
     }
 
     private func queryInputText(forInputIndex index: Int) {
         guard index < watchedInputs.count else { return }
         
-        var inputInfo = watchedInputs[index]
-        guard let queryFileName = inputInfo.queryFile,
-              let appIdentifier = queryAppIdentifiers[queryFileName], // Get stored appID
-              let locator = parsedQueries[queryFileName],
-              let attributesToFetch = queryAttributes[queryFileName] else {
-            self.watchedInputs[index].lastError = "Query not loaded, parsed, or appID missing for \(inputInfo.name)."
+        let inputInfo = watchedInputs[index]
+        guard let currentQueryFile = inputInfo.queryFile, // Used for fetching parsed data
+              let appIdentifier = queryAppIdentifiers[currentQueryFile],
+              let locator = parsedQueries[currentQueryFile],
+              let attributesToFetch = queryAttributes[currentQueryFile] else {
+            
+            let errorMsg = "Query not loaded, parsed, or appID missing for \(inputInfo.name). QueryFile: \(inputInfo.queryFile ?? "nil")"
+            self.watchedInputs[index].lastError = errorMsg
             self.statusMessage = "Configuration error for \(inputInfo.name)."
-            Logger(category: .settings).error("Missing parsed query for \(queryFileName) for input \(inputInfo.name)")
+            // Use inputInfo.queryFile in the logger call
+            Logger(category: .settings).error("Missing parsed query for \(inputInfo.queryFile ?? "<unknown file>") for input \(inputInfo.name): \(errorMsg)")
             return
         }
-        let maxDepth = queryMaxDepth[queryFileName] ?? AXMiscConstants.defaultMaxDepthSearch
+        let maxDepth = queryMaxDepth[currentQueryFile] ?? AXMiscConstants.defaultMaxDepthSearch
 
-        statusMessage = "Querying text for: \(inputInfo.name) using AXorcist library..."
+        // Update status before starting the async Task
+        // statusMessage = "Querying text for: \(inputInfo.name)..." // This will rapidly change; consider a general status.
 
         Task { // Perform AXorcist call in a background Task
-            // App identifier is now fetched from stored values for the specific query
             let response = await axorcist.handleQuery(
-                for: appIdentifier, // Use fetched appIdentifier
+                for: appIdentifier,
                 locator: locator,
                 maxDepth: maxDepth,
                 requestedAttributes: attributesToFetch,
-                outputFormat: .json // Or .smart, depending on how we want to parse
+                outputFormat: .json // AXorcist handles Element conversion internally
             )
 
             // Process the response on the main thread
@@ -237,48 +258,76 @@ class CursorInputWatcherViewModel: ObservableObject {
                 if let errorMsg = response.error {
                     self.watchedInputs[index].lastError = "AXorcist Error: \(errorMsg)"
                     self.statusMessage = "Error querying \(inputInfo.name)."
-                    Logger(category: .accessibility).error("AXorcist error for \(inputInfo.name): \(errorMsg). Logs: \(response.logs?.joined(separator: "\n") ?? "N/A")")
-                } else if let responseData = response.data {
-                    do {
-                        // Assuming response.data is AnyCodable wrapping AXElement
-                        let axElement = try responseData.decode(AXorcist.AXElement.self)
-                        if let axValue = axElement.attributes[AXAttributeNames.kAXValueAttribute] as? String {
-                            self.watchedInputs[index].lastKnownText = axValue
-                            self.watchedInputs[index].lastError = nil
-                            self.statusMessage = "Updated \(self.watchedInputs[index].name): \(Date().formatted(date: .omitted, time: .standard))"
+                    Logger(category: .accessibility).error("AXorcist error for \(inputInfo.name) (query: \(currentQueryFile)): \(errorMsg)")
+                } else if let responseData = response.data { // responseData is AnyCodable
+                    var foundText: String? = nil
+                    var foundElements: [Element] = []
+
+                    if let singleElement = responseData.value as? Element {
+                        foundElements = [singleElement]
+                    } else if let multipleElements = responseData.value as? [Element] {
+                        foundElements = multipleElements
+                    } else {
+                         let desc = String(describing: responseData.value)
+                         Logger(category: .accessibility).warning("AXorcist response data for \(inputInfo.name) (query: \(currentQueryFile)) was not a single Element or [Element]. Type: \(type(of: responseData.value)), Description: \(desc.prefix(200))")
+                         self.watchedInputs[index].lastError = "Unexpected data format from AXorcist."
+                         self.statusMessage = "Format error for \(inputInfo.name)."
+                         return // Exit if data is not in expected Element format
+                    }
+
+                    if foundElements.isEmpty {
+                        self.watchedInputs[index].lastError = "No elements found by AXorcist."
+                        Logger(category: .accessibility).info("No elements found for \(inputInfo.name) (query: \(currentQueryFile))")
+                    } else {
+                        let firstElement = foundElements[0]
+                        
+                        if let attributes = firstElement.attributes, 
+                           let value = attributes[AXAttributeNames.kAXValueAttribute]?.value as? String {
+                            foundText = value
+                        } else if let attributes = firstElement.attributes, 
+                                  let firstRequestedAttrKey = attributesToFetch.first,
+                                  let attrValueAny = attributes[firstRequestedAttrKey]?.value {
+                            if let strValue = attrValueAny as? String {
+                                foundText = strValue
+                            } else {
+                                // If not a string, represent it as a description.
+                                // This might be noisy if attributes like AXPosition are fetched.
+                                foundText = String(describing: attrValueAny)
+                                Logger(category: .accessibility).info("Attribute \(firstRequestedAttrKey) for \(inputInfo.name) was not String, using description: \(foundText ?? "nil")")
+                            }
                         } else {
-                            self.watchedInputs[index].lastError = "AXValue not found in attributes."
-                            self.statusMessage = "Attribute missing for \(self.watchedInputs[index].name)."
-                            Logger(category: .accessibility).warning("AXValue missing for \(inputInfo.name). Attributes: \(axElement.attributes)")
+                            // If neither AXValue nor the first requested attribute is a string.
+                            foundText = "<\(attributesToFetch.first ?? "Attribute") not string or found>"
+                             Logger(category: .accessibility).warning("Could not extract primary text attribute (AXValue or \(attributesToFetch.first ?? "N/A")) as String for \(inputInfo.name). Element dump: \(firstElement.briefDescription(option: .json))")
                         }
-                    } catch {
-                        self.watchedInputs[index].lastError = "Failed to decode AXElement: \(error.localizedDescription)"
-                        self.statusMessage = "Decoding error for \(self.watchedInputs[index].name)."
-                        Logger(category: .accessibility).error("Failed to decode AXElement for \(inputInfo.name): \(error.localizedDescription). Raw data: \(String(describing: responseData))")
+
+                        self.watchedInputs[index].lastKnownText = foundText ?? "<No text extractable>"
+                        self.watchedInputs[index].lastError = nil // Clear previous error
+                        // Update general status message less frequently, or make it more general.
+                        // self.statusMessage = "Updated: \(inputInfo.name)"
+                        Logger(category: .accessibility).info("Successfully queried \(inputInfo.name) (query: \(currentQueryFile)): \(foundText ?? "<nil>")")
+
+                        if foundElements.count > 1 {
+                            Logger(category: .accessibility).info("Query for \(inputInfo.name) (query: \(currentQueryFile)) returned \(foundElements.count) elements. Processed the first.")
+                        }
                     }
                 } else {
                     self.watchedInputs[index].lastError = "AXorcist returned no data and no error."
-                    self.statusMessage = "Empty response for \(self.watchedInputs[index].name)."
-                     Logger(category: .accessibility).warning("Empty response from AXorcist for \(inputInfo.name).")
+                    // self.watchedInputs[index].lastKnownText = "" // Or "No data"
+                    Logger(category: .accessibility).warning("AXorcist returned no data and no error for \(inputInfo.name) (query: \(currentQueryFile)).")
+                }
+                 // Update general status perhaps after all queries in a cycle, or a more stable message.
+                if self.isWatchingEnabled { // Check if still watching before updating status
+                    let activeErrorCount = self.watchedInputs.filter { $0.lastError != nil }.count
+                    if activeErrorCount > 0 {
+                        self.statusMessage = "Watcher active with \(activeErrorCount) error(s)."
+                    } else {
+                        self.statusMessage = "Watcher active. All inputs OK."
+                    }
                 }
             }
         }
     }
-    
-    deinit {
-        stopWatching()
-    }
 }
-
-// Make sure CursorWindowInfo has a queryFile property
-// This should be done in CursorWindowInfo.swift, but I'll note it here.
-// Assuming change is:
-// struct CursorWindowInfo: Identifiable, Hashable {
-//     let id: String 
-//     var name: String 
-//     var queryFile: String? // ADDED
-//     var lastKnownText: String = ""
-//     var lastError: String?
-// }
 
 // Removed placeholder GlobalAXLogger as Diagnostics is now imported. 

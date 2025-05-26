@@ -39,7 +39,7 @@ struct CursorInputWatcherView: View {
                     .padding(.vertical, 4)
                 }
             }
-            .listStyle(InsetGroupedListStyle()) // Or PlainListStyle()
+            .listStyle(PlainListStyle())
 
             Spacer()
         }
