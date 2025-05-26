@@ -14,8 +14,7 @@ This file provides guidance to AI assistants when working with code in this repo
 (This requires that the mcp is correctly set up)
 - Whenever you want to ask something to the user, ask Claude Code first instead.
 - Use AppleScript to find the bundle identifier for an app name
-- To run any terminal command, use `osascript .cursor/scripts/terminator.scpt`.
-  Call it without arguments to understand syntax.
+- Use `jq` to analyze large json files.
 
 - When I say "regenerate" then use `./scripts/generate-xcproj.sh` to regen the xcodeproj and use `xcodebuild` to test that it builds.
 - "fix build" means using `xcodebuild` with `CodeLooper.xcodeproj`. When you added/removed/changed files, regenerate first.
@@ -109,7 +108,6 @@ If you encounter build errors related to `TuistPlists+CodeLooper.swift` or Senda
 
 ### SwiftLint Configuration (CRITICAL)
 - **Explicit `self.` References**: The `redundant_self` rule is **disabled** to preserve explicit `self.` references required for Swift 6 concurrency compliance
-- **Current Status**: 84 warnings, 0 errors (down from 146 violations)
 - **Never remove** `self.` references in closures - they're required for capture semantics
 
 ### Swift 6 Concurrency Compliance

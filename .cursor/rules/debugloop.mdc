@@ -124,3 +124,161 @@ Based on these findings, a targeted query successfully retrieved the element's d
 
 This iterative process of refining queries, dealing with tool execution, and especially using broad, verbose dumps for offline analysis was key to successfully identifying and targeting the desired UI element. The `debugLogging: true` feature of `axorc` combined with output redirection is invaluable for complex UI hierarchies.
 
+## Post-Discovery: Reading AXValue and Intermittent Issues
+
+After successfully identifying the element and its `AXPath`, the next goal was to reliably read its `AXValue`.
+
+1.  **Initial `AXValue` Success**: The query shown in "Final Successful Query" did initially return the `AXValue` (e.g., "Hi this is the text I wanted to see") along with `AXPosition`, `AXSize`, etc.
+
+2.  **Intermittent Failures**: Subsequent attempts to run the exact same query, or even slightly modified versions (e.g., fetching only `AXPath` or querying for any `AXTextArea`), started failing with "Element not found matching criteria." This indicated a potential timing or state-dependency issue with the accessibility tree or `axorc`'s interaction with it.
+
+3.  **Dump File Limitations**: Attempts to dump the UI tree to a file (e.g., `axorc_rootview_dump.json`) for offline parsing revealed a limitation: `axorc`, when redirecting output (`>`), serializes the *first found matching element* based on the primary `locator.criteria` but does *not* recursively serialize its children into a nested JSON structure within that output file. The `fetch_children_attributes: "all"` and `max_depth` settings seemed to affect internal traversal for finding the element, not the structure of the single-element JSON output to a file.
+    *   This was confirmed by querying for a generic `AXGroup`, redirecting to `axorc_generic_group_dump.json`, and observing that only the `AXGroup` itself was in the file, not its detailed children, despite `fetch_children_attributes: "all"`.
+
+4.  **Final Successful `AXValue` Retrieval**: The breakthrough for consistently (or at least, successfully again) retrieving the `AXValue` came from:
+    *   Reverting to the known successful query criteria (targeting `AXTextArea` with `AXDOMClassList` containing `"aislash-editor-input"`).
+    *   Requesting `AXValue` and other key attributes.
+    *   Setting `max_depth` to a high value (`30`).
+    *   **Crucially, ensuring the output went to `stdout` and was not redirected to a file.**
+
+    The successful query was:
+    ```json
+    {
+      "command_id": "cursor-input-find-aislash-textarea-retry-002",
+      "command": "query",
+      "application": "com.todesktop.230313mzl4w4u92",
+      "locator": {
+        "criteria": [
+          {
+            "attribute": "AXRole",
+            "value": "AXTextArea"
+          },
+          {
+            "attribute": "AXDOMClassList",
+            "value": "aislash-editor-input",
+            "match_type": "contains"
+          }
+        ]
+      },
+      "attributes_to_fetch": [
+        "AXValue",
+        "AXPosition",
+        "AXSize",
+        "AXRole",
+        "AXRoleDescription",
+        "AXIdentifier",
+        "AXDOMClassList",
+        "AXPath"
+      ],
+      "fetch_children_attributes": "none",
+      "max_depth": 30, 
+      "debugLogging": true
+    }
+    ```
+    This yielded:
+    *   `AXValue`: `"Hi this is the text I wanted to see"`
+
+This suggests that for complex or potentially unstable accessibility trees, direct queries to `stdout` with a sufficient `max_depth` might be more reliable for fetching attributes from deeply nested elements than relying on file-based tree dumps if `axorc`'s file output behavior for children is limited.
+
+## Further Investigation into AXValue Flakiness (Attempt with Logging)
+
+To understand why `AXValue` retrieval was intermittent, an attempt was made to add logging directly into `AXorcist/Sources/AXorcist/Values/ValueUnwrapper.swift`, specifically in the `unwrapAXValue` method. The goal was to log the `AXValueType` being processed, especially when fetching the `AXValue` attribute.
+
+1.  **Logging Added**: Debug logs were added to print the `AXValueType` (and its raw value) and the result of `axVal.value()` call.
+2.  **Build**: `axorc` was rebuilt with these changes.
+3.  **Test Query**: The query to fetch `AXValue`, `AXRole`, and `AXDOMClassList` for the target `AXTextArea` (ID: `cursor-input-find-aislash-textarea-debug-type-001`) was run.
+
+### Outcome of Logging Attempt:
+
+Surprisingly, the query **succeeded** on this attempt, returning the `AXValue` correctly (e.g., "This is some text in the Cursor input field.").
+
+The extensive debug logs produced by `axorc` were too long for the terminal output capture to reliably show the newly added log lines from `ValueUnwrapper.swift`. This means we couldn't definitively see the `AXValueType` that was processed in this successful run through the captured output.
+
+### Implications:
+
+*   The success on this run further highlights the **intermittent nature** of the issue. The same query that failed multiple times before, and immediately prior to this, succeeded after adding logging and rebuilding.
+*   The inability to see the specific log lines in the truncated output means we still lack concrete data on what `AXValueType` is encountered when `AXValue` *is* successfully read as a string, or more importantly, when it fails.
+*   The problem likely still resides in how `AXValue.value()` (in `AXValue+Extensions.swift`) handles or *fails to handle* certain `AXValueType`s that might represent strings, or there's an inconsistency in whether the `AXValue` attribute returns a direct `CFStringRef` vs. an `AXValueRef` that wraps the string.
+
+Further debugging would require a more reliable way to capture these detailed logs (e.g., file-based logging within AXorcist) when a failure occurs to make a targeted fix to `AXValue+Extensions.swift`.
+
+## Enhanced Logging and Stability
+
+To further diagnose the intermittent "Element not found" errors, extensive logging was added to key parts of `AXorcist`:
+
+1.  **`AXorcist/Sources/AXorcist/Search/PathNavigator.swift`**:
+    *   Detailed logging in `elementMatchesAllCriteria` to show which element is being checked against which criteria and the outcome.
+    *   Logging in `findMatchingChild` to trace child iteration and matching.
+    *   Logging in `processPathComponent` to show how each part of a path hint is processed.
+2.  **`AXorcist/Sources/AXorcist/Search/ElementSearch.swift`**:
+    *   Logging at the start of `findTargetElement` showing all input parameters (app ID, locator details, max depth).
+    *   Logging upon successfully finding an element or when it's not found.
+    *   Logging for `JSONPathHint` navigation steps.
+3.  **`AXorcist/Sources/AXorcist/Utils/TreeTraversal.swift`**:
+    *   Logging in `TreeTraverser._traverse` for each element visited, depth, and when pruning branches due to max depth or cycles.
+    *   Logging before and after calling the `visitor.visit` method, showing the action returned.
+    *   Logging in `SearchVisitor.visit` and `CollectAllVisitor.visit` for elements being processed.
+
+### Build Process with Enhanced Logging:
+After adding these log statements, `axorc` was rebuilt using `swift package clean && swift build --product axorc` in the `AXorcist` directory. Several iterations were needed to fix syntax errors in the new log statements, primarily related to string interpolations and escaping.
+
+### Test Runs with Enhanced Logging:
+The same query that was previously intermittent was used:
+
+```json
+{
+  "command_id": "cursor-input-find-aislash-textarea-final-test-001",
+  "command": "query",
+  "application": "com.todesktop.230313mzl4w4u92",
+  "locator": {
+    "criteria": [
+      {
+        "attribute": "AXRole",
+        "value": "AXTextArea"
+      },
+      {
+        "attribute": "AXDOMClassList",
+        "value": "aislash-editor-input",
+        "match_type": "contains"
+      }
+    ]
+  },
+  "attributes_to_fetch": [
+    "AXValue",
+    "AXPosition",
+    "AXSize",
+    "AXRole",
+    "AXRoleDescription",
+    "AXIdentifier",
+    "AXDOMClassList",
+    "AXPath"
+  ],
+  "fetch_children_attributes": "none",
+  "max_depth": 30,
+  "debugLogging": true // Kept true to see axorc's internal logs alongside new GlobalAXLogger logs
+}
+```
+
+**Outcome:**
+With the enhanced logging in place, `axorc` **successfully found the target element and its `AXValue` on multiple consecutive runs (at least 4 times)**. The output included a large volume of logs from `GlobalAXLogger`, alongside the `axorc` `debugLogs` and the final JSON result.
+
+For example, one successful run returned:
+```json
+{
+  // ... extensive logs ...
+  "attributes": {
+    // ... other attributes ...
+    "AXValue": "booooo secreet pssst!", // Example text
+    // ... other attributes ...
+  },
+  "success": true
+}
+```
+
+### Conclusion from Enhanced Logging:
+The addition of detailed, fine-grained logging throughout the element search and traversal process appears to have coincided with a period of stability in `axorc`'s ability to find the target element. While it's difficult to definitively state that the logging *caused* the stability (it could be a coincidence, or the act of rebuilding/restarting might have cleared a transient issue), the consistent success after these changes is notable.
+
+The logs themselves, though voluminous, would be invaluable for pinpointing the exact step where a failure occurs if the intermittent issues return. The current hypothesis is that the traversal logic, especially around child fetching or criteria matching, might have been sensitive to timing or unhandled states that the logging, by slightly altering execution flow or by making the process more observable, has mitigated or helped bypass.
+
+The problem of `AXValue` itself being intermittently unreadable (as distinct from the element not being found) was not specifically re-tested with a focus on the `ValueUnwrapper` logs in this latest round, as the element finding stability became the primary focus. However, with the element now being found reliably, future tests can re-focus on `AXValue` if it becomes problematic again.
+
