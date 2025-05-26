@@ -130,7 +130,7 @@ struct AttributeRowView: View {
             }
             .padding(.leading)
             .task(id: node.id.uuidString + attributeKey) { 
-                let info = await viewModel.fetchAttributeUIDisplayInfo(for: node, attributeKey: attributeKey, attributeValue: attributeValue)
+                let info = viewModel.fetchAttributeUIDisplayInfo(for: node, attributeKey: attributeKey, attributeValue: attributeValue)
                 if attributeKey == self.attributeKey && node.id == self.node.id { 
                     self.attributeUIDisplayString = info.displayString
                     // self.attributeUIType = info.valueType // valueType was removed from AttributeDisplayInfo

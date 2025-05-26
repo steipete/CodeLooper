@@ -25,19 +25,49 @@ extension AXpectorViewModel {
                     axInfoLog("App activated: \(activatedApp.localizedName ?? "unknown") with PID \(activatedApp.processIdentifier). AXpector will update focus tracking.") // CHANGED
                     
                     let pidToObserve = self.selectedApplicationPID ?? activatedApp.processIdentifier
-                    // The axorcist.startFocusTracking is async, so it's fine here.
-                    _ = self.axorcist.startFocusTracking(for: pidToObserve, callback: self.handleFocusNotificationFromAXorcist)
+                    // Create ObserveCommand for focus tracking
+                    let observeCommand = ObserveCommand(
+                        appIdentifier: String(pidToObserve),
+                        locator: nil,
+                        notifications: [AXNotificationName.focusedUIElementChanged.rawValue],
+                        includeDetails: true,
+                        watchChildren: false,
+                        notificationName: .focusedUIElementChanged,
+                        includeElementDetails: nil,
+                        maxDepthForSearch: 10
+                    )
+                    _ = self.axorcist.handleObserve(command: observeCommand)
                 }
             }
         }
 
         Task {
             if let pid = selectedApplicationPID {
-                // AXorcist.startFocusTracking uses ax...Log internally
-                _ = axorcist.startFocusTracking(for: pid, callback: self.handleFocusNotificationFromAXorcist)
+                // Create ObserveCommand for focus tracking
+                let observeCommand = ObserveCommand(
+                    appIdentifier: String(pid),
+                    locator: nil,
+                    notifications: [AXNotificationName.focusedUIElementChanged.rawValue],
+                    includeDetails: true,
+                    watchChildren: false,
+                    notificationName: .focusedUIElementChanged,
+                    includeElementDetails: nil,
+                    maxDepthForSearch: 10
+                )
+                _ = axorcist.handleObserve(command: observeCommand)
             } else if let frontmostApp = NSWorkspace.shared.frontmostApplication {
-                // AXorcist.startFocusTracking uses ax...Log internally
-                _ = axorcist.startFocusTracking(for: frontmostApp.processIdentifier, callback: self.handleFocusNotificationFromAXorcist)
+                // Create ObserveCommand for focus tracking
+                let observeCommand = ObserveCommand(
+                    appIdentifier: String(frontmostApp.processIdentifier),
+                    locator: nil,
+                    notifications: [AXNotificationName.focusedUIElementChanged.rawValue],
+                    includeDetails: true,
+                    watchChildren: false,
+                    notificationName: .focusedUIElementChanged,
+                    includeElementDetails: nil,
+                    maxDepthForSearch: 10
+                )
+                _ = axorcist.handleObserve(command: observeCommand)
             } else {
                 axWarningLog("Focus Tracking: No application selected and no frontmost application found to observe.") // CHANGED
             }
@@ -47,8 +77,8 @@ extension AXpectorViewModel {
     internal func stopFocusTrackingMonitoring() {
         axInfoLog("AXpectorViewModel: Requesting to stop focus tracking monitoring.") // CHANGED
         Task {
-            // AXorcist.stopFocusTracking uses ax...Log internally
-            axorcist.stopFocusTracking()
+            // Comment out stopFocusTracking as there's no clear corresponding stopObservation command
+            // axorcist.stopFocusTracking()
         }
     }
 

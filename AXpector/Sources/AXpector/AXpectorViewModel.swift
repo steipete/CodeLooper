@@ -7,6 +7,7 @@ import Defaults
 // Define the key locally if not accessible from main app target's DefaultsKeys
 extension Defaults.Keys {
     static let verboseLogging_axpector = Key<Bool>("verboseLogging", default: false)
+    static let selectTreeOnFocusChange = Key<Bool>("selectTreeOnFocusChange", default: true)
 }
 
 enum AXpectorMode: String, CaseIterable, Identifiable {
@@ -47,12 +48,12 @@ class AXpectorViewModel: ObservableObject {
         didSet {
             if oldValue != selectedApplicationPID {
                 if isHoverModeActive {
-                    stopHoverMonitoring() // This will be in an extension
+                    self.stopHoverMonitoring()
                     isHoverModeActive = false
                 }
                 if isFocusTrackingModeActive {
-                    stopFocusTrackingMonitoring() // Assume this exists or will be added
-                    startFocusTrackingMonitoring() // Assume this exists or will be added
+                    self.stopFocusTrackingMonitoring()
+                    self.startFocusTrackingMonitoring()
                 }
                 if selectedApplicationPID == nil {
                     highlightWindowController.hideHighlight()
@@ -84,6 +85,7 @@ class AXpectorViewModel: ObservableObject {
     }
     @Published var isLoadingTree: Bool = false
     @Published var treeLoadingError: String? = nil
+    @Published var scrollToSelectedNode: AXPropertyNode.ID? = nil
 
     // Interaction States
     @Published var actionStatusMessage: String? = nil
@@ -96,7 +98,6 @@ class AXpectorViewModel: ObservableObject {
     
     internal struct AttributeDisplayInfo {
         let displayString: String
-        let valueType: AXAttributeValueType
         let isSettable: Bool
         let settableDisplayString: String
         let navigatableElementRef: AXUIElement?
@@ -121,16 +122,16 @@ class AXpectorViewModel: ObservableObject {
         didSet {
             if isHoverModeActive {
                 if isFocusTrackingModeActive {
-                    stopFocusTrackingMonitoring() // Assumed to exist
+                    self.stopFocusTrackingMonitoring()
                     focusedElementInfo = "Enable focus tracking mode."
                     temporarilySelectedNodeIDByFocus = nil
                     isFocusTrackingModeActive = false
                 }
-                startHoverMonitoring() // This will be in an extension
+                self.startHoverMonitoring()
                 hoveredElementInfo = "Hover over an element...\nTree selection disabled."
                 temporarilySelectedNodeIDByHover = nil
             } else {
-                stopHoverMonitoring() // This will be in an extension
+                self.stopHoverMonitoring()
                 hoveredElementInfo = "Enable hover mode to inspect elements with mouse."
                 temporarilySelectedNodeIDByHover = nil
                 if !isFocusTrackingModeActive {
@@ -150,11 +151,11 @@ class AXpectorViewModel: ObservableObject {
                 if isHoverModeActive {
                     isHoverModeActive = false // This will trigger its didSet to stop hover
                 }
-                startFocusTrackingMonitoring() // Assumed to exist
+                self.startFocusTrackingMonitoring()
                 focusedElementInfo = "Tracking focused element..."
                 temporarilySelectedNodeIDByFocus = nil
             } else {
-                stopFocusTrackingMonitoring() // Assumed to exist
+                self.stopFocusTrackingMonitoring()
                 focusedElementInfo = "Enable focus tracking mode."
                 temporarilySelectedNodeIDByFocus = nil
                 if !isHoverModeActive {
@@ -216,8 +217,8 @@ class AXpectorViewModel: ObservableObject {
         
         Task { @MainActor [weak self] in
             guard let self = self else { return }
-            self.stopHoverMonitoring() // This will be in an extension
-            self.stopFocusTrackingMonitoring() // Assumed to exist
+            self.stopHoverMonitoring()
+            self.stopFocusTrackingMonitoring()
         }
     }
 
@@ -254,20 +255,27 @@ class AXpectorViewModel: ObservableObject {
             let pathHintsForLocator = axConvertStringPathHintsToComponentArray(targetNode.fullPathArrayForLocator)
             let locator = Locator(criteria: criteriaForLocator, rootElementPathHint: pathHintsForLocator)
             
-            await GlobalAXLogger.shared.updateOperationDetails(commandID: "performAction_\\(actionName)", appName: appIdentifier)
-            let response = await axorcist.handlePerformAction(for: appIdentifier, locator: locator, actionName: actionName)
+            axInfoLog("Performing action: \(actionName) on \(targetNode.displayName)", details: ["commandID": AnyCodable("performAction_\(actionName)"), "appName": AnyCodable(appIdentifier)])
+            let performActionCommand = PerformActionCommand(
+                appIdentifier: appIdentifier,
+                locator: locator,
+                action: actionName,
+                value: nil,
+                maxDepthForSearch: AXMiscConstants.defaultMaxDepthSearch
+            )
+            let response = axorcist.handlePerformAction(command: performActionCommand)
             if Defaults[.verboseLogging_axpector] {
-                let collectedLogs = await axGetLogEntries()
+                let collectedLogs = axGetLogEntries()
                 for logEntry in collectedLogs { 
-                    axDebugLog("AXorcist (PerformAction) Log: \\(logEntry.message) [L:\\(logEntry.level.rawValue) T:\\(logEntry.timestamp)]", details: logEntry.details)
+                    axDebugLog("AXorcist (PerformAction) Log: \(logEntry.message) [L:\(logEntry.level.rawValue) T:\(logEntry.timestamp)]", details: logEntry.details)
                 }
-                await axClearLogs()
+                axClearLogs()
             }
-            if response.error == nil, let responseData = response.data?.value as? PerformResponse, responseData.success {
-                self.actionStatusMessage = "Action \\\"\\(actionName)\\\" successful."
+            if response.error == nil, let responseData = response.payload?.value as? PerformResponse, responseData.success {
+                self.actionStatusMessage = "Action \"\(actionName)\" successful."
                 axInfoLog("Successfully performed action \"\(actionName)\" on node \(targetNode.displayName).")
             } else {
-                let errorMessage = response.error ?? "Failed to perform action \"\(actionName)\""
+                let errorMessage = response.error?.message ?? "Failed to perform action \"\(actionName)\""
                 self.actionStatusMessage = "Failed to perform action \"\(actionName)\": \(errorMessage)"
                 axErrorLog("Failed to perform action \"\(actionName)\" on node \(targetNode.displayName). Error: \(errorMessage)")
             }
@@ -315,7 +323,7 @@ class AXpectorViewModel: ObservableObject {
     }
 
     private func performTreeFetchAndProcess(appName: String, pid: Int32, commandID: String) async {
-        await GlobalAXLogger.shared.updateOperationDetails(commandID: commandID, appName: appName)
+        axInfoLog("Performing tree fetch: \(appName)", details: ["commandID": AnyCodable(commandID), "appName": AnyCodable(appName)])
         
         let appElementAXUI = AXUIElementCreateApplication(pid)
         let rootElement = Element(appElementAXUI)
@@ -366,7 +374,7 @@ class AXpectorViewModel: ObservableObject {
         }
         
         self.applyFilter() // This should also be on MainActor if it modifies @Published properties
-        await GlobalAXLogger.shared.updateOperationDetails(commandID: nil, appName: nil) // Log ending on main actor too
+        axInfoLog("Finished tree UI update for: \(appName)")
     }
 
     enum AXpectorError: Error, LocalizedError {
@@ -383,15 +391,19 @@ class AXpectorViewModel: ObservableObject {
         guard let pid = selectedApplicationPID else { return }
         
         // axorcist.getElementAtPoint returns (element: AXElement?, error: String?)
-        let getElementResult = await axorcist.getElementAtPoint(pid: pid, point: point, requestedAttributes: Self.defaultFetchAttributes)
+        let getElementCommand = GetElementAtPointCommand(
+            point: point,
+            pid: Int(pid),
+            attributesToReturn: Self.defaultFetchAttributes
+        )
+        let getElementResult = axorcist.handleGetElementAtPoint(command: getElementCommand)
 
-        if let axUiElement = getElementResult.element { // Use .element from the tuple
+        if let axElement = getElementResult.payload?.value as? AXElement {
+            let axUiElement = axElement.underlyingElement
             let el = Element(axUiElement) // axUiElement is AXUIElement, wrap it
-            let role = el.role()
-            let title = el.title()
-            let briefDesc = el.briefDescription(includeRole: true, includeTitle: true, includeValue: false, includeDescription: false)
+            let briefDesc = el.briefDescription(option: ValueFormatOption.smart)
             // Careful with multi-line string for hoveredElementInfo
-            hoveredElementInfo = "Hovered: \(briefDesc)\nRole: \(role ?? "N/A")\nTitle: \(title ?? "N/A")"
+            hoveredElementInfo = "Hovered: \(briefDesc)"
             if let appTree = self.accessibilityTree.first, appTree.pid == pid, 
                let foundNode = findNodeByAXElement(axUiElement, in: [appTree]) { // Use axUiElement directly
                 temporarilySelectedNodeIDByHover = foundNode.id
@@ -406,10 +418,8 @@ class AXpectorViewModel: ObservableObject {
             highlightWindowController.hideHighlight()
         }
     }
-}
 
-// MARK: - Hover Mode Implementation
-extension AXpectorViewModel {
+    // MARK: - Hover Mode Implementation (MOVED FROM EXTENSION)
     internal func startHoverMonitoring() {
         guard globalEventMonitor == nil else { return }
         globalEventMonitor = NSEvent.addGlobalMonitorForEvents(matching: [.mouseMoved]) { [weak self] _ in
@@ -421,7 +431,7 @@ extension AXpectorViewModel {
                 await self.updateHoveredElement(at: NSEvent.mouseLocation) 
             }
         }
-        if globalEventMonitor == nil { isHoverModeActive = false }
+        if globalEventMonitor == nil { isHoverModeActive = false } // Ensure flag is correct if monitor fails
     }
 
     internal func stopHoverMonitoring() {
@@ -431,30 +441,28 @@ extension AXpectorViewModel {
 
     internal func updateHoveredElement(at mouseLocation: NSPoint) async { 
         guard isHoverModeActive, let pid = selectedApplicationPID else { return }
-        await GlobalAXLogger.shared.updateOperationDetails(commandID: "hover_\(pid)", appName: String(pid))
+        axInfoLog("Updating hovered element", details: ["commandID": AnyCodable("hover_\(pid)"), "appName": AnyCodable(String(pid))])
         
-        // axorcist.getElementAtPoint returns (element: AXElement?, error: String?)
-        let getElementResult = await axorcist.getElementAtPoint(pid: pid, point: mouseLocation, requestedAttributes: Self.defaultFetchAttributes)
+        let getElementCommand = GetElementAtPointCommand(
+            point: mouseLocation,
+            pid: Int(pid),
+            attributesToReturn: Self.defaultFetchAttributes
+        )
+        let getElementResult = axorcist.handleGetElementAtPoint(command: getElementCommand)
         
         var newHoverInfo: String = "Hover: No element."
 
-        // getElementResult.element is AXUIElement directly
-        if let axUiElement = getElementResult.element {
-            // To get attributes like role and title, we need to wrap axUiElement in an Element
-            // or use the attributes already fetched if getElementAtPoint is modified to return them.
-            // For now, let's assume getElementAtPoint returns requestedAttributes in its AXElement wrapper if it changes.
-            // Based on current axorcist.getElementAtPoint, it returns AXUIElement, not AXElement struct with attributes.
-            // This part needs to be re-evaluated based on what getElementAtPoint actually returns or if we need another fetch.
-            // For simplicity, if getElementResult.element is AXUIElement, let's just make a brief description from it.
+        if let axElement = getElementResult.payload?.value as? AXElement {
+            let axUiElement = axElement.underlyingElement
             let tempEl = Element(axUiElement)
             let roleValue = tempEl.role() ?? "N/A"
             let titleValue = tempEl.title() ?? ""
             
-            let titlePart = titleValue.isEmpty ? "" : " - \\\"\\(titleValue.prefix(30))\\\""
-            newHoverInfo = "Hover: \\(roleValue)\\(titlePart)"
+            let titlePartFormatted = titleValue.isEmpty ? "" : " - \"\(titleValue.prefix(30))\""
+            newHoverInfo = "Hover: \(roleValue)\(titlePartFormatted)"
  
         } else if let errorMsg = getElementResult.error {
-            newHoverInfo = "Hover Error: \\(errorMsg)"
+            newHoverInfo = "Hover Error: \(errorMsg)"
         }
         
         await MainActor.run {
@@ -462,10 +470,10 @@ extension AXpectorViewModel {
             self.temporarilySelectedNodeIDByHover = nil
             self.highlightWindowController.hideHighlight()
         }
-        await GlobalAXLogger.shared.updateOperationDetails(commandID: nil, appName: nil)
+        axInfoLog("Finished updating hovered element")
     }
 
-    // Synchronous helper
+    // Synchronous helper (MOVED FROM EXTENSION)
     internal func getFrameForAXElement(_ axElement: AXUIElement?) -> NSRect? {
         guard let element = axElement else { return nil }
         var positionRef: CFTypeRef?; var sizeRef: CFTypeRef?
@@ -478,17 +486,16 @@ extension AXpectorViewModel {
         AXValueGetValue(sizeVal as! AXValue, .cgSize, &size)
         return NSRect(origin: position, size: size)
     }
-}
-
-// Add the missing helper function
-extension AXpectorViewModel {
+    
+    // updateHighlightForAXUIElement was also in an extension, moving it too for good measure
+    // (MOVED FROM EXTENSION)
     internal func updateHighlightForAXUIElement(_ axElement: AXUIElement?, color: NSColor) {
         guard let element = axElement else {
             highlightWindowController.hideHighlight()
             return
         }
         if let frame = getFrameForAXElement(element) {
-            highlightWindowController.highlight(rect: frame, color: color)
+            highlightWindowController.showHighlight(at: frame, color: color, borderWidth: nil)
         } else {
             highlightWindowController.hideHighlight()
         }

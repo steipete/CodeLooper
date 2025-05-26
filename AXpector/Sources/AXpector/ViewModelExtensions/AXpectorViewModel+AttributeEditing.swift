@@ -10,7 +10,7 @@ func axConvertStringCriteriaToCriterionArray(_ stringCriteria: [String: String])
     for (key, value) in stringCriteria {
         // Basic determination of match type for Criterion. AXpector might need more sophisticated logic.
         let matchType: JSONPathHintComponent.MatchType = (value.hasPrefix("(") && value.hasSuffix(")") && value.contains("|")) ? .regex : .exact
-        criteriaArray.append(Criterion(attribute: key, value: value, match_type: matchType))
+        criteriaArray.append(Criterion(attribute: key, value: value, matchType: matchType))
     }
     return criteriaArray
 }
@@ -46,7 +46,7 @@ extension AXpectorViewModel {
         self.attributeIsCurrentlySettable = false 
 
         Task {
-            await GlobalAXLogger.shared.updateOperationDetails(commandID: "prepareEdit_\(attributeKey)", appName: String(node.pid))
+            axInfoLog("Preparing attribute for editing: \(attributeKey) on \(node.displayName)", details: ["commandID": AnyCodable("prepareEdit_\(attributeKey)"), "appName": AnyCodable(String(node.pid))])
 
             let axElement = Element(node.axElementRef)
             let settable = axElement.isAttributeSettable(named: attributeKey) // Added named: label
@@ -83,7 +83,7 @@ extension AXpectorViewModel {
                     }
                 }
             }
-            await GlobalAXLogger.shared.updateOperationDetails(commandID: nil, appName: nil)
+            axInfoLog("Finished preparing attribute for editing: \(attributeKey) on \(node.displayName)")
         }
     }
 
@@ -108,7 +108,7 @@ extension AXpectorViewModel {
 
         Task {
             let appIdentifier = String(node.pid)
-            await GlobalAXLogger.shared.updateOperationDetails(commandID: "commitEdit_\(key)", appName: appIdentifier)
+            axInfoLog("Committing attribute edit: \(key) on \(node.displayName)", details: ["commandID": AnyCodable("commitEdit_\(key)"), "appName": AnyCodable(appIdentifier)])
             
             var stringCriteria: [String: String] = [:]
             if let role = node.attributes[AXAttributeNames.kAXRoleAttribute]?.value as? String { stringCriteria[AXAttributeNames.kAXRoleAttribute] = role }
@@ -121,12 +121,8 @@ extension AXpectorViewModel {
 
             let locator = Locator(criteria: criteriaForLocator, rootElementPathHint: pathHintsForLocator)
             
-            let response = await axorcist.handlePerformAction(
-                for: appIdentifier,
-                locator: locator,
-                actionName: key, 
-                actionValue: AnyCodable(self.editingAttributeValueString)
-            )
+            let command = PerformActionCommand(appIdentifier: appIdentifier, locator: locator, action: key, value: AnyCodable(self.editingAttributeValueString), maxDepthForSearch: AXMiscConstants.defaultMaxDepthSearch)
+            let response = axorcist.handlePerformAction(command: command)
             
             if Defaults[.verboseLogging_axpector] {
                 let collectedLogs = axGetLogEntries()
@@ -136,12 +132,12 @@ extension AXpectorViewModel {
                 axClearLogs()
             }
 
-            if response.error == nil, let responseData = response.data?.value as? PerformResponse, responseData.success {
+            if response.error == nil, let responseData = response.payload?.value as? PerformResponse, responseData.success {
                 self.attributeUpdateStatusMessage = "Attribute '\(key)' updated successfully."
                 axInfoLog("Successfully updated attribute '\(key)' for node \(node.displayName)")
                 Task { await refreshSelectedNodeAttributes(node: node) }
             } else {
-                let errorMessage = response.error ?? "Failed to update attribute '\(key)'"
+                let errorMessage = response.error?.message ?? "Failed to update attribute '\(key)'"
                 self.attributeUpdateStatusMessage = "Failed to update attribute '\(key)': \(errorMessage)."
                 axErrorLog("Failed to update attribute '\(key)' for node \(node.displayName). Error: \(errorMessage)")
             }
@@ -151,7 +147,7 @@ extension AXpectorViewModel {
                 try? await Task.sleep(for: .seconds(4))
                 if self.attributeUpdateStatusMessage?.contains(key) == true { self.attributeUpdateStatusMessage = nil }
             }
-            await GlobalAXLogger.shared.updateOperationDetails(commandID: nil, appName: nil)
+            axInfoLog("Finished committing attribute edit: \(key) on \(node.displayName)")
         }
     }
 
@@ -169,7 +165,7 @@ extension AXpectorViewModel {
     private func refreshSelectedNodeAttributes(node: AXPropertyNode) async {
         axInfoLog("Refreshing attributes for node \(node.displayName)")
         let appIdentifier = String(node.pid)
-        await GlobalAXLogger.shared.updateOperationDetails(commandID: "refreshNodeAttrs_\(node.id.uuidString.prefix(8))", appName: appIdentifier)
+        axInfoLog("Refreshing attributes for node: \(node.displayName)", details: ["commandID": AnyCodable("refreshNodeAttrs_\(node.id.uuidString.prefix(8))"), "appName": AnyCodable(appIdentifier)])
 
         var stringCriteria: [String: String] = [:]
         if let role = node.attributes[AXAttributeNames.kAXRoleAttribute]?.value as? String { stringCriteria[AXAttributeNames.kAXRoleAttribute] = role }
@@ -182,13 +178,14 @@ extension AXpectorViewModel {
         
         let locator = Locator(criteria: criteriaForLocator, rootElementPathHint: pathHintsForLocator)
 
-        let response = await axorcist.handleQuery(
-            for: appIdentifier,
+        let queryCommand = QueryCommand(
+            appIdentifier: appIdentifier,
             locator: locator,
-            maxDepth: 0,
-            requestedAttributes: AXpectorViewModel.defaultFetchAttributes,
-            outputFormat: .smart
+            attributesToReturn: AXpectorViewModel.defaultFetchAttributes,
+            maxDepthForSearch: 0,
+            includeChildrenBrief: nil
         )
+        let response = axorcist.handleQuery(command: queryCommand, maxDepth: 0)
 
         if Defaults[.verboseLogging_axpector] {
             let collectedLogs = axGetLogEntries()
@@ -198,7 +195,7 @@ extension AXpectorViewModel {
             axClearLogs()
         }
 
-        if response.error == nil, let axElementData = response.data?.value as? AXElement { 
+        if response.error == nil, let axElementData = response.payload?.value as? AXElement { 
             if let newAttrs = axElementData.attributes {
                 node.attributes = newAttrs 
                 node.role = newAttrs[AXAttributeNames.kAXRoleAttribute]?.value as? String ?? node.role
@@ -210,9 +207,9 @@ extension AXpectorViewModel {
                 axWarningLog("No attributes returned on refresh for node \(node.displayName). Node attributes not changed.")
             }
         } else {
-            axErrorLog("Failed to refresh attributes for node \(node.displayName): \(response.error ?? "Unknown error")")
+            axErrorLog("Failed to refresh attributes for node \(node.displayName): \(response.error?.message ?? "Unknown error")")
         }
-        await GlobalAXLogger.shared.updateOperationDetails(commandID: nil, appName: nil)
+        axInfoLog("Finished refreshing attributes for node: \(node.displayName)")
     }
 
     func fetchSettableStatusForAttributeDisplay(node: AXPropertyNode, attributeKey: String) async -> String {
@@ -222,7 +219,7 @@ extension AXpectorViewModel {
         }
         if let cachedStatus = attributeSettableStatusCache[attributeKey] { return cachedStatus ? " (W)" : "" }
 
-        await GlobalAXLogger.shared.updateOperationDetails(commandID: "fetchSettableStatus_\(attributeKey)", appName: String(node.pid))
+        axInfoLog("Fetching settable status for attribute: \(attributeKey) on \(node.displayName)", details: ["commandID": AnyCodable("fetchSettableStatus_\(attributeKey)"), "appName": AnyCodable(String(node.pid))])
         
         let axElement = Element(node.axElementRef)
         let settable = axElement.isAttributeSettable(named: attributeKey) // Added named: label
@@ -236,7 +233,7 @@ extension AXpectorViewModel {
         }
         
         if node.id == cachedNodeIDForSettableStatus { attributeSettableStatusCache[attributeKey] = settable }
-        await GlobalAXLogger.shared.updateOperationDetails(commandID: nil, appName: nil)
+        axInfoLog("Finished fetching settable status for attribute: \(attributeKey) on \(node.displayName)")
         return settable ? " (W)" : ""
     }
 
@@ -288,10 +285,10 @@ extension AXpectorViewModel {
 
         if let val = attributeValue?.value {
             if let ref = tempElement.attribute(Attribute<AXUIElement>(attributeKey)) {
-                displayStr = axorcist.getPreviewString(forElement: ref) ?? "<AXUIElement>"
+                displayStr = Element(ref).briefDescription() ?? "<AXUIElement>"
                 navRef = ref
             } else if let arr = tempElement.attribute(Attribute<[AXUIElement]>(attributeKey)), !arr.isEmpty {
-                let firstElementPreview = axorcist.getPreviewString(forElement: arr[0]) ?? "<AXUIElement>"
+                let firstElementPreview = Element(arr[0]).briefDescription() ?? "<AXUIElement>"
                 displayStr = "[\(firstElementPreview), ...] (count: \(arr.count))"
                 navRef = arr[0]
             } else if let str = val as? String {

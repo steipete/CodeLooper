@@ -61,7 +61,7 @@ extension AXpectorViewModel {
         node.isLoadingChildren = true
 
         Task {
-            await GlobalAXLogger.shared.updateOperationDetails(commandID: "expandNode_\(node.id.uuidString.prefix(8))", appName: String(node.pid))
+            axInfoLog("Expanding node: \(node.displayName)", details: ["commandID": AnyCodable("expandNode_\(node.id.uuidString.prefix(8))"), "appName": AnyCodable(String(node.pid))])
 
             let rootAXElementForExpansion = Element(node.axElementRef)
             let fetchedPropertyNodeChildren = await self.recursivelyFetchChildren(
@@ -74,11 +74,11 @@ extension AXpectorViewModel {
             )
 
             if Defaults[.verboseLogging_axpector] {
-                let collectedLogs = await axGetLogEntries()
+                let collectedLogs = axGetLogEntries()
                 for logEntry in collectedLogs { // Iterate and log
                     axDebugLog("AXorcist (ExpandNode) Log [L:\(logEntry.level.rawValue) T:\(logEntry.timestamp)]: \(logEntry.message) Details: \(logEntry.details ?? [:])")
                 }
-                await axClearLogs()
+                axClearLogs()
             }
             
             let childrenToAssign: [AXPropertyNode]
@@ -96,7 +96,7 @@ extension AXpectorViewModel {
             node.isLoadingChildren = false
             if !node.isExpanded { node.isExpanded = true } 
             
-            await GlobalAXLogger.shared.updateOperationDetails(commandID: nil, appName: nil)
+            axInfoLog("Finished expanding node: \(node.displayName)")
         }
     }
 
