@@ -7,29 +7,9 @@ import Defaults // ADD for Defaults, might be used by other methods if this file
 
 // MARK: - Application and Tree Handling
 extension AXpectorViewModel {
-    /// Helper function to get running applications that have on-screen windows.
-    private func appsWithOnScreenWindows() -> [NSRunningApplication] {
-        // 1. Get ALL visible windows in one native call
-        guard let list = CGWindowListCopyWindowInfo(
-            [.optionOnScreenOnly, .excludeDesktopElements],
-            kCGNullWindowID
-        ) as? [[String: Any]] else {
-            axErrorLog("Failed to get CGWindowListCopyWindowInfo")
-            return []
-        }
-        
-        // 2. Collect PIDs that own at least one window
-        let pidsWithWindows = Set(list.compactMap { $0[kCGWindowOwnerPID as String] as? pid_t })
-        
-        // 3. Get all running applications that are also accessible
-        let accessibleApps = RunningApplicationHelper.accessibleApplications()
-        
-        // 4. Filter accessible applications to include only those with on-screen windows
-        return accessibleApps.filter { pidsWithWindows.contains($0.processIdentifier) }
-    }
-
     func fetchRunningApplications() {
-        runningApplications = appsWithOnScreenWindows()
+        // Use the centralized helper from AXorcist module
+        runningApplications = RunningApplicationHelper.accessibleApplicationsWithOnScreenWindows()
         axInfoLog("Fetched \(self.runningApplications.count) running applications with on-screen windows.")
     }
     
@@ -74,6 +54,4 @@ extension AXpectorViewModel {
             self.fetchRunningApplications()
         }
     }
-
-    // func fetchAccessibilityTreeForSelectedApp() { ... } // DELETED - Refactored version exists in AXpectorViewModel.swift
 } 
