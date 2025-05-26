@@ -33,6 +33,14 @@ Warning: These tools give your agent full power over your system, so integrate a
 - **Architecture**: Universal Binary (Apple Silicon and Intel)
 - **Accessibility**: Requires accessibility permissions for IDE automation
 
+## You've seen these
+
+<p align="center">
+  <img src="assets/default-stop-25.png" alt="Default Stop at 25 loops" width="300">
+  <img src="assets/cursor-stopped.png" alt="Cursor Stopped" width="300">
+  <img src="assets/trouble.png" alt="Connection Trouble" width="300">
+</p>
+
 ### Getting Started
 
 Download one of the releases from GitHub's Release section.
