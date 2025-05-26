@@ -24,11 +24,11 @@ It resolves these situations:
 
 CodeLooper can install various MCP's that help Cursor to build with fewer manual interventions:
 
-- [Peekaboo](https://github.com/steipete/Peekaboo): Enables your IDE to make screenshots and ask questions about images.
-- [Terminator](https://github.com/steipete/Terminator): Manages a Terminal outside of the loop, so processes that might get stuck don't break the loop.
-- [Claude Code](https://github.com/steipete/claude-code-mcp): A buddy for your IDE that your agent can ask if he's stuck. Can do coding task and offer "a pair of fresh eyes" that often un-stucks the loop.
-- [Conduit](https://github.com/steipete/conduit-mcp): Advanced file manipulation for faster refactoring.
-- [Automator](https://github.com/steipete/macos-automator-mcp): AppleScript for your IDE.
+- 👻 [Peekaboo](https://github.com/steipete/Peekaboo): Enables your IDE to make screenshots and ask questions about images.
+- 🤖 [Terminator](https://github.com/steipete/Terminator): Manages a Terminal outside of the loop, so processes that might get stuck don't break the loop.
+- 🧠 [Claude Code](https://github.com/steipete/claude-code-mcp): A buddy for your IDE that your agent can ask if he's stuck. Can do coding task and offer "a pair of fresh eyes" that often un-stucks the loop.
+- 🐱 [Conduit](https://github.com/steipete/conduit-mcp): Advanced file manipulation for faster refactoring.
+- 🎯 [Automator](https://github.com/steipete/macos-automator-mcp): AppleScript for your IDE.
 
 Warning: These tools give your agent full power over your system, so integrate at your own risk.
 
