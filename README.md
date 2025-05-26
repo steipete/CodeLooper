@@ -12,8 +12,13 @@ When Cursor breaks out of its productive loop – getting stuck generating code,
 It resolves these situations:
 
 - **Plain Stop:** Cursor just stops, even though the text indicates that there's more to do.
+  <img src="assets/cursor-stopped.png" alt="Cursor Stopped" width="300">
+
 - **Connection Issues**: "We're having trouble connecting to the model provider."
+  <img src="assets/trouble.png" alt="Connection Trouble" width="300">
+
 - **Stop after 25 Loops**: It automatically presses resume.
+  <img src="assets/default-stop-25.png" alt="Default Stop at 25 loops" width="300">
 
 ## Automatic MCP Installation
 
@@ -32,14 +37,6 @@ Warning: These tools give your agent full power over your system, so integrate a
 - **macOS Version**: macOS 14 (Sonoma) or later
 - **Architecture**: Universal Binary (Apple Silicon and Intel)
 - **Accessibility**: Requires accessibility permissions for IDE automation
-
-## You've seen these
-
-<p align="center">
-  <img src="assets/default-stop-25.png" alt="Default Stop at 25 loops" width="300">
-  <img src="assets/cursor-stopped.png" alt="Cursor Stopped" width="300">
-  <img src="assets/trouble.png" alt="Connection Trouble" width="300">
-</p>
 
 ### Getting Started
 
