@@ -118,7 +118,7 @@ extension AXpectorViewModel {
 
         var propertyNodes: [AXPropertyNode] = []
         for childAX in directChildrenAX {
-            let (childAttributes, _) = getElementAttributes(
+            let (childAttributes, _) = await getElementAttributes(
                 element: childAX,
                 attributes: AXpectorViewModel.defaultFetchAttributes,
                 outputFormat: .jsonString

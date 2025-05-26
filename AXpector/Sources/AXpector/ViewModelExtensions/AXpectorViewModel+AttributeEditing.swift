@@ -4,6 +4,40 @@ import AppKit // For pid_t, NSNumber
 // AXorcist import already includes logging utilities
 import Defaults // ADD for Defaults
 
+// Helper to convert [String: String] criteria to [Criterion]
+func axConvertStringCriteriaToCriterionArray(_ stringCriteria: [String: String]) -> [Criterion] {
+    var criteriaArray: [Criterion] = []
+    for (key, value) in stringCriteria {
+        // Basic determination of match type for Criterion. AXpector might need more sophisticated logic.
+        let matchType: JSONPathHintComponent.MatchType = (value.hasPrefix("(") && value.hasSuffix(")") && value.contains("|")) ? .regex : .exact
+        criteriaArray.append(Criterion(attribute: key, value: value, match_type: matchType))
+    }
+    return criteriaArray
+}
+
+// Helper to convert [String]? path hints to [JSONPathHintComponent]?
+// This is a simplified version. Assumes strings are role names and path hints imply AXRole.
+// A more robust parser would be needed if path strings are complex (e.g., "title=Foo[0]").
+func axConvertStringPathHintsToComponentArray(_ stringHints: [String]?) -> [JSONPathHintComponent]? {
+    guard let hints = stringHints else { return nil }
+    return hints.compactMap { hintString in
+        // Example: "AXWindow[0]" -> value: "AXWindow", attribute: "AXRole"
+        // This simplified logic assumes the string is the ROLE value.
+        // For "AXWindow[0]", we might need to extract "AXWindow" as value and use kAXRoleAttribute.
+        // If hintString is more complex like "title=My Window", this needs parsing.
+        // For now, assume hintString is a value for an implied AXRole attribute for path components.
+        // This is a common pattern for simple path hints but might not cover all AXpector cases.
+        
+        // Basic parsing for "RoleName[index]" format, extracting RoleName
+        var roleName = hintString
+        if let range = hintString.range(of: "[") {
+            roleName = String(hintString[..<range.lowerBound])
+        }
+        // Use kAXRoleAttribute for path hints by default if not specified otherwise.
+        return JSONPathHintComponent(attribute: AXAttributeNames.kAXRoleAttribute, value: roleName, matchType: .exact)
+    }
+}
+
 // MARK: - Attribute Editing Methods
 extension AXpectorViewModel {
     func prepareAttributeForEditing(node: AXPropertyNode?, attributeKey: String) {
@@ -19,11 +53,11 @@ extension AXpectorViewModel {
             self.attributeIsCurrentlySettable = settable 
 
             if Defaults[.verboseLogging_axpector] {
-                let collectedLogs = await axGetLogEntries()
+                let collectedLogs = axGetLogEntries()
                 for logEntry in collectedLogs {
                     axDebugLog("AXorcist (IsSettable Prep) Log [L:\(logEntry.level.rawValue) T:\(logEntry.timestamp)]: \(logEntry.message) Details: \(logEntry.details ?? [:])")
                 }
-                await axClearLogs()
+                axClearLogs()
             }
 
             if settable {
@@ -76,31 +110,30 @@ extension AXpectorViewModel {
             let appIdentifier = String(node.pid)
             await GlobalAXLogger.shared.updateOperationDetails(commandID: "commitEdit_\(key)", appName: appIdentifier)
             
-            // Construct Locator for node
-            var criteria: [String: String] = [:]
-            if let role = node.attributes[AXAttributeNames.kAXRoleAttribute]?.value as? String { criteria[AXAttributeNames.kAXRoleAttribute] = role }
-            if let title = node.attributes[AXAttributeNames.kAXTitleAttribute]?.value as? String { criteria[AXAttributeNames.kAXTitleAttribute] = title }
-            if let identifier = node.attributes[AXAttributeNames.kAXIdentifierAttribute]?.value as? String { criteria[AXAttributeNames.kAXIdentifierAttribute] = identifier }
-            if criteria.isEmpty { criteria[AXAttributeNames.kAXTitleAttribute] = node.displayName } // Fallback
+            var stringCriteria: [String: String] = [:]
+            if let role = node.attributes[AXAttributeNames.kAXRoleAttribute]?.value as? String { stringCriteria[AXAttributeNames.kAXRoleAttribute] = role }
+            if let title = node.attributes[AXAttributeNames.kAXTitleAttribute]?.value as? String { stringCriteria[AXAttributeNames.kAXTitleAttribute] = title }
+            if let identifier = node.attributes[AXAttributeNames.kAXIdentifierAttribute]?.value as? String { stringCriteria[AXAttributeNames.kAXIdentifierAttribute] = identifier }
+            if stringCriteria.isEmpty { stringCriteria[AXAttributeNames.kAXTitleAttribute] = node.displayName } // Fallback
 
-            let locator = Locator(criteria: criteria, rootElementPathHint: node.fullPathArrayForLocator)
+            let criteriaForLocator = axConvertStringCriteriaToCriterionArray(stringCriteria)
+            let pathHintsForLocator = axConvertStringPathHintsToComponentArray(node.fullPathArrayForLocator)
+
+            let locator = Locator(criteria: criteriaForLocator, rootElementPathHint: pathHintsForLocator)
             
-            // Value needs to be parsed into its actual type if possible, not just string.
-            // For now, sending as string; AXorcist side might need to handle parsing.
-            // A more robust solution would involve knowing the attribute's type.
             let response = await axorcist.handlePerformAction(
                 for: appIdentifier,
                 locator: locator,
-                actionName: key, // The attribute name is the "action" for setting
-                actionValue: AnyCodable(self.editingAttributeValueString) // Send new value
+                actionName: key, 
+                actionValue: AnyCodable(self.editingAttributeValueString)
             )
             
             if Defaults[.verboseLogging_axpector] {
-                let collectedLogs = await axGetLogEntries()
+                let collectedLogs = axGetLogEntries()
                 for logEntry in collectedLogs {
                     axDebugLog("AXorcist (SetAttribute) Log [L:\(logEntry.level.rawValue) T:\(logEntry.timestamp)]: \(logEntry.message) Details: \(logEntry.details ?? [:])")
                 }
-                await axClearLogs()
+                axClearLogs()
             }
 
             if response.error == nil, let responseData = response.data?.value as? PerformResponse, responseData.success {
@@ -138,13 +171,16 @@ extension AXpectorViewModel {
         let appIdentifier = String(node.pid)
         await GlobalAXLogger.shared.updateOperationDetails(commandID: "refreshNodeAttrs_\(node.id.uuidString.prefix(8))", appName: appIdentifier)
 
-        // Construct Locator for the node
-        var criteria: [String: String] = [:]
-        if let role = node.attributes[AXAttributeNames.kAXRoleAttribute]?.value as? String { criteria[AXAttributeNames.kAXRoleAttribute] = role }
-        if let title = node.attributes[AXAttributeNames.kAXTitleAttribute]?.value as? String { criteria[AXAttributeNames.kAXTitleAttribute] = title }
-        if let identifier = node.attributes[AXAttributeNames.kAXIdentifierAttribute]?.value as? String { criteria[AXAttributeNames.kAXIdentifierAttribute] = identifier }
-        if criteria.isEmpty { criteria[AXAttributeNames.kAXTitleAttribute] = node.displayName } // Fallback
-        let locator = Locator(criteria: criteria, rootElementPathHint: node.fullPathArrayForLocator)
+        var stringCriteria: [String: String] = [:]
+        if let role = node.attributes[AXAttributeNames.kAXRoleAttribute]?.value as? String { stringCriteria[AXAttributeNames.kAXRoleAttribute] = role }
+        if let title = node.attributes[AXAttributeNames.kAXTitleAttribute]?.value as? String { stringCriteria[AXAttributeNames.kAXTitleAttribute] = title }
+        if let identifier = node.attributes[AXAttributeNames.kAXIdentifierAttribute]?.value as? String { stringCriteria[AXAttributeNames.kAXIdentifierAttribute] = identifier }
+        if stringCriteria.isEmpty { stringCriteria[AXAttributeNames.kAXTitleAttribute] = node.displayName } // Fallback
+        
+        let criteriaForLocator = axConvertStringCriteriaToCriterionArray(stringCriteria)
+        let pathHintsForLocator = axConvertStringPathHintsToComponentArray(node.fullPathArrayForLocator)
+        
+        let locator = Locator(criteria: criteriaForLocator, rootElementPathHint: pathHintsForLocator)
 
         let response = await axorcist.handleQuery(
             for: appIdentifier,
@@ -155,23 +191,20 @@ extension AXpectorViewModel {
         )
 
         if Defaults[.verboseLogging_axpector] {
-            let collectedLogs = await axGetLogEntries()
+            let collectedLogs = axGetLogEntries()
             for logEntry in collectedLogs {
                 axDebugLog("AXorcist (RefreshNode) Log [L:\(logEntry.level.rawValue) T:\(logEntry.timestamp)]: \(logEntry.message) Details: \(logEntry.details ?? [:])")
             }
-            await axClearLogs()
+            axClearLogs()
         }
 
-        if response.error == nil, let axElementData = response.data?.value as? AXElement { // AXElement is from CommandModels
+        if response.error == nil, let axElementData = response.data?.value as? AXElement { 
             if let newAttrs = axElementData.attributes {
-                node.attributes = newAttrs // Update the node's attributes directly
-                // Update individual @Published properties if they are derived from attributes
+                node.attributes = newAttrs 
                 node.role = newAttrs[AXAttributeNames.kAXRoleAttribute]?.value as? String ?? node.role
                 node.title = newAttrs[AXAttributeNames.kAXTitleAttribute]?.value as? String ?? node.title
                 node.descriptionText = newAttrs[AXAttributeNames.kAXDescriptionAttribute]?.value as? String ?? node.descriptionText
                 node.value = newAttrs[AXAttributeNames.kAXValueAttribute]?.value as? String ?? node.value
-                // Assuming actions are also part of AXElement or a separate field in HandlerResponse if needed.
-                // For now, actions are not directly updated here from handleQuery response.
                 axInfoLog("Refreshed attributes for node \(node.displayName).")
             } else {
                 axWarningLog("No attributes returned on refresh for node \(node.displayName). Node attributes not changed.")
@@ -195,11 +228,11 @@ extension AXpectorViewModel {
         let settable = axElement.isAttributeSettable(named: attributeKey) // Added named: label
         
         if Defaults[.verboseLogging_axpector] {
-            let collectedLogs = await axGetLogEntries()
+            let collectedLogs = axGetLogEntries()
             for logEntry in collectedLogs {
                 axDebugLog("AXorcist (IsSettable Display) Log [L:\(logEntry.level.rawValue) T:\(logEntry.timestamp)]: \(logEntry.message) Details: \(logEntry.details ?? [:])")
             }
-            await axClearLogs()
+            axClearLogs()
         }
         
         if node.id == cachedNodeIDForSettableStatus { attributeSettableStatusCache[attributeKey] = settable }
@@ -242,33 +275,25 @@ extension AXpectorViewModel {
                                  // This method receives a ref, doesn't own it unless it copies it.
     }
 
-    // RESTORED FUNCTION
-    internal func fetchAttributeUIDisplayInfo(node: AXPropertyNode, attributeKey: String, rawAttributeValue: AnyCodable?) async -> AttributeDisplayInfo {
-        if node.id != self.cachedNodeIDForDisplayInfo { 
-            self.attributeDisplayInfoCache.removeAll() 
-            self.cachedNodeIDForDisplayInfo = node.id 
-        }
-        if let cachedInfo = self.attributeDisplayInfoCache[attributeKey] {
-            return cachedInfo
-        }
-
+    @MainActor
+    func fetchAttributeUIDisplayInfo(for node: AXPropertyNode, attributeKey: String, attributeValue: AnyCodable?) -> AttributeDisplayInfo {
+        axDebugLog("AXpectorVM.fetchAttributeUIDisplayInfo for \(attributeKey) on node: \(node.id)")
+        
         let tempElement = Element(node.axElementRef)
-        let valueType = tempElement.getValueType(forAttribute: attributeKey) 
         let isSettableStatus = tempElement.isAttributeSettable(named: attributeKey)
-        let settableString = isSettableStatus ? " (W)" : "" 
+        let settableString = isSettableStatus ? " (W)" : ""
 
-        var displayStr = "<Error fetching value>"
+        var displayStr = "<Unable to display>"
         var navRef: AXUIElement? = nil
 
-        // Simplified display logic from original AttributeRowView intentions
-        if let val = rawAttributeValue?.value {
-            if valueType == .axElement, let ref = tempElement.attribute(Attribute<AXUIElement>(attributeKey)) {
+        if let val = attributeValue?.value {
+            if let ref = tempElement.attribute(Attribute<AXUIElement>(attributeKey)) {
                 displayStr = axorcist.getPreviewString(forElement: ref) ?? "<AXUIElement>"
-                navRef = ref // Keep for navigation
-            } else if valueType == .arrayOfAXElements, let arr = tempElement.attribute(Attribute<[AXUIElement]>(attributeKey)), !arr.isEmpty {
+                navRef = ref
+            } else if let arr = tempElement.attribute(Attribute<[AXUIElement]>(attributeKey)), !arr.isEmpty {
                 let firstElementPreview = axorcist.getPreviewString(forElement: arr[0]) ?? "<AXUIElement>"
                 displayStr = "[\(firstElementPreview), ...] (count: \(arr.count))"
-                navRef = arr[0] // Keep first for navigation
+                navRef = arr[0]
             } else if let str = val as? String {
                 displayStr = "\"\(str)\""
             } else if let num = val as? NSNumber {
@@ -284,15 +309,11 @@ extension AXpectorViewModel {
         
         let info = AttributeDisplayInfo(
             displayString: displayStr,
-            valueType: valueType,
             isSettable: isSettableStatus,
             settableDisplayString: settableString,
             navigatableElementRef: navRef
         )
         
-        if node.id == self.cachedNodeIDForDisplayInfo { // Check again in case of race or if node.id changed
-             self.attributeDisplayInfoCache[attributeKey] = info
-        }
         return info
     }
 } 

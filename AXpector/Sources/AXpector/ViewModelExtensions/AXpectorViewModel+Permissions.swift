@@ -47,7 +47,9 @@ extension AXpectorViewModel {
                         axInfoLog("Accessibility API is now enabled.")
                         // Refresh the tree if we have a selected app
                         if selectedApplicationPID != nil {
-                            fetchAccessibilityTreeForSelectedApp()
+                            Task {
+                                await fetchAccessibilityTreeForSelectedApp()
+                            }
                         }
                     } else if !isGranted && previousState == true {
                         axWarningLog("Accessibility API was disabled.")

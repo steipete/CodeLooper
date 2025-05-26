@@ -1,6 +1,7 @@
 import SwiftUI // For @MainActor
 import AppKit // For NSWorkspace, NSRunningApplication, AXUIElement, AXObserver, pid_t
 import AXorcist // For AXorcist.Element
+import Defaults // ADDED
 // import OSLog // For Logger // REMOVE OSLog
 // AXorcist import already includes logging utilities
 
@@ -55,79 +56,50 @@ extension AXpectorViewModel {
     private func handleFocusNotificationFromAXorcist(focusedElement: Element, pid: pid_t, notification: AXNotification) {
         axDebugLog("AXpectorVM.handleFocusNotification: Element: \(focusedElement.briefDescription()), PID: \(pid), Notification: \(notification.rawValue)")
         
-        if let selectedPID = selectedApplicationPID, selectedPID != pid {
-            axInfoLog("Focus change in PID \(pid) ignored as different PID (\(selectedPID)) is selected in AXpector.") // CHANGED
-            if temporarilySelectedNodeIDByFocus != nil { temporarilySelectedNodeIDByFocus = nil; highlightWindowController.hideHighlight() }
-            return
-        }
+        Task { // WRAP async work in Task
+            // Ensure we are on the main actor for UI updates if necessary, though most of this is data processing.
+            // The original function was @MainActor, so this Task inherits that context.
+            
+            let (fetchedAttributes, _) = await getElementAttributes(
+                element: focusedElement, 
+                attributes: Self.defaultFetchAttributes, 
+                outputFormat: .jsonString 
+            )
 
-        if selectedApplicationPID == nil {
-            let appNameForInfo = runningApplications.first(where: { $0.processIdentifier == pid })?.localizedName ?? "App PID \(pid)"
-            if self.accessibilityTree.first?.pid != pid {
-                if autoSelectFocusedApp {
-                    axInfoLog("Focus in app (\(appNameForInfo)) not currently selected. Auto-selecting and fetching tree.") // CHANGED
-                    self.selectedApplicationPID = pid // This will trigger fetchAccessibilityTreeForSelectedApp
+            let newNode = AXPropertyNode(
+                id: UUID(), // Generate a new ID for this focused element representation
+                axElementRef: focusedElement.underlyingElement,
+                pid: pid,
+                role: fetchedAttributes[AXAttributeNames.kAXRoleAttribute]?.value as? String ?? "UnknownRole",
+                title: fetchedAttributes[AXAttributeNames.kAXTitleAttribute]?.value as? String ?? "UnknownTitle",
+                descriptionText: fetchedAttributes[AXAttributeNames.kAXDescriptionAttribute]?.value as? String ?? "",
+                value: fetchedAttributes[AXAttributeNames.kAXValueAttribute]?.value as? String ?? "",
+                fullPath: "focused://\(focusedElement.briefDescription())", // Create a pseudo-path
+                children: [], // Focused elements are typically not expanded for children here
+                attributes: fetchedAttributes,
+                actions: focusedElement.supportedActions() ?? [],
+                hasChildrenAXProperty: (focusedElement.children()?.count ?? 0) > 0,
+                depth: 0 // Treat as a root for display purposes in the focus log
+            )
+            
+            // Update the focused elements log
+            self.focusedElementsLog.append(newNode)
+            if self.focusedElementsLog.count > 20 { // Keep the log trimmed
+                self.focusedElementsLog.removeFirst()
+            }
+            
+            // If focus tracking also implies selecting in the main tree
+            if Defaults[.selectTreeOnFocusChange], let mainTreeRoot = self.accessibilityTree.first, mainTreeRoot.pid == pid {
+                if let existingNode = findNodeByAXElement(focusedElement.underlyingElement, in: [mainTreeRoot]) {
+                    self.selectedNode = existingNode
+                    self.scrollToSelectedNode = existingNode.id // Trigger scroll
+                    self.updateHighlightForNode(existingNode, isHover: false, isFocusHighlight: true)
                 } else {
-                    axInfoLog("Focus in app (\(appNameForInfo)) not currently selected. Auto-select disabled. Update info message.") // CHANGED
-                    self.focusedElementInfo = "Focused: \(appNameForInfo) - Tree not loaded. Select to inspect."
-                    if self.temporarilySelectedNodeIDByFocus != nil { self.temporarilySelectedNodeIDByFocus = nil; self.highlightWindowController.hideHighlight() }
-                    return
+                     axDebugLog("Focused element not found in main tree for selection.")
                 }
             }
-        }
-
-        let appElementForPath = AXUIElementCreateApplication(pid)
-
-        let role = focusedElement.role()
-        let title = focusedElement.title()
-        let pathArray = focusedElement.generatePathArray(upTo: Element(appElementForPath))
-        // PathComponent in AXorcist.Element's Path struct might have a better string representation.
-        // Assuming generatePathArray returns [String] for now, or that Path.PathComponent.description is suitable.
-        // For now, using map { $0.isEmpty ? "(empty)" : $0 } as was originally there for String arrays.
-        let pathString = pathArray.map { $0.description.isEmpty ? "(empty)" : $0.description }.joined(separator: " / ") // Adjusted if pathArray is [PathComponent]
-
-        var infoParts: [String] = []
-        infoParts.append("Focused Path: \(pathString)")
-        if let r = role, !r.isEmpty { infoParts.append("Role: \(r)") }
-        if let t = title, !t.isEmpty { infoParts.append("Title: \(t)") }
-        self.focusedElementInfo = infoParts.joined(separator: "\n")
-
-        // Populate detailed attributes description
-        var attributesText = "Focused Element Attributes:\n"
-        
-        // Explicitly fetch attributes for the focusedElement using the global getElementAttributes function
-        // from AXorcist module (assuming it's accessible globally or via an AXorcist instance method that calls it).
-        // AXpectorViewModel.defaultFetchAttributes should be accessible as Self.defaultFetchAttributes here.
-        let (fetchedAttributes, _) = getElementAttributes(
-            element: focusedElement, 
-            attributes: Self.defaultFetchAttributes, // Use the class's static list of attributes
-            outputFormat: .smart // .smart or .jsonString, .smart is likely better for display
-        )
-
-        if !fetchedAttributes.isEmpty {
-            for (key, value) in fetchedAttributes.sorted(by: { $0.key < $1.key }) {
-                let valueString = String(describing: value.value) 
-                attributesText += "  • \(key): \(valueString)\n"
-            }
-        } else {
-            attributesText += "  (No attributes could be fetched for the focused element)"
-        }
-        self.focusedElementAttributesDescription = attributesText
-
-        if let appTree = self.accessibilityTree.first, appTree.pid == pid, 
-           let foundNode = findNodeByAXElement(focusedElement.underlyingElement, in: [appTree]) { 
-            self.temporarilySelectedNodeIDByFocus = foundNode.id 
-            _ = expandParents(for: foundNode.id, in: self.accessibilityTree) 
-            updateHighlightForNode(foundNode, isHover: false, isFocusHighlight: true) 
-            axInfoLog("Focus tracked to node: \(foundNode.displayName)") // CHANGED
-        } else {
-            if self.accessibilityTree.first?.pid != pid && !autoSelectFocusedApp {
-                // Info already set to "Tree not loaded" or will be updated by selectedApplicationPID change.
-            } else {
-                axInfoLog("Focused element (\(title ?? role ?? "unknown")) not found in currently loaded AXpector tree for PID \(pid).") // CHANGED
-            }
-            self.temporarilySelectedNodeIDByFocus = nil 
-            highlightWindowController.hideHighlight()
+            // Ensure UI updates if selectedNode or logs changed by publishing changes.
+            // self.objectWillChange.send() // This is often handled by @Published
         }
     }
 } 

@@ -61,7 +61,9 @@ class AXpectorViewModel: ObservableObject {
                 cachedNodeIDForSettableStatus = nil
                 editingAttributeKey = nil
                 attributeUpdateStatusMessage = nil
-                fetchAccessibilityTreeForSelectedApp()
+                Task { // Wrap async call in Task
+                    await fetchAccessibilityTreeForSelectedApp()
+                }
             }
         }
     }
@@ -168,6 +170,7 @@ class AXpectorViewModel: ObservableObject {
     internal var appActivationObserver: AnyObject?
     internal var observedPIDForFocus: pid_t = 0
     @Published var autoSelectFocusedApp: Bool = true
+    @Published var focusedElementsLog: [AXPropertyNode] = []
 
     // Filter/Search
     @Published var filterText: String = ""
@@ -236,17 +239,21 @@ class AXpectorViewModel: ObservableObject {
         actionStatusMessage = "Performing: \\(actionName)..."
         Task {
             let appIdentifier = targetNode.pid != 0 ? String(targetNode.pid) : nil
-            var criteria: [String: String] = [:]
-            if let role = targetNode.attributes[AXAttributeNames.kAXRoleAttribute]?.value as? String { criteria[AXAttributeNames.kAXRoleAttribute] = role }
-            if let title = targetNode.attributes[AXAttributeNames.kAXTitleAttribute]?.value as? String { criteria[AXAttributeNames.kAXTitleAttribute] = title }
-            if let identifier = targetNode.attributes[AXAttributeNames.kAXIdentifierAttribute]?.value as? String { criteria[AXAttributeNames.kAXIdentifierAttribute] = identifier }
-            if criteria.isEmpty {
+            var stringCriteria: [String: String] = [:] // Renamed for clarity
+            if let role = targetNode.attributes[AXAttributeNames.kAXRoleAttribute]?.value as? String { stringCriteria[AXAttributeNames.kAXRoleAttribute] = role }
+            if let title = targetNode.attributes[AXAttributeNames.kAXTitleAttribute]?.value as? String { stringCriteria[AXAttributeNames.kAXTitleAttribute] = title }
+            if let identifier = targetNode.attributes[AXAttributeNames.kAXIdentifierAttribute]?.value as? String { stringCriteria[AXAttributeNames.kAXIdentifierAttribute] = identifier }
+            if stringCriteria.isEmpty {
                 if let role = targetNode.attributes[AXAttributeNames.kAXRoleAttribute]?.value as? String, role == AXRoleNames.kAXStaticTextRole as String {
-                     if let value = targetNode.attributes[AXAttributeNames.kAXValueAttribute]?.value as? String, !value.isEmpty { criteria[AXAttributeNames.kAXValueAttribute] = value }
-                     else { criteria[AXAttributeNames.kAXTitleAttribute] = targetNode.displayName }
-                } else { criteria[AXAttributeNames.kAXTitleAttribute] = targetNode.displayName }
+                     if let value = targetNode.attributes[AXAttributeNames.kAXValueAttribute]?.value as? String, !value.isEmpty { stringCriteria[AXAttributeNames.kAXValueAttribute] = value }
+                     else { stringCriteria[AXAttributeNames.kAXTitleAttribute] = targetNode.displayName }
+                } else { stringCriteria[AXAttributeNames.kAXTitleAttribute] = targetNode.displayName }
             }
-            let locator = Locator(criteria: criteria, rootElementPathHint: targetNode.fullPathArrayForLocator)
+            
+            let criteriaForLocator = axConvertStringCriteriaToCriterionArray(stringCriteria)
+            let pathHintsForLocator = axConvertStringPathHintsToComponentArray(targetNode.fullPathArrayForLocator)
+            let locator = Locator(criteria: criteriaForLocator, rootElementPathHint: pathHintsForLocator)
+            
             await GlobalAXLogger.shared.updateOperationDetails(commandID: "performAction_\\(actionName)", appName: appIdentifier)
             let response = await axorcist.handlePerformAction(for: appIdentifier, locator: locator, actionName: actionName)
             if Defaults[.verboseLogging_axpector] {
@@ -278,17 +285,21 @@ class AXpectorViewModel: ObservableObject {
         AXAttributeNames.kAXChildrenAttribute, AXAttributeNames.kAXRoleDescriptionAttribute
     ]
 
-    // MARK: - Accessibility Tree Loading
-    internal func fetchAccessibilityTreeForSelectedApp(forceReload: Bool = false) {
+    // MARK: - Accessibility Tree Fetching
+    func fetchAccessibilityTreeForSelectedApp() async {
         guard let pid = selectedApplicationPID else {
-            axWarningLog("Attempted to fetch tree with no application selected.")
-            self.accessibilityTree = []; self.originalAccessibilityTree = []; self.filteredAccessibilityTree = []; self.selectedNode = nil
+            self.accessibilityTree = []
+            self.originalAccessibilityTree = []
+            self.filteredAccessibilityTree = []
+            self.selectedNode = nil
             self.treeLoadingError = "No application selected."
             return
         }
         guard let app = NSRunningApplication(processIdentifier: pid) else {
-            axWarningLog("Application with PID \(pid) not found.")
-            self.treeLoadingError = "Application with PID \(pid) not found."; self.accessibilityTree = []; self.originalAccessibilityTree = []; self.filteredAccessibilityTree = []
+            self.treeLoadingError = "Application with PID \(pid) not found."
+            self.accessibilityTree = []
+            self.originalAccessibilityTree = []
+            self.filteredAccessibilityTree = []
             self.isLoadingTree = false
             return
         }
@@ -306,11 +317,9 @@ class AXpectorViewModel: ObservableObject {
     private func performTreeFetchAndProcess(appName: String, pid: Int32, commandID: String) async {
         await GlobalAXLogger.shared.updateOperationDetails(commandID: commandID, appName: appName)
         
-        // Create the application element directly
-        let appElement = AXUIElementCreateApplication(pid)
-        let rootElement = Element(appElement)
+        let appElementAXUI = AXUIElementCreateApplication(pid)
+        let rootElement = Element(appElementAXUI)
         
-        // Fetch the tree structure directly using Element objects
         let nodes = await recursivelyFetchChildren(
             forElement: rootElement,
             pid: pid,
@@ -320,46 +329,44 @@ class AXpectorViewModel: ObservableObject {
             pathOfElementToFetchChildrenFor: ""
         )
         
-        await MainActor.run {
-            self.isLoadingTree = false
-            self.treeLoadingError = nil
+        // Call the new MainActor UI update function
+        await updateTreeUI(nodes: nodes, appName: appName, pid: pid, appElementAXUI: appElementAXUI)
+    }
+
+    @MainActor
+    private func updateTreeUI(nodes: [AXPropertyNode], appName: String, pid: pid_t, appElementAXUI: AXUIElement) async {
+        self.isLoadingTree = false
+        self.treeLoadingError = nil
+        
+        if !nodes.isEmpty {
+            let (attributes, _) = await getElementAttributes(element: Element(appElementAXUI), attributes: Self.defaultFetchAttributes, outputFormat: .jsonString)
             
-            if !nodes.isEmpty {
-                // Create a root node for the application
-                let appAttributes = getElementAttributes(
-                    element: rootElement,
-                    attributes: Self.defaultFetchAttributes,
-                    outputFormat: .jsonString
-                ).0
-                
-                let appNode = AXPropertyNode(
-                    id: UUID(),
-                    axElementRef: appElement,
-                    pid: pid,
-                    role: appAttributes[AXAttributeNames.kAXRoleAttribute]?.value as? String ?? "Application",
-                    title: appName,
-                    descriptionText: "",
-                    value: "",
-                    fullPath: appName,
-                    children: nodes,
-                    attributes: appAttributes,
-                    actions: rootElement.supportedActions() ?? [],
-                    hasChildrenAXProperty: !nodes.isEmpty,
-                    depth: 0
-                )
-                appNode.areChildrenFullyLoaded = true
-                
-                self.accessibilityTree = [appNode]
-                self.originalAccessibilityTree = [appNode]
-            } else {
-                self.accessibilityTree = []
-                self.originalAccessibilityTree = []
-            }
+            let appNode = AXPropertyNode(
+                id: UUID(),
+                axElementRef: appElementAXUI,
+                pid: pid,
+                role: attributes[AXAttributeNames.kAXRoleAttribute]?.value as? String ?? "Application",
+                title: appName,
+                descriptionText: "",
+                value: "",
+                fullPath: appName,
+                children: nodes,
+                attributes: attributes,
+                actions: Element(appElementAXUI).supportedActions() ?? [], // Get actions from Element
+                hasChildrenAXProperty: !nodes.isEmpty,
+                depth: 0
+            )
+            appNode.areChildrenFullyLoaded = true // Since initial fetch depth loads them
             
-            self.applyFilter()
+            self.accessibilityTree = [appNode]
+            self.originalAccessibilityTree = [appNode]
+        } else {
+            self.accessibilityTree = []
+            self.originalAccessibilityTree = []
         }
         
-        await GlobalAXLogger.shared.updateOperationDetails(commandID: nil, appName: nil)
+        self.applyFilter() // This should also be on MainActor if it modifies @Published properties
+        await GlobalAXLogger.shared.updateOperationDetails(commandID: nil, appName: nil) // Log ending on main actor too
     }
 
     enum AXpectorError: Error, LocalizedError {
@@ -368,6 +375,35 @@ class AXpectorViewModel: ObservableObject {
             switch self {
             case .general(let message): return message
             }
+        }
+    }
+
+    // MARK: - Hover and Focus Helpers (Highlights)
+    private func highlightElementAtPoint(_ point: NSPoint) async {
+        guard let pid = selectedApplicationPID else { return }
+        
+        // axorcist.getElementAtPoint returns (element: AXElement?, error: String?)
+        let getElementResult = await axorcist.getElementAtPoint(pid: pid, point: point, requestedAttributes: Self.defaultFetchAttributes)
+
+        if let axUiElement = getElementResult.element { // Use .element from the tuple
+            let el = Element(axUiElement) // axUiElement is AXUIElement, wrap it
+            let role = el.role()
+            let title = el.title()
+            let briefDesc = el.briefDescription(includeRole: true, includeTitle: true, includeValue: false, includeDescription: false)
+            // Careful with multi-line string for hoveredElementInfo
+            hoveredElementInfo = "Hovered: \(briefDesc)\nRole: \(role ?? "N/A")\nTitle: \(title ?? "N/A")"
+            if let appTree = self.accessibilityTree.first, appTree.pid == pid, 
+               let foundNode = findNodeByAXElement(axUiElement, in: [appTree]) { // Use axUiElement directly
+                temporarilySelectedNodeIDByHover = foundNode.id
+                updateHighlightForNode(foundNode, isHover: true, isFocusHighlight: false)
+            } else {
+                temporarilySelectedNodeIDByHover = nil
+                updateHighlightForAXUIElement(axUiElement, color: NSColor.systemYellow) // Use axUiElement
+            }
+        } else {
+            hoveredElementInfo = "Hovered: Nothing found at point. Error: \(getElementResult.error ?? "Unknown")"
+            temporarilySelectedNodeIDByHover = nil
+            highlightWindowController.hideHighlight()
         }
     }
 }
@@ -396,19 +432,29 @@ extension AXpectorViewModel {
     internal func updateHoveredElement(at mouseLocation: NSPoint) async { 
         guard isHoverModeActive, let pid = selectedApplicationPID else { return }
         await GlobalAXLogger.shared.updateOperationDetails(commandID: "hover_\(pid)", appName: String(pid))
-        let response = axorcist.getElementAtPoint(pid: pid, point: mouseLocation, requestedAttributes: Self.defaultFetchAttributes)
+        
+        // axorcist.getElementAtPoint returns (element: AXElement?, error: String?)
+        let getElementResult = await axorcist.getElementAtPoint(pid: pid, point: mouseLocation, requestedAttributes: Self.defaultFetchAttributes)
         
         var newHoverInfo: String = "Hover: No element."
 
-        if let codableElement = response.data?.value as? AXElement { 
-            let roleValue = codableElement.attributes?[AXAttributeNames.kAXRoleAttribute]?.value as? String ?? "N/A"
-            let titleValue = codableElement.attributes?[AXAttributeNames.kAXTitleAttribute]?.value as? String ?? ""
+        // getElementResult.element is AXUIElement directly
+        if let axUiElement = getElementResult.element {
+            // To get attributes like role and title, we need to wrap axUiElement in an Element
+            // or use the attributes already fetched if getElementAtPoint is modified to return them.
+            // For now, let's assume getElementAtPoint returns requestedAttributes in its AXElement wrapper if it changes.
+            // Based on current axorcist.getElementAtPoint, it returns AXUIElement, not AXElement struct with attributes.
+            // This part needs to be re-evaluated based on what getElementAtPoint actually returns or if we need another fetch.
+            // For simplicity, if getElementResult.element is AXUIElement, let's just make a brief description from it.
+            let tempEl = Element(axUiElement)
+            let roleValue = tempEl.role() ?? "N/A"
+            let titleValue = tempEl.title() ?? ""
             
             let titlePart = titleValue.isEmpty ? "" : " - \\\"\\(titleValue.prefix(30))\\\""
-            newHoverInfo = "Hover: \(roleValue)\(titlePart)"
+            newHoverInfo = "Hover: \\(roleValue)\\(titlePart)"
  
-        } else if let errorMsg = response.error {
-            newHoverInfo = "Hover Error: \(errorMsg)"
+        } else if let errorMsg = getElementResult.error {
+            newHoverInfo = "Hover Error: \\(errorMsg)"
         }
         
         await MainActor.run {
@@ -431,6 +477,21 @@ extension AXpectorViewModel {
         AXValueGetValue(posVal as! AXValue, .cgPoint, &position)
         AXValueGetValue(sizeVal as! AXValue, .cgSize, &size)
         return NSRect(origin: position, size: size)
+    }
+}
+
+// Add the missing helper function
+extension AXpectorViewModel {
+    internal func updateHighlightForAXUIElement(_ axElement: AXUIElement?, color: NSColor) {
+        guard let element = axElement else {
+            highlightWindowController.hideHighlight()
+            return
+        }
+        if let frame = getFrameForAXElement(element) {
+            highlightWindowController.highlight(rect: frame, color: color)
+        } else {
+            highlightWindowController.hideHighlight()
+        }
     }
 }
 

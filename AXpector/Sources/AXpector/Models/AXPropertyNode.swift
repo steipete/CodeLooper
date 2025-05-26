@@ -79,4 +79,27 @@ class AXPropertyNode: ObservableObject, Identifiable, Hashable {
         // For now, return nil for empty to signify no meaningful hint.
         return components.isEmpty ? nil : components
     }
+}
+
+// Struct to hold display-specific information for an attribute
+public struct AttributeDisplayInfo {
+    public let displayString: String
+    // public let valueType: AXValueType? // REMOVED as getValueType was removed
+    public let isSettable: Bool
+    public let settableDisplayString: String
+    public let navigatableElementRef: AXUIElement? // If this attribute represents a navigable element
+
+    public init(
+        displayString: String,
+        // valueType: AXValueType? = nil, // REMOVED
+        isSettable: Bool,
+        settableDisplayString: String,
+        navigatableElementRef: AXUIElement? = nil
+    ) {
+        self.displayString = displayString
+        // self.valueType = valueType // REMOVED
+        self.isSettable = isSettable
+        self.settableDisplayString = settableDisplayString
+        self.navigatableElementRef = navigatableElementRef
+    }
 } 

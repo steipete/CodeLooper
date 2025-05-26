@@ -128,7 +128,9 @@ private struct ObserverView: View {
                     
                     if viewModel.selectedApplicationPID != nil {
                         DSButton("Refresh Tree", style: .secondary, size: .small) {
-                            viewModel.fetchAccessibilityTreeForSelectedApp() // Re-use existing fetch
+                            Task {
+                                await viewModel.fetchAccessibilityTreeForSelectedApp()
+                            }
                         }
                         .disabled(viewModel.isLoadingTree)
                         .frame(maxWidth: .infinity)
@@ -337,7 +339,9 @@ private struct TreeSidebarView: View {
                 // Refresh Button
                 if viewModel.selectedApplicationPID != nil {
                     DSButton("Refresh Tree", style: .secondary, size: .small) {
-                        viewModel.fetchAccessibilityTreeForSelectedApp()
+                        Task {
+                            await viewModel.fetchAccessibilityTreeForSelectedApp()
+                        }
                     }
                     .disabled(viewModel.isLoadingTree)
                     .frame(maxWidth: .infinity)
