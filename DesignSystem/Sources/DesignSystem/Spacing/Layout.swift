@@ -8,6 +8,7 @@ public struct Layout {
         public static let medium: CGFloat = 8
         public static let large: CGFloat = 12
         public static let xLarge: CGFloat = 16
+        public static let button: CGFloat = 6
         public static let round: CGFloat = 9999
     }
     
@@ -27,6 +28,7 @@ public struct Layout {
         public static let medium = ShadowStyle(radius: 4, y: 2)
         public static let large = ShadowStyle(radius: 8, y: 4)
         public static let xLarge = ShadowStyle(radius: 16, y: 8)
+        public static let contentCard = ShadowStyle(color: ColorPalette.shadowLight.opacity(0.5), radius: 3, y: 1)
     }
     
     // MARK: - Animation
