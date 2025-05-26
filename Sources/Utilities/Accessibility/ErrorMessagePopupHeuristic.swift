@@ -9,13 +9,14 @@ import Foundation
 struct ErrorMessagePopupHeuristic: AXElementHeuristic {
     let locatorType: LocatorType = .errorMessagePopup
 
+
     @MainActor func discover(for pid: pid_t, axorcist: AXorcist) async -> Locator? {
         // tempLogs removed
 
         // Attempt 1: Look for a pop-up dialog with an error message
         let locator1 = Locator(
             matchAll: false,
-            criteria: ["role": "AXWindow", "subrole": "AXDialog", "description_contains_any": "error,failed,unable"]
+            criteria: AXElementHeuristic.convertDictionaryToCriteriaArray(["role": "AXWindow", "subrole_exact": "AXDialog", "description_contains_any": "error,failed,unable"])
         )
         let queryResponse1 = await axorcist.handleQuery(
             for: String(pid),
@@ -27,7 +28,7 @@ struct ErrorMessagePopupHeuristic: AXElementHeuristic {
         // Attempt 2: Look for static text that is likely an error message
         let locator2 = Locator(
             matchAll: false,
-            criteria: ["role": "AXStaticText", "isLikelyErrorMessage": "true"]
+            criteria: AXElementHeuristic.convertDictionaryToCriteriaArray(["role": "AXStaticText", "isLikelyErrorMessage_exact": "true"])
         )
         let queryResponse2 = await axorcist.handleQuery(
             for: String(pid),
@@ -39,7 +40,7 @@ struct ErrorMessagePopupHeuristic: AXElementHeuristic {
         // Attempt 3: Look for a more generic static text containing error keywords
         let locator3 = Locator(
             matchAll: false,
-            criteria: ["role": "AXStaticText", "computed_name_contains_any": "error,failed,unable,warning,invalid"]
+            criteria: AXElementHeuristic.convertDictionaryToCriteriaArray(["role": "AXStaticText", "computed_name_contains_any": "error,failed,unable,warning,invalid"])
         )
         let queryResponse3 = await axorcist.handleQuery(
             for: String(pid),

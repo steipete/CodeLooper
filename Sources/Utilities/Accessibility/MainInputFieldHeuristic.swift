@@ -9,11 +9,12 @@ import Foundation
 struct MainInputFieldHeuristic: AXElementHeuristic {
     let locatorType: LocatorType = .mainInputField
 
+
     @MainActor func discover(for pid: pid_t, axorcist: AXorcist) async -> Locator? {
         // Strategy 1: Look for a text area that is enabled
         let strategy1 = Locator(
             matchAll: true,
-            criteria: ["role": "AXTextArea", "enabled": "true"]
+            criteria: AXElementHeuristic.convertDictionaryToCriteriaArray(["role_exact": "AXTextArea", "enabled_exact": "true"])
         )
         let queryResponse1 = await axorcist.handleQuery(
             for: String(pid),
@@ -25,7 +26,7 @@ struct MainInputFieldHeuristic: AXElementHeuristic {
         // Strategy 2: Look for a text field that is enabled
         let strategy2 = Locator(
             matchAll: true,
-            criteria: ["role": "AXTextField", "enabled": "true"]
+            criteria: AXElementHeuristic.convertDictionaryToCriteriaArray(["role_exact": "AXTextField", "enabled_exact": "true"])
         )
         let queryResponse2 = await axorcist.handleQuery(
             for: String(pid),
@@ -37,12 +38,12 @@ struct MainInputFieldHeuristic: AXElementHeuristic {
         // Strategy 3: Fallback - any element that looks like a text input area based on common AX attributes
         let strategy3 = Locator(
             matchAll: false,
-            criteria: [
-                "role": "AXTextArea",
-                "AXRoleDescription": "text area",
-                "AXIdentifier": "main_chat_input", // Example specific identifier
-                "AXPlaceholderValue_contains": "message"
-            ]
+            criteria: AXElementHeuristic.convertDictionaryToCriteriaArray([
+                "role_exact": "AXTextArea",
+                "AXRoleDescription_exact": "text area", // AXRoleDescription is an attribute name
+                "AXIdentifier_exact": "main_chat_input", // AXIdentifier is an attribute name
+                "AXPlaceholderValue_contains": "message" // AXPlaceholderValue is an attribute name
+            ])
         )
         let queryResponse3 = await axorcist.handleQuery(
             for: String(pid),

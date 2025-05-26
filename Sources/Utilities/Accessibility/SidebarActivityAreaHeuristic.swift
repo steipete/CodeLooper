@@ -8,14 +8,17 @@ import Foundation
 struct SidebarActivityAreaHeuristic: AXElementHeuristic {
     let locatorType: LocatorType = .sidebarActivityArea
 
+
     @MainActor func discover(for pid: pid_t, axorcist: AXorcist) async -> Locator? {
         let locator1 = Locator(
             matchAll: false,
-            criteria: ["role": AXRoleNames.kAXScrollAreaRole],
-            computedNameContains: "chat"
+            criteria: AXElementHeuristic.convertDictionaryToCriteriaArray([
+                "role_exact": AXRoleNames.kAXScrollAreaRole,
+                "computedName_contains": "chat"
+            ])
         )
         let queryResponse1 = await axorcist.handleQuery(
-            for: nil,
+            for: String(pid),
             locator: locator1,
             maxDepth: nil, requestedAttributes: nil, outputFormat: nil
         )
@@ -23,10 +26,13 @@ struct SidebarActivityAreaHeuristic: AXElementHeuristic {
 
         let locator2 = Locator(
             matchAll: false,
-            criteria: ["role": AXRoleNames.kAXScrollAreaRole, "identifier": "sidebar"]
+            criteria: AXElementHeuristic.convertDictionaryToCriteriaArray([
+                "role_exact": AXRoleNames.kAXScrollAreaRole,
+                "identifier_exact": "sidebar"
+            ])
         )
         let queryResponse2 = await axorcist.handleQuery(
-            for: nil,
+            for: String(pid),
             locator: locator2,
             maxDepth: nil, requestedAttributes: nil, outputFormat: nil
         )
@@ -34,11 +40,13 @@ struct SidebarActivityAreaHeuristic: AXElementHeuristic {
 
         let locator3 = Locator(
             matchAll: false,
-            criteria: ["role": AXRoleNames.kAXGroupRole],
-            computedNameContains: "sidebar"
+            criteria: AXElementHeuristic.convertDictionaryToCriteriaArray([
+                "role_exact": AXRoleNames.kAXGroupRole,
+                "computedName_contains": "sidebar"
+            ])
         )
         let queryResponse3 = await axorcist.handleQuery(
-            for: nil,
+            for: String(pid),
             locator: locator3,
             maxDepth: nil, requestedAttributes: nil, outputFormat: nil
         )

@@ -9,11 +9,12 @@ import Foundation
 struct ResumeConnectionButtonHeuristic: AXElementHeuristic {
     let locatorType: LocatorType = .resumeConnectionButton
 
+
     @MainActor func discover(for pid: pid_t, axorcist: AXorcist) async -> Locator? {
         // Strategy 1: Look for button with exact title "Resume connection"
         let strategy1 = Locator(
             matchAll: false, 
-            criteria: ["role": "AXButton", "title": "Resume connection"]
+            criteria: AXElementHeuristic.convertDictionaryToCriteriaArray(["role_exact": "AXButton", "title_exact": "Resume connection"])
         )
         let queryResponse1 = await axorcist.handleQuery(
             for: String(pid),
@@ -25,7 +26,7 @@ struct ResumeConnectionButtonHeuristic: AXElementHeuristic {
         // Strategy 2: Look for button containing "Resume"
         let strategy2 = Locator(
             matchAll: false, 
-            criteria: ["role": "AXButton", "title_contains": "Resume"]
+            criteria: AXElementHeuristic.convertDictionaryToCriteriaArray(["role_exact": "AXButton", "title_contains": "Resume"])
         )
         let queryResponse2 = await axorcist.handleQuery(
             for: String(pid),
@@ -37,7 +38,7 @@ struct ResumeConnectionButtonHeuristic: AXElementHeuristic {
         // Strategy 3: Look for any link containing "Resume"
         let strategy3 = Locator(
             matchAll: false,
-            criteria: ["role": "AXLink", "title_contains": "Resume"]
+            criteria: AXElementHeuristic.convertDictionaryToCriteriaArray(["role_exact": "AXLink", "title_contains": "Resume"])
         )
         let queryResponse3 = await axorcist.handleQuery(
             for: String(pid),

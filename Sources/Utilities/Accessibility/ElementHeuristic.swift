@@ -26,66 +26,57 @@ public enum LocatorType: String, CaseIterable, Codable {
         }
     }
 
+
     // Default locators are defined here as part of the enum
     var defaultLocator: Locator? {
         switch self {
         case .connectionErrorIndicator:
             return Locator(
-                matchAll: false,
-                criteria: ["role": "AXStaticText", "computed_name_contains_any": "offline,network error,connection failed"],
+                criteria: AXElementHeuristic.convertDictionaryToCriteriaArray(["role": "AXStaticText", "computed_name_contains_any": "offline,network error,connection failed"]),
                 rootElementPathHint: nil,
                 requireAction: nil
             )
         case .errorMessagePopup:
             return Locator(
-                matchAll: false,
-                criteria: ["role": "AXWindow", "subrole": "AXDialog", "description_contains_any": "error,failed,unable"],
+                criteria: AXElementHeuristic.convertDictionaryToCriteriaArray(["role": "AXWindow", "subrole_exact": "AXDialog", "description_contains_any": "error,failed,unable"]),
                 rootElementPathHint: nil,
                 requireAction: nil
             )
         case .forceStopResumeLink:
             return Locator(
-                matchAll: false,
-                criteria: ["role": "AXLink", "title_contains_any": "Force Stop,Resume"],
+                criteria: AXElementHeuristic.convertDictionaryToCriteriaArray(["role": "AXLink", "title_contains_any": "Force Stop,Resume"]),
                 rootElementPathHint: nil,
                 requireAction: "AXPressAction"
             )
         case .mainInputField:
             return Locator(
-                matchAll: false,
-                criteria: ["role": "AXTextArea", "placeholder_value_contains": "message"],
+                criteria: AXElementHeuristic.convertDictionaryToCriteriaArray(["role": "AXTextArea", "placeholder_value_contains": "message"]),
                 rootElementPathHint: nil,
                 requireAction: nil
             )
         case .resumeConnectionButton:
             return Locator(
-                matchAll: false,
-                criteria: ["role": "AXButton", "title_contains_any": "Resume,Try Again,Reload"],
+                criteria: AXElementHeuristic.convertDictionaryToCriteriaArray(["role": "AXButton", "title_contains_any": "Resume,Try Again,Reload"]),
                 rootElementPathHint: nil,
                 requireAction: "AXPressAction"
             )
         case .generatingIndicatorText:
             return Locator(
-                matchAll: false,
-                criteria: ["role": "AXStaticText"],
+                criteria: AXElementHeuristic.convertDictionaryToCriteriaArray(["role": "AXStaticText", "computedName_contains": "generating"]),
                 rootElementPathHint: nil,
-                requireAction: nil,
-                computedNameContains: "generating"
+                requireAction: nil
             )
         case .sidebarActivityArea:
             return Locator(
-                matchAll: false,
-                criteria: ["role": "AXScrollArea"],
+                criteria: AXElementHeuristic.convertDictionaryToCriteriaArray(["role": "AXScrollArea"]),
                 rootElementPathHint: nil,
                 requireAction: nil
             )
         case .stopGeneratingButton:
             return Locator(
-                matchAll: false,
-                criteria: ["role": "AXButton"],
+                criteria: AXElementHeuristic.convertDictionaryToCriteriaArray(["role": "AXButton", "computedName_contains": "Stop"]),
                 rootElementPathHint: nil,
-                requireAction: nil,
-                computedNameContains: "Stop"
+                requireAction: nil
             )
         }
     }
@@ -102,6 +93,32 @@ protocol AXElementHeuristic {
     ///   - axorcist: An instance of `AXorcist` to perform queries.
     /// - Returns: An `Locator` if discovery is successful, otherwise `nil`.
     @MainActor func discover(for pid: pid_t, axorcist: AXorcist) async -> Locator?
+}
+
+// MARK: - Shared Utilities
+
+extension AXElementHeuristic {
+    /// Converts a dictionary with keys like "attribute_matchType" to an array of Criterion objects
+    static func convertDictionaryToCriteriaArray(_ dict: [String: String]) -> [Criterion] {
+        var criteriaArray: [Criterion] = []
+        for (key, value) in dict {
+            let keyParts = key.split(separator: "_", maxSplits: 1)
+            let attributeName = String(keyParts[0])
+            var matchType: JSONPathHintComponent.MatchType = .exact // Default
+
+            if keyParts.count > 1 {
+                let matchTypeString = String(keyParts[1])
+                if matchTypeString == "contains" { matchType = .contains }
+                else if matchTypeString == "contains_any" { matchType = .containsAny }
+                else if matchTypeString == "prefix" { matchType = .prefix }
+                else if matchTypeString == "suffix" { matchType = .suffix }
+                else if matchTypeString == "regex" { matchType = .regex }
+                else { matchType = JSONPathHintComponent.MatchType(rawValue: matchTypeString) ?? .exact }
+            }
+            criteriaArray.append(Criterion(attribute: attributeName, value: value, match_type: matchType))
+        }
+        return criteriaArray
+    }
 }
 
 // End of file, nothing should follow

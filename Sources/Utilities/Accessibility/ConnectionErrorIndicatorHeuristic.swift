@@ -9,11 +9,12 @@ import Foundation
 struct ConnectionErrorIndicatorHeuristic: AXElementHeuristic {
     let locatorType: LocatorType = .connectionErrorIndicator
 
+
     @MainActor func discover(for pid: pid_t, axorcist: AXorcist) async -> Locator? {
         // Strategy 1: Look for a static text element with title "Connection error"
         let strategy1 = Locator(
             matchAll: false,
-            criteria: ["role": "AXStaticText", "title": "Connection error"]
+            criteria: AXElementHeuristic.convertDictionaryToCriteriaArray(["role_exact": "AXStaticText", "title_exact": "Connection error"])
         )
         let queryResponse1 = await axorcist.handleQuery(
             for: String(pid),
@@ -25,7 +26,7 @@ struct ConnectionErrorIndicatorHeuristic: AXElementHeuristic {
         // Strategy 2: Look for static text containing "Connection error"
         let strategy2 = Locator(
             matchAll: false,
-            criteria: ["role": "AXStaticText", "title_contains_any": "Connection error,Unable to connect,Network error"]
+            criteria: AXElementHeuristic.convertDictionaryToCriteriaArray(["role_exact": "AXStaticText", "title_contains_any": "Connection error,Unable to connect,Network error"])
         )
         let queryResponse2 = await axorcist.handleQuery(
             for: String(pid),
@@ -37,7 +38,7 @@ struct ConnectionErrorIndicatorHeuristic: AXElementHeuristic {
         // Strategy 3: Look for a generic error message pattern if more specific ones fail.
         let strategy3 = Locator(
             matchAll: false,
-            criteria: ["role": "AXStaticText", "value_contains_any": "error,failed"]
+            criteria: AXElementHeuristic.convertDictionaryToCriteriaArray(["role_exact": "AXStaticText", "value_contains_any": "error,failed"])
         )
         let queryResponse3 = await axorcist.handleQuery(
             for: String(pid),
