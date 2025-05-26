@@ -17,8 +17,11 @@ It resolves these situations:
 - **Connection Issues**: "We're having trouble connecting to the model provider."<br>
   <img src="assets/trouble.png" alt="Connection Trouble" width="600">
 
-- **Stop after 25 Loops**: It automatically presses resume.<br>
+- **Stop after 25 loops**: It automatically presses resume.<br>
   <img src="assets/default-stop-25.png" alt="Default Stop at 25 loops" width="600">
+
+- **Edited in another chat**: Automatically accepts if another tab edited a file.<br>
+  <img src="assets/edited-another-chat.png" alt="File is being edited by another chat" width="600">
 
 ## Automatic MCP Installation
 
