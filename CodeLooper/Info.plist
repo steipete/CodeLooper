@@ -64,5 +64,9 @@
     <key>NSAccessibilityUsageDescription</key>
     <string>CodeLooper requires Accessibility permissions to interact with UI elements for automation and to provide its full functionality.</string>
 
+    <!-- Apple Events/Automation Permissions -->
+    <key>NSAppleEventsUsageDescription</key>
+    <string>CodeLooper needs automation access to control Cursor and inject JavaScript for advanced monitoring features.</string>
+
 </dict>
 </plist> 
