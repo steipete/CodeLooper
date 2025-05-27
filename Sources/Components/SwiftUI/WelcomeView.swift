@@ -186,6 +186,14 @@ struct AccessibilityStepView: View {
                         .fontWeight(.semibold)
                     AutomationPermissionsView(showTitle: false, compact: false)
                 }
+
+                // Screen Recording permissions
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("Screen Recording")
+                        .font(.subheadline)
+                        .fontWeight(.semibold)
+                    ScreenRecordingPermissionsView(showTitle: false, compact: false)
+                }
             }
             .padding(.horizontal, 40)
 

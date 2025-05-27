@@ -1,11 +1,11 @@
 import AppKit
-import AXorcist
 import Diagnostics
 import SwiftUI
+@preconcurrency import ScreenCaptureKit
 
-/// A view component that displays automation permission status for Cursor
+/// A view component that displays screen recording permission status
 /// and provides a button to grant permissions if needed
-struct AutomationPermissionsView: View {
+struct ScreenRecordingPermissionsView: View {
     // MARK: Lifecycle
 
     init(showTitle: Bool = true, compact: Bool = false) {
@@ -21,7 +21,7 @@ struct AutomationPermissionsView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: compact ? 8 : 12) {
             if showTitle {
-                Text("Automation Permissions")
+                Text("Screen Recording Permissions")
                     .font(.headline)
             }
 
@@ -33,15 +33,14 @@ struct AutomationPermissionsView: View {
                         .font(.system(size: compact ? 16 : 20))
 
                     VStack(alignment: .leading, spacing: 4) {
-                        Text(viewModel.hasPermissions ? "Automation Granted" : "Automation Required")
+                        Text(viewModel.hasPermissions ? "Screen Recording Granted" : "Screen Recording Required")
                             .font(compact ? .callout : .body)
                             .fontWeight(.medium)
 
                         if !compact {
                             Text(viewModel.hasPermissions
-                                ? "CodeLooper can control Cursor via automation."
-                                :
-                                "CodeLooper needs permission to control Cursor for advanced features like JS injection.")
+                                ? "CodeLooper can capture Cursor windows for AI analysis."
+                                : "CodeLooper needs permission to capture Cursor windows without shadows for AI analysis.")
                                 .font(.caption)
                                 .foregroundColor(.secondary)
                         }
@@ -76,11 +75,11 @@ struct AutomationPermissionsView: View {
 
     // MARK: Private
 
-    @StateObject private var viewModel = AutomationPermissionsViewModel()
+    @StateObject private var viewModel = ScreenRecordingPermissionsViewModel()
 }
 
 @MainActor
-class AutomationPermissionsViewModel: ObservableObject {
+class ScreenRecordingPermissionsViewModel: ObservableObject {
     // MARK: Lifecycle
 
     init() {
@@ -97,8 +96,8 @@ class AutomationPermissionsViewModel: ObservableObject {
     @Published var hasPermissions: Bool = false
 
     func openSystemSettings() {
-        logger.info("Opening System Settings for automation permissions")
-        if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Automation") {
+        logger.info("Opening System Settings for screen recording permissions")
+        if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_ScreenCapture") {
             NSWorkspace.shared.open(url)
         }
     }
@@ -107,39 +106,23 @@ class AutomationPermissionsViewModel: ObservableObject {
 
     private var monitoringTask: Task<Void, Never>?
     private let logger = Logger(category: .permissions)
-    private let cursorBundleID = "com.todesktop.230313mzl4w4u92"
 
     private func checkPermissions() {
-        // Check automation permission for Cursor
-        hasPermissions = checkAutomationPermission()
-        logger.info("Automation permissions status for Cursor: \(hasPermissions)")
+        Task {
+            hasPermissions = await checkScreenRecordingPermission()
+            logger.info("Screen recording permissions status: \(hasPermissions)")
+        }
     }
 
-    private func checkAutomationPermission() -> Bool {
-        // Check if we have automation permission for System Events
-        let systemEventsScript = NSAppleScript(source: """
-            tell application "System Events"
-                return name of first process whose frontmost is true
-            end tell
-        """)
-        
-        var errorDict: NSDictionary?
-        let result = systemEventsScript?.executeAndReturnError(&errorDict)
-        
-        // If we can access System Events, we have automation permission
-        if result != nil && errorDict == nil {
+    private func checkScreenRecordingPermission() async -> Bool {
+        do {
+            // Try to get shareable content - this will fail if we don't have permission
+            _ = try await SCShareableContent.excludingDesktopWindows(false, onScreenWindowsOnly: true)
             return true
+        } catch {
+            // If we get an error, we likely don't have permission
+            return false
         }
-        
-        // Fallback: try to check Cursor directly
-        let cursorScript = NSAppleScript(source: """
-            tell application id "\(cursorBundleID)"
-                return exists
-            end tell
-        """)
-        
-        let cursorResult = cursorScript?.executeAndReturnError(&errorDict)
-        return cursorResult != nil && errorDict == nil
     }
 
     private func startMonitoring() {
@@ -149,16 +132,16 @@ class AutomationPermissionsViewModel: ObservableObject {
             while !Task.isCancelled {
                 try? await Task.sleep(nanoseconds: 2_000_000_000) // 2 seconds
 
-                let currentState = checkAutomationPermission()
+                let currentState = await checkScreenRecordingPermission()
 
                 if currentState != lastState {
                     lastState = currentState
                     hasPermissions = currentState
-                    logger.info("Automation permissions changed to: \(currentState)")
+                    logger.info("Screen recording permissions changed to: \(currentState)")
 
                     // Post notification for other parts of the app
                     NotificationCenter.default.post(
-                        name: .automationPermissionsChanged,
+                        name: .screenRecordingPermissionsChanged,
                         object: nil,
                         userInfo: ["granted": currentState]
                     )
@@ -171,18 +154,18 @@ class AutomationPermissionsViewModel: ObservableObject {
 // MARK: - Notification Names
 
 extension Notification.Name {
-    static let automationPermissionsChanged = Notification.Name("automationPermissionsChanged")
+    static let screenRecordingPermissionsChanged = Notification.Name("screenRecordingPermissionsChanged")
 }
 
 // MARK: - Preview
 
-struct AutomationPermissionsView_Previews: PreviewProvider {
+struct ScreenRecordingPermissionsView_Previews: PreviewProvider {
     static var previews: some View {
         VStack(spacing: 20) {
-            AutomationPermissionsView(showTitle: true, compact: false)
+            ScreenRecordingPermissionsView(showTitle: true, compact: false)
                 .padding()
 
-            AutomationPermissionsView(showTitle: false, compact: true)
+            ScreenRecordingPermissionsView(showTitle: false, compact: true)
                 .padding()
         }
     }
