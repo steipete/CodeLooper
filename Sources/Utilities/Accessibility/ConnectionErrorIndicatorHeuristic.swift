@@ -14,38 +14,44 @@ struct ConnectionErrorIndicatorHeuristic: AXElementHeuristic {
         // Strategy 1: Look for a static text element with title "Connection error"
         let strategy1 = Locator(
             matchAll: false,
-            criteria: AXElementHeuristic.convertDictionaryToCriteriaArray(["role_exact": "AXStaticText", "title_exact": "Connection error"])
+            criteria: Self.convertDictionaryToCriteriaArray(["role_exact": "AXStaticText", "title_exact": "Connection error"])
         )
-        let queryResponse1 = await axorcist.handleQuery(
-            for: String(pid),
+        let queryCommand1 = QueryCommand(
+            appIdentifier: String(pid),
             locator: strategy1,
-            maxDepth: nil, requestedAttributes: nil, outputFormat: nil
+            attributesToReturn: nil,
+            maxDepthForSearch: 10
         )
-        if queryResponse1.data != nil { return strategy1 }
+        let queryResponse1 = axorcist.handleQuery(command: queryCommand1, maxDepth: nil)
+        if queryResponse1.payload != nil { return strategy1 }
         
         // Strategy 2: Look for static text containing "Connection error"
         let strategy2 = Locator(
             matchAll: false,
-            criteria: AXElementHeuristic.convertDictionaryToCriteriaArray(["role_exact": "AXStaticText", "title_contains_any": "Connection error,Unable to connect,Network error"])
+            criteria: Self.convertDictionaryToCriteriaArray(["role_exact": "AXStaticText", "title_contains_any": "Connection error,Unable to connect,Network error"])
         )
-        let queryResponse2 = await axorcist.handleQuery(
-            for: String(pid),
+        let queryCommand2 = QueryCommand(
+            appIdentifier: String(pid),
             locator: strategy2,
-            maxDepth: nil, requestedAttributes: nil, outputFormat: nil
+            attributesToReturn: nil,
+            maxDepthForSearch: 10
         )
-        if queryResponse2.data != nil { return strategy2 }
+        let queryResponse2 = axorcist.handleQuery(command: queryCommand2, maxDepth: nil)
+        if queryResponse2.payload != nil { return strategy2 }
 
         // Strategy 3: Look for a generic error message pattern if more specific ones fail.
         let strategy3 = Locator(
             matchAll: false,
-            criteria: AXElementHeuristic.convertDictionaryToCriteriaArray(["role_exact": "AXStaticText", "value_contains_any": "error,failed"])
+            criteria: Self.convertDictionaryToCriteriaArray(["role_exact": "AXStaticText", "value_contains_any": "error,failed"])
         )
-        let queryResponse3 = await axorcist.handleQuery(
-            for: String(pid),
+        let queryCommand3 = QueryCommand(
+            appIdentifier: String(pid),
             locator: strategy3,
-            maxDepth: nil, requestedAttributes: nil, outputFormat: nil
+            attributesToReturn: nil,
+            maxDepthForSearch: 10
         )
-        if queryResponse3.data != nil { return strategy3 }
+        let queryResponse3 = axorcist.handleQuery(command: queryCommand3, maxDepth: nil)
+        if queryResponse3.payload != nil { return strategy3 }
         
         return nil
     }

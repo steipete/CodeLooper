@@ -76,12 +76,12 @@ public final class CursorJSHook: @unchecked Sendable {
     // 2️⃣ AppleScript UI-drive
     private func injectViaAppleScript() throws {
         // JavaScript to be injected. Standard triple quotes are fine.
-        let js = """ 
-        (function hook(u='ws://127.0.0.1:\(port)'){\
-        const w=new WebSocket(u);w.onopen=()=>w.send('ready');\
-        w.onmessage=e=>{let r;try{r=eval(e.data)}catch(x){r=x.stack};\
-        w.send(JSON.stringify(r));};})();
-        """
+        let js = """
+(function hook(u=\'ws://127.0.0.1:\(port)\'){ \
+const w=new WebSocket(u);w.onopen=()=>w.send(\'ready\'); \
+w.onmessage=e=>{let r;try{r=eval(e.data)}catch(x){r=x.stack}; \
+w.send(JSON.stringify(r));};})();
+"""
 
         // AppleScript content. Raw triple quotes #"""..."""# are used.
         let script = #"""

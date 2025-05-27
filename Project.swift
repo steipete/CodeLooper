@@ -53,9 +53,10 @@ let project = Project(
             product: .staticFramework,
             bundleId: "me.steipete.codelooper.Diagnostics",
             deploymentTargets: .macOS("14.0"),
-            sources: ["Sources/Diagnostics/**", "Sources/Settings/Models/DefaultsKeys.swift", "Sources/Utilities/Constants.swift"],
+            sources: ["Sources/Diagnostics/**"],
             dependencies: [
-                .package(product: "Logging")
+                .package(product: "Logging"),
+                .package(product: "AXorcist")
             ],
             settings: .settings(
                 base: [

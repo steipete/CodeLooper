@@ -1,5 +1,6 @@
 
 **Code Looper - Technical Specification**
+https://aistudio.google.com/prompts/1Kr0eQwevQj5iD_vllx6g78EbrCKzYkSc
 
 **Version:** 1.0 (Derived from Iterative Revisions up to v26)
 **Project Repository:** `https://github.com/steipete/CodeLooper`

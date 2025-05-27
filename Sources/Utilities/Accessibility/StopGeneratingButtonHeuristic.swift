@@ -13,38 +13,44 @@ struct StopGeneratingButtonHeuristic: AXElementHeuristic {
         // Strategy 1: Look for button with exact title "Stop generating"
         let strategy1 = Locator(
             matchAll: false,
-            criteria: AXElementHeuristic.convertDictionaryToCriteriaArray(["role_exact": "AXButton", "title_exact": "Stop generating"])
+            criteria: Self.convertDictionaryToCriteriaArray(["role_exact": "AXButton", "title_exact": "Stop generating"])
         )
-        let queryResponse1 = await axorcist.handleQuery(
-            for: String(pid),
+        let queryCommand1 = QueryCommand(
+            appIdentifier: String(pid),
             locator: strategy1,
-            maxDepth: nil, requestedAttributes: nil, outputFormat: nil
+            attributesToReturn: nil,
+            maxDepthForSearch: 10
         )
-        if queryResponse1.data != nil { return strategy1 }
+        let queryResponse1 = axorcist.handleQuery(command: queryCommand1, maxDepth: nil)
+        if queryResponse1.payload != nil { return strategy1 }
 
         // Strategy 2: Look for button with title containing "Stop"
         let strategy2 = Locator(
             matchAll: false,
-            criteria: AXElementHeuristic.convertDictionaryToCriteriaArray(["role_exact": "AXButton", "title_contains": "Stop"])
+            criteria: Self.convertDictionaryToCriteriaArray(["role_exact": "AXButton", "title_contains": "Stop"])
         )
-        let queryResponse2 = await axorcist.handleQuery(
-            for: String(pid),
+        let queryCommand2 = QueryCommand(
+            appIdentifier: String(pid),
             locator: strategy2,
-            maxDepth: nil, requestedAttributes: nil, outputFormat: nil
+            attributesToReturn: nil,
+            maxDepthForSearch: 10
         )
-        if queryResponse2.data != nil { return strategy2 }
+        let queryResponse2 = axorcist.handleQuery(command: queryCommand2, maxDepth: nil)
+        if queryResponse2.payload != nil { return strategy2 }
 
         // Strategy 3: Look for any link containing "Stop"
         let strategy3 = Locator(
             matchAll: false,
-            criteria: AXElementHeuristic.convertDictionaryToCriteriaArray(["role_exact": "AXLink", "title_contains": "Stop"])
+            criteria: Self.convertDictionaryToCriteriaArray(["role_exact": "AXLink", "title_contains": "Stop"])
         )
-        let queryResponse3 = await axorcist.handleQuery(
-            for: String(pid),
+        let queryCommand3 = QueryCommand(
+            appIdentifier: String(pid),
             locator: strategy3,
-            maxDepth: nil, requestedAttributes: nil, outputFormat: nil
+            attributesToReturn: nil,
+            maxDepthForSearch: 10
         )
-        if queryResponse3.data != nil { return strategy3 }
+        let queryResponse3 = axorcist.handleQuery(command: queryCommand3, maxDepth: nil)
+        if queryResponse3.payload != nil { return strategy3 }
         
         return nil
     }

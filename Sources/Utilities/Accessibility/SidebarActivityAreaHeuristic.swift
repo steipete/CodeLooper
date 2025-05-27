@@ -12,45 +12,51 @@ struct SidebarActivityAreaHeuristic: AXElementHeuristic {
     @MainActor func discover(for pid: pid_t, axorcist: AXorcist) async -> Locator? {
         let locator1 = Locator(
             matchAll: false,
-            criteria: AXElementHeuristic.convertDictionaryToCriteriaArray([
+            criteria: Self.convertDictionaryToCriteriaArray([
                 "role_exact": AXRoleNames.kAXScrollAreaRole,
                 "computedName_contains": "chat"
             ])
         )
-        let queryResponse1 = await axorcist.handleQuery(
-            for: String(pid),
+        let queryCommand1 = QueryCommand(
+            appIdentifier: String(pid),
             locator: locator1,
-            maxDepth: nil, requestedAttributes: nil, outputFormat: nil
+            attributesToReturn: nil,
+            maxDepthForSearch: 10
         )
-        if queryResponse1.data != nil { return locator1 }
+        let queryResponse1 = axorcist.handleQuery(command: queryCommand1, maxDepth: nil)
+        if queryResponse1.payload != nil { return locator1 }
 
         let locator2 = Locator(
             matchAll: false,
-            criteria: AXElementHeuristic.convertDictionaryToCriteriaArray([
+            criteria: Self.convertDictionaryToCriteriaArray([
                 "role_exact": AXRoleNames.kAXScrollAreaRole,
                 "identifier_exact": "sidebar"
             ])
         )
-        let queryResponse2 = await axorcist.handleQuery(
-            for: String(pid),
+        let queryCommand2 = QueryCommand(
+            appIdentifier: String(pid),
             locator: locator2,
-            maxDepth: nil, requestedAttributes: nil, outputFormat: nil
+            attributesToReturn: nil,
+            maxDepthForSearch: 10
         )
-        if queryResponse2.data != nil { return locator2 }
+        let queryResponse2 = axorcist.handleQuery(command: queryCommand2, maxDepth: nil)
+        if queryResponse2.payload != nil { return locator2 }
 
         let locator3 = Locator(
             matchAll: false,
-            criteria: AXElementHeuristic.convertDictionaryToCriteriaArray([
+            criteria: Self.convertDictionaryToCriteriaArray([
                 "role_exact": AXRoleNames.kAXGroupRole,
                 "computedName_contains": "sidebar"
             ])
         )
-        let queryResponse3 = await axorcist.handleQuery(
-            for: String(pid),
+        let queryCommand3 = QueryCommand(
+            appIdentifier: String(pid),
             locator: locator3,
-            maxDepth: nil, requestedAttributes: nil, outputFormat: nil
+            attributesToReturn: nil,
+            maxDepthForSearch: 10
         )
-        if queryResponse3.data != nil { return locator3 }
+        let queryResponse3 = axorcist.handleQuery(command: queryCommand3, maxDepth: nil)
+        if queryResponse3.payload != nil { return locator3 }
 
         return nil
     }

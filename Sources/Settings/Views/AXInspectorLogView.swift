@@ -128,12 +128,10 @@ struct AXInspectorLogView_Previews: PreviewProvider { // Renamed
     static var previews: some View {
         Task {
             axClearLogs()
-            axDebugLog("Debug message for preview", details: ["key": "value"])
+            axDebugLog("Debug message for preview", details: ["key": AnyCodable("value")])
             axInfoLog("Info message for preview")
             try? await Task.sleep(for: .milliseconds(10))
             axWarningLog("Warning: Something might be wrong.")
-            try? await Task.sleep(for: .milliseconds(10))
-            axErrorLog("Error: Something went wrong!", details: ["code": "123"])
         }
         return AXInspectorLogView() // Renamed
     }

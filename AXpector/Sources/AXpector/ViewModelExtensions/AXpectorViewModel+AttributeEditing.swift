@@ -285,10 +285,10 @@ extension AXpectorViewModel {
 
         if let val = attributeValue?.value {
             if let ref = tempElement.attribute(Attribute<AXUIElement>(attributeKey)) {
-                displayStr = Element(ref).briefDescription() ?? "<AXUIElement>"
+                displayStr = Element(ref).briefDescription()
                 navRef = ref
             } else if let arr = tempElement.attribute(Attribute<[AXUIElement]>(attributeKey)), !arr.isEmpty {
-                let firstElementPreview = Element(arr[0]).briefDescription() ?? "<AXUIElement>"
+                let firstElementPreview = Element(arr[0]).briefDescription()
                 displayStr = "[\(firstElementPreview), ...] (count: \(arr.count))"
                 navRef = arr[0]
             } else if let str = val as? String {

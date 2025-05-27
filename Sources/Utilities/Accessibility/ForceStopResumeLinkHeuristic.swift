@@ -14,59 +14,61 @@ struct ForceStopResumeLinkHeuristic: AXElementHeuristic {
         // Attempt 1: Look for a link with text "Force Stop and Resume"
         let locator1 = Locator(
             matchAll: false,
-            criteria: AXElementHeuristic.convertDictionaryToCriteriaArray(["role": "AXLink", "title_exact": "Force Stop and Resume"])
+            criteria: Self.convertDictionaryToCriteriaArray(["role": "AXLink", "title_exact": "Force Stop and Resume"])
         )
-        let queryResponse1 = await axorcist.handleQuery(
-            for: String(pid),
+        let queryCommand1 = QueryCommand(
+            appIdentifier: String(pid),
             locator: locator1,
-            maxDepth: nil, requestedAttributes: nil, outputFormat: nil
+            attributesToReturn: nil,
+            maxDepthForSearch: 10
         )
-        if queryResponse1.data != nil { return locator1 }
+        let queryResponse1 = axorcist.handleQuery(command: queryCommand1, maxDepth: nil)
+        if queryResponse1.payload != nil { return locator1 }
         
         // Strategy 1: Look for link containing "Resume Conversation"
         let strategy1 = Locator(
             matchAll: false,
-            criteria: AXElementHeuristic.convertDictionaryToCriteriaArray(["role": "AXLink", "title_contains": "Resume Conversation"])
+            criteria: Self.convertDictionaryToCriteriaArray(["role": "AXLink", "title_contains": "Resume Conversation"])
         )
         
-        let queryResponse2 = await axorcist.handleQuery(
-            for: String(pid),
+        let queryCommand2 = QueryCommand(
+            appIdentifier: String(pid),
             locator: strategy1,
-            maxDepth: nil,
-            requestedAttributes: nil,
-            outputFormat: nil
+            attributesToReturn: nil,
+            maxDepthForSearch: 10
         )
-        if queryResponse2.data != nil { return strategy1 }
+        let queryResponse2 = axorcist.handleQuery(command: queryCommand2, maxDepth: nil)
+        if queryResponse2.payload != nil { return strategy1 }
         
         // Strategy 2: Look for button containing "Resume Conversation"
         let strategy2 = Locator(
             matchAll: false,
-            criteria: AXElementHeuristic.convertDictionaryToCriteriaArray(["role": "AXButton", "title_contains": "Resume Conversation"])
+            criteria: Self.convertDictionaryToCriteriaArray(["role": "AXButton", "title_contains": "Resume Conversation"])
         )
         
-        let queryResponse3 = await axorcist.handleQuery(
-            for: String(pid),
+        let queryCommand3 = QueryCommand(
+            appIdentifier: String(pid),
             locator: strategy2,
-            maxDepth: nil,
-            requestedAttributes: nil,
-            outputFormat: nil
+            attributesToReturn: nil,
+            maxDepthForSearch: 10
         )
-        if queryResponse3.data != nil { return strategy2 }
+        let queryResponse3 = axorcist.handleQuery(command: queryCommand3, maxDepth: nil)
+        if queryResponse3.payload != nil { return strategy2 }
         
         // Strategy 3: Look for any link containing "Resume"
         let strategy3 = Locator(
             matchAll: false,
-            criteria: AXElementHeuristic.convertDictionaryToCriteriaArray(["role": "AXLink", "title_contains": "Resume"])
+            criteria: Self.convertDictionaryToCriteriaArray(["role": "AXLink", "title_contains": "Resume"])
         )
         
-        let queryResponse4 = await axorcist.handleQuery(
-            for: String(pid),
+        let queryCommand4 = QueryCommand(
+            appIdentifier: String(pid),
             locator: strategy3,
-            maxDepth: nil,
-            requestedAttributes: nil,
-            outputFormat: nil
+            attributesToReturn: nil,
+            maxDepthForSearch: 10
         )
-        if queryResponse4.data != nil { return strategy3 }
+        let queryResponse4 = axorcist.handleQuery(command: queryCommand4, maxDepth: nil)
+        if queryResponse4.payload != nil { return strategy3 }
         
         return nil
     }

@@ -32,49 +32,49 @@ public enum LocatorType: String, CaseIterable, Codable {
         switch self {
         case .connectionErrorIndicator:
             return Locator(
-                criteria: AXElementHeuristic.convertDictionaryToCriteriaArray(["role": "AXStaticText", "computed_name_contains_any": "offline,network error,connection failed"]),
+                criteria: GeneratingIndicatorTextHeuristic.convertDictionaryToCriteriaArray(["role": "AXStaticText", "computed_name_contains_any": "offline,network error,connection failed"]),
                 rootElementPathHint: nil,
                 requireAction: nil
             )
         case .errorMessagePopup:
             return Locator(
-                criteria: AXElementHeuristic.convertDictionaryToCriteriaArray(["role": "AXWindow", "subrole_exact": "AXDialog", "description_contains_any": "error,failed,unable"]),
+                criteria: GeneratingIndicatorTextHeuristic.convertDictionaryToCriteriaArray(["role": "AXWindow", "subrole_exact": "AXDialog", "description_contains_any": "error,failed,unable"]),
                 rootElementPathHint: nil,
                 requireAction: nil
             )
         case .forceStopResumeLink:
             return Locator(
-                criteria: AXElementHeuristic.convertDictionaryToCriteriaArray(["role": "AXLink", "title_contains_any": "Force Stop,Resume"]),
+                criteria: GeneratingIndicatorTextHeuristic.convertDictionaryToCriteriaArray(["role": "AXLink", "title_contains_any": "Force Stop,Resume"]),
                 rootElementPathHint: nil,
                 requireAction: "AXPressAction"
             )
         case .mainInputField:
             return Locator(
-                criteria: AXElementHeuristic.convertDictionaryToCriteriaArray(["role": "AXTextArea", "placeholder_value_contains": "message"]),
+                criteria: GeneratingIndicatorTextHeuristic.convertDictionaryToCriteriaArray(["role": "AXTextArea", "placeholder_value_contains": "message"]),
                 rootElementPathHint: nil,
                 requireAction: nil
             )
         case .resumeConnectionButton:
             return Locator(
-                criteria: AXElementHeuristic.convertDictionaryToCriteriaArray(["role": "AXButton", "title_contains_any": "Resume,Try Again,Reload"]),
+                criteria: GeneratingIndicatorTextHeuristic.convertDictionaryToCriteriaArray(["role": "AXButton", "title_contains_any": "Resume,Try Again,Reload"]),
                 rootElementPathHint: nil,
                 requireAction: "AXPressAction"
             )
         case .generatingIndicatorText:
             return Locator(
-                criteria: AXElementHeuristic.convertDictionaryToCriteriaArray(["role": "AXStaticText", "computedName_contains": "generating"]),
+                criteria: GeneratingIndicatorTextHeuristic.convertDictionaryToCriteriaArray(["role": "AXStaticText", "computedName_contains": "generating"]),
                 rootElementPathHint: nil,
                 requireAction: nil
             )
         case .sidebarActivityArea:
             return Locator(
-                criteria: AXElementHeuristic.convertDictionaryToCriteriaArray(["role": "AXScrollArea"]),
+                criteria: GeneratingIndicatorTextHeuristic.convertDictionaryToCriteriaArray(["role": "AXScrollArea"]),
                 rootElementPathHint: nil,
                 requireAction: nil
             )
         case .stopGeneratingButton:
             return Locator(
-                criteria: AXElementHeuristic.convertDictionaryToCriteriaArray(["role": "AXButton", "computedName_contains": "Stop"]),
+                criteria: GeneratingIndicatorTextHeuristic.convertDictionaryToCriteriaArray(["role": "AXButton", "computedName_contains": "Stop"]),
                 rootElementPathHint: nil,
                 requireAction: nil
             )
@@ -115,7 +115,7 @@ extension AXElementHeuristic {
                 else if matchTypeString == "regex" { matchType = .regex }
                 else { matchType = JSONPathHintComponent.MatchType(rawValue: matchTypeString) ?? .exact }
             }
-            criteriaArray.append(Criterion(attribute: attributeName, value: value, match_type: matchType))
+            criteriaArray.append(Criterion(attribute: attributeName, value: value, matchType: matchType))
         }
         return criteriaArray
     }

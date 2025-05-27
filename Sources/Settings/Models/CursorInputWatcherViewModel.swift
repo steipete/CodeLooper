@@ -1,5 +1,5 @@
 import SwiftUI
-import Combine
+@preconcurrency import Combine
 import Diagnostics
 import AXorcist // Import AXorcist module
 
@@ -41,8 +41,7 @@ class CursorInputWatcherViewModel: ObservableObject {
     }
 
     deinit {
-        // deinit is nonisolated. stopWatching must be callable from here.
-        stopWatching() 
+        timerSubscription?.cancel()
     }
 
     private func loadAndParseAllQueries() {
@@ -114,7 +113,7 @@ class CursorInputWatcherViewModel: ObservableObject {
             if parts.count > 1 {
                 matchTypeEnum = JSONPathHintComponent.MatchType(rawValue: String(parts[1])) ?? .exact // changed from .equals
             }
-            criteriaArray.append(Criterion(attribute: attributeName, value: value, match_type: matchTypeEnum)) // value directly, not AnyCodable(value)
+            criteriaArray.append(Criterion(attribute: attributeName, value: value, matchType: matchTypeEnum)) // value directly, not AnyCodable(value)
         }
 
         var pathHints: [JSONPathHintComponent]? = nil
@@ -205,22 +204,19 @@ class CursorInputWatcherViewModel: ObservableObject {
         }
     }
 
-    // Made nonisolated to be callable from deinit.
     // UI updates are dispatched to MainActor.
-    nonisolated private func stopWatching() {
-        timerSubscription?.cancel() // Combine cancellables are thread-safe to cancel
+    private func stopWatching() {
+        // Access to timerSubscription needs to be safe from a nonisolated context.
+        // If timerSubscription is itself guarded by an actor, or if its methods are thread-safe.
+        // Assuming AnyCancellable.cancel() is thread-safe, and assignment to an optional is atomic enough.
+        timerSubscription?.cancel()
         timerSubscription = nil
         
-        Task {
-            await MainActor.run {
-                // self.statusMessage = "Watcher is disabled." // self cannot be used directly in nonisolated func
-                // To update @Published properties from nonisolated, the ViewModel instance needs to be passed or captured.
-                // For simplicity here, we might need a different approach or accept that deinit won't update statusMessage.
-                // Or, the ViewModel holds a reference to something that can update statusMessage on MainActor.
-                // For now, just log from deinit context.
-            }
-        }
-        Logger(category: .settings).info("Cursor input watcher stopped (from deinit or direct call).")
+        // If statusMessage needs update, it must be dispatched to MainActor.
+        // For deinit, usually we don't update UI state that might not exist anymore.
+        // Task { @MainActor {
+        //     self.statusMessage = "Watcher stopped."
+        // }}
     }
 
     private func queryInputText(forInputIndex index: Int) {
@@ -245,21 +241,21 @@ class CursorInputWatcherViewModel: ObservableObject {
         // statusMessage = "Querying text for: \(inputInfo.name)..." // This will rapidly change; consider a general status.
 
         Task { // Perform AXorcist call in a background Task
-            let response = await axorcist.handleQuery(
-                for: appIdentifier,
+            let queryCommand = QueryCommand(
+                appIdentifier: appIdentifier,
                 locator: locator,
-                maxDepth: maxDepth,
-                requestedAttributes: attributesToFetch,
-                outputFormat: .json // AXorcist handles Element conversion internally
+                attributesToReturn: attributesToFetch,
+                maxDepthForSearch: maxDepth
             )
+            let response = axorcist.handleQuery(command: queryCommand, maxDepth: maxDepth) // outputFormat is not part of QueryCommand, handleQuery is not async
 
-            // Process the response on the main thread
+            // Process the response on the MainActor
             await MainActor.run {
                 if let errorMsg = response.error {
-                    self.watchedInputs[index].lastError = "AXorcist Error: \(errorMsg)"
+                    self.watchedInputs[index].lastError = "AXorcist Error: \(errorMsg.message)"
                     self.statusMessage = "Error querying \(inputInfo.name)."
-                    Logger(category: .accessibility).error("AXorcist error for \(inputInfo.name) (query: \(currentQueryFile)): \(errorMsg)")
-                } else if let responseData = response.data { // responseData is AnyCodable
+                    Logger(category: .accessibility).error("AXorcist error for \(inputInfo.name) (query: \(currentQueryFile)): \(errorMsg.message)")
+                } else if case .success(let payload, _) = response, let responseData = payload { // responseData is AnyCodable
                     var foundText: String? = nil
                     var foundElements: [Element] = []
 
@@ -298,7 +294,7 @@ class CursorInputWatcherViewModel: ObservableObject {
                         } else {
                             // If neither AXValue nor the first requested attribute is a string.
                             foundText = "<\(attributesToFetch.first ?? "Attribute") not string or found>"
-                             Logger(category: .accessibility).warning("Could not extract primary text attribute (AXValue or \(attributesToFetch.first ?? "N/A")) as String for \(inputInfo.name). Element dump: \(firstElement.briefDescription(option: .json))")
+                             Logger(category: .accessibility).warning("Could not extract primary text attribute (AXValue or \(attributesToFetch.first ?? "N/A")) as String for \(inputInfo.name). Element dump: \(firstElement.briefDescription(option: .stringified))")
                         }
 
                         self.watchedInputs[index].lastKnownText = foundText ?? "<No text extractable>"

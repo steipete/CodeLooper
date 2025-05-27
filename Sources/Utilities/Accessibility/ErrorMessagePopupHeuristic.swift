@@ -16,38 +16,44 @@ struct ErrorMessagePopupHeuristic: AXElementHeuristic {
         // Attempt 1: Look for a pop-up dialog with an error message
         let locator1 = Locator(
             matchAll: false,
-            criteria: AXElementHeuristic.convertDictionaryToCriteriaArray(["role": "AXWindow", "subrole_exact": "AXDialog", "description_contains_any": "error,failed,unable"])
+            criteria: Self.convertDictionaryToCriteriaArray(["role": "AXWindow", "subrole_exact": "AXDialog", "description_contains_any": "error,failed,unable"])
         )
-        let queryResponse1 = await axorcist.handleQuery(
-            for: String(pid),
+        let queryCommand1 = QueryCommand(
+            appIdentifier: String(pid),
             locator: locator1,
-            maxDepth: nil, requestedAttributes: nil, outputFormat: nil
+            attributesToReturn: nil,
+            maxDepthForSearch: 10
         )
-        if queryResponse1.data != nil { return locator1 }
+        let queryResponse1 = axorcist.handleQuery(command: queryCommand1, maxDepth: nil)
+        if queryResponse1.payload != nil { return locator1 }
         
         // Attempt 2: Look for static text that is likely an error message
         let locator2 = Locator(
             matchAll: false,
-            criteria: AXElementHeuristic.convertDictionaryToCriteriaArray(["role": "AXStaticText", "isLikelyErrorMessage_exact": "true"])
+            criteria: Self.convertDictionaryToCriteriaArray(["role": "AXStaticText", "isLikelyErrorMessage_exact": "true"])
         )
-        let queryResponse2 = await axorcist.handleQuery(
-            for: String(pid),
+        let queryCommand2 = QueryCommand(
+            appIdentifier: String(pid),
             locator: locator2,
-            maxDepth: nil, requestedAttributes: nil, outputFormat: nil
+            attributesToReturn: nil,
+            maxDepthForSearch: 10
         )
-        if queryResponse2.data != nil { return locator2 }
+        let queryResponse2 = axorcist.handleQuery(command: queryCommand2, maxDepth: nil)
+        if queryResponse2.payload != nil { return locator2 }
 
         // Attempt 3: Look for a more generic static text containing error keywords
         let locator3 = Locator(
             matchAll: false,
-            criteria: AXElementHeuristic.convertDictionaryToCriteriaArray(["role": "AXStaticText", "computed_name_contains_any": "error,failed,unable,warning,invalid"])
+            criteria: Self.convertDictionaryToCriteriaArray(["role": "AXStaticText", "computed_name_contains_any": "error,failed,unable,warning,invalid"])
         )
-        let queryResponse3 = await axorcist.handleQuery(
-            for: String(pid),
+        let queryCommand3 = QueryCommand(
+            appIdentifier: String(pid),
             locator: locator3,
-            maxDepth: nil, requestedAttributes: nil, outputFormat: nil
+            attributesToReturn: nil,
+            maxDepthForSearch: 10
         )
-        if queryResponse3.data != nil { return locator3 }
+        let queryResponse3 = axorcist.handleQuery(command: queryCommand3, maxDepth: nil)
+        if queryResponse3.payload != nil { return locator3 }
 
         return nil
     }

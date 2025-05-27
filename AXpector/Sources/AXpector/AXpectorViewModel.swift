@@ -398,22 +398,25 @@ class AXpectorViewModel: ObservableObject {
         )
         let getElementResult = axorcist.handleGetElementAtPoint(command: getElementCommand)
 
-        if let axElement = getElementResult.payload?.value as? AXElement {
-            let axUiElement = axElement.underlyingElement
-            let el = Element(axUiElement) // axUiElement is AXUIElement, wrap it
-            let briefDesc = el.briefDescription(option: ValueFormatOption.smart)
+        if let axElementData = getElementResult.payload?.value as? AXElementData {
+            // Comment out lines that depend on axUiElement since AXElementData doesn't have underlyingElement
+            // let axUiElement = axElementData.underlyingElement
+            // let el = Element(axUiElement) // axUiElement is AXUIElement, wrap it
+            let briefDesc = axElementData.briefDescription
             // Careful with multi-line string for hoveredElementInfo
             hoveredElementInfo = "Hovered: \(briefDesc)"
-            if let appTree = self.accessibilityTree.first, appTree.pid == pid, 
-               let foundNode = findNodeByAXElement(axUiElement, in: [appTree]) { // Use axUiElement directly
-                temporarilySelectedNodeIDByHover = foundNode.id
-                updateHighlightForNode(foundNode, isHover: true, isFocusHighlight: false)
-            } else {
-                temporarilySelectedNodeIDByHover = nil
-                updateHighlightForAXUIElement(axUiElement, color: NSColor.systemYellow) // Use axUiElement
-            }
+            // Comment out lines that require the actual AXUIElement reference
+            // if let appTree = self.accessibilityTree.first, appTree.pid == pid, 
+            //    let foundNode = findNodeByAXElement(axUiElement, in: [appTree]) { // Use axUiElement directly
+            //     temporarilySelectedNodeIDByHover = foundNode.id
+            //     updateHighlightForNode(foundNode, isHover: true, isFocusHighlight: false)
+            // } else {
+            //     temporarilySelectedNodeIDByHover = nil
+            //     updateHighlightForAXUIElement(axUiElement, color: NSColor.systemYellow) // Use axUiElement
+            // }
+            temporarilySelectedNodeIDByHover = nil
         } else {
-            hoveredElementInfo = "Hovered: Nothing found at point. Error: \(getElementResult.error ?? "Unknown")"
+            hoveredElementInfo = "Hovered: Nothing found at point. Error: \(getElementResult.error?.message ?? "Unknown")"
             temporarilySelectedNodeIDByHover = nil
             highlightWindowController.hideHighlight()
         }
@@ -452,16 +455,18 @@ class AXpectorViewModel: ObservableObject {
         
         var newHoverInfo: String = "Hover: No element."
 
-        if let axElement = getElementResult.payload?.value as? AXElement {
-            let axUiElement = axElement.underlyingElement
-            let tempEl = Element(axUiElement)
-            let roleValue = tempEl.role() ?? "N/A"
-            let titleValue = tempEl.title() ?? ""
+        if let axElementData = getElementResult.payload?.value as? AXElementData {
+            // Comment out lines that depend on axUiElement since AXElementData doesn't have underlyingElement
+            // let axUiElement = axElementData.underlyingElement
+            // let tempEl = Element(axUiElement)
+            // let roleValue = tempEl.role() ?? "N/A"
+            // let titleValue = tempEl.title() ?? ""
             
-            let titlePartFormatted = titleValue.isEmpty ? "" : " - \"\(titleValue.prefix(30))\""
-            newHoverInfo = "Hover: \(roleValue)\(titlePartFormatted)"
+            // let titlePartFormatted = titleValue.isEmpty ? "" : " - \"\(titleValue.prefix(30))\""
+            // newHoverInfo = "Hover: \(roleValue)\(titlePartFormatted)"
+            newHoverInfo = "Hover: \(axElementData.briefDescription)"
  
-        } else if let errorMsg = getElementResult.error {
+        } else if let errorMsg = getElementResult.error?.message {
             newHoverInfo = "Hover Error: \(errorMsg)"
         }
         

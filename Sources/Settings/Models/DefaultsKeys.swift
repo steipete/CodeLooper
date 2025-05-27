@@ -1,5 +1,5 @@
 @preconcurrency import Defaults
-import Diagnostics
+// import Diagnostics // Removed as DefaultsKeys should not be part of Diagnostics module
 import Foundation
 
 extension Defaults.Keys {
