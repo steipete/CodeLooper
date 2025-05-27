@@ -27,6 +27,9 @@ let package = Package(
         .package(url: "https://github.com/sparkle-project/Sparkle.git", .upToNextMajor(from: "2.0.0")),
         // MenuBarExtra enhancements
         .package(url: "https://github.com/orchetect/MenuBarExtraAccess.git", .upToNextMajor(from: "1.2.1")),
+        // AI and image analysis dependencies
+        .package(url: "https://github.com/MacPaw/OpenAI", .upToNextMajor(from: "0.3.0")),
+        .package(url: "https://github.com/loopwork-ai/ollama-swift", .upToNextMajor(from: "1.0.0")),
         // Development-only dependencies
         .package(url: "https://github.com/cpisciotta/xcbeautify", from: "2.28.0")
     ],
@@ -52,7 +55,9 @@ let package = Package(
                 .product(name: "AXpector", package: "AXpector"),
                 .product(name: "Sparkle", package: "Sparkle"),
                 .product(name: "DesignSystem", package: "DesignSystem"),
-                .product(name: "MenuBarExtraAccess", package: "MenuBarExtraAccess")
+                .product(name: "MenuBarExtraAccess", package: "MenuBarExtraAccess"),
+                .product(name: "OpenAI", package: "OpenAI"),
+                .product(name: "Ollama", package: "ollama-swift")
             ],
             path: "Sources",
             exclude: ["Diagnostics"],
