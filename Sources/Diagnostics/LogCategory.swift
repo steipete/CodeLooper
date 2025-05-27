@@ -50,6 +50,7 @@ public enum LogCategory: String, CaseIterable {
     case mcpConfiguration
     case appLifecycle
     case unknown
+    case jshook = "JSHook"
 
     // MARK: Public
 
