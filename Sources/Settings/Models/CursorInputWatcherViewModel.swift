@@ -3,7 +3,10 @@
 import AppKit
 import AXorcist // Import AXorcist module
 @preconcurrency import Combine
+import Defaults
 import Diagnostics
+@preconcurrency import Foundation
+import Security
 import SwiftUI
 
 // MARK: - axorc Output Structures (Element is provided by AXorcist, so these might be simplified or removed)
@@ -24,6 +27,7 @@ class CursorInputWatcherViewModel: ObservableObject {
         queryManager.loadAndParseAllQueries()
         jsHookManager.loadPortMappings()
         setupWindowsSubscription()
+        setupHeartbeatListener()
 
         // Port probing for pre-existing windows now happens automatically
         // when windows are first detected in setupWindowsSubscription()
@@ -33,6 +37,7 @@ class CursorInputWatcherViewModel: ObservableObject {
         // Cancel subscriptions - these are fine since they're non-isolated
         timerSubscription?.cancel()
         windowsSubscription?.cancel()
+        heartbeatListenerTask?.cancel()
         // JS hooks cleanup handled by ARC when jsHookManager is deallocated
     }
 
@@ -45,9 +50,26 @@ class CursorInputWatcherViewModel: ObservableObject {
     @Published var statusMessage: String = "Watcher is disabled."
     @Published var cursorWindows: [MonitoredWindowInfo] = []
     @Published var isInjectingHook: Bool = false // Track injection state
+    @Published var windowHeartbeatStatus: [String: HeartbeatStatus] = [:] // Track heartbeat status per window
+    @Published var windowAIAnalysis: [String: AIAnalysisStatus] = [:] // Track AI analysis status per window
 
     var hookedWindows: Set<String> {
         jsHookManager.hookedWindows
+    }
+    
+    struct HeartbeatStatus {
+        var lastHeartbeat: Date?
+        var isAlive: Bool = false
+        var resumeNeeded: Bool = false
+        var hookVersion: String?
+        var location: String?
+    }
+    
+    struct AIAnalysisStatus {
+        var isAnalyzing: Bool = false
+        var lastAnalysis: Date?
+        var status: String?
+        var error: String?
     }
 
     @Published var isWatchingEnabled: Bool = false {
@@ -182,6 +204,7 @@ class CursorInputWatcherViewModel: ObservableObject {
     private let projectRoot: String
     private let cursorMonitor = CursorMonitor.shared
     private var windowsSubscription: AnyCancellable?
+    private var heartbeatListenerTask: Task<Void, Never>?
 
     private func checkForExistingHook(in window: MonitoredWindowInfo) async -> Bool {
         // Try to probe using the existing port for this window
@@ -661,12 +684,20 @@ class CursorInputWatcherViewModel: ObservableObject {
             if let window = cursorWindows.first(where: { $0.id == windowId }),
                let hook = jsHookManager.jsHooks[windowId]
             {
-                if !hook.isHooked {
-                    // Hook was lost, remove it
+                // Check if we're still receiving heartbeats
+                let heartbeatStatus = windowHeartbeatStatus[windowId]
+                let hasRecentHeartbeat = heartbeatStatus?.lastHeartbeat.map { Date().timeIntervalSince($0) < 10 } ?? false
+                
+                if !hook.isHooked && !hasRecentHeartbeat {
+                    // Hook was lost and no recent heartbeats, remove it
                     jsHookManager.removeHookedWindow(windowId)
                     jsHookManager.jsHooks.removeValue(forKey: windowId)
                     Logger(category: .settings)
-                        .warning("JS Hook lost for window \(window.windowTitle ?? "Unknown")")
+                        .warning("JS Hook lost for window \(window.windowTitle ?? "Unknown") - no heartbeat")
+                } else if !hook.isHooked && hasRecentHeartbeat {
+                    // WebSocket disconnected but still receiving heartbeats
+                    Logger(category: .settings)
+                        .info("JS Hook WebSocket disconnected but still receiving heartbeats for window \(window.windowTitle ?? "Unknown")")
                 }
             }
         }
@@ -876,6 +907,246 @@ class CursorInputWatcherViewModel: ObservableObject {
                 }
             }
         }
+    }
+    
+    // MARK: - Heartbeat Monitoring
+    
+    private func setupHeartbeatListener() {
+        heartbeatListenerTask = Task { [weak self] in
+            await self?.startHeartbeatMonitoring()
+        }
+    }
+    
+    private func startHeartbeatMonitoring() async {
+        // Set up notification observer
+        let observer = NotificationCenter.default.addObserver(
+            forName: Notification.Name("CursorHeartbeat"),
+            object: nil,
+            queue: nil
+        ) { [weak self] notification in
+            Task { @MainActor in
+                guard let self = self,
+                      let userInfo = notification.userInfo,
+                      let port = userInfo["port"] as? UInt16,
+                      let location = userInfo["location"] as? String,
+                      let version = userInfo["version"] as? String,
+                      let resumeNeeded = userInfo["resumeNeeded"] as? Bool else {
+                    return
+                }
+                
+                // Find window ID by port
+                if let windowId = self.jsHookManager.windowPorts.first(where: { $0.value == port })?.key {
+                    self.updateHeartbeatStatus(
+                        for: windowId,
+                        resumeNeeded: resumeNeeded,
+                        location: location,
+                        hookVersion: version
+                    )
+                }
+            }
+        }
+        
+        // Keep task alive until cancelled
+        while !Task.isCancelled {
+            try? await Task.sleep(for: .seconds(60))
+        }
+        
+        // Clean up when done
+        await MainActor.run {
+            NotificationCenter.default.removeObserver(observer)
+        }
+    }
+    
+    private func updateHeartbeatStatus(
+        for windowId: String,
+        resumeNeeded: Bool,
+        location: String? = nil,
+        hookVersion: String? = nil
+    ) {
+        var status = windowHeartbeatStatus[windowId] ?? HeartbeatStatus()
+        status.lastHeartbeat = Date()
+        status.isAlive = true
+        status.resumeNeeded = resumeNeeded
+        if let location = location {
+            status.location = location
+        }
+        if let hookVersion = hookVersion {
+            status.hookVersion = hookVersion
+        }
+        windowHeartbeatStatus[windowId] = status
+        
+        // Mark stale heartbeats after 5 seconds
+        Task {
+            try? await Task.sleep(for: .seconds(5))
+            if let lastHeartbeat = windowHeartbeatStatus[windowId]?.lastHeartbeat,
+               Date().timeIntervalSince(lastHeartbeat) >= 5 {
+                windowHeartbeatStatus[windowId]?.isAlive = false
+            }
+        }
+    }
+    
+    func getHeartbeatStatus(for windowId: String) -> HeartbeatStatus? {
+        windowHeartbeatStatus[windowId]
+    }
+    
+    func getAIAnalysisStatus(for windowId: String) -> AIAnalysisStatus? {
+        windowAIAnalysis[windowId]
+    }
+    
+    // MARK: - AI Analysis
+    
+    func analyzeWindowWithAI(window: MonitoredWindowInfo) async {
+        // Set analyzing state
+        windowAIAnalysis[window.id] = AIAnalysisStatus(isAnalyzing: true)
+        
+        do {
+            // Take screenshot
+            guard let screenshot = captureWindowScreenshot(window: window) else {
+                throw NSError(domain: "Screenshot", code: -1, userInfo: [NSLocalizedDescriptionKey: "Failed to capture screenshot"])
+            }
+            
+            // Save screenshot temporarily
+            let tempURL = FileManager.default.temporaryDirectory.appendingPathComponent("cursor_window_\(window.id).png")
+            guard let tiffData = screenshot.tiffRepresentation,
+                  let bitmapImage = NSBitmapImageRep(data: tiffData),
+                  let pngData = bitmapImage.representation(using: .png, properties: [:]) else {
+                throw NSError(domain: "Screenshot", code: -2, userInfo: [NSLocalizedDescriptionKey: "Failed to convert screenshot to PNG"])
+            }
+            try pngData.write(to: tempURL)
+            
+            // Analyze with AI
+            let analysisResult = await analyzeScreenshotWithAI(screenshotPath: tempURL.path)
+            
+            // Update status
+            windowAIAnalysis[window.id] = AIAnalysisStatus(
+                isAnalyzing: false,
+                lastAnalysis: Date(),
+                status: analysisResult,
+                error: nil
+            )
+            
+            // Clean up temp file
+            try? FileManager.default.removeItem(at: tempURL)
+            
+        } catch {
+            windowAIAnalysis[window.id] = AIAnalysisStatus(
+                isAnalyzing: false,
+                lastAnalysis: Date(),
+                status: nil,
+                error: error.localizedDescription
+            )
+        }
+    }
+    
+    @MainActor
+    private func captureWindowScreenshot(window: MonitoredWindowInfo) -> NSImage? {
+        guard let axElement = window.windowAXElement else { return nil }
+        
+        // Get window bounds
+        guard let position = axElement.position(),
+              let size = axElement.size() else { return nil }
+        
+        let windowRect = CGRect(
+            x: CGFloat(position.x),
+            y: CGFloat(position.y),
+            width: CGFloat(size.width),
+            height: CGFloat(size.height)
+        )
+        
+        // Capture the window area
+        // Use .optionOnScreenAboveWindow to capture everything in the rect
+        guard let screenshot = CGWindowListCreateImage(
+            windowRect,
+            .optionOnScreenAboveWindow,
+            CGWindowID(0), // 0 means capture all windows
+            .bestResolution
+        ) else { return nil }
+        
+        return NSImage(cgImage: screenshot, size: windowRect.size)
+    }
+    
+    private func analyzeScreenshotWithAI(screenshotPath: String) async -> String {
+        do {
+            // Load the screenshot
+            guard let screenshot = NSImage(contentsOfFile: screenshotPath) else {
+                return "❌ Failed to load screenshot"
+            }
+            
+            // Initialize AI manager
+            let aiManager = AIServiceManager()
+            
+            // Configure AI service based on defaults
+            let provider = Defaults[.aiProvider]
+            switch provider {
+            case .openAI:
+                let apiKey = loadAPIKeyFromKeychain()
+                if apiKey.isEmpty {
+                    return "❌ OpenAI API key not configured. Please set it in Settings > AI"
+                }
+                aiManager.configure(provider: .openAI, apiKey: apiKey)
+            case .ollama:
+                let baseURLString = Defaults[.ollamaBaseURL]
+                if let url = URL(string: baseURLString) {
+                    aiManager.configure(provider: .ollama, baseURL: url)
+                } else {
+                    aiManager.configure(provider: .ollama)
+                }
+            }
+            
+            // Check if service is available
+            guard await aiManager.isServiceAvailable() else {
+                return "❌ AI service is not available. Check your settings."
+            }
+            
+            // Prepare the analysis request
+            let prompt = """
+            What do you see here? Especially take a look at the text sidebar and check if you see "Generating..." meaning Cursor is working or if it appears idle.
+            
+            Please respond with one of these statuses:
+            - 🟢 Idle: If Cursor appears idle with no generation happening
+            - 🟡 Generating: If you see "Generating..." or similar text indicating AI is working
+            - 🔴 Error: If you see any error messages or connection issues
+            - 🔵 Other: For any other notable status
+            
+            Follow with a brief description of what you observe.
+            """
+            
+            let model = Defaults[.aiModel]
+            let request = ImageAnalysisRequest(
+                image: screenshot,
+                prompt: prompt,
+                model: model
+            )
+            
+            // Analyze the image
+            let response = try await aiManager.analyzeImage(request)
+            return response.text
+            
+        } catch let error as AIServiceError {
+            return "❌ AI Error: \(error.localizedDescription)"
+        } catch {
+            return "❌ Error: \(error.localizedDescription)"
+        }
+    }
+    
+    private func loadAPIKeyFromKeychain() -> String {
+        let query: [String: Any] = [
+            kSecClass as String: kSecClassGenericPassword,
+            kSecAttrService as String: "CODELOOPER_OPENAI_API_KEY",
+            kSecAttrAccount as String: "api-key",
+            kSecReturnData as String: true
+        ]
+        
+        var result: AnyObject?
+        let status = SecItemCopyMatching(query as CFDictionary, &result)
+        
+        if status == errSecSuccess,
+           let data = result as? Data,
+           let apiKey = String(data: data, encoding: .utf8) {
+            return apiKey
+        }
+        
+        return ""
     }
 }
 
