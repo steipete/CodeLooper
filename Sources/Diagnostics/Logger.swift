@@ -102,6 +102,7 @@ private struct MyOSLogHandler: LogHandler {
     public var metadata: Logging.Logger.Metadata = [:]
     public var logLevel: Logging.Logger.Level = .info
 
+    // swiftlint:disable:next function_parameter_count
     public func log(
         level: Logging.Logger.Level,
         message: Logging.Logger.Message,
