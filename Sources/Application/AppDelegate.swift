@@ -82,7 +82,7 @@ public class AppDelegate: NSObject, NSApplicationDelegate,
 
         // Sync login item state with user preference after services are up
         loginItemManager?.syncLoginItemWithPreference()
-        
+
         // Setup dock visibility based on user preference
         setupDockVisibility()
 
@@ -287,11 +287,11 @@ public class AppDelegate: NSObject, NSApplicationDelegate,
         }
         loginItemManager.syncLoginItemWithPreference()
     }
-    
+
     private func setupDockVisibility() {
         logger.info("Setting up dock visibility")
         updateDockVisibility()
-        
+
         // Observe changes to the showInDock preference
         Defaults.observe(.showInDock) { [weak self] change in
             self?.logger.info("Dock visibility preference changed to: \(change.newValue)")
@@ -299,11 +299,11 @@ public class AppDelegate: NSObject, NSApplicationDelegate,
         }
         .tieToLifetime(of: self)
     }
-    
+
     private func updateDockVisibility() {
         let shouldShowInDock = Defaults[.showInDock]
         logger.info("Updating dock visibility to: \(shouldShowInDock)")
-        
+
         if shouldShowInDock {
             NSApp.setActivationPolicy(.regular)
         } else {

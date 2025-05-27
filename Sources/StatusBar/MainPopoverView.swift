@@ -120,7 +120,7 @@ struct MainPopoverView: View {
                 windows: [
                     MonitoredWindowInfo(id: "w1", windowTitle: "Document 1.txt", isPaused: false),
                     MonitoredWindowInfo(id: "w2", windowTitle: "Project Settings", isPaused: true),
-                    MonitoredWindowInfo(id: "w3", windowTitle: nil, isPaused: false)
+                    MonitoredWindowInfo(id: "w3", windowTitle: nil, isPaused: false),
                 ]
             )
 

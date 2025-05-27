@@ -62,7 +62,7 @@ struct SettingsContainerView: View {
         (.externalMCPs, "Extensions", "puzzlepiece.extension"),
         (.advanced, "Advanced", "wrench.and.screwdriver"),
         (.cursorInputWatcher, "Input Watcher", "magnifyingglass"),
-        (.about, "About", "info.circle")
+        (.about, "About", "info.circle"),
     ]
 
     @ViewBuilder

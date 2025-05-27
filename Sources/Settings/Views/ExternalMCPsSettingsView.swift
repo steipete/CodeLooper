@@ -99,7 +99,7 @@ struct ExternalMCPsSettingsView: View {
             description: "Interact with AWS services",
             enabled: false,
             icon: "cloud"
-        )
+        ),
     ]
 
     @State private var showAddMCP = false

@@ -28,8 +28,8 @@ struct AboutSettingsTab: View {
                     let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0.0"
                     let build = Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "Unknown"
                     Text("Version \(version) (Build \(build))")
-                    .font(.footnote)
-                    .foregroundColor(.secondary)
+                        .font(.footnote)
+                        .foregroundColor(.secondary)
                 }
                 .padding(.top, 5)
 

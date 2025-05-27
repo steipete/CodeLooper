@@ -91,7 +91,7 @@ extension MenuBarIconManager {
             "envelope",
             "gear",
             "bell",
-            "network"
+            "network",
         ]
 
         for symbolName in commonSymbols {

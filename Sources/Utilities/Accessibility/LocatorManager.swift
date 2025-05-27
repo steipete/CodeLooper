@@ -30,39 +30,9 @@ public class LocatorManager {
     public static let shared = LocatorManager()
 
     public func getLocator(for type: LocatorType, pid: pid_t? = nil) async -> Locator? {
-        var jsonString: String?
-        _ = type.rawValue // Unused variable
-
-        // 1. Check UserDefaults for user override (JSON string)
-        switch type {
-        case .generatingIndicatorText: jsonString = Defaults[.locatorJSONGeneratingIndicatorText]
-        case .sidebarActivityArea: jsonString = Defaults[.locatorJSONSidebarActivityArea]
-        case .errorMessagePopup: jsonString = Defaults[.locatorJSONErrorMessagePopup]
-        case .stopGeneratingButton: jsonString = Defaults[.locatorJSONStopGeneratingButton]
-        case .connectionErrorIndicator: jsonString = Defaults[.locatorJSONConnectionErrorIndicator]
-        case .resumeConnectionButton: jsonString = Defaults[.locatorJSONResumeConnectionButton]
-        case .forceStopResumeLink: jsonString = Defaults[.locatorJSONForceStopResumeLink]
-        case .mainInputField: jsonString = Defaults[.locatorJSONMainInputField]
-            // default: break // Not needed if LocatorType is comprehensive and matches DefaultsKeys
-        }
-
-        if let str = jsonString, !str.isEmpty,
-           let jsonData = str.data(using: .utf8) {
-            do {
-                let userLocator = try JSONDecoder().decode(Locator.self, from: jsonData)
-                SessionLogger.shared.log(
-                    level: .debug,
-                    message: "Using user-defined locator for \(type.rawValue) from Defaults.",
-                    pid: pid
-                )
-                return userLocator
-            } catch {
-                SessionLogger.shared.log(
-                    level: .error,
-                    message: "Failed to decode user-defined locator JSON for \(type.rawValue): " +
-                        "\(error.localizedDescription). JSON: \(str)", pid: pid
-                )
-            }
+        // 1. Check UserDefaults for user override
+        if let userLocator = getUserOverrideLocator(for: type, pid: pid) {
+            return userLocator
         }
 
         // 2. Check session cache
@@ -75,59 +45,17 @@ public class LocatorManager {
             return cachedLocator
         }
 
-        // 3. Return bundled default
-        if defaultLocators[type] != nil {
-            SessionLogger.shared.log(
-                level: .debug,
-                message: "Using bundled default locator for \(type.rawValue).",
-                pid: pid
-            )
-            // Attempt to use this locator once. If it fails, dynamic discovery might be tried next (implicitly by
-            // caller or explicitly here)
-            // For now, just return it. Dynamic discovery is the next step if this doesn't work for the caller.
-            // return bundledLocator // Old behavior: just return the bundled one
-        } else {
-            SessionLogger.shared.log(
-                level: .warning,
-                message: "No bundled default locator found for type: \(type.rawValue)",
-                pid: pid
-            )
+        // 3. Log bundled default availability
+        logBundledDefaultStatus(for: type, pid: pid)
+
+        // 4. If PID is available, attempt dynamic discovery
+        if let currentPid = pid,
+           let discoveredLocator = await attemptDynamicDiscovery(for: type, pid: currentPid)
+        {
+            return discoveredLocator
         }
 
-        // 4. If PID is available, attempt dynamic discovery as a fallback
-        // This happens if user, cache, and bundled (or if bundled fails in practice) don't yield a result.
-        // For clarity, we try dynamic discovery if user & cache miss, and bundled is considered a starting point for
-        // heuristics or a direct attempt.
-
-        // First, try the bundled locator if it exists. Actual query to AXorcist is done by the caller (CursorMonitor).
-        // If the caller determines the bundled locator failed, it could re-call getLocator with a flag to force
-        // discovery,
-        // or LocatorManager can attempt discovery now if the bundled one *might* be stale.
-        // Let's try dynamic discovery if user & cache miss. Bundled is the ultimate fallback if discovery also fails.
-
-        if let currentPid = pid {
-            SessionLogger.shared.log(
-                level: .info,
-                message: "User/cached locator not found for \(type.rawValue). " +
-                         "Attempting dynamic discovery for PID: \(currentPid).",
-                pid: currentPid
-            )
-            if let discoveredLocator = await dynamicDiscoverer.discover(
-                type: type,
-                for: currentPid,
-                axorcist: self.axorcistInstance
-            ) {
-                SessionLogger.shared.log(
-                    level: .info,
-                    message: "Dynamic discovery successful for \(type.rawValue). Caching and returning.",
-                    pid: currentPid
-                )
-                updateSessionCache(for: type, with: discoveredLocator) // Use type directly
-                return discoveredLocator
-            }
-        }
-
-        // 5. If dynamic discovery also fails or no PID, fall back to bundled default (if it exists)
+        // 5. Fall back to bundled default if available
         if let bundledLocator = defaultLocators[type] {
             SessionLogger.shared.log(
                 level: .debug,
@@ -142,7 +70,7 @@ public class LocatorManager {
             message: "Failed to find any locator for type: \(type.rawValue) after all attempts.",
             pid: pid
         )
-        return nil // Absolute fallback
+        return nil
     }
 
     public func updateSessionCache(for type: LocatorType, with locator: Locator) {
@@ -203,6 +131,87 @@ public class LocatorManager {
 
     // Session cache for successfully used/discovered locators
     private var sessionCache: [LocatorType: Locator] = [:]
+
+    private func getUserOverrideLocator(for type: LocatorType, pid: pid_t?) -> Locator? {
+        let jsonString = getUserOverrideJSON(for: type)
+
+        guard let str = jsonString, !str.isEmpty,
+              let jsonData = str.data(using: .utf8)
+        else {
+            return nil
+        }
+
+        do {
+            let userLocator = try JSONDecoder().decode(Locator.self, from: jsonData)
+            SessionLogger.shared.log(
+                level: .debug,
+                message: "Using user-defined locator for \(type.rawValue) from Defaults.",
+                pid: pid
+            )
+            return userLocator
+        } catch {
+            SessionLogger.shared.log(
+                level: .error,
+                message: "Failed to decode user-defined locator JSON for \(type.rawValue): " +
+                    "\(error.localizedDescription). JSON: \(str)", pid: pid
+            )
+            return nil
+        }
+    }
+
+    private func getUserOverrideJSON(for type: LocatorType) -> String? {
+        switch type {
+        case .generatingIndicatorText: Defaults[.locatorJSONGeneratingIndicatorText]
+        case .sidebarActivityArea: Defaults[.locatorJSONSidebarActivityArea]
+        case .errorMessagePopup: Defaults[.locatorJSONErrorMessagePopup]
+        case .stopGeneratingButton: Defaults[.locatorJSONStopGeneratingButton]
+        case .connectionErrorIndicator: Defaults[.locatorJSONConnectionErrorIndicator]
+        case .resumeConnectionButton: Defaults[.locatorJSONResumeConnectionButton]
+        case .forceStopResumeLink: Defaults[.locatorJSONForceStopResumeLink]
+        case .mainInputField: Defaults[.locatorJSONMainInputField]
+        }
+    }
+
+    private func logBundledDefaultStatus(for type: LocatorType, pid: pid_t?) {
+        if defaultLocators[type] != nil {
+            SessionLogger.shared.log(
+                level: .debug,
+                message: "Using bundled default locator for \(type.rawValue).",
+                pid: pid
+            )
+        } else {
+            SessionLogger.shared.log(
+                level: .warning,
+                message: "No bundled default locator found for type: \(type.rawValue)",
+                pid: pid
+            )
+        }
+    }
+
+    private func attemptDynamicDiscovery(for type: LocatorType, pid: pid_t) async -> Locator? {
+        SessionLogger.shared.log(
+            level: .info,
+            message: "User/cached locator not found for \(type.rawValue). " +
+                "Attempting dynamic discovery for PID: \(pid).",
+            pid: pid
+        )
+
+        guard let discoveredLocator = await dynamicDiscoverer.discover(
+            type: type,
+            for: pid,
+            axorcist: self.axorcistInstance
+        ) else {
+            return nil
+        }
+
+        SessionLogger.shared.log(
+            level: .info,
+            message: "Dynamic discovery successful for \(type.rawValue). Caching and returning.",
+            pid: pid
+        )
+        updateSessionCache(for: type, with: discoveredLocator)
+        return discoveredLocator
+    }
 }
 
 // Extension to make AXCore.Locator usable in the defaultLocators dictionary if it's not Hashable by default.

@@ -29,20 +29,20 @@ struct AXInspectorLogEntryRow: View { // Renamed
 
     private func logLevelToString(_ level: AXLogLevel) -> String {
         switch level {
-        case .debug: return "DEBUG"
-        case .info: return "INFO"
-        case .warning: return "WARNING"
-        case .error: return "ERROR"
-        case .critical: return "CRITICAL"
+        case .debug: "DEBUG"
+        case .info: "INFO"
+        case .warning: "WARNING"
+        case .error: "ERROR"
+        case .critical: "CRITICAL"
         }
     }
 
     private func logLevelToColor(_ level: AXLogLevel) -> Color {
         switch level {
-        case .debug: return .gray
-        case .info: return .blue
-        case .warning: return .orange
-        case .error, .critical: return .red
+        case .debug: .gray
+        case .info: .blue
+        case .warning: .orange
+        case .error, .critical: .red
         }
     }
 }
@@ -55,7 +55,7 @@ struct AXInspectorLogView: View { // Renamed
 
     var filteredLogEntries: [AXLogEntry] {
         logEntries.filter { entry in
-            let textMatch = filterText.isEmpty || 
+            let textMatch = filterText.isEmpty ||
                 entry.message.localizedCaseInsensitiveContains(filterText) ||
                 (entry.details?.values.contains { "\($0)".localizedCaseInsensitiveContains(filterText) } ?? false)
             let levelMatch = selectedLogLevel == nil || entry.level == selectedLogLevel
@@ -72,7 +72,7 @@ struct AXInspectorLogView: View { // Renamed
             HStack {
                 TextField("Filter logs...", text: $filterText)
                     .textFieldStyle(.roundedBorder)
-                
+
                 Picker("Level", selection: $selectedLogLevel) {
                     Text("All").tag(nil as AXLogLevel?)
                     ForEach(AXLogLevel.allCases, id: \.self) {
@@ -96,7 +96,7 @@ struct AXInspectorLogView: View { // Renamed
                         .id(entry.id)
                 }
                 .listStyle(.inset)
-                .onChange(of: filteredLogEntries) { oldValue, newValue in 
+                .onChange(of: filteredLogEntries) { oldValue, newValue in
                     if newValue.count > oldValue.count {
                         proxy.scrollTo(newValue.last?.id, anchor: .bottom)
                     }
@@ -104,7 +104,7 @@ struct AXInspectorLogView: View { // Renamed
             }
         }
         .onAppear {
-            loadEntries() 
+            loadEntries()
             refreshTimer = Timer.scheduledTimer(withTimeInterval: 2.0, repeats: true) { _ in
                 Task { @MainActor in self.loadEntries() }
             }
@@ -114,7 +114,7 @@ struct AXInspectorLogView: View { // Renamed
             refreshTimer = nil
         }
     }
-    
+
     @MainActor
     private func loadEntries() {
         let currentEntries = axGetLogEntries()
@@ -123,17 +123,17 @@ struct AXInspectorLogView: View { // Renamed
 }
 
 #if DEBUG
-@MainActor
-struct AXInspectorLogView_Previews: PreviewProvider { // Renamed
-    static var previews: some View {
-        Task {
-            axClearLogs()
-            axDebugLog("Debug message for preview", details: ["key": AnyCodable("value")])
-            axInfoLog("Info message for preview")
-            try? await Task.sleep(for: .milliseconds(10))
-            axWarningLog("Warning: Something might be wrong.")
+    @MainActor
+    struct AXInspectorLogView_Previews: PreviewProvider { // Renamed
+        static var previews: some View {
+            Task {
+                axClearLogs()
+                axDebugLog("Debug message for preview", details: ["key": AnyCodable("value")])
+                axInfoLog("Info message for preview")
+                try? await Task.sleep(for: .milliseconds(10))
+                axWarningLog("Warning: Something might be wrong.")
+            }
+            return AXInspectorLogView() // Renamed
         }
-        return AXInspectorLogView() // Renamed
     }
-}
-#endif 
+#endif

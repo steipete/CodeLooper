@@ -57,7 +57,7 @@ struct AdvancedSettingsView: View {
                     options: [
                         ("normal", "Normal"),
                         ("floating", "Floating"),
-                        ("screenSaver", "Always on Top")
+                        ("screenSaver", "Always on Top"),
                     ]
                 )
             }

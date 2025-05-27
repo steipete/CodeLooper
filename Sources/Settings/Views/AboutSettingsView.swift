@@ -145,27 +145,27 @@ private struct LinkRow: View {
             action: { openURL() },
             label: {
                 HStack(spacing: Spacing.small) {
-                Image(systemName: icon)
-                    .font(.system(size: 20))
-                    .foregroundColor(ColorPalette.primary)
-                    .frame(width: 32)
+                    Image(systemName: icon)
+                        .font(.system(size: 20))
+                        .foregroundColor(ColorPalette.primary)
+                        .frame(width: 32)
 
-                VStack(alignment: .leading, spacing: Spacing.xxxSmall) {
-                    Text(title)
-                        .font(Typography.body(.medium))
-                        .foregroundColor(ColorPalette.text)
+                    VStack(alignment: .leading, spacing: Spacing.xxxSmall) {
+                        Text(title)
+                            .font(Typography.body(.medium))
+                            .foregroundColor(ColorPalette.text)
 
-                    Text(subtitle)
-                        .font(Typography.caption1())
+                        Text(subtitle)
+                            .font(Typography.caption1())
+                            .foregroundColor(ColorPalette.textSecondary)
+                    }
+
+                    Spacer()
+
+                    Image(systemName: "arrow.up.forward")
+                        .font(.system(size: 12))
                         .foregroundColor(ColorPalette.textSecondary)
-                }
-
-                Spacer()
-
-                Image(systemName: "arrow.up.forward")
-                    .font(.system(size: 12))
-                    .foregroundColor(ColorPalette.textSecondary)
-                    .opacity(isHovered ? 1 : 0.5)
+                        .opacity(isHovered ? 1 : 0.5)
                 }
                 .padding(.vertical, Spacing.xxSmall)
                 .contentShape(Rectangle())

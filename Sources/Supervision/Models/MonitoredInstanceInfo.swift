@@ -43,7 +43,8 @@ public struct MonitoredWindowInfo: Identifiable {
     // Add other window-specific properties as needed, e.g., specific status for this window
     // For simplicity, the main popover will display windows of the single monitored Cursor app.
 
-    public init(id: String, windowTitle: String?, axElement: Element? = nil, isPaused: Bool = false) { // Added axElement and isPaused
+    public init(id: String, windowTitle: String?, axElement: Element? = nil, isPaused: Bool = false) { // Added
+        // axElement and isPaused
         self.id = id
         self.windowTitle = windowTitle
         self.windowAXElement = axElement
@@ -53,4 +54,4 @@ public struct MonitoredWindowInfo: Identifiable {
 
 // Ensure DisplayStatus is Sendable if it's not already
 // public enum DisplayStatus: Sendable { ... }
-// (Assuming DisplayStatus is already Sendable as per previous work) 
+// (Assuming DisplayStatus is already Sendable as per previous work)

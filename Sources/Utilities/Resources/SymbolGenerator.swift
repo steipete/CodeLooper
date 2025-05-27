@@ -65,7 +65,7 @@ enum SymbolGenerator {
         let attributes: [NSAttributedString.Key: Any] = [
             .font: NSFont.boldSystemFont(ofSize: 14),
             .foregroundColor: NSColor.white,
-            .paragraphStyle: paragraphStyle
+            .paragraphStyle: paragraphStyle,
         ]
 
         let textRect = NSRect(

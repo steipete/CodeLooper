@@ -1,5 +1,5 @@
-import AXorcist
 import AppKit
+import AXorcist
 import Diagnostics
 import SwiftUI
 
@@ -27,7 +27,8 @@ struct AutomationPermissionsView: View {
 
             if !(compact && viewModel.hasPermissions) {
                 HStack(spacing: 12) {
-                    Image(systemName: viewModel.hasPermissions ? "checkmark.circle.fill" : "exclamationmark.triangle.fill")
+                    Image(systemName: viewModel
+                        .hasPermissions ? "checkmark.circle.fill" : "exclamationmark.triangle.fill")
                         .foregroundColor(viewModel.hasPermissions ? .green : .orange)
                         .font(.system(size: compact ? 16 : 20))
 
@@ -39,7 +40,8 @@ struct AutomationPermissionsView: View {
                         if !compact {
                             Text(viewModel.hasPermissions
                                 ? "CodeLooper can control Cursor via automation."
-                                : "CodeLooper needs permission to control Cursor for advanced features like JS injection.")
+                                :
+                                "CodeLooper needs permission to control Cursor for advanced features like JS injection.")
                                 .font(.caption)
                                 .foregroundColor(.secondary)
                         }
@@ -86,6 +88,10 @@ class AutomationPermissionsViewModel: ObservableObject {
         startMonitoring()
     }
 
+    deinit {
+        monitoringTask?.cancel()
+    }
+
     // MARK: Internal
 
     @Published var hasPermissions: Bool = false
@@ -108,16 +114,16 @@ class AutomationPermissionsViewModel: ObservableObject {
         hasPermissions = checkAutomationPermission()
         logger.info("Automation permissions status for Cursor: \(hasPermissions)")
     }
-    
+
     private func checkAutomationPermission() -> Bool {
         // Simple check: try to count windows in Cursor via AppleScript
         let script = NSAppleScript(source: """
             tell application id "\(cursorBundleID)" to count windows
         """)
-        
+
         var errorDict: NSDictionary?
         let result = script?.executeAndReturnError(&errorDict)
-        
+
         // If no error and we got a result, we have permission
         return errorDict == nil && result != nil
     }
@@ -125,17 +131,17 @@ class AutomationPermissionsViewModel: ObservableObject {
     private func startMonitoring() {
         monitoringTask = Task {
             var lastState = hasPermissions
-            
+
             while !Task.isCancelled {
                 try? await Task.sleep(nanoseconds: 2_000_000_000) // 2 seconds
-                
+
                 let currentState = checkAutomationPermission()
-                
+
                 if currentState != lastState {
                     lastState = currentState
                     hasPermissions = currentState
                     logger.info("Automation permissions changed to: \(currentState)")
-                    
+
                     // Post notification for other parts of the app
                     NotificationCenter.default.post(
                         name: .automationPermissionsChanged,
@@ -145,10 +151,6 @@ class AutomationPermissionsViewModel: ObservableObject {
                 }
             }
         }
-    }
-
-    deinit {
-        monitoringTask?.cancel()
     }
 }
 

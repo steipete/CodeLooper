@@ -178,7 +178,7 @@ struct AccessibilityStepView: View {
                         .fontWeight(.semibold)
                     PermissionsView(showTitle: false, compact: false)
                 }
-                
+
                 // Automation permissions
                 VStack(alignment: .leading, spacing: 8) {
                     Text("Automation (for Cursor)")

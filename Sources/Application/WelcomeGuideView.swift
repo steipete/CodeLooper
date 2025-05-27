@@ -29,21 +29,21 @@ struct WelcomeGuideView: View {
                     systemImage: "arrow.triangle.2.circlepath.icloud.fill",
                     title: "Automatic Recovery",
                     description: "CodeLooper monitors Cursor for common interruptions (like connection issues or " +
-                                 "unexpected stops) and attempts to resolve them automatically, minimizing disruptions."
+                        "unexpected stops) and attempts to resolve them automatically, minimizing disruptions."
                 )
 
                 FeatureHighlightView(
                     systemImage: "server.rack",
                     title: "MCP Server Assistance",
                     description: "Easily configure and manage External Model Context Protocol (MCP) servers " +
-                                 "(like Claude Code, macOS Automator, XcodeBuild) to extend Cursor's capabilities."
+                        "(like Claude Code, macOS Automator, XcodeBuild) to extend Cursor's capabilities."
                 )
 
                 FeatureHighlightView(
                     systemImage: "lock.shield.fill",
                     title: "Accessibility Permissions Required",
                     description: "To monitor and interact with Cursor's UI elements, CodeLooper needs Accessibility " +
-                                 "permissions. You'll be guided to grant these if needed."
+                        "permissions. You'll be guided to grant these if needed."
                 )
             }
             .padding(.horizontal, 30)

@@ -224,7 +224,7 @@ struct LogSettingsView: View {
                 logger.log(
                     level: .debug,
                     message: "Preview log: Debugging some cool feature here. This message might be a bit longer " +
-                             "to test wrapping and text selection capabilities within the log view.",
+                        "to test wrapping and text selection capabilities within the log view.",
                     pid: 456
                 )
                 logger.log(level: .warning, message: "Preview log: Something might be wrong, be careful!", pid: 123)

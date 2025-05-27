@@ -24,7 +24,7 @@ import SwiftUI
 /// ## Features
 ///
 /// - Real-time monitoring of Cursor instances
-/// - Automatic detection of stuck or error states  
+/// - Automatic detection of stuck or error states
 /// - Intelligent intervention strategies
 /// - Configurable monitoring parameters
 /// - Session logging and diagnostics
@@ -50,7 +50,7 @@ import SwiftUI
 /// ```swift
 /// let monitor = CursorMonitor.shared
 /// monitor.startMonitoring()
-/// 
+///
 /// // Monitor will automatically detect and handle Cursor issues
 /// ```
 @MainActor
@@ -75,7 +75,6 @@ public class CursorMonitor: ObservableObject {
         self.locatorManager = locatorManager
         self.instanceStateManager = instanceStateManager
         self.appLifecycleManager = CursorAppLifecycleManager(owner: self, sessionLogger: sessionLogger)
-        // Initialize interventionEngine
         self.interventionEngine = CursorInterventionEngine(
             monitor: self,
             axorcist: self.axorcist,
@@ -87,80 +86,16 @@ public class CursorMonitor: ObservableObject {
         self.logger.info("CursorMonitor initialized with all components.")
         self.sessionLogger.log(level: .info, message: "CursorMonitor initialized with all components.")
 
-        // Initial setup based on current state of AppLifecycleManager
-        self.monitoredApps = appLifecycleManager.monitoredApps.map { appInfo in
-            let newAppInfo = appInfo
-            return newAppInfo
-        }
+        // Initial setup
+        self.monitoredApps = appLifecycleManager.monitoredApps
 
-        // Subscribe to updates from AppLifecycleManager on its primary published list
-        appLifecycleManager.$monitoredApps
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] newAppsFromManager in
-                guard let self else { return }
-                self.monitoredApps = newAppsFromManager.map { appInfo in
-                    if let existingApp = self.monitoredApps.first(where: { $0.pid == appInfo.pid }) {
-                        var updatedApp = appInfo
-                        updatedApp.windows = existingApp.windows
-                        return updatedApp
-                    } else {
-                        return appInfo
-                    }
-                }
-            }
-            .store(in: &cancellables)
+        // Setup subscriptions
+        setupAppLifecycleSubscriptions()
+        setupInstanceStateSubscriptions()
+        setupMonitoringLoopSubscription()
 
-        // Subscribe to totalAutomaticInterventionsThisSession from instanceStateManager
-        instanceStateManager.$totalAutomaticInterventionsThisSession
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] newTotal in
-                self?.totalAutomaticInterventionsThisSessionDisplay = newTotal
-            }
-            .store(in: &cancellables)
-
+        // Initialize system hooks
         appLifecycleManager.initializeSystemHooks()
-
-        // Subscribe to updates from AppLifecycleManager
-        appLifecycleManager.$monitoredApps
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] newAppsFromManager in
-                guard let self else { return }
-                // Reconcile newAppsFromManager with self.monitoredApps
-                // This might involve adding, removing, or updating existing app entries.
-                // For now, a simple replacement, but a more sophisticated merge might be needed
-                // if CursorMonitor adds its own state to MonitoredAppInfo that isn't from AppLifecycleManager.
-                self.monitoredApps = newAppsFromManager.map { appInfo in
-                    // If we need to preserve window list or other state through this update:
-                    if let existingApp = self.monitoredApps.first(where: { $0.pid == appInfo.pid }) {
-                        var updatedApp = appInfo
-                        updatedApp.windows = existingApp.windows // Preserve existing windows for now
-                        // Potentially copy over other CursorMonitor-specific states if any
-                        return updatedApp
-                    } else {
-                        return appInfo // New app
-                    }
-                }
-                // Potentially trigger an immediate window scan for new apps if required here.
-                // For example, if an app was just added, call `updateWindows` for it.
-            }
-            .store(in: &cancellables)
-
-        // NEW: Subscribe to own monitoredApps to manage the monitoring loop
-        $monitoredApps
-            .receive(on: DispatchQueue.main) // Ensure changes are processed on main thread
-            .sink { [weak self] apps in
-                guard let self else { return }
-                if !apps.isEmpty, !self.isMonitoringActive {
-                    self.logger.info("Monitored apps list became non-empty. Starting monitoring loop.")
-                    self.startMonitoringLoop()
-                } else if apps.isEmpty, self.isMonitoringActive {
-                    // The loop itself also has a check to stop if monitoredApps becomes empty,
-                    // but this provides a more immediate stop if the list clears due to external factors.
-                    self.logger.info("Monitored apps list became empty. Stopping monitoring loop.")
-                    self.stopMonitoringLoop()
-                }
-            }
-            .store(in: &cancellables)
     }
 
     deinit {
@@ -415,6 +350,60 @@ public class CursorMonitor: ObservableObject {
     private var interventionEngine: CursorInterventionEngine!
     private var tickUseCases: [pid_t: ProcessMonitoringTickUseCase] = [:]
 
+    private func setupAppLifecycleSubscriptions() {
+        // Subscribe to updates from AppLifecycleManager
+        appLifecycleManager.$monitoredApps
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] newAppsFromManager in
+                guard let self else { return }
+                self.updateMonitoredApps(with: newAppsFromManager)
+            }
+            .store(in: &cancellables)
+    }
+
+    private func setupInstanceStateSubscriptions() {
+        // Subscribe to totalAutomaticInterventionsThisSession from instanceStateManager
+        instanceStateManager.$totalAutomaticInterventionsThisSession
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] newTotal in
+                self?.totalAutomaticInterventionsThisSessionDisplay = newTotal
+            }
+            .store(in: &cancellables)
+    }
+
+    private func setupMonitoringLoopSubscription() {
+        // Subscribe to own monitoredApps to manage the monitoring loop
+        $monitoredApps
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] apps in
+                guard let self else { return }
+                self.handleMonitoredAppsChange(apps)
+            }
+            .store(in: &cancellables)
+    }
+
+    private func updateMonitoredApps(with newAppsFromManager: [MonitoredAppInfo]) {
+        self.monitoredApps = newAppsFromManager.map { appInfo in
+            if let existingApp = self.monitoredApps.first(where: { $0.pid == appInfo.pid }) {
+                var updatedApp = appInfo
+                updatedApp.windows = existingApp.windows
+                return updatedApp
+            } else {
+                return appInfo
+            }
+        }
+    }
+
+    private func handleMonitoredAppsChange(_ apps: [MonitoredAppInfo]) {
+        if !apps.isEmpty, !self.isMonitoringActive {
+            self.logger.info("Monitored apps list became non-empty. Starting monitoring loop.")
+            self.startMonitoringLoop()
+        } else if apps.isEmpty, self.isMonitoringActive {
+            self.logger.info("Monitored apps list became empty. Stopping monitoring loop.")
+            self.stopMonitoringLoop()
+        }
+    }
+
     private func performMonitoringCycle() async {
         guard !monitoredApps.isEmpty else {
             logger.info("No monitored apps, skipping monitoring cycle.")
@@ -558,7 +547,9 @@ public class CursorMonitor: ObservableObject {
 
         if monitoringCycleCount % 10 == 0 {
             logger
-                .debug("Attempting to fetch windows for PID \(appInfo.pid) using element: \(appElement.briefDescription())")
+                .debug(
+                    "Attempting to fetch windows for PID \(appInfo.pid) using element: \(appElement.briefDescription())"
+                )
         }
         guard let windowElements: [Element] = appElement.windows() else {
             if monitoringCycleCount % 10 == 0 {

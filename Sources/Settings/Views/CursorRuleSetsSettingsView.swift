@@ -84,7 +84,7 @@ struct CursorRuleSetsSettingsView: View {
             description: "Stop generations that take too long",
             trigger: .generationTimeout,
             action: .stopGeneration
-        )
+        ),
     ]
 
     @State private var selectedRule: InterventionRule?

@@ -86,6 +86,10 @@ class PermissionsViewModel: ObservableObject {
         startMonitoring()
     }
 
+    deinit {
+        monitoringTask?.cancel()
+    }
+
     // MARK: Internal
 
     @Published var hasPermissions: Bool = false
@@ -106,10 +110,6 @@ class PermissionsViewModel: ObservableObject {
     private var monitoringTask: Task<Void, Never>?
     private let logger = Logger(category: .permissions)
 
-    deinit {
-        monitoringTask?.cancel()
-    }
-
     private func checkPermissions() {
         hasPermissions = AXPermissionHelpers.hasAccessibilityPermissions()
         logger.info("Accessibility permissions status: \(hasPermissions)")
@@ -119,11 +119,11 @@ class PermissionsViewModel: ObservableObject {
         monitoringTask = Task {
             for await permissionGranted in AXPermissionHelpers.permissionChanges() {
                 guard !Task.isCancelled else { break }
-                
+
                 await MainActor.run {
                     self.hasPermissions = permissionGranted
                     self.logger.info("Accessibility permissions changed to: \(permissionGranted)")
-                    
+
                     // Post notification for other parts of the app
                     NotificationCenter.default.post(
                         name: .accessibilityPermissionsChanged,
@@ -134,7 +134,6 @@ class PermissionsViewModel: ObservableObject {
             }
         }
     }
-
 }
 
 // MARK: - Preview

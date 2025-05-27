@@ -2,7 +2,7 @@ import Foundation
 import Network
 
 @MainActor
-public final class CursorJSHook: Sendable {
+public final class CursorJSHook {
     // MARK: Lifecycle
 
     /// Spin up the hook (starts listener, injects JS, waits for the renderer).
@@ -10,8 +10,15 @@ public final class CursorJSHook: Sendable {
     ///   - applicationName: The name of the application to target (e.g., "Cursor").
     ///   - port: The port to use for WebSocket connection (default: 9001)
     ///   - skipInjection: If true, only starts listener without injecting (for probing)
-    public init(applicationName: String = "Cursor", port: UInt16 = 9001, skipInjection: Bool = false) async throws {
+    ///   - targetWindowTitle: Optional window title to target specifically
+    public init(
+        applicationName: String = "Cursor",
+        port: UInt16 = 9001,
+        skipInjection: Bool = false,
+        targetWindowTitle: String? = nil
+    ) async throws {
         self.applicationName = applicationName
+        self.targetWindowTitle = targetWindowTitle
         self.port = NWEndpoint.Port(rawValue: port)!
         try await startListener()
         if !skipInjection {
@@ -27,6 +34,7 @@ public final class CursorJSHook: Sendable {
         case injectionFailed(Error?)
         case connectionLost(underlyingError: Error)
         case cancelled
+        case portInUse(port: UInt16)
         // Consider adding case handshakeTimeout if a timeout mechanism is implemented
     }
 
@@ -66,6 +74,7 @@ public final class CursorJSHook: Sendable {
 
     // ──────────────────────────────  public API  ──────────────────────────────
     private let applicationName: String
+    private let targetWindowTitle: String?
     private var handshakeCompleted: Bool = false
 
     // ──────────────────────────────  internals  ──────────────────────────────
@@ -81,140 +90,208 @@ public final class CursorJSHook: Sendable {
         wsOpt.autoReplyPing = true
         params.defaultProtocolStack.applicationProtocols.insert(wsOpt, at: 0)
 
-        listener = try NWListener(using: params, on: port)
-        listener.newConnectionHandler = { [weak self] c in
+        do {
+            listener = try NWListener(using: params, on: port)
+        } catch {
+            // Port might be in use
+            print("❌ Failed to create listener on port \(port): \(error)")
+            throw HookError.portInUse(port: port.rawValue)
+        }
+        
+        listener.newConnectionHandler = { [weak self] connection in
             print("🌀 Listener received new connection attempt.")
             Task { @MainActor in
-                self?.adopt(c)
+                self?.adopt(connection)
             }
         }
-        listener.stateUpdateHandler = { [weak self] newState in
-            Task { @MainActor in
-                guard let self else { return }
-                print("🌀 Listener state updated: \(newState)")
-                if case let .failed(error) = newState {
-                    // Handle listener failure - connection cleanup will be handled elsewhere
-                    print("🌀 Listener failed: \(error)")
+        
+        var listenerStarted = false
+        let startContinuation = await withCheckedContinuation { continuation in
+            listener.stateUpdateHandler = { [weak self] newState in
+                Task { @MainActor in
+                    guard self != nil else { return }
+                    print("🌀 Listener state updated: \(newState)")
+                    
+                    switch newState {
+                    case .ready:
+                        if !listenerStarted {
+                            listenerStarted = true
+                            continuation.resume(returning: true)
+                        }
+                    case let .failed(error):
+                        print("🌀 Listener failed: \(error)")
+                        if !listenerStarted {
+                            listenerStarted = true
+                            continuation.resume(returning: false)
+                        }
+                    default:
+                        break
+                    }
                 }
             }
+            
+            listener.start(queue: .main)
         }
-        listener.start(queue: .main)
+        
+        if !startContinuation {
+            throw HookError.portInUse(port: port.rawValue)
+        }
+        
         print("🌀  Listening on ws://127.0.0.1:\(port) for \(self.applicationName)")
     }
 
     // 2️⃣ AppleScript UI-drive
     private func injectViaAppleScript() throws {
         print("🎯 Starting AppleScript injection for \(self.applicationName)")
-        
-        // JavaScript to be injected with debugging. Standard triple quotes are fine.
-        let js = """
+
+        let js = generateJavaScriptHook()
+        let script = buildAppleScript(javascript: js)
+
+        try executeAppleScript(script)
+    }
+
+    private func generateJavaScriptHook() -> String {
+        """
         (function hook(u=\'ws://127.0.0.1:\(port)\'){ \
-        console.log(\'🎯 CodeLooper: Attempting to connect to \' + u); \
+        console.log(\'🔄 CodeLooper: Attempting to connect to \' + u); \
         try { \
         const w=new WebSocket(u); \
-        w.onopen=()=>{console.log(\'🎯 CodeLooper: Connected to \' + u);w.send(\'ready\');}; \
-        w.onerror=(e)=>console.log(\'🎯 CodeLooper: WebSocket error\', e); \
-        w.onclose=(e)=>console.log(\'🎯 CodeLooper: WebSocket closed\', e); \
+        w.onopen=()=>{console.log(\'🔄 CodeLooper: Connected to \' + u);w.send(\'ready\');}; \
+        w.onerror=(e)=>console.log(\'🔄 CodeLooper: WebSocket error\', e); \
+        w.onclose=(e)=>console.log(\'🔄 CodeLooper: WebSocket closed\', e); \
         w.onmessage=e=>{let r;try{r=eval(e.data)}catch(x){r=x.stack}; \
         w.send(JSON.stringify(r));}; \
         return \'CodeLooper hook installing on port \(port)...\'; \
         } catch(err) { \
-        console.error(\'🎯 CodeLooper: Failed to create WebSocket\', err); \
+        console.error(\'🔄 CodeLooper: Failed to create WebSocket\', err); \
         return \'CodeLooper hook failed: \' + err.message; \
         } \
         })();
         """
+    }
 
-        // AppleScript content. Raw triple quotes #"""..."""# are used.
-        let script = #"""
-        tell application "\#(self.applicationName)"
+    private func buildAppleScript(javascript js: String) -> String {
+        let windowTarget = targetWindowTitle != nil ? "window \"\(targetWindowTitle!)\"" : "front window"
+
+        return """
+        tell application "\(self.applicationName)"
             activate
-            delay 0.5 # Increased delay to ensure app is fully activated
+            delay 0.5
         end tell
+
         tell application "System Events"
-            tell process "\#(self.applicationName)"
-                # Ensure the application is ready for UI scripting
-                delay 0.5 # Wait for window to be responsive after activation
+            tell process "\(self.applicationName)"
+                # Target specific window by name if provided, otherwise use front window
+                set targetWindow to \(windowTarget)
 
-                # Open Command Palette
-                keystroke "P" using {shift down, command down}
-                delay 1.0 # Wait for palette to appear
+                \(buildWindowFocusScript())
 
-                # Clear any existing text and type the full specific command with > prefix
-                keystroke "a" using {command down} # Select all existing text
-                delay 0.1
-                keystroke ">Developer: Toggle Developer Tools" # Full explicit command with > prefix
-                delay 0.5 # Wait for search results
-                key code 36 # Press Enter to select the command
+                \(buildDeveloperToolsScript())
 
-                delay 2.5 # Wait for Developer Tools to open/become active
-
-                # Now try to focus the console with multiple strategies
-                
-                # Strategy 1: Try Cmd+Shift+C to open Console directly
-                keystroke "c" using {command down, shift down}
-                delay 1.5
-                
-                # Strategy 2: Try pressing Escape to focus console input
-                key code 53 -- Esc
-                delay 0.5
-                
-                # Strategy 3: Try Tab to navigate to input field
-                key code 48 -- Tab
-                delay 0.5
-                
-                # Strategy 4: Try clicking at bottom of window where console input usually is
-                try
-                    set windowBounds to bounds of front window
-                    set windowWidth to (item 3 of windowBounds) - (item 1 of windowBounds)
-                    set windowHeight to (item 4 of windowBounds) - (item 2 of windowBounds)
-                    set clickX to (item 1 of windowBounds) + (windowWidth / 2)
-                    set clickY to (item 2 of windowBounds) + (windowHeight - 50) # Near bottom
-                    click at {clickX, clickY}
-                    delay 0.5
-                end try
-                
-                # Clear any existing content in console input
-                keystroke "a" using {command down}
-                delay 0.2
-                key code 117 # Delete key
-                delay 0.2
-
-                # Set clipboard and paste our JavaScript
-                set the clipboard to "\#(js)" 
-                delay 0.3
-                keystroke "v" using {command down} # Paste
-                delay 1.0 # Wait longer for paste to complete
-                
-                # Execute the JavaScript - try multiple times to ensure it works
-                key code 36 # Press Enter (to execute pasted JS in console)
-                delay 0.5
-                key code 36 # Press Enter again to be sure
-                delay 1.5 # Wait longer for execution
+                \(buildConsoleInteractionScript(javascript: js))
 
             end tell
         end tell
-        """# // End of AppleScript raw string literal
+        """
+    }
 
+    private func buildWindowFocusScript() -> String {
+        """
+                # Bring the target window to front and focus it
+                try
+                    # First, bring window to front
+                    set frontmost to true
+                    perform action "AXRaise" of targetWindow
+                    delay 0.3
+
+                    # Then click on the window to ensure it has focus
+                    set windowBounds to bounds of targetWindow
+                    set centerX to (item 1 of windowBounds) + ((item 3 of windowBounds) - (item 1 of windowBounds)) / 2
+                    set centerY to (item 2 of windowBounds) + ((item 4 of windowBounds) - (item 2 of windowBounds)) / 2
+                    click at {centerX, centerY}
+                    delay 0.5
+                end try
+
+                # Ensure target window is now the focused window
+                set focused of targetWindow to true
+                delay 0.5
+        """
+    }
+
+    private func buildDeveloperToolsScript() -> String {
+        """
+                # Open developer tools using direct keyboard shortcut
+                keystroke "`" using {command down, option down}
+                delay 2.0
+
+                # Ensure console tab is selected and focused
+                keystroke "c" using {command down, shift down}
+                delay 1.0
+
+                # Try clicking at expected console input location
+                try
+                    set windowBounds to bounds of targetWindow
+                    set windowWidth to (item 3 of windowBounds) - (item 1 of windowBounds)
+                    set windowHeight to (item 4 of windowBounds) - (item 2 of windowBounds)
+                    # Click in the bottom area where console input typically is
+                    set clickX to (item 1 of windowBounds) + (windowWidth / 2)
+                    set clickY to (item 2 of windowBounds) + (windowHeight - 30)
+                    click at {clickX, clickY}
+                    delay 0.5
+                end try
+        """
+    }
+
+    private func buildConsoleInteractionScript(javascript js: String) -> String {
+        """
+                # Clear any existing content
+                keystroke "a" using {command down}
+                delay 0.2
+                key code 117 # Delete
+                delay 0.2
+
+                # Set clipboard and paste JavaScript
+                set the clipboard to "\(js)"
+                delay 0.3
+                keystroke "v" using {command down}
+                delay 1.0
+
+                # Execute the JavaScript
+                key code 36 # Enter
+                delay 0.5
+                key code 36 # Enter again to ensure execution
+                delay 1.0
+        """
+    }
+
+    // Removed - inlined into main script
+
+    // Removed - inlined into main script
+
+    // Removed - inlined into main script
+
+    private func executeAppleScript(_ script: String) throws {
         let appleScript = NSAppleScript(source: script)
         var errorDict: NSDictionary?
         let result = appleScript?.executeAndReturnError(&errorDict)
-        
+
         if result == nil || errorDict != nil {
             if let error = errorDict {
                 let errorMessage = error[NSAppleScript.errorMessage] as? String ?? "Unknown AppleScript error"
                 let errorNumber = error[NSAppleScript.errorNumber] as? Int ?? -1
                 print("🍎 AppleScript injection failed: \(errorMessage) (Code: \(errorNumber))")
-                
+
                 // Check for specific error codes
                 if errorNumber == -1743 {
-                    print("⚠️  User denied automation permission. Please grant permission in System Settings > Privacy & Security > Automation")
+                    print(
+                        "⚠️  User denied automation permission. Please grant permission in System Settings > Privacy & Security > Automation"
+                    )
                 } else if errorNumber == -600 {
                     print("⚠️  Application not running or not found")
                 } else if errorNumber == -10004 {
                     print("⚠️  A privilege violation occurred")
                 }
-                
+
                 // Create a custom error or use a generic one
                 let nsError = NSError(
                     domain: "AppleScriptError",
@@ -233,11 +310,11 @@ public final class CursorJSHook: Sendable {
     // 3️⃣ Wait for renderer's "ready"
     private func waitForRendererHandshake() async throws {
         print("⏳ Waiting for renderer handshake...")
-        
+
         // Use a simpler approach with Task.sleep and polling
         let startTime = Date()
         let timeout: TimeInterval = 10
-        
+
         while Date().timeIntervalSince(startTime) < timeout {
             if handshakeCompleted {
                 print("🤝 Renderer handshake complete.")
@@ -245,7 +322,7 @@ public final class CursorJSHook: Sendable {
             }
             try await Task.sleep(for: .milliseconds(100))
         }
-        
+
         // Timeout occurred
         throw HookError.connectionLost(underlyingError: NSError(
             domain: "TimeoutError",
@@ -253,22 +330,21 @@ public final class CursorJSHook: Sendable {
             userInfo: [NSLocalizedDescriptionKey: "Handshake timeout after \(timeout) seconds"]
         ))
     }
-    
 
     // adopt a new WS connection
-    private func adopt(_ c: NWConnection) {
-        self.conn = c
+    private func adopt(_ connection: NWConnection) {
+        self.conn = connection
         self.handshakeCompleted = false // Reset on new connection attempt
         print("🌀 WS Connection adopted. Waiting for state updates.")
 
-        c.stateUpdateHandler = { [weak self] newState in
+        connection.stateUpdateHandler = { [weak self] newState in
             Task { @MainActor in
                 guard let self else { return }
                 print("🌀 WS Connection state: \(newState)")
                 switch newState {
                 case .ready:
                     print("🌀 WS Connection is ready. Starting pump.")
-                    self.pump(c)
+                    self.pump(connection)
                 case let .failed(error):
                     print("🌀 WS Connection failed: \(error.localizedDescription)")
                     self.cleanupConnection(error: HookError.connectionLost(underlyingError: error))
@@ -281,7 +357,7 @@ public final class CursorJSHook: Sendable {
                 }
             }
         }
-        c.start(queue: .main)
+        connection.start(queue: .main)
     }
 
     private func cleanupConnection(error: HookError) {
@@ -295,9 +371,9 @@ public final class CursorJSHook: Sendable {
     }
 
     // pump is already @MainActor isolated
-    private func pump(_ c: NWConnection) {
-        print("🌀 Setting up receiveMessage on connection \(c.debugDescription)")
-        c.receiveMessage { [weak self] data, _, isComplete, error in
+    private func pump(_ connection: NWConnection) {
+        print("🌀 Setting up receiveMessage on connection \(connection.debugDescription)")
+        connection.receiveMessage { [weak self] data, _, isComplete, error in
             // This closure is @Sendable. We must dispatch to MainActor to interact with self
             Task { @MainActor in
                 guard let self else {
@@ -305,9 +381,9 @@ public final class CursorJSHook: Sendable {
                     return
                 }
                 // Ensure the connection being processed is still the active one.
-                guard self.conn === c else {
+                guard self.conn === connection else {
                     print(
-                        "泵 Stale connection \(c.debugDescription), current is \(self.conn?.debugDescription ?? "nil"). Ignoring message."
+                        "泵 Stale connection \(connection.debugDescription), current is \(self.conn?.debugDescription ?? "nil"). Ignoring message."
                     )
                     return
                 }
@@ -316,48 +392,50 @@ public final class CursorJSHook: Sendable {
 
                 if let error {
                     print(
-                        "🌀 WS Receive error on \(c.debugDescription): \(error.localizedDescription). Cleaning up connection."
+                        "🌀 WS Receive error on \(connection.debugDescription): \(error.localizedDescription). Cleaning up connection."
                     )
                     self.cleanupConnection(error: .connectionLost(underlyingError: error))
                     shouldContinuePumping = false // Stop pumping on error
                 }
 
-                if shouldContinuePumping, let d = data, !d.isEmpty,
-                   let txt = String(data: d, encoding: .utf8)
+                if shouldContinuePumping, let messageData = data, !messageData.isEmpty,
+                   let txt = String(data: messageData, encoding: .utf8)
                 {
-                    print("🌀 WS Received on \(c.debugDescription): \(txt)")
+                    print("🌀 WS Received on \(connection.debugDescription): \(txt)")
                     if txt == "ready" {
                         if !self.handshakeCompleted {
                             self.handshakeCompleted = true
-                            print("🤝 Handshake 'ready' message processed for \(c.debugDescription).")
+                            print("🤝 Handshake 'ready' message processed for \(connection.debugDescription).")
                         } else {
                             print(
-                                "⚠️ Received 'ready' message again on \(c.debugDescription), but handshake already completed."
+                                "⚠️ Received 'ready' message again on \(connection.debugDescription), but handshake already completed."
                             )
                         }
                     } else {
-                        if let p = self.pending {
+                        if let pendingContinuation = self.pending {
                             self.pending = nil
-                            p.resume(returning: txt)
-                            print("🌀 Resumed pending continuation with: \(txt) for \(c.debugDescription)")
+                            pendingContinuation.resume(returning: txt)
+                            print("🌀 Resumed pending continuation with: \(txt) for \(connection.debugDescription)")
                         } else {
-                            print("⚠️ Received data '\(txt)' on \(c.debugDescription) but no pending continuation.")
+                            print(
+                                "⚠️ Received data '\(txt)' on \(connection.debugDescription) but no pending continuation."
+                            )
                         }
                     }
                 } else if shouldContinuePumping, isComplete {
-                    print("🌀 WS Received complete message but no valid text data on \(c.debugDescription).")
+                    print("🌀 WS Received complete message but no valid text data on \(connection.debugDescription).")
                 }
 
                 // Continue the loop by re-calling pump if no terminal error occurred and connection is still active
-                if shouldContinuePumping, self.conn === c { // Check conn again before re-pumping
-                    print("🌀 Re-pumping for \(c.debugDescription)")
-                    self.pump(c) // Re-call pump to set up the next receive
-                } else if shouldContinuePumping, self.conn !== c {
+                if shouldContinuePumping, self.conn === connection { // Check conn again before re-pumping
+                    print("🌀 Re-pumping for \(connection.debugDescription)")
+                    self.pump(connection) // Re-call pump to set up the next receive
+                } else if shouldContinuePumping, self.conn !== connection {
                     print(
-                        "🌀 Not re-pumping for stale connection \(c.debugDescription). Current is \(self.conn?.debugDescription ?? "nil")"
+                        "🌀 Not re-pumping for stale connection \(connection.debugDescription). Current is \(self.conn?.debugDescription ?? "nil")"
                     )
                 } else {
-                    print("🌀 Not re-pumping for \(c.debugDescription) as shouldContinuePumping is false.")
+                    print("🌀 Not re-pumping for \(connection.debugDescription) as shouldContinuePumping is false.")
                 }
             }
         }

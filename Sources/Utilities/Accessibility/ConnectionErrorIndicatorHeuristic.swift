@@ -16,7 +16,7 @@ struct ConnectionErrorIndicatorHeuristic: AXElementHeuristic {
             matchAll: false,
             criteria: Self.convertDictionaryToCriteriaArray([
                 "role_exact": "AXStaticText",
-                "title_exact": "Connection error"
+                "title_exact": "Connection error",
             ])
         )
         let queryCommand1 = QueryCommand(
@@ -33,7 +33,7 @@ struct ConnectionErrorIndicatorHeuristic: AXElementHeuristic {
             matchAll: false,
             criteria: Self.convertDictionaryToCriteriaArray([
                 "role_exact": "AXStaticText",
-                "title_contains_any": "Connection error,Unable to connect,Network error"
+                "title_contains_any": "Connection error,Unable to connect,Network error",
             ])
         )
         let queryCommand2 = QueryCommand(
@@ -50,7 +50,7 @@ struct ConnectionErrorIndicatorHeuristic: AXElementHeuristic {
             matchAll: false,
             criteria: Self.convertDictionaryToCriteriaArray([
                 "role_exact": "AXStaticText",
-                "value_contains_any": "error,failed"
+                "value_contains_any": "error,failed",
             ])
         )
         let queryCommand3 = QueryCommand(

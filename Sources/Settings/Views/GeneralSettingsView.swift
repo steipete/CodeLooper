@@ -62,9 +62,9 @@ struct GeneralSettingsView: View {
                         ),
                         description: "Automatically start CodeLooper when you log in to your Mac"
                     )
-                    
+
                     DSDivider()
-                    
+
                     DSToggle(
                         "Show CodeLooper in Dock",
                         isOn: $showInDock,

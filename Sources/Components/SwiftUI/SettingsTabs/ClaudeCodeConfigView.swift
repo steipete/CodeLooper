@@ -16,7 +16,7 @@ struct ClaudeCodeConfigView: View {
 
             Text(
                 "If you use a custom command for the Claude Code CLI (e.g., via an alias or a different " +
-                "installation method), you can specify it here. Otherwise, leave blank to use the default ('claude-code')."
+                    "installation method), you can specify it here. Otherwise, leave blank to use the default ('claude-code')."
             )
             .font(.callout)
             .foregroundColor(.secondary)

@@ -15,7 +15,7 @@ struct MacOSAutomatorConfigView: View {
 
             Text(
                 "This Model Context Protocol (MCP) server allows AI agents to control your Mac by executing " +
-                "AppleScript and JavaScript for Automation (JXA) scripts."
+                    "AppleScript and JavaScript for Automation (JXA) scripts."
             )
             .font(.callout)
             .multilineTextAlignment(.center)
@@ -27,8 +27,8 @@ struct MacOSAutomatorConfigView: View {
 
             Text(
                 "Enabling this MCP grants significant control over your computer. Only use this feature if you fully " +
-                "understand the implications and trust the AI agents and scripts that will be interacting with it. " +
-                "Malicious scripts could potentially harm your system or compromise your data."
+                    "understand the implications and trust the AI agents and scripts that will be interacting with it. " +
+                    "Malicious scripts could potentially harm your system or compromise your data."
             )
             .font(.caption)
             .foregroundColor(.secondary)
