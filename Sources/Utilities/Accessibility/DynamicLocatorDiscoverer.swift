@@ -11,29 +11,29 @@ class DynamicLocatorDiscoverer {
         // Each array is ordered by preference - more specific/reliable heuristics first.
         self.heuristics = [
             .generatingIndicatorText: [
-                GeneratingIndicatorTextHeuristic(),
+                GeneratingIndicatorTextHeuristic()
             ],
             .sidebarActivityArea: [
-                SidebarActivityAreaHeuristic(),
+                SidebarActivityAreaHeuristic()
             ],
             .errorMessagePopup: [
-                ErrorMessagePopupHeuristic(),
+                ErrorMessagePopupHeuristic()
             ],
             .stopGeneratingButton: [
-                StopGeneratingButtonHeuristic(),
+                StopGeneratingButtonHeuristic()
             ],
             .connectionErrorIndicator: [
-                ConnectionErrorIndicatorHeuristic(),
+                ConnectionErrorIndicatorHeuristic()
             ],
             .resumeConnectionButton: [
-                ResumeConnectionButtonHeuristic(),
+                ResumeConnectionButtonHeuristic()
             ],
             .forceStopResumeLink: [
-                ForceStopResumeLinkHeuristic(),
+                ForceStopResumeLinkHeuristic()
             ],
             .mainInputField: [
-                MainInputFieldHeuristic(),
-            ],
+                MainInputFieldHeuristic()
+            ]
         ]
     }
 
@@ -57,7 +57,8 @@ class DynamicLocatorDiscoverer {
 
         SessionLogger.shared.log(
             level: .info,
-            message: "Attempting dynamic discovery for LocatorType: \(type.rawValue) (PID: \(pid)) using \(specificHeuristics.count) heuristic(s).",
+            message: "Attempting dynamic discovery for LocatorType: \(type.rawValue) (PID: \(pid)) " +
+                     "using \(specificHeuristics.count) heuristic(s).",
             pid: pid
         )
 
@@ -70,7 +71,9 @@ class DynamicLocatorDiscoverer {
             if let discoveredLocator = await heuristic.discover(for: pid, axorcist: axorcist) {
                 SessionLogger.shared.log(
                     level: .info,
-                    message: "Dynamic discovery successful for LocatorType: \(type.rawValue) using heuristic: \(String(describing: heuristic)). Locator: \(String(describing: discoveredLocator))",
+                    message: "Dynamic discovery successful for LocatorType: \(type.rawValue) " +
+                             "using heuristic: \(String(describing: heuristic)). " +
+                             "Locator: \(String(describing: discoveredLocator))",
                     pid: pid
                 )
                 return discoveredLocator
@@ -79,7 +82,8 @@ class DynamicLocatorDiscoverer {
 
         SessionLogger.shared.log(
             level: .warning,
-            message: "Dynamic discovery failed for LocatorType: \(type.rawValue) after trying all registered heuristics.",
+            message: "Dynamic discovery failed for LocatorType: \(type.rawValue) " +
+                     "after trying all registered heuristics.",
             pid: pid
         )
         return nil

@@ -47,8 +47,7 @@ public class LocatorManager {
         }
 
         if let str = jsonString, !str.isEmpty,
-           let jsonData = str.data(using: .utf8)
-        {
+           let jsonData = str.data(using: .utf8) {
             do {
                 let userLocator = try JSONDecoder().decode(Locator.self, from: jsonData)
                 SessionLogger.shared.log(
@@ -109,7 +108,8 @@ public class LocatorManager {
         if let currentPid = pid {
             SessionLogger.shared.log(
                 level: .info,
-                message: "User/cached locator not found for \(type.rawValue). Attempting dynamic discovery for PID: \(currentPid).",
+                message: "User/cached locator not found for \(type.rawValue). " +
+                         "Attempting dynamic discovery for PID: \(currentPid).",
                 pid: currentPid
             )
             if let discoveredLocator = await dynamicDiscoverer.discover(

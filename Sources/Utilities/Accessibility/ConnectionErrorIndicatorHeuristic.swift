@@ -50,7 +50,7 @@ struct ConnectionErrorIndicatorHeuristic: AXElementHeuristic {
             matchAll: false,
             criteria: Self.convertDictionaryToCriteriaArray([
                 "role_exact": "AXStaticText",
-                "value_contains_any": "error,failed",
+                "value_contains_any": "error,failed"
             ])
         )
         let queryCommand3 = QueryCommand(

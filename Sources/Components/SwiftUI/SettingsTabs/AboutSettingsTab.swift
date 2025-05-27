@@ -25,9 +25,9 @@ struct AboutSettingsTab: View {
                         .font(.title)
                         .bold()
 
-                    Text(
-                        "Version \(Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0.0") (Build \(Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "Unknown"))"
-                    )
+                    let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0.0"
+                    let build = Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "Unknown"
+                    Text("Version \(version) (Build \(build))")
                     .font(.footnote)
                     .foregroundColor(.secondary)
                 }

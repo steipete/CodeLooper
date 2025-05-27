@@ -166,7 +166,9 @@ struct LogSettingsView: View {
             let entries = sessionLogger.getEntries()
             let logText = entries.map { entry -> String in
                 let pidString = entry.instancePID.map { "[PID: \(String($0))] " } ?? ""
-                return "\(entry.timestamp.formatted(date: .omitted, time: .standard)) [\(entry.level.displayName.uppercased())] \(pidString)\(entry.message)"
+                let timeString = entry.timestamp.formatted(date: .omitted, time: .standard)
+                let levelString = entry.level.displayName.uppercased()
+                return "\(timeString) [\(levelString)] \(pidString)\(entry.message)"
             }.joined(separator: "\n")
 
             if let data = logText.data(using: .utf8) {
@@ -221,7 +223,8 @@ struct LogSettingsView: View {
                 logger.log(level: .info, message: "Preview log: Application started.", pid: 123)
                 logger.log(
                     level: .debug,
-                    message: "Preview log: Debugging some cool feature here. This message might be a bit longer to test wrapping and text selection capabilities within the log view.",
+                    message: "Preview log: Debugging some cool feature here. This message might be a bit longer " +
+                             "to test wrapping and text selection capabilities within the log view.",
                     pid: 456
                 )
                 logger.log(level: .warning, message: "Preview log: Something might be wrong, be careful!", pid: 123)

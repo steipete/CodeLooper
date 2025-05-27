@@ -1,10 +1,10 @@
 import AppKit // For pid_t
-import Foundation
 import AXorcist // Add this import
+import Foundation
 
 // Renamed from MonitoredInstanceInfo
 @MainActor
-public struct MonitoredAppInfo: Identifiable, Sendable { // Made Sendable
+public struct MonitoredAppInfo: Identifiable { // Made Sendable
     public let id: pid_t // Using PID as unique ID for the app instance
     public var pid: pid_t
     public var displayName: String
@@ -35,7 +35,7 @@ public struct MonitoredAppInfo: Identifiable, Sendable { // Made Sendable
 
 // New struct for window information
 @MainActor
-public struct MonitoredWindowInfo: Identifiable, Sendable {
+public struct MonitoredWindowInfo: Identifiable {
     public let id: String // Unique ID for the window (e.g., from AXUIElement or a generated UUID)
     public var windowTitle: String?
     public var windowAXElement: Element? // Changed from AXorcist.Element to Element
