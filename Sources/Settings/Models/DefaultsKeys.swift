@@ -120,4 +120,9 @@ extension Defaults.Keys {
 
     // --- Path for the MCP configuration file ---
     static let mcpConfigFilePath = Key<String>("mcpConfigFilePath", default: "~/.cursor/mcp_config.json")
+    
+    // --- AI Settings ---
+    static let aiProvider = Key<AIProvider>("aiProvider", default: .openAI)
+    static let aiModel = Key<AIModel>("aiModel", default: .gpt4o)
+    static let ollamaBaseURL = Key<String>("ollamaBaseURL", default: "http://localhost:11434")
 }
