@@ -1,5 +1,6 @@
 import Foundation
 import Network
+import Diagnostics
 
 extension String {
     /// Converts a String to a properly escaped AppleScript string literal
@@ -155,6 +156,74 @@ public final class CursorJSHook {
         
         return try await sendCommand(command)
     }
+    
+    /// Check if the "resume conversation" link is visible (indicating Cursor has stopped)
+    /// - Returns: JSON response with resumeNeeded boolean
+    public func checkResumeNeeded() async throws -> String {
+        try await sendCommand(["type": "checkResumeNeeded"])
+    }
+    
+    /// Click the "resume conversation" link if it's available
+    /// - Returns: JSON response with success boolean
+    public func clickResume() async throws -> String {
+        try await sendCommand(["type": "clickResume"])
+    }
+    
+    /// Check if resume is needed and return as a boolean
+    /// - Returns: True if resume link is found
+    public func isResumeNeeded() async throws -> Bool {
+        let result = try await checkResumeNeeded()
+        guard let data = result.data(using: .utf8),
+              let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+              let resumeNeeded = json["resumeNeeded"] as? Bool else {
+            return false
+        }
+        return resumeNeeded
+    }
+    
+    /// Attempt to resume Cursor if needed
+    /// - Returns: True if resume was clicked successfully
+    public func attemptResume() async throws -> Bool {
+        let result = try await clickResume()
+        guard let data = result.data(using: .utf8),
+              let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+              let success = json["success"] as? Bool else {
+            return false
+        }
+        return success
+    }
+    
+    // MARK: - Composer Bar Observation
+    
+    /// Start observing the composer bar for changes
+    /// - Returns: JSON response with success status
+    public func startComposerObserver() async throws -> String {
+        try await sendCommand(["type": "startComposerObserver"])
+    }
+    
+    /// Stop observing the composer bar
+    /// - Returns: JSON response with success status
+    public func stopComposerObserver() async throws -> String {
+        try await sendCommand(["type": "stopComposerObserver"])
+    }
+    
+    /// Get the current content of the composer bar
+    /// - Returns: JSON response with content
+    public func getComposerContent() async throws -> String {
+        try await sendCommand(["type": "getComposerContent"])
+    }
+    
+    /// Start observing composer bar and return success status
+    /// - Returns: True if observer started successfully
+    public func startObservingComposer() async throws -> Bool {
+        let result = try await startComposerObserver()
+        guard let data = result.data(using: .utf8),
+              let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+              let success = json["success"] as? Bool else {
+            return false
+        }
+        return success
+    }
 
     // MARK: Private
 
@@ -230,253 +299,19 @@ public final class CursorJSHook {
     private func injectViaAppleScript() throws {
         print("🎯 Starting AppleScript injection for \(self.applicationName)")
 
-        let js = generateJavaScriptHook()
+        let js = try generateJavaScriptHook()
         let script = buildAppleScript(javascript: js)
 
         try executeAppleScript(script)
     }
 
-    // swiftlint:disable:next function_body_length
-    private func generateJavaScriptHook() -> String {
-        """
-        (function() {
-            // Check if hook already exists and clean it up
-            if (window.__codeLooperHook) {
-                console.log('🔄 CodeLooper: Cleaning up existing hook on port ' + window.__codeLooperPort);
-                try {
-                    if (window.__codeLooperHook.readyState === WebSocket.OPEN || 
-                        window.__codeLooperHook.readyState === WebSocket.CONNECTING) {
-                        window.__codeLooperHook.close();
-                    }
-                } catch (e) {
-                    console.log('🔄 CodeLooper: Error closing existing connection:', e);
-                }
-                window.__codeLooperHook = null;
-                window.__codeLooperPort = null;
-            }
-
-            const port = \(port);
-            const url = 'ws://127.0.0.1:' + port;
-            let reconnectAttempts = 0;
-            const maxReconnectAttempts = 5;
-            const reconnectDelay = 3000; // 3 seconds
-
-            function connect() {
-                console.log('🔄 CodeLooper: Attempting to connect to ' + url);
-
-                try {
-                    const ws = new WebSocket(url);
-
-                    ws.onopen = () => {
-                        console.log('🔄 CodeLooper: Connected to ' + url);
-                        ws.send('ready');
-                        reconnectAttempts = 0; // Reset on successful connection
-                        
-                        // Show success notification
-                        try {
-                            // Create a toast notification in Cursor's UI
-                            const notification = document.createElement('div');
-                            notification.innerHTML = '✅ CodeLooper connected successfully!';
-                            notification.style.cssText = 'position: fixed; top: 20px; right: 20px; background: #10b981; color: white; padding: 12px 24px; border-radius: 8px; font-weight: 500; z-index: 999999; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); animation: slideIn 0.3s ease-out; font-family: -apple-system, BlinkMacSystemFont, sans-serif; font-size: 14px;';
-                            
-                            // Add animation
-                            const style = document.createElement('style');
-                            style.textContent = '@keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }';
-                            document.head.appendChild(style);
-                            
-                            document.body.appendChild(notification);
-                            
-                            // Remove notification after 5 seconds
-                            setTimeout(() => {
-                                notification.style.opacity = '0';
-                                notification.style.transform = 'translateX(100%)';
-                                notification.style.transition = 'all 0.3s ease-out';
-                                setTimeout(() => notification.remove(), 300);
-                            }, 5000);
-                            
-                            // Also show in console
-                            console.log('%c✅ CodeLooper Hook Active!', 'color: #10b981; font-size: 16px; font-weight: bold;');
-                            console.log('Port:', port);
-                            console.log('Ready to receive commands');
-                            
-                        } catch (e) {
-                            console.error('Failed to show notification:', e);
-                        }
-                    };
-
-                    ws.onerror = (e) => {
-                        console.log('🔄 CodeLooper: WebSocket error', e);
-                    };
-
-                    ws.onclose = (e) => {
-                        console.log('🔄 CodeLooper: WebSocket closed', e);
-                        window.__codeLooperHook = null;
-                        window.__codeLooperPort = null;
-
-                        // Auto-reconnect logic
-                        if (reconnectAttempts < maxReconnectAttempts) {
-                            reconnectAttempts++;
-                            console.log(`🔄 CodeLooper: Reconnecting in ${reconnectDelay/1000}s... ` +
-                                `(attempt ${reconnectAttempts}/${maxReconnectAttempts})`);
-                            setTimeout(connect, reconnectDelay);
-                        } else {
-                            console.log('🔄 CodeLooper: Max reconnection attempts reached. Hook disabled.');
-                        }
-                    };
-
-                    ws.onmessage = async (e) => {
-                        let result;
-                        try {
-                            // Parse message as a command instead of evaluating code
-                            const command = JSON.parse(e.data);
-                            
-                            switch(command.type) {
-                                case 'getSystemInfo':
-                                    result = {
-                                        userAgent: navigator.userAgent,
-                                        platform: navigator.platform,
-                                        language: navigator.language,
-                                        onLine: navigator.onLine,
-                                        cookieEnabled: navigator.cookieEnabled,
-                                        windowLocation: window.location.href,
-                                        timestamp: new Date().toISOString()
-                                    };
-                                    break;
-                                    
-                                case 'querySelector':
-                                    const element = document.querySelector(command.selector);
-                                    result = element ? {
-                                        found: true,
-                                        tagName: element.tagName,
-                                        id: element.id,
-                                        className: element.className,
-                                        text: element.textContent?.substring(0, 100)
-                                    } : { found: false };
-                                    break;
-                                    
-                                case 'getElementInfo':
-                                    const el = document.querySelector(command.selector);
-                                    if (el) {
-                                        const rect = el.getBoundingClientRect();
-                                        result = {
-                                            found: true,
-                                            position: { x: rect.x, y: rect.y },
-                                            size: { width: rect.width, height: rect.height },
-                                            visible: rect.width > 0 && rect.height > 0,
-                                            text: el.textContent?.substring(0, 200)
-                                        };
-                                    } else {
-                                        result = { found: false };
-                                    }
-                                    break;
-                                    
-                                case 'clickElement':
-                                    const target = document.querySelector(command.selector);
-                                    if (target && target instanceof HTMLElement) {
-                                        target.click();
-                                        result = { success: true, clicked: command.selector };
-                                    } else {
-                                        result = { success: false, error: 'Element not found or not clickable' };
-                                    }
-                                    break;
-                                    
-                                case 'getActiveElement':
-                                    const active = document.activeElement;
-                                    result = {
-                                        tagName: active?.tagName,
-                                        id: active?.id,
-                                        className: active?.className,
-                                        value: active?.value || active?.textContent
-                                    };
-                                    break;
-                                    
-                                case 'showNotification':
-                                    // Display a notification in the console with custom styling
-                                    const message = command.message || 'Hello from CodeLooper!';
-                                    const style = command.style || 'background: linear-gradient(45deg, #667eea 0%, #764ba2 100%); color: white; font-size: 14px; padding: 20px; border-radius: 8px; font-weight: bold;';
-                                    console.log('%c' + message, style);
-                                    
-                                    // Try to show a browser notification if permissions allow
-                                    if (command.browserNotification && typeof Notification !== 'undefined' && Notification.permission === 'granted') {
-                                        new Notification(command.title || 'CodeLooper', {
-                                            body: message,
-                                            icon: command.icon || 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="%23667eea" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M8 12a4 4 0 0 0 8 0"/></svg>'
-                                        });
-                                    }
-                                    
-                                    // Create a temporary DOM element for visual feedback
-                                    if (command.showToast) {
-                                        const toast = document.createElement('div');
-                                        toast.textContent = message;
-                                        toast.style.cssText = 'position: fixed; top: 20px; right: 20px; background: linear-gradient(45deg, #667eea 0%, #764ba2 100%); color: white; padding: 16px 24px; border-radius: 8px; font-family: -apple-system, BlinkMacSystemFont, sans-serif; font-size: 14px; font-weight: 500; box-shadow: 0 4px 12px rgba(0,0,0,0.15); z-index: 999999; animation: slideIn 0.3s ease-out;';
-                                        
-                                        // Add animation
-                                        const styleEl = document.createElement('style');
-                                        styleEl.textContent = '@keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }';
-                                        document.head.appendChild(styleEl);
-                                        
-                                        document.body.appendChild(toast);
-                                        
-                                        // Remove after delay
-                                        setTimeout(() => {
-                                            toast.style.animation = 'slideOut 0.3s ease-in forwards';
-                                            toast.style.animationName = 'slideOut';
-                                            setTimeout(() => {
-                                                toast.remove();
-                                                styleEl.remove();
-                                            }, 300);
-                                        }, command.duration || 3000);
-                                        
-                                        // Add slide out animation
-                                        styleEl.textContent += ' @keyframes slideOut { from { transform: translateX(0); opacity: 1; } to { transform: translateX(100%); opacity: 0; } }';
-                                    }
-                                    
-                                    result = { success: true, message: 'Notification shown' };
-                                    break;
-                                    
-                                case 'rawCode':
-                                    // Fallback for backward compatibility - will fail with Trusted Types
-                                    result = {
-                                        error: 'Trusted Types policy prevents eval. Use predefined commands instead.',
-                                        suggestion: 'Available commands: getSystemInfo, querySelector, getElementInfo, clickElement, getActiveElement, showNotification'
-                                    };
-                                    break;
-                                    
-                                default:
-                                    result = {
-                                        error: 'Unknown command type',
-                                        type: command.type,
-                                        availableCommands: ['getSystemInfo', 'querySelector', 'getElementInfo', 'clickElement', 'getActiveElement', 'showNotification']
-                                    };
-                            }
-                        } catch (e) {
-                            // Fallback for non-JSON messages (backward compatibility)
-                            result = {
-                                error: 'Invalid command format. Expected JSON with type field.',
-                                received: e.data,
-                                actualError: e.message,
-                                suggestion: 'Send commands as JSON: {"type": "getSystemInfo"}'
-                            };
-                        }
-                        ws.send(JSON.stringify(result));
-                    };
-
-                    // Store reference globally
-                    window.__codeLooperHook = ws;
-                    window.__codeLooperPort = port;
-
-                } catch(err) {
-                    console.error('🔄 CodeLooper: Failed to create WebSocket', err);
-                    return 'CodeLooper hook failed: ' + err.message;
-                }
-            }
-
-            // Start connection
-            connect();
-
-            return 'CodeLooper hook installing on port ' + port + '...';
-        })();
-        """
+    private func generateJavaScriptHook() throws -> String {
+        do {
+            return try CursorJSHookScript.generate(port: port.rawValue)
+        } catch {
+            Logger(category: .settings).error("Failed to load JavaScript hook script: \(error)")
+            throw HookError.injectionFailed(error)
+        }
     }
 
     private func buildAppleScript(javascript js: String) -> String {
@@ -701,11 +536,88 @@ public final class CursorJSHook {
     }
 
     private func processReceivedText(_ txt: String, on connection: NWConnection) {
+        // Try to parse as JSON first
+        if let data = txt.data(using: .utf8),
+           let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+           let type = json["type"] as? String {
+            
+            switch type {
+            case "heartbeat":
+                // Process heartbeat
+                let version = json["version"] as? String ?? "unknown"
+                let location = json["location"] as? String ?? "unknown"
+                let resumeNeeded = json["resumeNeeded"] as? Bool ?? false
+                
+                if resumeNeeded {
+                    Logger(category: .jshook)
+                        .info("⏸️ Cursor stopped - resume needed (hook v\(version))")
+                } else {
+                    Logger(category: .jshook)
+                        .debug("💓 Heartbeat from Cursor hook v\(version) at \(location)")
+                }
+                
+                // Always post heartbeat notification
+                NotificationCenter.default.post(
+                    name: Notification.Name("CursorHeartbeat"),
+                    object: nil,
+                    userInfo: [
+                        "port": self.port.rawValue,
+                        "location": location,
+                        "version": version,
+                        "resumeNeeded": resumeNeeded
+                    ]
+                )
+                return
+                
+            case "composerUpdate":
+                // Process composer bar update
+                let content = json["content"] as? String ?? ""
+                let timestamp = json["timestamp"] as? String ?? ""
+                let isInitial = json["initial"] as? Bool ?? false
+                let mutations = json["mutations"] as? Int ?? 0
+                
+                if isInitial {
+                    Logger(category: .jshook)
+                        .info("📝 Initial composer bar content received (length: \(content.count))")
+                } else {
+                    Logger(category: .jshook)
+                        .info("📝 Composer bar updated: \(mutations) mutations, length: \(content.count)")
+                }
+                
+                // Log the actual content (truncated if too long)
+                let truncatedContent = content.count > 500 ? 
+                    String(content.prefix(500)) + "..." : content
+                Logger(category: .jshook)
+                    .debug("📝 Composer content: \(truncatedContent)")
+                
+                // Post notification for other parts of the app
+                NotificationCenter.default.post(
+                    name: Notification.Name("CursorComposerUpdate"),
+                    object: nil,
+                    userInfo: [
+                        "content": content,
+                        "timestamp": timestamp,
+                        "initial": isInitial,
+                        "mutations": mutations
+                    ]
+                )
+                return
+                
+            default:
+                // Unknown message type, fall through to normal processing
+                Logger(category: .jshook)
+                    .warning("⚠️ Received unknown message type '\(type)' from JS hook: \(txt)")
+                break
+            }
+        }
+        
         print("🌀 WS Received on \(connection.debugDescription): \(txt)")
         if txt == "ready" {
             if !self.handshakeCompleted {
                 self.handshakeCompleted = true
                 print("🤝 Handshake 'ready' message processed for \(connection.debugDescription).")
+                Logger(category: .jshook)
+                    .info("🤝 Renderer handshake complete. Hook version: \(CursorJSHookScript.version)")
             } else {
                 print(
                     "⚠️ Received 'ready' message again on \(connection.debugDescription), but handshake already completed."
