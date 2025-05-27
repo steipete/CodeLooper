@@ -152,20 +152,97 @@ public final class CursorJSHook {
 
     private func generateJavaScriptHook() -> String {
         """
-        (function hook(u=\'ws://127.0.0.1:\(port)\'){ \
-        console.log(\'🔄 CodeLooper: Attempting to connect to \' + u); \
-        try { \
-        const w=new WebSocket(u); \
-        w.onopen=()=>{console.log(\'🔄 CodeLooper: Connected to \' + u);w.send(\'ready\');}; \
-        w.onerror=(e)=>console.log(\'🔄 CodeLooper: WebSocket error\', e); \
-        w.onclose=(e)=>console.log(\'🔄 CodeLooper: WebSocket closed\', e); \
-        w.onmessage=e=>{let r;try{r=eval(e.data)}catch(x){r=x.stack}; \
-        w.send(JSON.stringify(r));}; \
-        return \'CodeLooper hook installing on port \(port)...\'; \
-        } catch(err) { \
-        console.error(\'🔄 CodeLooper: Failed to create WebSocket\', err); \
-        return \'CodeLooper hook failed: \' + err.message; \
-        } \
+        (function() {
+            // Check if hook already exists
+            if (window.__codeLooperHook && window.__codeLooperHook.readyState === WebSocket.OPEN) {
+                console.log('🔄 CodeLooper: Hook already active on port ' + window.__codeLooperHook.url);
+                return 'CodeLooper hook already active';
+            }
+            
+            const port = \(port);
+            const url = 'ws://127.0.0.1:' + port;
+            let reconnectAttempts = 0;
+            const maxReconnectAttempts = 5;
+            const reconnectDelay = 3000; // 3 seconds
+            
+            function connect() {
+                console.log('🔄 CodeLooper: Attempting to connect to ' + url);
+                
+                try {
+                    const ws = new WebSocket(url);
+                    
+                    ws.onopen = () => {
+                        console.log('🔄 CodeLooper: Connected to ' + url);
+                        ws.send('ready');
+                        reconnectAttempts = 0; // Reset on successful connection
+                    };
+                    
+                    ws.onerror = (e) => {
+                        console.log('🔄 CodeLooper: WebSocket error', e);
+                    };
+                    
+                    ws.onclose = (e) => {
+                        console.log('🔄 CodeLooper: WebSocket closed', e);
+                        window.__codeLooperHook = null;
+                        
+                        // Auto-reconnect logic
+                        if (reconnectAttempts < maxReconnectAttempts) {
+                            reconnectAttempts++;
+                            console.log(`🔄 CodeLooper: Reconnecting in ${reconnectDelay/1000}s... (attempt ${reconnectAttempts}/${maxReconnectAttempts})`);
+                            setTimeout(connect, reconnectDelay);
+                        } else {
+                            console.log('🔄 CodeLooper: Max reconnection attempts reached. Hook disabled.');
+                        }
+                    };
+                    
+                    ws.onmessage = (e) => {
+                        let result;
+                        try {
+                            // Try using Function constructor as a fallback for eval
+                            const AsyncFunction = (async function() {}).constructor;
+                            const fn = new AsyncFunction('return (' + e.data + ')');
+                            result = fn();
+                            
+                            // Handle promises
+                            if (result && typeof result.then === 'function') {
+                                result.then(r => ws.send(JSON.stringify(r)))
+                                       .catch(err => ws.send(JSON.stringify({ error: err.message, stack: err.stack })));
+                                return;
+                            }
+                        } catch(error) {
+                            // If Function constructor also fails, try to execute as a simple expression
+                            try {
+                                // For simple property access, we can use a safer approach
+                                if (e.data.match(/^[\\w\\.\\[\\]'"]+$/)) {
+                                    result = Function('"use strict"; return ' + e.data)();
+                                } else {
+                                    result = { 
+                                        error: 'Trusted Types policy prevents eval. Code execution limited.', 
+                                        attempted: e.data,
+                                        actualError: error.message 
+                                    };
+                                }
+                            } catch(innerError) {
+                                result = { error: innerError.message, stack: innerError.stack };
+                            }
+                        }
+                        ws.send(JSON.stringify(result));
+                    };
+                    
+                    // Store reference globally
+                    window.__codeLooperHook = ws;
+                    window.__codeLooperPort = port;
+                    
+                } catch(err) {
+                    console.error('🔄 CodeLooper: Failed to create WebSocket', err);
+                    return 'CodeLooper hook failed: ' + err.message;
+                }
+            }
+            
+            // Start connection
+            connect();
+            
+            return 'CodeLooper hook installing on port ' + port + '...';
         })();
         """
     }
@@ -183,92 +260,40 @@ public final class CursorJSHook {
             tell process "\(self.applicationName)"
                 # Target specific window by name if provided, otherwise use front window
                 set targetWindow to \(windowTarget)
-
-                \(buildWindowFocusScript())
-
-                \(buildDeveloperToolsScript())
-
-                \(buildConsoleInteractionScript(javascript: js))
-
-            end tell
-        end tell
-        """
-    }
-
-    private func buildWindowFocusScript() -> String {
-        """
-                # Bring the target window to front and focus it
-                try
-                    # First, bring window to front
-                    set frontmost to true
-                    perform action "AXRaise" of targetWindow
-                    delay 0.3
-
-                    # Then click on the window to ensure it has focus
-                    set windowBounds to bounds of targetWindow
-                    set centerX to (item 1 of windowBounds) + ((item 3 of windowBounds) - (item 1 of windowBounds)) / 2
-                    set centerY to (item 2 of windowBounds) + ((item 4 of windowBounds) - (item 2 of windowBounds)) / 2
-                    click at {centerX, centerY}
-                    delay 0.5
-                end try
-
-                # Ensure target window is now the focused window
+                
+                # Focus the window
+                set frontmost to true
                 set focused of targetWindow to true
                 delay 0.5
-        """
-    }
-
-    private func buildDeveloperToolsScript() -> String {
-        """
-                # Open developer tools using direct keyboard shortcut
-                keystroke "`" using {command down, option down}
-                delay 2.0
-
-                # Ensure console tab is selected and focused
-                keystroke "c" using {command down, shift down}
+                
+                # Toggle developer tools console
+                keystroke "P" using {shift down, command down}
                 delay 1.0
-
-                # Try clicking at expected console input location
-                try
-                    set windowBounds to bounds of targetWindow
-                    set windowWidth to (item 3 of windowBounds) - (item 1 of windowBounds)
-                    set windowHeight to (item 4 of windowBounds) - (item 2 of windowBounds)
-                    # Click in the bottom area where console input typically is
-                    set clickX to (item 1 of windowBounds) + (windowWidth / 2)
-                    set clickY to (item 2 of windowBounds) + (windowHeight - 30)
-                    click at {clickX, clickY}
-                    delay 0.5
-                end try
-        """
-    }
-
-    private func buildConsoleInteractionScript(javascript js: String) -> String {
-        """
+                keystroke ">Developer: Toggle Developer Tools"
+                delay 0.5
+                key code 36 # Enter
+                delay 2.0
+                
                 # Clear any existing content
                 keystroke "a" using {command down}
                 delay 0.2
                 key code 117 # Delete
                 delay 0.2
-
-                # Set clipboard and paste JavaScript
+                
+                # Paste the JavaScript
                 set the clipboard to "\(js)"
                 delay 0.3
                 keystroke "v" using {command down}
-                delay 1.0
-
-                # Execute the JavaScript
+                delay 0.5
+                
+                # Execute
                 key code 36 # Enter
                 delay 0.5
-                key code 36 # Enter again to ensure execution
-                delay 1.0
+            end tell
+        end tell
         """
     }
 
-    // Removed - inlined into main script
-
-    // Removed - inlined into main script
-
-    // Removed - inlined into main script
 
     private func executeAppleScript(_ script: String) throws {
         let appleScript = NSAppleScript(source: script)
@@ -361,6 +386,7 @@ public final class CursorJSHook {
     }
 
     private func cleanupConnection(error: HookError) {
+        conn?.cancel()
         conn = nil
         handshakeCompleted = false
         if let pendingContinuation = self.pending {
@@ -368,6 +394,12 @@ public final class CursorJSHook {
             pendingContinuation.resume(throwing: error)
         }
         // Optional: Notify listener or attempt to re-establish if appropriate for the use case
+    }
+    
+    deinit {
+        // Clean up listener and connection
+        listener?.cancel()
+        conn?.cancel()
     }
 
     // pump is already @MainActor isolated
