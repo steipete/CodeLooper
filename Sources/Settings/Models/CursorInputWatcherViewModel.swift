@@ -9,8 +9,8 @@ import SwiftUI
 // We'll rely on AXorcist.Element for success cases.
 // Error handling will be based on HandlerResponse.error.
 
-// swiftlint:disable:next type_body_length
 @MainActor
+// swiftlint:disable:next type_body_length
 class CursorInputWatcherViewModel: ObservableObject {
     // MARK: Lifecycle
 
