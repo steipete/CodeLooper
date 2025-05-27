@@ -2,7 +2,7 @@ import Foundation
 import Network
 
 @MainActor
-public final class CursorJSHook: @unchecked Sendable {
+public final class CursorJSHook: Sendable {
     // MARK: Lifecycle
 
     /// Spin up the hook (starts listener, injects JS, waits for the renderer).
@@ -50,7 +50,7 @@ public final class CursorJSHook: @unchecked Sendable {
             if isHooked {
                 return true
             }
-            try? await Task.sleep(nanoseconds: 100_000_000) // 0.1 second
+            try? await Task.sleep(nanoseconds: 20_000_000) // 0.02 second (reduced from 0.1)
         }
 
         return false
@@ -109,12 +109,23 @@ public final class CursorJSHook: @unchecked Sendable {
     private func injectViaAppleScript() throws {
         print("🎯 Starting AppleScript injection for \(self.applicationName)")
         
-        // JavaScript to be injected. Standard triple quotes are fine.
+        // JavaScript to be injected with debugging. Standard triple quotes are fine.
         let js = """
         (function hook(u=\'ws://127.0.0.1:\(port)\'){ \
-        const w=new WebSocket(u);w.onopen=()=>w.send(\'ready\'); \
+        console.log(\'🎯 CodeLooper: Attempting to connect to \' + u); \
+        try { \
+        const w=new WebSocket(u); \
+        w.onopen=()=>{console.log(\'🎯 CodeLooper: Connected to \' + u);w.send(\'ready\');}; \
+        w.onerror=(e)=>console.log(\'🎯 CodeLooper: WebSocket error\', e); \
+        w.onclose=(e)=>console.log(\'🎯 CodeLooper: WebSocket closed\', e); \
         w.onmessage=e=>{let r;try{r=eval(e.data)}catch(x){r=x.stack}; \
-        w.send(JSON.stringify(r));};})();
+        w.send(JSON.stringify(r));}; \
+        return \'CodeLooper hook installing on port \(port)...\'; \
+        } catch(err) { \
+        console.error(\'🎯 CodeLooper: Failed to create WebSocket\', err); \
+        return \'CodeLooper hook failed: \' + err.message; \
+        } \
+        })();
         """
 
         // AppleScript content. Raw triple quotes #"""..."""# are used.
@@ -126,35 +137,64 @@ public final class CursorJSHook: @unchecked Sendable {
         tell application "System Events"
             tell process "\#(self.applicationName)"
                 # Ensure the application is ready for UI scripting
-                # This might need more robust checks depending on the app's responsiveness
                 delay 0.5 # Wait for window to be responsive after activation
 
                 # Open Command Palette
                 keystroke "P" using {shift down, command down}
-                delay 1.0 # Increased delay for palette to appear
+                delay 1.0 # Wait for palette to appear
 
-                # Type 'Developer: Toggle Developer Tools'
-                # Check if dev tools are already open, if possible, or just toggle
-                keystroke "Developer: Toggle Developer Tools"
-                delay 0.5 # More delay for typing to register
-                key code 36 # Press Enter
+                # Clear any existing text and type the full specific command with > prefix
+                keystroke "a" using {command down} # Select all existing text
+                delay 0.1
+                keystroke ">Developer: Toggle Developer Tools" # Full explicit command with > prefix
+                delay 0.5 # Wait for search results
+                key code 36 # Press Enter to select the command
 
-                delay 2.5 # Significantly increased delay for Developer Tools to open and become active
+                delay 2.5 # Wait for Developer Tools to open/become active
 
-                # Open Console (often ESC toggles a drawer or focuses console)
-                # This part is highly dependent on the specific dev tools UI
-                key code 53 -- Esc (hoping it opens/focuses console drawer)
+                # Now try to focus the console with multiple strategies
+                
+                # Strategy 1: Try Cmd+Shift+C to open Console directly
+                keystroke "c" using {command down, shift down}
+                delay 1.5
+                
+                # Strategy 2: Try pressing Escape to focus console input
+                key code 53 -- Esc
                 delay 0.5
-
-                set the clipboard to "\#(js)" 
-                delay 0.1
-                keystroke "v" using {command down} # Paste
-                delay 0.1
-                key code 36 # Press Enter (to execute pasted JS in console)
+                
+                # Strategy 3: Try Tab to navigate to input field
+                key code 48 -- Tab
+                delay 0.5
+                
+                # Strategy 4: Try clicking at bottom of window where console input usually is
+                try
+                    set windowBounds to bounds of front window
+                    set windowWidth to (item 3 of windowBounds) - (item 1 of windowBounds)
+                    set windowHeight to (item 4 of windowBounds) - (item 2 of windowBounds)
+                    set clickX to (item 1 of windowBounds) + (windowWidth / 2)
+                    set clickY to (item 2 of windowBounds) + (windowHeight - 50) # Near bottom
+                    click at {clickX, clickY}
+                    delay 0.5
+                end try
+                
+                # Clear any existing content in console input
+                keystroke "a" using {command down}
+                delay 0.2
+                key code 117 # Delete key
                 delay 0.2
 
-                # Optional: Close Developer Tools or Console Drawer if needed
-                # key code 53 -- Esc (again, if it closes the drawer)
+                # Set clipboard and paste our JavaScript
+                set the clipboard to "\#(js)" 
+                delay 0.3
+                keystroke "v" using {command down} # Paste
+                delay 1.0 # Wait longer for paste to complete
+                
+                # Execute the JavaScript - try multiple times to ensure it works
+                key code 36 # Press Enter (to execute pasted JS in console)
+                delay 0.5
+                key code 36 # Press Enter again to be sure
+                delay 1.5 # Wait longer for execution
+
             end tell
         end tell
         """# // End of AppleScript raw string literal
@@ -196,11 +236,27 @@ public final class CursorJSHook: @unchecked Sendable {
     // 3️⃣ Wait for renderer's "ready"
     private func waitForRendererHandshake() async throws {
         print("⏳ Waiting for renderer handshake...")
-        try await withCheckedThrowingContinuation { continuation in
-            self.ready = continuation
+        
+        // Use a simpler approach with Task.sleep and polling
+        let startTime = Date()
+        let timeout: TimeInterval = 10
+        
+        while Date().timeIntervalSince(startTime) < timeout {
+            if handshakeCompleted {
+                print("🤝 Renderer handshake complete.")
+                return
+            }
+            try await Task.sleep(for: .milliseconds(100))
         }
-        print("🤝 Renderer handshake complete.")
+        
+        // Timeout occurred
+        throw HookError.connectionLost(underlyingError: NSError(
+            domain: "TimeoutError",
+            code: -1001,
+            userInfo: [NSLocalizedDescriptionKey: "Handshake timeout after \(timeout) seconds"]
+        ))
     }
+    
 
     // adopt a new WS connection
     private func adopt(_ c: NWConnection) {
