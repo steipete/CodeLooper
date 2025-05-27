@@ -56,6 +56,11 @@ struct CursorRuleSetsSettingsView: View {
                 rules.append(rule)
             }
         }
+        .alert("Feature Not Yet Implemented", isPresented: $showNotImplementedAlert) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text("The '\(attemptedRuleName)' rule is not yet implemented. Currently, only the 'Stop after 25 loops' rule is functional.")
+        }
     }
 
     // MARK: Private
@@ -63,35 +68,51 @@ struct CursorRuleSetsSettingsView: View {
     @State private var rules: [InterventionRule] = [
         InterventionRule(
             id: UUID(),
-            name: "Connection Error Recovery",
+            name: "Stop after 25 loops",
             enabled: true,
-            description: "Automatically recover from connection errors",
+            description: "It automatically presses resume. Note: By default, we stop the agent after 25 tool calls.",
+            trigger: .generationTimeout,
+            action: .clickResumeButton
+        ),
+        InterventionRule(
+            id: UUID(),
+            name: "Plain Stop",
+            enabled: false,
+            description: "Cursor just stops, even though the text indicates that there's more to do.",
+            trigger: .stuckState,
+            action: .clickResumeButton
+        ),
+        InterventionRule(
+            id: UUID(),
+            name: "Connection Issues",
+            enabled: false,
+            description: "\"We're having trouble connecting to the model provider.\"",
             trigger: .connectionError,
             action: .clickResumeButton
         ),
         InterventionRule(
             id: UUID(),
-            name: "Stuck State Detection",
-            enabled: true,
-            description: "Detect and resolve when Cursor becomes unresponsive",
-            trigger: .stuckState,
-            action: .forceRefresh
-        ),
-        InterventionRule(
-            id: UUID(),
-            name: "Long Generation Timeout",
+            name: "Edited in another chat",
             enabled: false,
-            description: "Stop generations that take too long",
-            trigger: .generationTimeout,
-            action: .stopGeneration
+            description: "Automatically accepts if another tab edited a file.",
+            trigger: .sidebarInactive,
+            action: .forceRefresh
         ),
     ]
 
     @State private var selectedRule: InterventionRule?
     @State private var showAddRule = false
+    @State private var showNotImplementedAlert = false
+    @State private var attemptedRuleName = ""
 
     private func toggleRule(_ rule: InterventionRule) {
         if let index = rules.firstIndex(where: { $0.id == rule.id }) {
+            // Check if trying to enable an unimplemented rule
+            if !rules[index].enabled && rule.name != "Stop after 25 loops" {
+                attemptedRuleName = rule.name
+                showNotImplementedAlert = true
+                return
+            }
             rules[index].enabled.toggle()
         }
     }
