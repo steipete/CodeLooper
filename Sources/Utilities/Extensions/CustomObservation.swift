@@ -16,32 +16,44 @@ public protocol CustomObservation {
 /// This class adapts the new Observation framework to our legacy CustomObservation protocol
 /// We use a simplified version that doesn't directly depend on ObservationRegistrar.Registration
 public class ModernObservation: CustomObservation {
-    // Use a cancellation closure instead of direct Registration reference
-    private var cancellationHandler: (() -> Void)?
+    // MARK: Lifecycle
 
     public init(cancellationHandler: (() -> Void)?) {
         self.cancellationHandler = cancellationHandler
     }
 
+    // MARK: Public
+
     public func cancel() {
         cancellationHandler?()
         cancellationHandler = nil
     }
+
+    // MARK: Private
+
+    // Use a cancellation closure instead of direct Registration reference
+    private var cancellationHandler: (() -> Void)?
 }
 
 /// A simple observation wrapper for callbacks
 /// Legacy implementation for older code
 public class CallbackObservation: CustomObservation {
-    private var onCancel: (() -> Void)?
+    // MARK: Lifecycle
 
     public init(onCancel: @escaping () -> Void) {
         self.onCancel = onCancel
     }
 
+    // MARK: Public
+
     public func cancel() {
         onCancel?()
         onCancel = nil
     }
+
+    // MARK: Private
+
+    private var onCancel: (() -> Void)?
 }
 
 // Legacy support for Combine-based observation
@@ -51,14 +63,20 @@ import Combine
 /// A combine-based observation implementation
 /// Legacy support for existing code
 public class CombineObservation: CustomObservation {
-    private var cancellable: AnyCancellable?
+    // MARK: Lifecycle
 
     public init(cancellable: AnyCancellable) {
         self.cancellable = cancellable
     }
 
+    // MARK: Public
+
     public func cancel() {
         cancellable?.cancel()
         cancellable = nil
     }
+
+    // MARK: Private
+
+    private var cancellable: AnyCancellable?
 }

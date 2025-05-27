@@ -4,7 +4,7 @@ import Foundation
 /// This prevents potential crashes from multiple resume operations
 /// on the same continuation
 actor ContinuationGuard {
-    private var hasResumed = false
+    // MARK: Internal
 
     /// Attempts to resume with a success value
     /// - Parameter value: The value to resume with
@@ -23,4 +23,8 @@ actor ContinuationGuard {
         hasResumed = true
         return true
     }
+
+    // MARK: Private
+
+    private var hasResumed = false
 }

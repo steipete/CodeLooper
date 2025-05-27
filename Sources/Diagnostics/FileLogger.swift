@@ -7,13 +7,17 @@ import OSLog
 /// This class uses OSLog/Logger exclusively for logging, but maintains the
 /// diagnostic directory functionality for storing diagnostic reports.
 actor FileLogger {
-    static let shared = FileLogger()
+    // MARK: Lifecycle
 
     private init() {
         // Simple initialization
         Logger(label: "FileLogger", category: .utilities)
             .debug("FileLogger initialized - using OSLog for all logging")
     }
+
+    // MARK: Internal
+
+    static let shared = FileLogger()
 
     /// Log a message to the system log
     /// - Parameters:

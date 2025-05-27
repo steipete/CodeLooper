@@ -92,11 +92,11 @@ struct FeatureHighlightView: View {
 }
 
 #if DEBUG
-struct WelcomeGuideView_Previews: PreviewProvider {
-    static var previews: some View {
-        WelcomeGuideView {
-            print("Get Started Clicked!")
+    struct WelcomeGuideView_Previews: PreviewProvider {
+        static var previews: some View {
+            WelcomeGuideView {
+                print("Get Started Clicked!")
+            }
         }
     }
-}
-#endif 
+#endif

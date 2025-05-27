@@ -5,6 +5,7 @@ import SwiftUI
 // PreferenceKey to communicate ideal height from child views
 struct IdealHeightPreferenceKey: PreferenceKey {
     static var defaultValue: CGFloat { 0 }
+
     static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
         value = nextValue() // Use the latest reported height
     }
@@ -30,10 +31,10 @@ extension View {
 // }
 
 struct SettingsPanesContainerView: View {
+    // MARK: Internal
+
     @EnvironmentObject var mainSettingsViewModel: MainSettingsViewModel
     @EnvironmentObject var sessionLogger: SessionLogger // Assuming SessionLogger is provided higher up
-    @State private var idealContentHeight: CGFloat = 450 // Default/initial height, adjusted slightly
-    @FocusState private var focusedTab: SettingsTab? // Added for keyboard focus
 
     var body: some View {
         VStack(spacing: 0) { // Use VStack to manage TabView and Footer
@@ -46,7 +47,7 @@ struct SettingsPanesContainerView: View {
                     .tag(SettingsTab.general)
                     .focusable() // Added for keyboard focus
                     .focused($focusedTab, equals: .general) // Added for keyboard focus
-                
+
                 CursorSupervisionSettingsView()
                     .readHeight() // Apply readHeight
                     .tabItem {
@@ -55,7 +56,7 @@ struct SettingsPanesContainerView: View {
                     .tag(SettingsTab.supervision)
                     .focusable() // Added for keyboard focus
                     .focused($focusedTab, equals: .supervision) // Added for keyboard focus
-                
+
                 CursorRuleSetsSettingsView()
                     .readHeight() // Apply readHeight
                     .tabItem {
@@ -64,7 +65,7 @@ struct SettingsPanesContainerView: View {
                     .tag(SettingsTab.ruleSets)
                     .focusable() // Added for keyboard focus
                     .focused($focusedTab, equals: .ruleSets) // Added for keyboard focus
-                
+
                 ExternalMCPsSettingsView()
                     .readHeight() // Apply readHeight
                     .tabItem {
@@ -73,7 +74,7 @@ struct SettingsPanesContainerView: View {
                     .tag(SettingsTab.externalMCPs)
                     .focusable() // Added for keyboard focus
                     .focused($focusedTab, equals: .externalMCPs) // Added for keyboard focus
-                
+
                 AdvancedSettingsView()
                     .readHeight() // Apply readHeight
                     .tabItem {
@@ -82,7 +83,7 @@ struct SettingsPanesContainerView: View {
                     .tag(SettingsTab.advanced)
                     .focusable() // Added for keyboard focus
                     .focused($focusedTab, equals: .advanced) // Added for keyboard focus
-                
+
                 AXInspectorLogView() // Renamed from Text(...)
                     .readHeight() // Apply readHeight
                     .tabItem {
@@ -98,11 +99,12 @@ struct SettingsPanesContainerView: View {
             .onPreferenceChange(IdealHeightPreferenceKey.self) { newHeight in
                 if newHeight > 0 { // Ensure we have a valid height
                     // Adjust this offset as needed for TabView chrome and padding
-                    self.idealContentHeight = newHeight + 20 
+                    self.idealContentHeight = newHeight + 20
                 }
             }
             .animation(.default, value: idealContentHeight) // Animate height changes
-            .onChange(of: mainSettingsViewModel.selectedTab) { oldValue, newValue in // Changed to observe ViewModel's selectedTab
+            .onChange(of: mainSettingsViewModel.selectedTab) { _, newValue in
+                // Changed to observe ViewModel's selectedTab
                 focusedTab = newValue // Update focus state when tab changes
             }
             .onAppear { // Set initial focus
@@ -121,18 +123,26 @@ struct SettingsPanesContainerView: View {
             .font(.caption)
         }
     }
+
+    // MARK: Private
+
+    @State private var idealContentHeight: CGFloat = 450 // Default/initial height, adjusted slightly
+    @FocusState private var focusedTab: SettingsTab? // Added for keyboard focus
 }
 
 #if DEBUG
-struct SettingsPanesContainerView_Previews: PreviewProvider {
-    static var previews: some View {
-        // Create dummy UpdaterViewModel for the preview
-        let dummySparkleUpdaterManager = SparkleUpdaterManager()
-        let dummyUpdaterViewModel = UpdaterViewModel(sparkleUpdaterManager: dummySparkleUpdaterManager)
+    struct SettingsPanesContainerView_Previews: PreviewProvider {
+        static var previews: some View {
+            // Create dummy UpdaterViewModel for the preview
+            let dummySparkleUpdaterManager = SparkleUpdaterManager()
+            let dummyUpdaterViewModel = UpdaterViewModel(sparkleUpdaterManager: dummySparkleUpdaterManager)
 
-        SettingsPanesContainerView()
-            .environmentObject(MainSettingsViewModel(loginItemManager: LoginItemManager.shared, updaterViewModel: dummyUpdaterViewModel))
-            .environmentObject(SessionLogger.shared) // Provide a SessionLogger for the preview
+            SettingsPanesContainerView()
+                .environmentObject(MainSettingsViewModel(
+                    loginItemManager: LoginItemManager.shared,
+                    updaterViewModel: dummyUpdaterViewModel
+                ))
+                .environmentObject(SessionLogger.shared) // Provide a SessionLogger for the preview
+        }
     }
-}
-#endif 
+#endif

@@ -8,12 +8,14 @@ import Foundation
 struct GeneratingIndicatorTextHeuristic: AXElementHeuristic {
     let locatorType: LocatorType = .generatingIndicatorText
 
-
     @MainActor func discover(for pid: pid_t, axorcist: AXorcist) async -> Locator? {
         // Attempt 1: Specific text and role
         let locator1 = Locator(
             matchAll: false,
-            criteria: Self.convertDictionaryToCriteriaArray(["role_exact": AXRoleNames.kAXStaticTextRole as String, "computedName_contains": "Generating"])
+            criteria: Self.convertDictionaryToCriteriaArray([
+                "role_exact": AXRoleNames.kAXStaticTextRole as String,
+                "computedName_contains": "Generating",
+            ])
             // computedNameContains: "Generating" // This is now part of criteria
         )
         let queryCommand1 = QueryCommand(
@@ -28,7 +30,10 @@ struct GeneratingIndicatorTextHeuristic: AXElementHeuristic {
         // Attempt 2: Broader role with general keywords
         let locator2 = Locator(
             matchAll: false,
-            criteria: Self.convertDictionaryToCriteriaArray(["role_exact": AXRoleNames.kAXStaticTextRole as String, "computedName_contains": "loading"])
+            criteria: Self.convertDictionaryToCriteriaArray([
+                "role_exact": AXRoleNames.kAXStaticTextRole as String,
+                "computedName_contains": "loading",
+            ])
             // computedNameContains: "loading" // This is now part of criteria
         )
         let queryCommand2 = QueryCommand(
@@ -43,7 +48,8 @@ struct GeneratingIndicatorTextHeuristic: AXElementHeuristic {
         // Attempt 3: Progress indicator role
         let locator3 = Locator(
             matchAll: false,
-            criteria: Self.convertDictionaryToCriteriaArray(["role_exact": AXRoleNames.kAXProgressIndicatorRole as String])
+            criteria: Self
+                .convertDictionaryToCriteriaArray(["role_exact": AXRoleNames.kAXProgressIndicatorRole as String])
         )
         let queryCommand3 = QueryCommand(
             appIdentifier: String(pid),
@@ -55,7 +61,7 @@ struct GeneratingIndicatorTextHeuristic: AXElementHeuristic {
         if queryResponse3.payload != nil {
             return locator3
         }
-        
+
         return nil
     }
-} 
+}

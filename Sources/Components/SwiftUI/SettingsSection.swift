@@ -6,13 +6,17 @@ import SwiftUI
 
 /// Shared section component for settings
 struct SettingsSection<Content: View>: View {
-    let title: String
-    let content: Content
+    // MARK: Lifecycle
 
     init(title: String, @ViewBuilder content: () -> Content) {
         self.title = title
         self.content = content()
     }
+
+    // MARK: Internal
+
+    let title: String
+    let content: Content
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {

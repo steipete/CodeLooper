@@ -25,9 +25,11 @@ struct AboutSettingsTab: View {
                         .font(.title)
                         .bold()
 
-                    Text("Version \(Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0.0") (Build \(Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "Unknown"))")
-                        .font(.footnote)
-                        .foregroundColor(.secondary)
+                    Text(
+                        "Version \(Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0.0") (Build \(Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "Unknown"))"
+                    )
+                    .font(.footnote)
+                    .foregroundColor(.secondary)
                 }
                 .padding(.top, 5)
 
@@ -36,10 +38,10 @@ struct AboutSettingsTab: View {
                 CodeLooper is your coding companion for macOS, helping you be more productive \
                 with your development workflow.
                 """)
-                    .multilineTextAlignment(.center)
-                    .frame(maxWidth: 400)
-                    .padding(.horizontal)
-                    .padding(.vertical, 2)
+                .multilineTextAlignment(.center)
+                .frame(maxWidth: 400)
+                .padding(.horizontal)
+                .padding(.vertical, 2)
 
                 // Developer Info
                 VStack(spacing: 5) {
@@ -77,7 +79,10 @@ struct AboutSettingsTab: View {
     let loginItemManager = LoginItemManager.shared
     let sparkleUpdaterManager = SparkleUpdaterManager() // Assuming it can be init'd simply
     let updaterViewModel = UpdaterViewModel(sparkleUpdaterManager: sparkleUpdaterManager)
-    let mainSettingsViewModel = MainSettingsViewModel(loginItemManager: loginItemManager, updaterViewModel: updaterViewModel)
+    let mainSettingsViewModel = MainSettingsViewModel(
+        loginItemManager: loginItemManager,
+        updaterViewModel: updaterViewModel
+    )
 
     AboutSettingsTab(viewModel: mainSettingsViewModel)
         // .environmentObject(mainSettingsViewModel) // viewModel is passed directly, no need for environmentObject here
@@ -90,10 +95,14 @@ struct AboutSettingsTab_Previews: PreviewProvider {
         let loginItemManager = LoginItemManager.shared
         let sparkleUpdaterManager = SparkleUpdaterManager() // Assuming it can be init'd simply
         let updaterViewModel = UpdaterViewModel(sparkleUpdaterManager: sparkleUpdaterManager)
-        let mainSettingsViewModel = MainSettingsViewModel(loginItemManager: loginItemManager, updaterViewModel: updaterViewModel)
+        let mainSettingsViewModel = MainSettingsViewModel(
+            loginItemManager: loginItemManager,
+            updaterViewModel: updaterViewModel
+        )
 
         AboutSettingsTab(viewModel: mainSettingsViewModel)
-            // .environmentObject(mainSettingsViewModel) // viewModel is passed directly, no need for environmentObject here
+            // .environmentObject(mainSettingsViewModel) // viewModel is passed directly, no need for environmentObject
+            // here
             .frame(width: 350, height: 400)
     }
 }

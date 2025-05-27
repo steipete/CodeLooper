@@ -1,32 +1,20 @@
-import SwiftUI
-import DesignSystem
 import Defaults
+import DesignSystem
+import SwiftUI
 
 struct SettingsContainerView: View {
+    // MARK: Internal
+
     @EnvironmentObject var viewModel: MainSettingsViewModel
-    @State private var selectedTab: SettingsTab = .general
-    @State private var contentHeight: CGFloat = 600
-    @State private var isAnimating = false
-    
-    // Tab definitions
-    private let tabs: [(id: SettingsTab, title: String, icon: String)] = [
-        (.general, "General", "gearshape"),
-        (.supervision, "Supervision", "eye"),
-        (.ruleSets, "Rules", "checklist"),
-        (.externalMCPs, "Extensions", "puzzlepiece.extension"),
-        (.advanced, "Advanced", "wrench.and.screwdriver"),
-        (.cursorInputWatcher, "Input Watcher", "eyeglass"),
-        (.about, "About", "info.circle")
-    ]
-    
+
     var body: some View {
         VStack(spacing: 0) {
             // Header with app branding
             HeaderView()
-            
+
             // Custom tab navigation
             TabNavigationView(selectedTab: $selectedTab, tabs: tabs)
-            
+
             // Content area with animated height
             ScrollView {
                 VStack(spacing: 0) {
@@ -51,15 +39,32 @@ struct SettingsContainerView: View {
                     }
                 }
             }
-            
+
             // Footer
             SettingsFooterView()
         }
-        .frame(width: 700) // Fixed width for settings
+        .frame(width: 720) // Fixed width for settings - increased to prevent tab cutoff
         .background(ColorPalette.background)
         .withDesignSystem()
     }
-    
+
+    // MARK: Private
+
+    @State private var selectedTab: SettingsTab = .general
+    @State private var contentHeight: CGFloat = 600
+    @State private var isAnimating = false
+
+    // Tab definitions
+    private let tabs: [(id: SettingsTab, title: String, icon: String)] = [
+        (.general, "General", "gearshape"),
+        (.supervision, "Supervision", "eye"),
+        (.ruleSets, "Rules", "checklist"),
+        (.externalMCPs, "Extensions", "puzzlepiece.extension"),
+        (.advanced, "Advanced", "wrench.and.screwdriver"),
+        (.cursorInputWatcher, "Input Watcher", "magnifyingglass"),
+        (.about, "About", "info.circle"),
+    ]
+
     @ViewBuilder
     private var tabContent: some View {
         switch selectedTab {
@@ -112,24 +117,27 @@ struct SettingsContainerView: View {
 }
 
 // MARK: - Header View
+
 private struct HeaderView: View {
     var body: some View {
         HStack(spacing: Spacing.medium) {
-            Image("AppIcon")
-                .resizable()
-                .frame(width: 48, height: 48)
-                .cornerRadiusDS(Layout.CornerRadius.large)
-            
+            if let appIcon = NSApplication.shared.applicationIconImage {
+                Image(nsImage: appIcon)
+                    .resizable()
+                    .frame(width: 48, height: 48)
+                    .cornerRadiusDS(Layout.CornerRadius.large)
+            }
+
             VStack(alignment: .leading, spacing: Spacing.xxxSmall) {
                 Text("CodeLooper Settings")
                     .font(Typography.title2(.semibold))
                     .foregroundColor(ColorPalette.text)
-                
+
                 Text("Configure your Cursor supervision preferences")
                     .font(Typography.caption1())
                     .foregroundColor(ColorPalette.textSecondary)
             }
-            
+
             Spacer()
         }
         .padding(Spacing.large)
@@ -138,11 +146,14 @@ private struct HeaderView: View {
 }
 
 // MARK: - Tab Navigation
+
 private struct TabNavigationView: View {
+    // MARK: Internal
+
     @Binding var selectedTab: SettingsTab
+
     let tabs: [(id: SettingsTab, title: String, icon: String)]
-    @State private var hoveredTab: SettingsTab?
-    
+
     var body: some View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: Spacing.medium) {
@@ -162,7 +173,7 @@ private struct TabNavigationView: View {
                     }
                 }
             }
-            .padding(.horizontal, Spacing.large)
+            .padding(.horizontal, Spacing.medium)
             .padding(.vertical, Spacing.small)
         }
         .background(ColorPalette.backgroundTertiary)
@@ -172,15 +183,21 @@ private struct TabNavigationView: View {
             alignment: .bottom
         )
     }
+
+    // MARK: Private
+
+    @State private var hoveredTab: SettingsTab?
 }
 
 private struct TabButton: View {
+    // MARK: Internal
+
     let title: String
     let icon: String
     let isSelected: Bool
     let isHovered: Bool
     let action: () -> Void
-    
+
     var body: some View {
         Button(action: action) {
             VStack(spacing: Spacing.xxSmall) {
@@ -188,7 +205,7 @@ private struct TabButton: View {
                     .font(.system(size: 20, weight: .medium))
                     .foregroundColor(iconColor)
                     .frame(height: 24)
-                
+
                 Text(title)
                     .font(Typography.caption1(.medium))
                     .foregroundColor(textColor)
@@ -205,52 +222,57 @@ private struct TabButton: View {
         }
         .buttonStyle(.plain)
     }
-    
+
+    // MARK: Private
+
     private var iconColor: Color {
         if isSelected {
-            return ColorPalette.primary
+            ColorPalette.primary
         } else if isHovered {
-            return ColorPalette.text
+            ColorPalette.text
         } else {
-            return ColorPalette.textSecondary
+            ColorPalette.textSecondary
         }
     }
-    
+
     private var textColor: Color {
         if isSelected {
-            return ColorPalette.text
+            ColorPalette.text
         } else if isHovered {
-            return ColorPalette.text
+            ColorPalette.text
         } else {
-            return ColorPalette.textSecondary
+            ColorPalette.textSecondary
         }
     }
-    
+
     private var backgroundColor: Color {
         if isSelected {
-            return ColorPalette.background
+            ColorPalette.background
         } else if isHovered {
-            return ColorPalette.backgroundSecondary
+            ColorPalette.backgroundSecondary
         } else {
-            return Color.clear
+            Color.clear
         }
     }
-    
+
     private var borderColor: Color {
         if isSelected {
-            return ColorPalette.primary.opacity(0.3)
+            ColorPalette.primary.opacity(0.3)
         } else {
-            return Color.clear
+            Color.clear
         }
     }
-    
+
     private var borderWidth: CGFloat {
         isSelected ? Layout.BorderWidth.medium : 0
     }
 }
 
 // MARK: - Footer
+
 private struct SettingsFooterView: View {
+    // MARK: Internal
+
     var body: some View {
         HStack {
             Button(action: openGitHub) {
@@ -259,19 +281,19 @@ private struct SettingsFooterView: View {
             }
             .buttonStyle(.plain)
             .foregroundColor(ColorPalette.primary)
-            
+
             Text("•")
                 .foregroundColor(ColorPalette.textTertiary)
-            
+
             Button(action: openDocumentation) {
                 Label("Documentation", systemImage: "book")
                     .font(Typography.caption1())
             }
             .buttonStyle(.plain)
             .foregroundColor(ColorPalette.primary)
-            
+
             Spacer()
-            
+
             Text("Made with ❤️ for Cursor users")
                 .font(Typography.caption1())
                 .foregroundColor(ColorPalette.textSecondary)
@@ -280,13 +302,15 @@ private struct SettingsFooterView: View {
         .padding(.vertical, Spacing.small)
         .background(ColorPalette.backgroundSecondary)
     }
-    
+
+    // MARK: Private
+
     private func openGitHub() {
         if let url = URL(string: "https://github.com/steipete/codelooper") {
             NSWorkspace.shared.open(url)
         }
     }
-    
+
     private func openDocumentation() {
         if let url = URL(string: "https://github.com/steipete/codelooper/wiki") {
             NSWorkspace.shared.open(url)
@@ -295,18 +319,21 @@ private struct SettingsFooterView: View {
 }
 
 // MARK: - Preference Key for Content Height
+
 private struct ContentHeightPreferenceKey: PreferenceKey {
     static let defaultValue: CGFloat = 600
+
     static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
         value = nextValue()
     }
 }
 
 // MARK: - Preview
+
 #if DEBUG
-struct SettingsContainerView_Previews: PreviewProvider {
-    static var previews: some View {
-        SettingsContainerView()
+    struct SettingsContainerView_Previews: PreviewProvider {
+        static var previews: some View {
+            SettingsContainerView()
+        }
     }
-}
 #endif

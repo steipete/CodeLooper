@@ -9,14 +9,17 @@ import Foundation
 struct ErrorMessagePopupHeuristic: AXElementHeuristic {
     let locatorType: LocatorType = .errorMessagePopup
 
-
     @MainActor func discover(for pid: pid_t, axorcist: AXorcist) async -> Locator? {
         // tempLogs removed
 
         // Attempt 1: Look for a pop-up dialog with an error message
         let locator1 = Locator(
             matchAll: false,
-            criteria: Self.convertDictionaryToCriteriaArray(["role": "AXWindow", "subrole_exact": "AXDialog", "description_contains_any": "error,failed,unable"])
+            criteria: Self.convertDictionaryToCriteriaArray([
+                "role": "AXWindow",
+                "subrole_exact": "AXDialog",
+                "description_contains_any": "error,failed,unable",
+            ])
         )
         let queryCommand1 = QueryCommand(
             appIdentifier: String(pid),
@@ -26,11 +29,14 @@ struct ErrorMessagePopupHeuristic: AXElementHeuristic {
         )
         let queryResponse1 = axorcist.handleQuery(command: queryCommand1, maxDepth: nil)
         if queryResponse1.payload != nil { return locator1 }
-        
+
         // Attempt 2: Look for static text that is likely an error message
         let locator2 = Locator(
             matchAll: false,
-            criteria: Self.convertDictionaryToCriteriaArray(["role": "AXStaticText", "isLikelyErrorMessage_exact": "true"])
+            criteria: Self.convertDictionaryToCriteriaArray([
+                "role": "AXStaticText",
+                "isLikelyErrorMessage_exact": "true",
+            ])
         )
         let queryCommand2 = QueryCommand(
             appIdentifier: String(pid),
@@ -44,7 +50,10 @@ struct ErrorMessagePopupHeuristic: AXElementHeuristic {
         // Attempt 3: Look for a more generic static text containing error keywords
         let locator3 = Locator(
             matchAll: false,
-            criteria: Self.convertDictionaryToCriteriaArray(["role": "AXStaticText", "computed_name_contains_any": "error,failed,unable,warning,invalid"])
+            criteria: Self.convertDictionaryToCriteriaArray([
+                "role": "AXStaticText",
+                "computed_name_contains_any": "error,failed,unable,warning,invalid",
+            ])
         )
         let queryCommand3 = QueryCommand(
             appIdentifier: String(pid),
@@ -57,4 +66,4 @@ struct ErrorMessagePopupHeuristic: AXElementHeuristic {
 
         return nil
     }
-} 
+}

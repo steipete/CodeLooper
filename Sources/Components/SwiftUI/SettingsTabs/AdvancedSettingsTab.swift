@@ -4,9 +4,10 @@ import SwiftUI
 
 /// Advanced settings tab view
 struct AdvancedSettingsTab: View {
+    // MARK: Internal
+
     // Use @Bindable to enable proper bindings with @Observable
     @Bindable var viewModel: MainSettingsViewModel
-    @State private var showResetConfirmation = false
 
     var body: some View {
         ScrollView {
@@ -80,6 +81,10 @@ struct AdvancedSettingsTab: View {
             .padding()
         }
     }
+
+    // MARK: Private
+
+    @State private var showResetConfirmation = false
 }
 
 #Preview {

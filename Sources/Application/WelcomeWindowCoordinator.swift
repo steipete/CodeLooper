@@ -7,25 +7,25 @@ import OSLog
 import SwiftUI
 
 /**
-    Coordinator to manage the welcome window.
-    This component handles showing and hiding the welcome window,
-    which may be triggered from various parts of the app.
-*/
+ Coordinator to manage the welcome window.
+ This component handles showing and hiding the welcome window,
+ which may be triggered from various parts of the app.
+ */
 @MainActor
 class WelcomeWindowCoordinator: NSObject {
-    // MARK: - Properties
-
-    static let shared = WelcomeWindowCoordinator()
-
-    private let logger = Logger(category: .onboarding)
-    // Make welcomeWindow internal so it can be directly checked from MenuManager
-    var welcomeWindow: NSWindow?
-    private var cancellables = Set<AnyCancellable>()
+    // MARK: Lifecycle
 
     override private init() {
         super.init()
         setupNotificationObservers()
     }
+
+    // MARK: Internal
+
+    static let shared = WelcomeWindowCoordinator()
+
+    // Make welcomeWindow internal so it can be directly checked from MenuManager
+    var welcomeWindow: NSWindow?
 
     // MARK: - Window Management
 
@@ -76,6 +76,11 @@ class WelcomeWindowCoordinator: NSObject {
         welcomeWindow = nil
     }
 
+    // MARK: Private
+
+    private let logger = Logger(category: .onboarding)
+    private var cancellables = Set<AnyCancellable>()
+
     // MARK: - Notification Handling
 
     private func setupNotificationObservers() {
@@ -110,7 +115,7 @@ class WelcomeWindowCoordinator: NSObject {
 extension WelcomeWindowCoordinator: NSWindowDelegate {
     func windowWillClose(_ notification: Notification) {
         guard let window = notification.object as? NSWindow,
-            window === welcomeWindow else { return }
+              window === welcomeWindow else { return }
 
         welcomeWindow = nil
         logger.info("Welcome window closed")

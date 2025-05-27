@@ -7,22 +7,15 @@ import UserNotifications
 /// Class for showing visual success feedback after a contact upload completes
 @MainActor
 class UploadCompletionFeedback {
-    // MARK: - Properties
-
-    /// Weak reference to avoid reference cycles
-    private weak var statusItem: NSStatusItem?
-
-    /// Dictionary of stored tasks with identifiers
-    private var tasks: [String: Task<Void, Error>] = [:]
-
-    /// Logger for this class
-    private let logger = Logger(category: .ui)
+    // MARK: Lifecycle
 
     // MARK: - Initialization
 
     init(statusItem: NSStatusItem?) {
         self.statusItem = statusItem
     }
+
+    // MARK: Internal
 
     // MARK: - Public Methods
 
@@ -98,6 +91,23 @@ class UploadCompletionFeedback {
     func cancelFeedback() {
         cancelAllTasks()
     }
+
+    /// Clean up all resources
+    func cleanup() {
+        // Cancel all active tasks
+        cancelAllTasks()
+    }
+
+    // MARK: Private
+
+    /// Weak reference to avoid reference cycles
+    private weak var statusItem: NSStatusItem?
+
+    /// Dictionary of stored tasks with identifiers
+    private var tasks: [String: Task<Void, Error>] = [:]
+
+    /// Logger for this class
+    private let logger = Logger(category: .ui)
 
     // MARK: - Private Helper Methods
 
@@ -250,12 +260,6 @@ class UploadCompletionFeedback {
         }
 
         logger.info("Displayed upload success notification: \(message)")
-    }
-
-    /// Clean up all resources
-    func cleanup() {
-        // Cancel all active tasks
-        cancelAllTasks()
     }
 
     // MARK: - Task Management

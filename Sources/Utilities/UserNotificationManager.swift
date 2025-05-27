@@ -1,5 +1,5 @@
-import Foundation
 import Diagnostics
+import Foundation
 import OSLog
 @preconcurrency import UserNotifications
 
@@ -7,17 +7,10 @@ import OSLog
 /// This actor safely manages notification authorization and delivery while properly handling
 /// the interaction with UNUserNotificationCenter's @MainActor isolation.
 public actor UserNotificationManager {
-    // MARK: - Singleton
-    
-    public static let shared = UserNotificationManager()
-    
-    // MARK: - Properties
-    
-    private static let logger = Logger(category: .notifications)
-    private var isAuthorizationRequested = false
-    
+    // MARK: Lifecycle
+
     // MARK: - Initialization
-    
+
     private init() {
         Task {
             do {
@@ -33,24 +26,23 @@ public actor UserNotificationManager {
             }
         }
     }
-    
-    // MARK: - Authorization
-    
-    /// Checks current authorization status
-    private func checkAuthorizationStatus() async -> UNAuthorizationStatus {
-        let settings = await UNUserNotificationCenter.current().notificationSettings()
-        return settings.authorizationStatus
-    }
-    
+
+    // MARK: Public
+
+    // MARK: - Singleton
+
+    public static let shared = UserNotificationManager()
+
     // MARK: - Public Methods
-    
+
     /// Sends a user notification with the specified parameters
     /// - Parameters:
     ///   - identifier: Unique identifier for the notification
     ///   - title: The notification title
     ///   - body: The notification body text
     ///   - subtitle: Optional subtitle for the notification
-    ///   - soundName: Optional name of the sound file to play (e.g., "Blow.aiff"). "default" for default sound, nil for no sound.
+    ///   - soundName: Optional name of the sound file to play (e.g., "Blow.aiff"). "default" for default sound, nil for
+    /// no sound.
     ///   - categoryIdentifier: Optional category identifier for the notification
     ///   - userInfo: Optional user information for the notification
     public func sendNotification(
@@ -59,24 +51,24 @@ public actor UserNotificationManager {
         body: String,
         subtitle: String? = nil,
         soundName: String? = "default",
-        categoryIdentifier: String? = nil,
-        userInfo: [AnyHashable: Any]? = nil
+        categoryIdentifier _: String? = nil,
+        userInfo _: [AnyHashable: Any]? = nil
     ) async {
         let authorizationStatus = await UNUserNotificationCenter.getSafeAuthorizationStatus()
-        
+
         guard authorizationStatus == .authorized else {
             Self.logger.debug("Cannot send notification, authorization denied or not determined.")
             return
         }
-        
+
         let content = UNMutableNotificationContent()
         content.title = title
         content.body = body
-        
-        if let subtitle = subtitle {
+
+        if let subtitle {
             content.subtitle = subtitle
         }
-        
+
         // Construct UNNotificationSound from soundName
         if let name = soundName {
             if name.lowercased() == "default" {
@@ -91,13 +83,13 @@ public actor UserNotificationManager {
         } else {
             content.sound = nil // No sound if soundName is nil
         }
-        
+
         let request = UNNotificationRequest(identifier: identifier, content: content, trigger: nil)
-        
+
         do {
             try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
                 UNUserNotificationCenter.current().add(request) { error in
-                    if let error = error {
+                    if let error {
                         continuation.resume(throwing: error)
                     } else {
                         continuation.resume(returning: ())
@@ -109,18 +101,32 @@ public actor UserNotificationManager {
             Self.logger.error("Error sending notification \"\(identifier)\": \(error.localizedDescription)")
         }
     }
-    
+
     /// Removes a pending notification with the specified identifier
     /// - Parameter identifier: The identifier of the notification to remove
     public func removePendingNotification(identifier: String) {
         UNUserNotificationCenter.current().removePendingNotificationRequests(withIdentifiers: [identifier])
         Self.logger.info("Removed pending notification request for identifier: \(identifier)")
     }
-    
+
     /// Removes all pending notifications
     public func removeAllPendingNotifications() {
         UNUserNotificationCenter.current().removeAllPendingNotificationRequests()
         Self.logger.info("Removed all pending notification requests.")
+    }
+
+    // MARK: Private
+
+    private static let logger = Logger(category: .notifications)
+
+    private var isAuthorizationRequested = false
+
+    // MARK: - Authorization
+
+    /// Checks current authorization status
+    private func checkAuthorizationStatus() async -> UNAuthorizationStatus {
+        let settings = await UNUserNotificationCenter.current().notificationSettings()
+        return settings.authorizationStatus
     }
 }
 
@@ -153,6 +159,6 @@ extension UNAuthorizationStatus {
 // Extend UNUserNotificationCenter to provide a Sendable way to get status
 extension UNUserNotificationCenter {
     static func getSafeAuthorizationStatus() async -> UNAuthorizationStatus {
-        return await UNUserNotificationCenter.current().notificationSettings().authorizationStatus
+        await UNUserNotificationCenter.current().notificationSettings().authorizationStatus
     }
 }

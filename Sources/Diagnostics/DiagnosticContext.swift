@@ -3,6 +3,8 @@ import Foundation
 /// A Sendable-safe context structure for diagnostic operations
 /// This replaces dictionaries with type-safe Sendable context values
 struct DiagnosticContext: Sendable {
+    // MARK: Internal
+
     // Redesigned to be fully Sendable-compatible in Swift 6.1
     // Swift 6.1 automatically makes structures Sendable when all properties are Sendable
     // Instead of using Optional types, use empty strings and 0 values as indicators
@@ -37,6 +39,10 @@ struct DiagnosticContext: Sendable {
     /// Whether a timer was valid at time of capture (-1 if not set, 0 if false, 1 if true)
     var timeoutTimerValidInt: Int = -1
 
+    /// Store custom values in a predefined array instead of Dictionary for BitwiseCopyable compliance
+    /// Format: [key1, value1, key2, value2, ...]
+    var customValuesList: [String] = []
+
     // Use helper methods for Date conversions
 
     /// Get request time as Date
@@ -70,10 +76,6 @@ struct DiagnosticContext: Sendable {
         timeoutTimerValidInt >= 0
     }
 
-    /// Store custom values in a predefined array instead of Dictionary for BitwiseCopyable compliance
-    /// Format: [key1, value1, key2, value2, ...]
-    var customValuesList: [String] = []
-
     /// Convert Dictionary<String, Any> context to DiagnosticContext
     static func from(dictionary: [String: Any]) -> DiagnosticContext {
         var context = DiagnosticContext()
@@ -83,66 +85,6 @@ struct DiagnosticContext: Sendable {
         }
 
         return context
-    }
-
-    /// Process individual key-value pairs from dictionary
-    private mutating func processKeyValue(key: String, value: Any) {
-        switch key {
-        case "operation":
-            processStringValue(value) { self.operation = $0 }
-        case "requestTime":
-            processTimeValue(value) { self.requestTimeInterval = $0 }
-        case "uploadTime":
-            processTimeValue(value) { self.uploadTimeInterval = $0 }
-        case "syncTime":
-            processTimeValue(value) { self.syncTimeInterval = $0 }
-        case "reason":
-            processStringValue(value) { self.reason = $0 }
-        case "exportType":
-            processStringValue(value) { self.exportType = $0 }
-        case "scheduleTime":
-            processTimeIntervalValue(value) { self.scheduleTime = $0 }
-        case "failTime":
-            processTimeValue(value) { self.failTimeInterval = $0 }
-        case "timeoutInterval":
-            processTimeIntervalValue(value) { self.timeoutInterval = $0 }
-        case "timeoutTimerValid":
-            processBoolValue(value) { self.timeoutTimerValidInt = $0 ? 1 : 0 }
-        default:
-            // Store as string representation in the array
-            customValuesList.append(key)
-            customValuesList.append(String(describing: value))
-        }
-    }
-
-    /// Helper to process string values
-    private func processStringValue(_ value: Any, setter: (String) -> Void) {
-        if let strValue = value as? String {
-            setter(strValue)
-        }
-    }
-
-    /// Helper to process time values (TimeInterval or Date)
-    private func processTimeValue(_ value: Any, setter: (TimeInterval) -> Void) {
-        if let timestamp = value as? TimeInterval {
-            setter(timestamp)
-        } else if let date = value as? Date {
-            setter(date.timeIntervalSince1970)
-        }
-    }
-
-    /// Helper to process TimeInterval values
-    private func processTimeIntervalValue(_ value: Any, setter: (TimeInterval) -> Void) {
-        if let timeValue = value as? TimeInterval {
-            setter(timeValue)
-        }
-    }
-
-    /// Helper to process boolean values
-    private func processBoolValue(_ value: Any, setter: (Bool) -> Void) {
-        if let boolValue = value as? Bool {
-            setter(boolValue)
-        }
     }
 
     /// Helper to get custom values as dictionary (non-modifying)
@@ -218,5 +160,67 @@ struct DiagnosticContext: Sendable {
         }
 
         return components.joined(separator: ", ")
+    }
+
+    // MARK: Private
+
+    /// Process individual key-value pairs from dictionary
+    private mutating func processKeyValue(key: String, value: Any) {
+        switch key {
+        case "operation":
+            processStringValue(value) { self.operation = $0 }
+        case "requestTime":
+            processTimeValue(value) { self.requestTimeInterval = $0 }
+        case "uploadTime":
+            processTimeValue(value) { self.uploadTimeInterval = $0 }
+        case "syncTime":
+            processTimeValue(value) { self.syncTimeInterval = $0 }
+        case "reason":
+            processStringValue(value) { self.reason = $0 }
+        case "exportType":
+            processStringValue(value) { self.exportType = $0 }
+        case "scheduleTime":
+            processTimeIntervalValue(value) { self.scheduleTime = $0 }
+        case "failTime":
+            processTimeValue(value) { self.failTimeInterval = $0 }
+        case "timeoutInterval":
+            processTimeIntervalValue(value) { self.timeoutInterval = $0 }
+        case "timeoutTimerValid":
+            processBoolValue(value) { self.timeoutTimerValidInt = $0 ? 1 : 0 }
+        default:
+            // Store as string representation in the array
+            customValuesList.append(key)
+            customValuesList.append(String(describing: value))
+        }
+    }
+
+    /// Helper to process string values
+    private func processStringValue(_ value: Any, setter: (String) -> Void) {
+        if let strValue = value as? String {
+            setter(strValue)
+        }
+    }
+
+    /// Helper to process time values (TimeInterval or Date)
+    private func processTimeValue(_ value: Any, setter: (TimeInterval) -> Void) {
+        if let timestamp = value as? TimeInterval {
+            setter(timestamp)
+        } else if let date = value as? Date {
+            setter(date.timeIntervalSince1970)
+        }
+    }
+
+    /// Helper to process TimeInterval values
+    private func processTimeIntervalValue(_ value: Any, setter: (TimeInterval) -> Void) {
+        if let timeValue = value as? TimeInterval {
+            setter(timeValue)
+        }
+    }
+
+    /// Helper to process boolean values
+    private func processBoolValue(_ value: Any, setter: (Bool) -> Void) {
+        if let boolValue = value as? Bool {
+            setter(boolValue)
+        }
     }
 }

@@ -17,7 +17,7 @@ extension NSImage {
             // Add direct path to Resources directory
             Bundle.main.bundlePath + "/Resources/\(name).\(fileExtension)",
             // For development builds, try a more explicit path
-            Bundle.main.bundlePath + "/mac/Resources/\(name).\(fileExtension)"
+            Bundle.main.bundlePath + "/mac/Resources/\(name).\(fileExtension)",
         ]
 
         // Add the resourceURL path if available
@@ -28,7 +28,7 @@ extension NSImage {
         }
 
         // Filter out nil values
-        let possiblePaths = potentialPaths.compactMap { $0 }
+        let possiblePaths = potentialPaths.compactMap(\.self)
 
         // Try each path
         for path in possiblePaths where FileManager.default.fileExists(atPath: path) {

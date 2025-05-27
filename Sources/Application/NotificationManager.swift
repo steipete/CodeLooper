@@ -1,27 +1,45 @@
-import Foundation
 import Diagnostics
+import Foundation
 import OSLog
 import UserNotifications
 
 /**
-    Centralized manager for handling system notifications.
-    This class encapsulates all notification-related functionality.
-*/
+ Centralized manager for handling system notifications.
+ This class encapsulates all notification-related functionality.
+ */
 @MainActor
 class NotificationManager {
-    // MARK: - Singleton
-
-    static let shared = NotificationManager()
-
-    // MARK: - Properties
-
-    private let logger = Logger(category: .notifications)
+    // MARK: Lifecycle
 
     // MARK: - Initialization
 
     private init() {
         setupNotificationCenter()
     }
+
+    // MARK: Internal
+
+    // MARK: - Singleton
+
+    static let shared = NotificationManager()
+
+    // MARK: - Methods
+
+    /// Shows a notification for upload completion
+    func showUploadCompleteNotification(title: String, message: String, metadata: [String: Any]? = nil) {
+        logger.info("Showing upload complete notification")
+        showLocalNotification(title: title, message: message, identifier: "uploadComplete", metadata: metadata)
+    }
+
+    /// Shows a notification for sync completion
+    func showSyncCompleteNotification(title: String, message: String, metadata: [String: Any]? = nil) {
+        logger.info("Showing sync complete notification")
+        showLocalNotification(title: title, message: message, identifier: "syncComplete", metadata: metadata)
+    }
+
+    // MARK: Private
+
+    private let logger = Logger(category: .notifications)
 
     // MARK: - Setup
 
@@ -41,20 +59,6 @@ class NotificationManager {
                 }
             }
         }
-    }
-
-    // MARK: - Methods
-
-    /// Shows a notification for upload completion
-    func showUploadCompleteNotification(title: String, message: String, metadata: [String: Any]? = nil) {
-        logger.info("Showing upload complete notification")
-        showLocalNotification(title: title, message: message, identifier: "uploadComplete", metadata: metadata)
-    }
-
-    /// Shows a notification for sync completion
-    func showSyncCompleteNotification(title: String, message: String, metadata: [String: Any]? = nil) {
-        logger.info("Showing sync complete notification")
-        showLocalNotification(title: title, message: message, identifier: "syncComplete", metadata: metadata)
     }
 
     /// Shows a local notification

@@ -20,9 +20,9 @@ public final class ResourceLoader: Sendable {
     // Get URL scheme from Info.plist
     public static func getURLScheme() -> String? {
         guard let urlTypes = Bundle.main.infoDictionary?[InfoKey.Bundle.urlTypes] as? [[String: Sendable]],
-            let firstUrlType = urlTypes.first,
-            let schemes = firstUrlType[InfoKey.CFBundleURL.schemes] as? [String],
-            let scheme = schemes.first
+              let firstUrlType = urlTypes.first,
+              let schemes = firstUrlType[InfoKey.CFBundleURL.schemes] as? [String],
+              let scheme = schemes.first
         else {
             return nil
         }
@@ -75,7 +75,7 @@ public extension ResourceLoader {
             // Add direct path to Resources directory
             Bundle.main.bundlePath + "/Resources/\(name).\(fileExtension)",
             // For development builds, try a more explicit path
-            Bundle.main.bundlePath + "/mac/Resources/\(name).\(fileExtension)"
+            Bundle.main.bundlePath + "/mac/Resources/\(name).\(fileExtension)",
         ]
 
         // Add the resourceURL path if available
@@ -86,7 +86,7 @@ public extension ResourceLoader {
         }
 
         // Filter out nil values
-        let possiblePaths = potentialPaths.compactMap { $0 }
+        let possiblePaths = potentialPaths.compactMap(\.self)
 
         // Try each path
         for path in possiblePaths where FileManager.default.fileExists(atPath: path) {

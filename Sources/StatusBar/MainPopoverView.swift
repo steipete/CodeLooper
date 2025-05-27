@@ -1,18 +1,17 @@
 import AppKit
+import Combine
 import Defaults
 import SwiftUI
-import Combine
 
 struct MainPopoverView: View {
-    @StateObject private var cursorMonitor = CursorMonitor.shared
-    @Default(.isGlobalMonitoringEnabled) private var isGlobalMonitoringEnabled
+    // MARK: Internal
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             Text("CodeLooper Supervision")
                 .font(.title2)
                 .padding(.bottom, 5)
-            
+
             PermissionsView(showTitle: false, compact: true)
                 .padding(.bottom, 5)
 
@@ -24,7 +23,7 @@ struct MainPopoverView: View {
                 Text("Monitored: \(cursorApp.displayName)")
                     .font(.subheadline)
                     .foregroundColor(isGlobalMonitoringEnabled ? .primary : .secondary)
-                
+
                 if !isGlobalMonitoringEnabled {
                     Text("  (Supervision Paused)")
                         .font(.caption)
@@ -66,7 +65,7 @@ struct MainPopoverView: View {
                     Text("No Cursor app detected.")
                         .foregroundColor(.secondary)
                 } else {
-                     Text("Cursor supervision is paused.")
+                    Text("Cursor supervision is paused.")
                         .foregroundColor(.secondary)
                 }
             }
@@ -80,8 +79,7 @@ struct MainPopoverView: View {
                     Text("Open Settings")
                 }
                 .tint(.accentColor)
-                .simultaneousGesture(TapGesture().onEnded {
-                })
+                .simultaneousGesture(TapGesture().onEnded {})
 
                 Button("Reset All Counters") {
                     Task { await CursorMonitor.shared.resetAllInstancesAndResume() }
@@ -97,34 +95,39 @@ struct MainPopoverView: View {
         .frame(width: 350) // Fixed width for the popover view
     }
 
-}
+    // MARK: Private
 
+    @StateObject private var cursorMonitor = CursorMonitor.shared
+
+    @Default(.isGlobalMonitoringEnabled) private var isGlobalMonitoringEnabled
+}
 
 // MARK: - Preview
-#if DEBUG
-struct MainPopoverView_Previews: PreviewProvider {
-    static var previews: some View {
-        let mockMonitor = CursorMonitor.sharedForPreview
-        let appPID = pid_t(12345)
-        let mockApp = MonitoredAppInfo(
-            id: appPID,
-            pid: appPID,
-            displayName: "Cursor (PID: 12345)",
-            status: .active,
-            isActivelyMonitored: true,
-            interventionCount: 2,
-            windows: [
-                MonitoredWindowInfo(id: "w1", windowTitle: "Document 1.txt", isPaused: false),
-                MonitoredWindowInfo(id: "w2", windowTitle: "Project Settings", isPaused: true),
-                MonitoredWindowInfo(id: "w3", windowTitle: nil, isPaused: false)
-            ]
-        )
 
-        return MainPopoverView()
-            .environmentObject(mockMonitor)
-            .onAppear {
-                 mockMonitor.monitoredApps = [mockApp]
-            }
+#if DEBUG
+    struct MainPopoverView_Previews: PreviewProvider {
+        static var previews: some View {
+            let mockMonitor = CursorMonitor.sharedForPreview
+            let appPID = pid_t(12345)
+            let mockApp = MonitoredAppInfo(
+                id: appPID,
+                pid: appPID,
+                displayName: "Cursor (PID: 12345)",
+                status: .active,
+                isActivelyMonitored: true,
+                interventionCount: 2,
+                windows: [
+                    MonitoredWindowInfo(id: "w1", windowTitle: "Document 1.txt", isPaused: false),
+                    MonitoredWindowInfo(id: "w2", windowTitle: "Project Settings", isPaused: true),
+                    MonitoredWindowInfo(id: "w3", windowTitle: nil, isPaused: false),
+                ]
+            )
+
+            return MainPopoverView()
+                .environmentObject(mockMonitor)
+                .onAppear {
+                    mockMonitor.monitoredApps = [mockApp]
+                }
+        }
     }
-}
-#endif 
+#endif

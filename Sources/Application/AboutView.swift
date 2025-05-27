@@ -1,13 +1,7 @@
 import SwiftUI
 
 struct AboutView: View {
-    private let appName = Bundle.main.infoDictionary?["CFBundleName"] as? String ?? "CodeLooper"
-    private let appVersion = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "Unknown"
-    private let buildNumber = Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "Unknown"
-    private let copyrightInfo = Bundle.main.infoDictionary?["NSHumanReadableCopyright"] as? String ?? "© Your Name"
-    private let githubURL = URL(string: Constants.githubRepositoryURL)!
-    private let websiteURL = URL(string: "https://codelooper.app/")!
-    private let twitterURL = URL(string: "https://x.com/CodeLoopApp")!
+    // MARK: Internal
 
     var body: some View {
         VStack(spacing: 15) {
@@ -36,9 +30,9 @@ struct AboutView: View {
                 Link("View on GitHub", destination: githubURL)
             }
             .font(.callout)
-            
+
             Spacer()
-            
+
             Text("CodeLooper helps automate and enhance your Cursor experience.")
                 .font(.footnote)
                 .foregroundColor(.gray)
@@ -49,12 +43,22 @@ struct AboutView: View {
         .padding(EdgeInsets(top: 20, leading: 40, bottom: 20, trailing: 40))
         .frame(width: 400, height: 400)
     }
+
+    // MARK: Private
+
+    private let appName = Bundle.main.infoDictionary?["CFBundleName"] as? String ?? "CodeLooper"
+    private let appVersion = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "Unknown"
+    private let buildNumber = Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "Unknown"
+    private let copyrightInfo = Bundle.main.infoDictionary?["NSHumanReadableCopyright"] as? String ?? "© Your Name"
+    private let githubURL = URL(string: Constants.githubRepositoryURL)!
+    private let websiteURL = URL(string: "https://codelooper.app/")!
+    private let twitterURL = URL(string: "https://x.com/CodeLoopApp")!
 }
 
 #if DEBUG
-struct AboutView_Previews: PreviewProvider {
-    static var previews: some View {
-        AboutView()
+    struct AboutView_Previews: PreviewProvider {
+        static var previews: some View {
+            AboutView()
+        }
     }
-}
-#endif 
+#endif

@@ -6,24 +6,7 @@ import OSLog
 /// Since this is already MainActor-isolated, we can safely conform to Sendable
 @MainActor
 public final class LogManager {
-    // MARK: - Singleton access
-
-    /// Shared instance of the LogManager
-    public static let shared = LogManager()
-
-    // MARK: - Properties
-
-    /// The OSLog subsystem identifier, typically the bundle identifier
-    private let subsystem: String
-
-    /// A map of category-specific loggers
-    private var loggers: [LogCategory: Logger] = [:]
-
-    /// File logger for persistent logging
-    private let fileLogger: FileLogger
-
-    /// Configuration for logging behavior
-    private let configuration: LogConfiguration
+    // MARK: Lifecycle
 
     // MARK: - Initialization
 
@@ -40,22 +23,12 @@ public final class LogManager {
         }
     }
 
-    // MARK: - Logger Access
+    // MARK: Public
 
-    /// Get a logger for a specific category
-    /// - Parameter category: The log category
-    /// - Returns: An OSLog Logger for the specified category
-    public func getLogger(for category: LogCategory) -> Logger {
-        // Return cached logger if available
-        if let logger = loggers[category] {
-            return logger
-        }
+    // MARK: - Singleton access
 
-        // Create and cache a new logger if needed
-        let logger = Logger(category: category)
-        loggers[category] = logger
-        return logger
-    }
+    /// Shared instance of the LogManager
+    public static let shared = LogManager()
 
     // MARK: - Convenience Loggers
 
@@ -104,6 +77,23 @@ public final class LogManager {
         getLogger(for: .menu)
     }
 
+    // MARK: - Logger Access
+
+    /// Get a logger for a specific category
+    /// - Parameter category: The log category
+    /// - Returns: An OSLog Logger for the specified category
+    public func getLogger(for category: LogCategory) -> Logger {
+        // Return cached logger if available
+        if let logger = loggers[category] {
+            return logger
+        }
+
+        // Create and cache a new logger if needed
+        let logger = Logger(category: category)
+        loggers[category] = logger
+        return logger
+    }
+
     // MARK: - Generic Logging
 
     /// Log a message with the specified level
@@ -138,8 +128,8 @@ public final class LogManager {
         let formattedMessage
 
             // Show more context for debug logs
-            = if level == .debug {
-
+            = if level == .debug
+        {
             "\(prefix)\(message) [\(filename):\(line) \(function)]"
         } else {
             "\(prefix)\(message) [\(filename):\(line)]"
@@ -298,6 +288,20 @@ public final class LogManager {
     ) {
         log(message, level: .fault, category: category, file: file, function: function, line: line)
     }
+
+    // MARK: Private
+
+    /// The OSLog subsystem identifier, typically the bundle identifier
+    private let subsystem: String
+
+    /// A map of category-specific loggers
+    private var loggers: [LogCategory: Logger] = [:]
+
+    /// File logger for persistent logging
+    private let fileLogger: FileLogger
+
+    /// Configuration for logging behavior
+    private let configuration: LogConfiguration
 }
 
 // MARK: - Logger Extensions

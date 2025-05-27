@@ -71,7 +71,8 @@ struct WelcomeStepView: View {
                     .font(.title.weight(.bold)) // Larger font
                     .foregroundColor(.primary)
 
-                Text("Your intelligent assistant for macOS automation and workflow enhancement.") // Slightly more descriptive
+                Text("Your intelligent assistant for macOS automation and workflow enhancement.") // Slightly more
+                    // descriptive
                     .font(.headline.weight(.regular))
                     .foregroundColor(.secondary)
                     .multilineTextAlignment(.center)
@@ -142,34 +143,36 @@ struct WelcomeStepView: View {
 
 struct AccessibilityStepView: View {
     var viewModel: WelcomeViewModel
-    
+
     var body: some View {
         VStack(spacing: 20) { // Consistent spacing
             Spacer(minLength: 10) // Add a little space at the top
-            
+
             // Accessibility icon
             ZStack {
                 Circle()
                     .fill(Color.accentColor.opacity(0.1))
                     .frame(width: 70, height: 70) // Slightly smaller icon
-                
+
                 Image(systemName: "figure.hand.tap.computer") // More descriptive icon
                     .font(.system(size: 36))
                     .foregroundColor(Color.accentColor)
             }
             .padding(.bottom, 20)
-            
-            Text("CodeLooper needs Accessibility permissions to monitor and interact with other applications on your behalf. This is essential for its core functionality.")
-                .font(.headline.weight(.regular))
-                .foregroundColor(.secondary)
-                .multilineTextAlignment(.center)
-                .padding(.horizontal, 40) // Adjusted padding
-                .padding(.bottom, 30)
-            
+
+            Text(
+                "CodeLooper needs Accessibility permissions to monitor and interact with other applications on your behalf. This is essential for its core functionality."
+            )
+            .font(.headline.weight(.regular))
+            .foregroundColor(.secondary)
+            .multilineTextAlignment(.center)
+            .padding(.horizontal, 40) // Adjusted padding
+            .padding(.bottom, 30)
+
             // Use the reusable PermissionsView component
             PermissionsView(showTitle: false, compact: false)
                 .padding(.horizontal, 40)
-            
+
             Spacer(minLength: 10)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)

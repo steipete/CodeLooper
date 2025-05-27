@@ -6,12 +6,16 @@ import OSLog
 // Define simple structs for mcp.json structure (Spec 7)
 // These can be expanded as needed based on the actual mcp.json format
 struct MCPRoot: Codable {
-    var mcpServers: [String: MCPServerEntry]? // Dictionary of MCP server configurations
+    // MARK: Lifecycle
 
     // Initialize with empty servers and no shortcut if creating a new file
     init(mcpServers: [String: MCPServerEntry]? = [:]) {
         self.mcpServers = mcpServers
     }
+
+    // MARK: Internal
+
+    var mcpServers: [String: MCPServerEntry]? // Dictionary of MCP server configurations
 }
 
 struct MCPServerEntry: Codable {
@@ -44,13 +48,7 @@ struct MCPFullStatus {
 
 @MainActor
 class MCPConfigManager {
-    static let shared = MCPConfigManager()
-    private let logger = Logger(category: .mcpConfig)
-
-    private var mcpFilePath: URL {
-        let homeDir = FileManager.default.homeDirectoryForCurrentUser
-        return homeDir.appendingPathComponent(".cursor/mcp.json")
-    }
+    // MARK: Lifecycle
 
     private init() {
         logger.info("MCPConfigManager initialized. MCP file path: \(self.mcpFilePath.path)")
@@ -58,17 +56,9 @@ class MCPConfigManager {
         ensureDotCursorDirectoryExists()
     }
 
-    private func ensureDotCursorDirectoryExists() {
-        let dotCursorDir = mcpFilePath.deletingLastPathComponent()
-        if !FileManager.default.fileExists(atPath: dotCursorDir.path) {
-            do {
-                try FileManager.default.createDirectory(at: dotCursorDir, withIntermediateDirectories: true, attributes: nil)
-                logger.info("Created .cursor directory at \(dotCursorDir.path)")
-            } catch {
-                logger.error("Failed to create .cursor directory: \(error.localizedDescription)")
-            }
-        }
-    }
+    // MARK: Internal
+
+    static let shared = MCPConfigManager()
 
     // MARK: - mcp.json Handling (Spec 7)
 
@@ -102,7 +92,7 @@ class MCPConfigManager {
             return false
         }
     }
-    
+
     func ensureMCPFileExists() {
         if !FileManager.default.fileExists(atPath: mcpFilePath.path) {
             logger.info("mcp.json does not exist, creating with default structure.")
@@ -114,7 +104,7 @@ class MCPConfigManager {
     // MARK: - File Operations (Spec 7.A.3)
 
     func getMCPFilePath() -> URL {
-        return mcpFilePath
+        mcpFilePath
     }
 
     func clearMCPFile() -> Bool {
@@ -144,11 +134,13 @@ class MCPConfigManager {
         }
 
         if enabled {
-            var entry = currentConfig.mcpServers?[mcpIdentifier] ?? MCPServerEntry(name: nameForEntry, enabled: true) // Default to new if not found
+            var entry = currentConfig
+                .mcpServers?[mcpIdentifier] ??
+                MCPServerEntry(name: nameForEntry, enabled: true) // Default to new if not found
             entry.name = nameForEntry // Ensure name is set/updated
             entry.enabled = true
-            if entry.command == nil, let defaultCommand = defaultCommand {
-                 entry.command = defaultCommand
+            if entry.command == nil, let defaultCommand {
+                entry.command = defaultCommand
             }
             currentConfig.mcpServers?[mcpIdentifier] = entry
             logger.info("Set MCP \(mcpIdentifier) enabled state to true")
@@ -248,21 +240,48 @@ class MCPConfigManager {
     // MARK: - Specific MCP Getters for Configuration Booleans
 
     func getXcodeBuildIncrementalBuildsFlag() -> Bool {
-        guard let config = readMCPConfig(), 
-              let servers = config.mcpServers, 
-              let entry = servers["XcodeBuildMCP"] else {
+        guard let config = readMCPConfig(),
+              let servers = config.mcpServers,
+              let entry = servers["XcodeBuildMCP"]
+        else {
             return false // Default to false if not found
         }
         return entry.incrementalBuildsEnabled ?? false // Default to false if nil
     }
 
     func getXcodeBuildSentryDisabledFlag() -> Bool {
-        guard let config = readMCPConfig(), 
-              let servers = config.mcpServers, 
-              let entry = servers["XcodeBuildMCP"] else {
+        guard let config = readMCPConfig(),
+              let servers = config.mcpServers,
+              let entry = servers["XcodeBuildMCP"]
+        else {
             return false // Default to false
         }
         return entry.sentryDisabled ?? false // Default to false if nil
+    }
+
+    // MARK: Private
+
+    private let logger = Logger(category: .mcpConfig)
+
+    private var mcpFilePath: URL {
+        let homeDir = FileManager.default.homeDirectoryForCurrentUser
+        return homeDir.appendingPathComponent(".cursor/mcp.json")
+    }
+
+    private func ensureDotCursorDirectoryExists() {
+        let dotCursorDir = mcpFilePath.deletingLastPathComponent()
+        if !FileManager.default.fileExists(atPath: dotCursorDir.path) {
+            do {
+                try FileManager.default.createDirectory(
+                    at: dotCursorDir,
+                    withIntermediateDirectories: true,
+                    attributes: nil
+                )
+                logger.info("Created .cursor directory at \(dotCursorDir.path)")
+            } catch {
+                logger.error("Failed to create .cursor directory: \(error.localizedDescription)")
+            }
+        }
     }
 
     // MARK: - Cursor Rule Set Management (Spec 3.3.C)
@@ -273,7 +292,8 @@ class MCPConfigManager {
         for line in lines {
             let trimmedLine = line.trimmingCharacters(in: .whitespacesAndNewlines)
             if trimmedLine.starts(with: "// Version:") {
-                return trimmedLine.replacingOccurrences(of: "// Version:", with: "").trimmingCharacters(in: .whitespacesAndNewlines)
+                return trimmedLine.replacingOccurrences(of: "// Version:", with: "")
+                    .trimmingCharacters(in: .whitespacesAndNewlines)
             }
         }
         return nil // No version found

@@ -26,19 +26,8 @@ public protocol UIConstantsProvider {
 
 /// Constants provides central configuration for the application
 public enum Constants: UIConstantsProvider {
-    // MARK: - App constants
-
-    /// The application name from the bundle
-    public static var appName: String {
-        Bundle.main.infoDictionary?["CFBundleName"] as? String ?? "CodeLooper"
-    }
-
-    /// The application bundle identifier
-    public static var bundleIdentifier: String {
-        Bundle.main.bundleIdentifier ?? "me.steipete.codelooper"
-    }
-
     // MARK: - External Links & Info
+
     public static let githubRepositoryURL = "https://github.com/codelooper/codelooper"
     public static let githubUsername = "steipete"
     public static let appAuthor = "Peter Steinberger"
@@ -67,6 +56,18 @@ public enum Constants: UIConstantsProvider {
 
     /// Primary color for UI elements
     public static let primaryColorValue: Color = .primaryBlue
+
+    // MARK: - App constants
+
+    /// The application name from the bundle
+    public static var appName: String {
+        Bundle.main.infoDictionary?["CFBundleName"] as? String ?? "CodeLooper"
+    }
+
+    /// The application bundle identifier
+    public static var bundleIdentifier: String {
+        Bundle.main.bundleIdentifier ?? "me.steipete.codelooper"
+    }
 
     // UIConstantsProvider implementation
     public static var navBarHeight: CGFloat { 48 }

@@ -15,20 +15,7 @@ import OSLog
 /// with full support for different states, dark/light mode, and animations.
 @MainActor
 class MenuBarIconManager {
-    // MARK: - Properties
-
-    private let logger = Logger(category: .statusBar)
-    weak var statusItem: NSStatusItem?
-    private var appearanceObserver: Any?
-
-    // Current state of the icon
-    private var currentState: StatusIconState = .idle
-
-    // Animator for icon animations
-    private var iconAnimator: IconAnimator?
-
-    // Icon cache for different states and appearance modes
-    private var iconCache: [StatusIconState: [NSAppearance.Name: NSImage]] = [:]
+    // MARK: Lifecycle
 
     // MARK: - Initialization
 
@@ -37,7 +24,7 @@ class MenuBarIconManager {
 
         // Ensure we have a valid status item with a button before proceeding
         guard let statusItem,
-            statusItem.button != nil
+              statusItem.button != nil
         else {
             logger.warning("Initializing with nil status item or button - will defer initialization")
             setupAppearanceObserver()
@@ -74,6 +61,10 @@ class MenuBarIconManager {
             iconAnimator?.cleanup()
         }
     }
+
+    // MARK: Internal
+
+    weak var statusItem: NSStatusItem?
 
     // MARK: - Public Methods
 
@@ -133,6 +124,20 @@ class MenuBarIconManager {
         iconAnimator?.cleanup()
         iconCache.removeAll()
     }
+
+    // MARK: Private
+
+    private let logger = Logger(category: .statusBar)
+    private var appearanceObserver: Any?
+
+    // Current state of the icon
+    private var currentState: StatusIconState = .idle
+
+    // Animator for icon animations
+    private var iconAnimator: IconAnimator?
+
+    // Icon cache for different states and appearance modes
+    private var iconCache: [StatusIconState: [NSAppearance.Name: NSImage]] = [:]
 
     // MARK: - Private Methods
 
@@ -261,7 +266,7 @@ class MenuBarIconManager {
     /// Updates the status item button with the appropriate icon for the given state
     private func updateIcon(for state: StatusIconState) {
         guard let statusItem,
-            let button = statusItem.button
+              let button = statusItem.button
         else {
             logger.warning("Status item or button is nil, can't update icon")
             return
@@ -373,8 +378,8 @@ class MenuBarIconManager {
         // Create a new template image with the app's symbol
         let symbolName = currentState == .error ? "exclamationmark.circle" : "circle.dashed"
         if let icon = NSImage(systemSymbolName: symbolName, accessibilityDescription: Constants.appName)?
-            .withSymbolConfiguration(NSImage.SymbolConfiguration(pointSize: 18, weight: .medium)) {
-
+            .withSymbolConfiguration(NSImage.SymbolConfiguration(pointSize: 18, weight: .medium))
+        {
             prepareIconForStatusBar(icon)
             return icon
         }

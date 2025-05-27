@@ -1,7 +1,7 @@
 import SwiftUI
 
 struct CursorInputWatcherView: View {
-    @StateObject private var viewModel = CursorInputWatcherViewModel()
+    // MARK: Internal
 
     var body: some View {
         VStack(alignment: .leading) {
@@ -15,8 +15,39 @@ struct CursorInputWatcherView: View {
             Text(viewModel.statusMessage)
                 .font(.caption)
                 .padding(.bottom)
-            
-            if viewModel.isWatchingEnabled && viewModel.watchedInputs.isEmpty {
+
+            // Display Cursor Windows
+            if !viewModel.cursorWindows.isEmpty {
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("Cursor Windows")
+                        .font(.headline)
+                        .padding(.bottom, 4)
+                    
+                    ForEach(viewModel.cursorWindows) { window in
+                        HStack {
+                            Image(systemName: "window.ceiling")
+                                .foregroundColor(.secondary)
+                            Text(window.windowTitle ?? "Untitled Window")
+                                .font(.system(.body, design: .monospaced))
+                            Spacer()
+                            if window.isPaused {
+                                Image(systemName: "pause.circle.fill")
+                                    .foregroundColor(.yellow)
+                            }
+                        }
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 4)
+                        .background(Color.secondary.opacity(0.1))
+                        .cornerRadius(4)
+                    }
+                }
+                .padding(.bottom)
+                
+                Divider()
+                    .padding(.bottom)
+            }
+
+            if viewModel.isWatchingEnabled, viewModel.watchedInputs.isEmpty {
                 Text("No inputs are currently being watched. Configure in ViewModel.")
                     .foregroundColor(.orange)
             }
@@ -46,10 +77,14 @@ struct CursorInputWatcherView: View {
         .padding()
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
     }
+
+    // MARK: Private
+
+    @StateObject private var viewModel = CursorInputWatcherViewModel()
 }
 
 struct CursorInputWatcherView_Previews: PreviewProvider {
     static var previews: some View {
         CursorInputWatcherView()
     }
-} 
+}

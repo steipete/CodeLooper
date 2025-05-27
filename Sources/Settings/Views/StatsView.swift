@@ -26,9 +26,7 @@ struct StatsView: View {
 /// A view controller that displays application statistics
 @MainActor
 class StatsViewController: NSViewController {
-    // MARK: - Properties
-
-    private let statsView = StatsView()
+    // MARK: Internal
 
     // MARK: - View Lifecycle
 
@@ -36,6 +34,10 @@ class StatsViewController: NSViewController {
         view = NSHostingView(rootView: statsView)
         title = "Statistics"
     }
+
+    // MARK: Private
+
+    private let statsView = StatsView()
 }
 
 /// A preview provider for StatsView

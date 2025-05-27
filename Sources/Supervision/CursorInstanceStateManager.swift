@@ -5,19 +5,7 @@ import Foundation
 
 @MainActor
 public class CursorInstanceStateManager: ObservableObject {
-    private let logger = Diagnostics.Logger(category: .supervision) // Explicitly use Diagnostics.Logger
-
-    // Moved from CursorMonitor
-    @Published public var manuallyPausedPIDs: Set<pid_t> = []
-    @Published public var automaticInterventionsSincePositiveActivity: [pid_t: Int] = [:]
-    @Published public var totalAutomaticInterventionsThisSession: Int = 0
-    @Published public var connectionIssueResumeButtonClicks: [pid_t: Int] = [:]
-    @Published public var consecutiveRecoveryFailures: [pid_t: Int] = [:]
-    @Published public var lastKnownSidebarStateHash: [pid_t: Int?] = [:] // Int? as per CursorMonitor
-    @Published public var lastActivityTimestamp: [pid_t: Date] = [:]
-    @Published public var pendingObservationForPID: [pid_t: (startTime: Date, initialInterventionCountWhenObservationStarted: Int)] = [:]
-
-    private let sessionLogger: SessionLogger
+    // MARK: Lifecycle
 
     public init(sessionLogger: SessionLogger) {
         self.sessionLogger = sessionLogger
@@ -27,6 +15,21 @@ public class CursorInstanceStateManager: ObservableObject {
     deinit {
         logger.info("CursorInstanceStateManager deinitialized.")
     }
+
+    // MARK: Public
+
+    // Moved from CursorMonitor
+    @Published public var manuallyPausedPIDs: Set<pid_t> = []
+    @Published public var automaticInterventionsSincePositiveActivity: [pid_t: Int] = [:]
+    @Published public var totalAutomaticInterventionsThisSession: Int = 0
+    @Published public var connectionIssueResumeButtonClicks: [pid_t: Int] = [:]
+    @Published public var consecutiveRecoveryFailures: [pid_t: Int] = [:]
+    @Published public var lastKnownSidebarStateHash: [pid_t: Int?] = [:] // Int? as per CursorMonitor
+    @Published public var lastActivityTimestamp: [pid_t: Date] = [:]
+    @Published public var pendingObservationForPID: [pid_t: (
+        startTime: Date,
+        initialInterventionCountWhenObservationStarted: Int
+    )] = [:]
 
     // MARK: - State Initialization and Cleanup
 
@@ -64,7 +67,7 @@ public class CursorInstanceStateManager: ObservableObject {
 
         for pid in pids {
             initializeState(for: pid) // Re-initialize to default for active PIDs, effectively resetting.
-                                     // For PIDs that might only be in manuallyPausedPIDs, this also clears them.
+            // For PIDs that might only be in manuallyPausedPIDs, this also clears them.
         }
         // Explicitly clear all, as initializeState only acts on one PID at a time.
         automaticInterventionsSincePositiveActivity.removeAll()
@@ -74,14 +77,15 @@ public class CursorInstanceStateManager: ObservableObject {
         lastActivityTimestamp.removeAll()
         pendingObservationForPID.removeAll()
         manuallyPausedPIDs.removeAll()
-        
+
         totalAutomaticInterventionsThisSession = 0
         sessionLogger.log(level: .info, message: "All instance states and session counters have been reset.")
     }
 
     // MARK: - Manual Pause State
+
     public func isManuallyPaused(pid: pid_t) -> Bool {
-        return manuallyPausedPIDs.contains(pid)
+        manuallyPausedPIDs.contains(pid)
     }
 
     public func setManuallyPaused(pid: pid_t, paused: Bool) {
@@ -91,8 +95,9 @@ public class CursorInstanceStateManager: ObservableObject {
             manuallyPausedPIDs.remove(pid)
         }
     }
-    
+
     // MARK: - Intervention Counters
+
     public func getAutomaticInterventions(for pid: pid_t) -> Int {
         automaticInterventionsSincePositiveActivity[pid, default: 0]
     }
@@ -112,12 +117,13 @@ public class CursorInstanceStateManager: ObservableObject {
     public func incrementTotalAutomaticInterventionsThisSession() {
         totalAutomaticInterventionsThisSession += 1
     }
-    
+
     public func resetTotalAutomaticInterventionsThisSession() {
         totalAutomaticInterventionsThisSession = 0
     }
 
     // MARK: - Connection Issue Retries
+
     public func getConnectionIssueRetries(for pid: pid_t) -> Int {
         connectionIssueResumeButtonClicks[pid, default: 0]
     }
@@ -131,6 +137,7 @@ public class CursorInstanceStateManager: ObservableObject {
     }
 
     // MARK: - Consecutive Recovery Failures
+
     public func getConsecutiveRecoveryFailures(for pid: pid_t) -> Int {
         consecutiveRecoveryFailures[pid, default: 0]
     }
@@ -142,8 +149,9 @@ public class CursorInstanceStateManager: ObservableObject {
     public func resetConsecutiveRecoveryFailures(for pid: pid_t) {
         consecutiveRecoveryFailures[pid] = 0
     }
-    
+
     // MARK: - Last Activity Timestamp
+
     public func getLastActivityTimestamp(for pid: pid_t) -> Date? {
         lastActivityTimestamp[pid]
     }
@@ -151,9 +159,12 @@ public class CursorInstanceStateManager: ObservableObject {
     public func setLastActivityTimestamp(for pid: pid_t, date: Date) {
         lastActivityTimestamp[pid] = date
     }
-    
+
     // MARK: - Last Known Sidebar State Hash
-    public func getLastKnownSidebarStateHash(for pid: pid_t) -> Int?? { // Returns Int?? because dictionary access is Int? and then outer optional
+
+    public func getLastKnownSidebarStateHash(for pid: pid_t)
+        -> Int??
+    { // Returns Int?? because dictionary access is Int? and then outer optional
         lastKnownSidebarStateHash[pid]
     }
 
@@ -162,15 +173,27 @@ public class CursorInstanceStateManager: ObservableObject {
     }
 
     // MARK: - Pending Observation
-    public func getPendingObservation(for pid: pid_t) -> (startTime: Date, initialInterventionCountWhenObservationStarted: Int)? {
+
+    public func getPendingObservation(for pid: pid_t)
+        -> (startTime: Date, initialInterventionCountWhenObservationStarted: Int)?
+    {
         pendingObservationForPID[pid]
     }
 
     public func startPendingObservation(for pid: pid_t, initialInterventionCount: Int) {
-        pendingObservationForPID[pid] = (startTime: Date(), initialInterventionCountWhenObservationStarted: initialInterventionCount)
+        pendingObservationForPID[pid] = (
+            startTime: Date(),
+            initialInterventionCountWhenObservationStarted: initialInterventionCount
+        )
     }
 
     public func clearPendingObservation(for pid: pid_t) {
         pendingObservationForPID.removeValue(forKey: pid)
     }
-} 
+
+    // MARK: Private
+
+    private let logger = Diagnostics.Logger(category: .supervision) // Explicitly use Diagnostics.Logger
+
+    private let sessionLogger: SessionLogger
+}

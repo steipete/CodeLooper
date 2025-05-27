@@ -90,7 +90,7 @@ extension AppDelegate {
     }
 
     // Example: Bring the welcome window to the front if it exists
-    func handleShowWelcomeCommand(_ command: NSScriptCommand) -> Any? {
+    func handleShowWelcomeCommand(_: NSScriptCommand) -> Any? {
         logger.info("AppleScript command: Show Welcome")
         // Ensure this is called on the main thread
         DispatchQueue.main.async {
@@ -106,7 +106,7 @@ extension AppDelegate {
         return nil // Or an appropriate result
     }
 
-    func handleGetMonitoringStatusCommand(_ command: NSScriptCommand) -> Any? {
+    func handleGetMonitoringStatusCommand(_: NSScriptCommand) -> Any? {
         // Implementation of handleGetMonitoringStatusCommand
         logger.info("AppleScript command: Get Monitoring Status")
         return Defaults[.isGlobalMonitoringEnabled]

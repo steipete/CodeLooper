@@ -8,12 +8,14 @@ import Foundation
 struct StopGeneratingButtonHeuristic: AXElementHeuristic {
     let locatorType: LocatorType = .stopGeneratingButton
 
-
     @MainActor func discover(for pid: pid_t, axorcist: AXorcist) async -> Locator? {
         // Strategy 1: Look for button with exact title "Stop generating"
         let strategy1 = Locator(
             matchAll: false,
-            criteria: Self.convertDictionaryToCriteriaArray(["role_exact": "AXButton", "title_exact": "Stop generating"])
+            criteria: Self.convertDictionaryToCriteriaArray([
+                "role_exact": "AXButton",
+                "title_exact": "Stop generating",
+            ])
         )
         let queryCommand1 = QueryCommand(
             appIdentifier: String(pid),
@@ -51,7 +53,7 @@ struct StopGeneratingButtonHeuristic: AXElementHeuristic {
         )
         let queryResponse3 = axorcist.handleQuery(command: queryCommand3, maxDepth: nil)
         if queryResponse3.payload != nil { return strategy3 }
-        
+
         return nil
     }
-} 
+}

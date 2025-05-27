@@ -1,26 +1,15 @@
 import Defaults
+import Diagnostics
 import Observation
 import OSLog
 import SwiftUI
-import Diagnostics
 
 // MARK: - Welcome View Model
 
 @MainActor
 @Observable
 final class WelcomeViewModel: ObservableObject {
-    private let logger = Logger(category: .onboarding)
-    var currentStep: WelcomeStep = .welcome
-
-    // Computed property for startAtLogin
-    var startAtLogin: Bool {
-        get { Defaults[.startAtLogin] }
-        set { Defaults[.startAtLogin] = newValue }
-    }
-
-    private var loginItemManager: LoginItemManager
-    private var windowManager: WindowManager?
-    private var onCompletionCallback: (() -> Void)?
+    // MARK: Lifecycle
 
     init(loginItemManager: LoginItemManager, windowManager: WindowManager? = nil, onCompletion: (() -> Void)? = nil) {
         self.loginItemManager = loginItemManager
@@ -28,6 +17,16 @@ final class WelcomeViewModel: ObservableObject {
         onCompletionCallback = onCompletion
 
         logger.info("WelcomeViewModel initialized for CodeLooper")
+    }
+
+    // MARK: Internal
+
+    var currentStep: WelcomeStep = .welcome
+
+    // Computed property for startAtLogin
+    var startAtLogin: Bool {
+        get { Defaults[.startAtLogin] }
+        set { Defaults[.startAtLogin] = newValue }
     }
 
     // MARK: - Navigation
@@ -109,7 +108,10 @@ final class WelcomeViewModel: ObservableObject {
         Defaults[.isFirstLaunch] = false
         Defaults[.hasShownWelcomeGuide] = true
 
-        logger.info("Onboarding completed, hasCompletedOnboarding set to true, isFirstLaunch set to false, hasShownWelcomeGuide set to true")
+        logger
+            .info(
+                "Onboarding completed, hasCompletedOnboarding set to true, isFirstLaunch set to false, hasShownWelcomeGuide set to true"
+            )
 
         // Trigger the delegate's completion callback
         onCompletionCallback?()
@@ -118,6 +120,14 @@ final class WelcomeViewModel: ObservableObject {
         // This helps users find the app in the menu bar after completing onboarding
         NotificationCenter.default.post(name: .highlightMenuBarIcon, object: nil)
     }
+
+    // MARK: Private
+
+    private let logger = Logger(category: .onboarding)
+
+    private var loginItemManager: LoginItemManager
+    private var windowManager: WindowManager?
+    private var onCompletionCallback: (() -> Void)?
 }
 
 // MARK: - Welcome Step Enum
@@ -127,6 +137,8 @@ enum WelcomeStep: Int, CaseIterable, CustomStringConvertible {
     case accessibility = 1
     case settings = 2
     case complete = 3
+
+    // MARK: Internal
 
     var description: String {
         switch self {

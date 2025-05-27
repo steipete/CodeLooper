@@ -8,13 +8,12 @@ import Foundation
 struct SidebarActivityAreaHeuristic: AXElementHeuristic {
     let locatorType: LocatorType = .sidebarActivityArea
 
-
     @MainActor func discover(for pid: pid_t, axorcist: AXorcist) async -> Locator? {
         let locator1 = Locator(
             matchAll: false,
             criteria: Self.convertDictionaryToCriteriaArray([
                 "role_exact": AXRoleNames.kAXScrollAreaRole,
-                "computedName_contains": "chat"
+                "computedName_contains": "chat",
             ])
         )
         let queryCommand1 = QueryCommand(
@@ -30,7 +29,7 @@ struct SidebarActivityAreaHeuristic: AXElementHeuristic {
             matchAll: false,
             criteria: Self.convertDictionaryToCriteriaArray([
                 "role_exact": AXRoleNames.kAXScrollAreaRole,
-                "identifier_exact": "sidebar"
+                "identifier_exact": "sidebar",
             ])
         )
         let queryCommand2 = QueryCommand(
@@ -46,7 +45,7 @@ struct SidebarActivityAreaHeuristic: AXElementHeuristic {
             matchAll: false,
             criteria: Self.convertDictionaryToCriteriaArray([
                 "role_exact": AXRoleNames.kAXGroupRole,
-                "computedName_contains": "sidebar"
+                "computedName_contains": "sidebar",
             ])
         )
         let queryCommand3 = QueryCommand(
@@ -60,4 +59,4 @@ struct SidebarActivityAreaHeuristic: AXElementHeuristic {
 
         return nil
     }
-} 
+}

@@ -13,68 +13,91 @@ public enum LocatorType: String, CaseIterable, Codable {
     case sidebarActivityArea
     case stopGeneratingButton
 
+    // MARK: Internal
+
     var heuristic: AXElementHeuristic {
         switch self {
-        case .connectionErrorIndicator: return ConnectionErrorIndicatorHeuristic()
-        case .errorMessagePopup: return ErrorMessagePopupHeuristic()
-        case .forceStopResumeLink: return ForceStopResumeLinkHeuristic()
-        case .mainInputField: return MainInputFieldHeuristic()
-        case .resumeConnectionButton: return ResumeConnectionButtonHeuristic()
-        case .generatingIndicatorText: return GeneratingIndicatorTextHeuristic()
-        case .sidebarActivityArea: return SidebarActivityAreaHeuristic()
-        case .stopGeneratingButton: return StopGeneratingButtonHeuristic()
+        case .connectionErrorIndicator: ConnectionErrorIndicatorHeuristic()
+        case .errorMessagePopup: ErrorMessagePopupHeuristic()
+        case .forceStopResumeLink: ForceStopResumeLinkHeuristic()
+        case .mainInputField: MainInputFieldHeuristic()
+        case .resumeConnectionButton: ResumeConnectionButtonHeuristic()
+        case .generatingIndicatorText: GeneratingIndicatorTextHeuristic()
+        case .sidebarActivityArea: SidebarActivityAreaHeuristic()
+        case .stopGeneratingButton: StopGeneratingButtonHeuristic()
         }
     }
-
 
     // Default locators are defined here as part of the enum
     var defaultLocator: Locator? {
         switch self {
         case .connectionErrorIndicator:
-            return Locator(
-                criteria: GeneratingIndicatorTextHeuristic.convertDictionaryToCriteriaArray(["role": "AXStaticText", "computed_name_contains_any": "offline,network error,connection failed"]),
+            Locator(
+                criteria: GeneratingIndicatorTextHeuristic.convertDictionaryToCriteriaArray([
+                    "role": "AXStaticText",
+                    "computed_name_contains_any": "offline,network error,connection failed",
+                ]),
                 rootElementPathHint: nil,
                 requireAction: nil
             )
         case .errorMessagePopup:
-            return Locator(
-                criteria: GeneratingIndicatorTextHeuristic.convertDictionaryToCriteriaArray(["role": "AXWindow", "subrole_exact": "AXDialog", "description_contains_any": "error,failed,unable"]),
+            Locator(
+                criteria: GeneratingIndicatorTextHeuristic.convertDictionaryToCriteriaArray([
+                    "role": "AXWindow",
+                    "subrole_exact": "AXDialog",
+                    "description_contains_any": "error,failed,unable",
+                ]),
                 rootElementPathHint: nil,
                 requireAction: nil
             )
         case .forceStopResumeLink:
-            return Locator(
-                criteria: GeneratingIndicatorTextHeuristic.convertDictionaryToCriteriaArray(["role": "AXLink", "title_contains_any": "Force Stop,Resume"]),
+            Locator(
+                criteria: GeneratingIndicatorTextHeuristic.convertDictionaryToCriteriaArray([
+                    "role": "AXLink",
+                    "title_contains_any": "Force Stop,Resume",
+                ]),
                 rootElementPathHint: nil,
                 requireAction: "AXPressAction"
             )
         case .mainInputField:
-            return Locator(
-                criteria: GeneratingIndicatorTextHeuristic.convertDictionaryToCriteriaArray(["role": "AXTextArea", "placeholder_value_contains": "message"]),
+            Locator(
+                criteria: GeneratingIndicatorTextHeuristic.convertDictionaryToCriteriaArray([
+                    "role": "AXTextArea",
+                    "placeholder_value_contains": "message",
+                ]),
                 rootElementPathHint: nil,
                 requireAction: nil
             )
         case .resumeConnectionButton:
-            return Locator(
-                criteria: GeneratingIndicatorTextHeuristic.convertDictionaryToCriteriaArray(["role": "AXButton", "title_contains_any": "Resume,Try Again,Reload"]),
+            Locator(
+                criteria: GeneratingIndicatorTextHeuristic.convertDictionaryToCriteriaArray([
+                    "role": "AXButton",
+                    "title_contains_any": "Resume,Try Again,Reload",
+                ]),
                 rootElementPathHint: nil,
                 requireAction: "AXPressAction"
             )
         case .generatingIndicatorText:
-            return Locator(
-                criteria: GeneratingIndicatorTextHeuristic.convertDictionaryToCriteriaArray(["role": "AXStaticText", "computedName_contains": "generating"]),
+            Locator(
+                criteria: GeneratingIndicatorTextHeuristic.convertDictionaryToCriteriaArray([
+                    "role": "AXStaticText",
+                    "computedName_contains": "generating",
+                ]),
                 rootElementPathHint: nil,
                 requireAction: nil
             )
         case .sidebarActivityArea:
-            return Locator(
+            Locator(
                 criteria: GeneratingIndicatorTextHeuristic.convertDictionaryToCriteriaArray(["role": "AXScrollArea"]),
                 rootElementPathHint: nil,
                 requireAction: nil
             )
         case .stopGeneratingButton:
-            return Locator(
-                criteria: GeneratingIndicatorTextHeuristic.convertDictionaryToCriteriaArray(["role": "AXButton", "computedName_contains": "Stop"]),
+            Locator(
+                criteria: GeneratingIndicatorTextHeuristic.convertDictionaryToCriteriaArray([
+                    "role": "AXButton",
+                    "computedName_contains": "Stop",
+                ]),
                 rootElementPathHint: nil,
                 requireAction: nil
             )

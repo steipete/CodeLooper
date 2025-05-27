@@ -11,20 +11,7 @@ import os.log
 /// allowing runtime adjustment of logging verbosity and filtering
 @MainActor
 public final class LogConfiguration: @unchecked Sendable {
-    // Singleton instance
-    public static let shared = LogConfiguration()
-
-    // MARK: - Properties
-
-    /// Whether verbose logging is enabled
-    public private(set) var verboseLogging: Bool = false
-
-    /// Minimum log level that will be logged
-    /// Debug logs are only shown when verboseLogging is true
-    public private(set) var minimumLogLevel: LogLevel = .info
-
-    /// Categories to exclude from logging
-    public var excludedCategories: Set<LogCategory> = []
+    // MARK: Lifecycle
 
     // Observer for notification changes
     // private var notificationObserver: NSObjectProtocol? // REMOVED
@@ -65,6 +52,21 @@ public final class LogConfiguration: @unchecked Sendable {
         //     } // REMOVED
         // } // REMOVED
     }
+
+    // MARK: Public
+
+    // Singleton instance
+    public static let shared = LogConfiguration()
+
+    /// Whether verbose logging is enabled
+    public private(set) var verboseLogging: Bool = false
+
+    /// Minimum log level that will be logged
+    /// Debug logs are only shown when verboseLogging is true
+    public private(set) var minimumLogLevel: LogLevel = .info
+
+    /// Categories to exclude from logging
+    public var excludedCategories: Set<LogCategory> = []
 
     // MARK: - Configuration Methods
 

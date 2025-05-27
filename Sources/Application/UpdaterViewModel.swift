@@ -4,12 +4,7 @@ import SwiftUI // For ObservableObject
 
 @MainActor
 public class UpdaterViewModel: ObservableObject {
-    @Published public var isUpdateInProgress: Bool = false
-    @Published public var lastUpdateCheckDate: Date? // Placeholder
-    // Potentially more properties: canCheckForUpdates, version, etc.
-
-    private var sparkleUpdaterManager: SparkleUpdaterManager?
-    private var cancellables = Set<AnyCancellable>()
+    // MARK: Lifecycle
 
     // Standard Initializer
     public init(sparkleUpdaterManager: SparkleUpdaterManager?) {
@@ -28,6 +23,11 @@ public class UpdaterViewModel: ObservableObject {
         // For now, it's a manually toggled placeholder.
     }
 
+    // MARK: Public
+
+    @Published public var isUpdateInProgress: Bool = false
+    @Published public var lastUpdateCheckDate: Date? // Placeholder
+
     public func checkForUpdates() {
         // Communicate with SparkleUpdaterManager to initiate update check
         guard let manager = sparkleUpdaterManager else {
@@ -35,7 +35,7 @@ public class UpdaterViewModel: ObservableObject {
             return
         }
         // Set update in progress (simplistic, real status comes from Sparkle delegates)
-        isUpdateInProgress = true 
+        isUpdateInProgress = true
         manager.updaterController.checkForUpdates(nil) // Pass nil for sender
 
         // TODO: Listen to Sparkle notifications/delegate calls to set isUpdateInProgress = false
@@ -46,4 +46,11 @@ public class UpdaterViewModel: ObservableObject {
             self?.lastUpdateCheckDate = Date()
         }
     }
-} 
+
+    // MARK: Private
+
+    // Potentially more properties: canCheckForUpdates, version, etc.
+
+    private var sparkleUpdaterManager: SparkleUpdaterManager?
+    private var cancellables = Set<AnyCancellable>()
+}

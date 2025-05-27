@@ -47,7 +47,8 @@ public extension Notification.Name {
 
     // For AXpector
     static let showAXpectorWindow = Notification.Name("me.steipete.codelooper.showAXpectorWindow")
-    
+
     // Accessibility
-    static let accessibilityPermissionsChanged = Notification.Name("me.steipete.codelooper.accessibilityPermissionsChanged")
+    static let accessibilityPermissionsChanged = Notification
+        .Name("me.steipete.codelooper.accessibilityPermissionsChanged")
 }

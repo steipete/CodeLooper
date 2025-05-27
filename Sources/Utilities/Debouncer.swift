@@ -1,10 +1,8 @@
-import Foundation
 import Combine
+import Foundation
 
 public class Debouncer {
-    private let delay: TimeInterval
-    private var cancellable: AnyCancellable?
-    private let subject = PassthroughSubject<() -> Void, Never>()
+    // MARK: Lifecycle
 
     public init(delay: TimeInterval) {
         self.delay = delay
@@ -15,11 +13,19 @@ public class Debouncer {
             }
     }
 
+    deinit {
+        cancellable?.cancel()
+    }
+
+    // MARK: Public
+
     public func call(_ action: @escaping () -> Void) {
         subject.send(action)
     }
 
-    deinit {
-        cancellable?.cancel()
-    }
-} 
+    // MARK: Private
+
+    private let delay: TimeInterval
+    private var cancellable: AnyCancellable?
+    private let subject = PassthroughSubject<() -> Void, Never>()
+}

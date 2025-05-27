@@ -6,4 +6,4 @@ struct CursorWindowInfo: Identifiable, Hashable, Sendable {
     var queryFile: String? // Name of the JSON file in the project root for this query
     var lastKnownText: String = ""
     var lastError: String?
-} 
+}

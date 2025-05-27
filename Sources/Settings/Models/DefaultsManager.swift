@@ -10,14 +10,7 @@ import SwiftUI
 
 @MainActor
 final class DefaultsManager: @unchecked Sendable {
-    // MARK: - Singleton
-
-    @MainActor static let shared = DefaultsManager()
-
-    // MARK: - Properties
-
-    private let logger = Logger(category: .defaults)
-    private var observers: [AnyCancellable] = []
+    // MARK: Lifecycle
 
     // MARK: - Initialization
 
@@ -31,28 +24,11 @@ final class DefaultsManager: @unchecked Sendable {
 
     deinit {}
 
-    // MARK: - Observers Setup
+    // MARK: Internal
 
-    private func setupObservers() {
-        // Watch for general preferences changes
-        observers.append(
-            Defaults.publisher(.startAtLogin).sink { _ in
-                NotificationCenter.default.post(name: .preferencesChanged, object: nil)
-            }
-        )
+    // MARK: - Singleton
 
-        observers.append(
-            Defaults.publisher(.showInMenuBar).sink { _ in
-                NotificationCenter.default.post(name: .preferencesChanged, object: nil)
-            }
-        )
-
-        observers.append(
-            Defaults.publisher(.showDebugMenu).sink { _ in
-                NotificationCenter.default.post(name: .preferencesChanged, object: nil)
-            }
-        )
-    }
+    @MainActor static let shared = DefaultsManager()
 
     // MARK: - Utility Methods
 
@@ -92,7 +68,8 @@ final class DefaultsManager: @unchecked Sendable {
         #if DEBUG
             logger.info("Requesting user confirmation for reset to defaults")
 
-            // Post a notification that will be observed by a UI component (typically AppDelegate or MainSettingsCoordinator)
+            // Post a notification that will be observed by a UI component (typically AppDelegate or
+            // MainSettingsCoordinator)
             // which can then show a confirmation dialog to the user
             NotificationCenter.default.post(
                 name: .requestResetConfirmation,
@@ -137,5 +114,33 @@ final class DefaultsManager: @unchecked Sendable {
             logger.warning("Reset to defaults attempted in production - ignoring")
             return false
         #endif
+    }
+
+    // MARK: Private
+
+    private let logger = Logger(category: .defaults)
+    private var observers: [AnyCancellable] = []
+
+    // MARK: - Observers Setup
+
+    private func setupObservers() {
+        // Watch for general preferences changes
+        observers.append(
+            Defaults.publisher(.startAtLogin).sink { _ in
+                NotificationCenter.default.post(name: .preferencesChanged, object: nil)
+            }
+        )
+
+        observers.append(
+            Defaults.publisher(.showInMenuBar).sink { _ in
+                NotificationCenter.default.post(name: .preferencesChanged, object: nil)
+            }
+        )
+
+        observers.append(
+            Defaults.publisher(.showDebugMenu).sink { _ in
+                NotificationCenter.default.post(name: .preferencesChanged, object: nil)
+            }
+        )
     }
 }

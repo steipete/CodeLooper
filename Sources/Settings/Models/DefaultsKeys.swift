@@ -1,4 +1,5 @@
 @preconcurrency import Defaults
+
 // import Diagnostics // Removed as DefaultsKeys should not be part of Diagnostics module
 import Foundation
 
@@ -19,14 +20,15 @@ extension Defaults.Keys {
         "maxConsecutiveRecoveryFailures",
         default: 3
     ) // "Max recovery cycles before 'Persistent Error'"
-    
+
     // --- General Behavior & Notifications (Spec 3.3.A / 3.3.E) ---
     static let playSoundOnIntervention = Key<Bool>("playSoundOnIntervention", default: true)
     static let successfulInterventionSoundName = Key<String>("successfulInterventionSoundName", default: "Funk")
     static let sendNotificationOnPersistentError = Key<Bool>("sendNotificationOnPersistentError", default: true)
     static let sendNotificationOnMaxInterventions = Key<Bool>("sendNotificationOnMaxInterventions", default: true)
-    static let notificationSoundName = Key<String?>("notificationSoundName", default: "Default") // Added as per Spec 3.3.A and 5.1.B
-    
+    static let notificationSoundName = Key<String?>("notificationSoundName",
+                                                    default: "Default") // Added as per Spec 3.3.A and 5.1.B
+
     // --- Text for "Cursor Stops" recovery (Spec 3.3.A) ---
     static let textForCursorStopsRecovery = Key<String>(
         "textForCursorStopsRecovery",
@@ -54,7 +56,7 @@ extension Defaults.Keys {
         "postInterventionObservationWindowSeconds",
         default: 3.0
     )
-    static let stuckDetectionTimeoutSeconds = Key<TimeInterval>("stuckDetectionTimeoutSeconds", default: 60.0) 
+    static let stuckDetectionTimeoutSeconds = Key<TimeInterval>("stuckDetectionTimeoutSeconds", default: 60.0)
 
     // --- Onboarding ---
     static let hasShownWelcomeGuide = Key<Bool>("hasShownWelcomeGuide", default: false)
@@ -64,6 +66,7 @@ extension Defaults.Keys {
 
     // --- General Settings (from MenuManager usage in AppDelegate & Spec 3.3.A) ---
     static let startAtLogin = Key<Bool>("startAtLogin", default: true) // "Launch CodeLooper at Login"
+    static let showInDock = Key<Bool>("showInDock", default: false) // "Show CodeLooper in Dock"
     static let showDebugMenu = Key<Bool>("showDebugMenu", default: false) // For debug menu in status bar
     static let debugModeEnabled = Key<Bool>("debugModeEnabled", default: false)
     static let showCopyCounter = Key<Bool>("showCopyCounter", default: false)

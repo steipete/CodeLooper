@@ -5,28 +5,18 @@ import OSLog
 import SwiftUI
 
 /**
-    Welcome window adapter for the new SwiftUI lifecycle.
-    This wrapper helps manage the welcome window using pure SwiftUI APIs.
-*/
+ Welcome window adapter for the new SwiftUI lifecycle.
+ This wrapper helps manage the welcome window using pure SwiftUI APIs.
+ */
 struct WelcomeWindowView: View {
-    private let logger = Logger(category: .onboarding)
-
-    // Services provided by AppDelegate
-    private let loginItemManager: LoginItemManager
-
-    // Access the app-wide environment
-    @EnvironmentObject private var appEnvironment: AppEnvironment
-
-    // State for the welcome window visibility
-    @State private var isShowing = true
-
-    // Store Combine cancellables
-    @State private var cancellables = Set<AnyCancellable>()
+    // MARK: Lifecycle
 
     // Public initializer
     init(loginItemManager: LoginItemManager) {
         self.loginItemManager = loginItemManager
     }
+
+    // MARK: Internal
 
     var body: some View {
         if isShowing {
@@ -54,6 +44,22 @@ struct WelcomeWindowView: View {
             // Welcome view handles its own state management
         }
     }
+
+    // MARK: Private
+
+    // Access the app-wide environment
+    @EnvironmentObject private var appEnvironment: AppEnvironment
+
+    // State for the welcome window visibility
+    @State private var isShowing = true
+
+    // Store Combine cancellables
+    @State private var cancellables = Set<AnyCancellable>()
+
+    private let logger = Logger(category: .onboarding)
+
+    // Services provided by AppDelegate
+    private let loginItemManager: LoginItemManager
 
     private func createViewModel() -> WelcomeViewModel {
         let viewModel = WelcomeViewModel(

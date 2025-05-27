@@ -1,11 +1,12 @@
 import SwiftUI
 
 struct ClaudeCodeConfigView: View {
+    // MARK: Internal
+
     @Binding var isPresented: Bool
     @Binding var customCliName: String // Bound to a property in MainSettingsViewModel
-    var onSave: (String) -> Void // Action to save the new CLI name
 
-    @State private var localCliName: String = ""
+    var onSave: (String) -> Void // Action to save the new CLI name
 
     var body: some View {
         VStack(spacing: 20) {
@@ -13,16 +14,18 @@ struct ClaudeCodeConfigView: View {
                 .font(.title2)
                 .padding(.top)
 
-            Text("If you use a custom command for the Claude Code CLI (e.g., via an alias or a different installation method), you can specify it here. Otherwise, leave blank to use the default ('claude-code').")
-                .font(.callout)
-                .foregroundColor(.secondary)
-                .multilineTextAlignment(.center)
-                .padding(.horizontal)
+            Text(
+                "If you use a custom command for the Claude Code CLI (e.g., via an alias or a different installation method), you can specify it here. Otherwise, leave blank to use the default ('claude-code')."
+            )
+            .font(.callout)
+            .foregroundColor(.secondary)
+            .multilineTextAlignment(.center)
+            .padding(.horizontal)
 
             TextField("Custom CLI Name (e.g., claude)", text: $localCliName)
                 .textFieldStyle(RoundedBorderTextFieldStyle())
                 .padding(.horizontal)
-            
+
             Text("Example: If your command is `claude --version`, enter `claude`.")
                 .font(.caption)
                 .foregroundColor(.gray)
@@ -50,8 +53,14 @@ struct ClaudeCodeConfigView: View {
             localCliName = customCliName
         }
     }
+
+    // MARK: Private
+
+    @State private var localCliName: String = ""
 }
 
 #Preview {
-    ClaudeCodeConfigView(isPresented: .constant(true), customCliName: .constant("claude-custom")) { name in print("Preview save: \(name)") }
-} 
+    ClaudeCodeConfigView(isPresented: .constant(true), customCliName: .constant("claude-custom")) { name in
+        print("Preview save: \(name)")
+    }
+}

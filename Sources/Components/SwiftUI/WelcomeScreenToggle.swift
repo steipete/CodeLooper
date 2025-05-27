@@ -1,8 +1,8 @@
 import AppKit
 import Defaults
+import Diagnostics
 import os.log
 import SwiftUI
-import Diagnostics
 
 // Extension to force show the welcome window once on app startup
 /// Exposed C function to show the welcome window on startup for testing/debugging

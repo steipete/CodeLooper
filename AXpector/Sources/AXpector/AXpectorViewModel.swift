@@ -404,7 +404,7 @@ class AXpectorViewModel: ObservableObject {
             // let el = Element(axUiElement) // axUiElement is AXUIElement, wrap it
             let briefDesc = axElementData.briefDescription
             // Careful with multi-line string for hoveredElementInfo
-            hoveredElementInfo = "Hovered: \(briefDesc)"
+            hoveredElementInfo = "Hovered: \(String(describing: briefDesc))"
             // Comment out lines that require the actual AXUIElement reference
             // if let appTree = self.accessibilityTree.first, appTree.pid == pid, 
             //    let foundNode = findNodeByAXElement(axUiElement, in: [appTree]) { // Use axUiElement directly
@@ -464,7 +464,7 @@ class AXpectorViewModel: ObservableObject {
             
             // let titlePartFormatted = titleValue.isEmpty ? "" : " - \"\(titleValue.prefix(30))\""
             // newHoverInfo = "Hover: \(roleValue)\(titlePartFormatted)"
-            newHoverInfo = "Hover: \(axElementData.briefDescription)"
+            newHoverInfo = "Hover: \(String(describing: axElementData.briefDescription))"
  
         } else if let errorMsg = getElementResult.error?.message {
             newHoverInfo = "Hover Error: \(errorMsg)"

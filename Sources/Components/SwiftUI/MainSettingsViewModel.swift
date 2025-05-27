@@ -10,84 +10,7 @@ import SwiftUI
 @MainActor
 @Observable
 public final class MainSettingsViewModel: ObservableObject {
-    // MARK: - Properties
-
-    // Logger instance
-    private let logger = Logger(category: .settings)
-
-    // Selected Tab for the TabView
-    var selectedTab: SettingsTab = .general
-
-    // Dependencies
-    private let loginItemManager: LoginItemManager
-    let mcpConfigManager = MCPConfigManager.shared // Made public for access from previews if needed, but primarily internal
-    let updaterViewModel: UpdaterViewModel // Modified: Changed to internal (default access level)
-
-    private(set) var startAtLogin: Bool = false // Don't read Defaults during init
-    private(set) var showInMenuBar: Bool = true // Safe default
-    private(set) var showWelcomeScreen: Bool = false // Safe default
-    private(set) var showCopyCounter: Bool = false // Safe default
-    private(set) var showPasteCounter: Bool = false // Safe default
-    private(set) var showTotalInterventions: Bool = true // Safe default
-    var isGlobalMonitoringEnabled: Bool = true // Safe default
-    var playSoundOnIntervention: Bool = true // Safe default
-    var flashIconOnIntervention: Bool = true // Safe default
-
-    // Global Shortcut
-
-    // Computed property for showDebugMenu
-    var showDebugMenu: Bool {
-        get { Defaults[.showDebugMenu] }
-        set { Defaults[.showDebugMenu] = newValue }
-    }
-
-    // Published properties for MCP status messages - @Observable handles publishing
-    var claudeCodeStatusMessage: String = "Loading..."
-    var macOSAutomatorStatusMessage: String = "Loading..."
-    var xcodeBuildStatusMessage: String = "Loading..."
-
-    // Sheet presentation state - @Observable handles publishing
-    var showingClaudeConfigSheet = false
-    var showingXcodeConfigSheet = false
-    var showingAutomatorConfigSheet = false
-
-    // Properties to hold MCP configuration values, to be bound to config views
-    var claudeCodeCustomCliName: String = ""
-    var xcodeBuildVersionString: String = ""
-    var xcodeBuildIncrementalBuilds: Bool = false
-    var xcodeBuildSentryDisabled: Bool = false
-
-    // Rule Set Properties - @Observable handles changes - These will be removed.
-    // var projectDisplayName: String = "Selected Project"
-    // var ruleSetStatusMessage: String = "Verify or Install Rule Set"
-    // var selectedProjectURL: URL?
-    // var currentRuleSetStatus: MCPConfigManager.RuleSetStatus = .notInstalled
-
-    // Status for individual MCPs (raw boolean enabled/disabled)
-    // These are now computed properties based on mcpConfigManager
-    var isClaudeCodeEnabled: Bool {
-        get { mcpConfigManager.getMCPStatus(mcpIdentifier: "claude-code").enabled }
-        set { 
-            mcpConfigManager.setMCPEnabled(mcpIdentifier: "claude-code", nameForEntry: "Claude Code", enabled: newValue, defaultCommand: ["claude-code"])
-            refreshMCPStatusMessage(for: "claude-code")
-        }
-    }
-    var isMacOSAutomatorEnabled: Bool {
-        get { mcpConfigManager.getMCPStatus(mcpIdentifier: "macos-automator").enabled }
-        set { 
-            mcpConfigManager.setMCPEnabled(mcpIdentifier: "macos-automator", nameForEntry: "macOS Automator", enabled: newValue, defaultCommand: ["macos-automator"])
-            refreshMCPStatusMessage(for: "macos-automator")
-        }
-    }
-    var isXcodeBuildEnabled: Bool {
-        get { mcpConfigManager.getMCPStatus(mcpIdentifier: "XcodeBuildMCP").enabled }
-        set { 
-            mcpConfigManager.setMCPEnabled(mcpIdentifier: "XcodeBuildMCP", nameForEntry: "XcodeBuildMCP", enabled: newValue, defaultCommand: ["XcodeBuildMCP"])
-            refreshMCPStatusMessage(for: "XcodeBuildMCP")
-        }
-    }
-
-    var defaultsObservations = Set<AnyCancellable>()
+    // MARK: Lifecycle
 
     // MARK: - Initialization
 
@@ -95,17 +18,19 @@ public final class MainSettingsViewModel: ObservableObject {
     public init(loginItemManager: LoginItemManager, updaterViewModel: UpdaterViewModel) {
         self.loginItemManager = loginItemManager
         self.updaterViewModel = updaterViewModel
-        
+
         // Load initial MCP statuses
         refreshAllMCPStatusMessages()
 
         logger.info("MainSettingsViewModel initialized")
-        
+
         // Load Defaults safely after initialization
         Task { @MainActor in
             await self.refreshSettings()
         }
     }
+
+    // MARK: Public
 
     // MARK: - Settings Management
 
@@ -213,7 +138,114 @@ public final class MainSettingsViewModel: ObservableObject {
         logger.info("Settings refreshed")
     }
 
+    /// Enable a specific MCP by its identifier
+    public func enableMCP(_ mcpIdentifier: String) {
+        switch mcpIdentifier {
+        case "claude-code":
+            isClaudeCodeEnabled = true
+        case "macos-automator":
+            isMacOSAutomatorEnabled = true
+        case "XcodeBuildMCP":
+            isXcodeBuildEnabled = true
+        default:
+            logger.warning("Attempted to enable unknown MCP: \(mcpIdentifier)")
+        }
+        refreshAllMCPStatusMessages()
+    }
+
+    // MARK: Internal
+
+    // Selected Tab for the TabView
+    var selectedTab: SettingsTab = .general
+
+    let mcpConfigManager = MCPConfigManager
+        .shared // Made public for access from previews if needed, but primarily internal
+    let updaterViewModel: UpdaterViewModel // Modified: Changed to internal (default access level)
+    private(set) var startAtLogin: Bool = false // Don't read Defaults during init
+    private(set) var showInMenuBar: Bool = true // Safe default
+    private(set) var showWelcomeScreen: Bool = false // Safe default
+    private(set) var showCopyCounter: Bool = false // Safe default
+    private(set) var showPasteCounter: Bool = false // Safe default
+    private(set) var showTotalInterventions: Bool = true // Safe default
+    var isGlobalMonitoringEnabled: Bool = true // Safe default
+    var playSoundOnIntervention: Bool = true // Safe default
+    var flashIconOnIntervention: Bool = true // Safe default
+
+    // Published properties for MCP status messages - @Observable handles publishing
+    var claudeCodeStatusMessage: String = "Loading..."
+    var macOSAutomatorStatusMessage: String = "Loading..."
+    var xcodeBuildStatusMessage: String = "Loading..."
+
+    // Sheet presentation state - @Observable handles publishing
+    var showingClaudeConfigSheet = false
+    var showingXcodeConfigSheet = false
+    var showingAutomatorConfigSheet = false
+
+    // Properties to hold MCP configuration values, to be bound to config views
+    var claudeCodeCustomCliName: String = ""
+    var xcodeBuildVersionString: String = ""
+    var xcodeBuildIncrementalBuilds: Bool = false
+    var xcodeBuildSentryDisabled: Bool = false
+
+    var defaultsObservations = Set<AnyCancellable>()
+
+    // Global Shortcut
+
+    // Computed property for showDebugMenu
+    var showDebugMenu: Bool {
+        get { Defaults[.showDebugMenu] }
+        set { Defaults[.showDebugMenu] = newValue }
+    }
+
+    // Rule Set Properties - @Observable handles changes - These will be removed.
+    // var projectDisplayName: String = "Selected Project"
+    // var ruleSetStatusMessage: String = "Verify or Install Rule Set"
+    // var selectedProjectURL: URL?
+    // var currentRuleSetStatus: MCPConfigManager.RuleSetStatus = .notInstalled
+
+    // Status for individual MCPs (raw boolean enabled/disabled)
+    // These are now computed properties based on mcpConfigManager
+    var isClaudeCodeEnabled: Bool {
+        get { mcpConfigManager.getMCPStatus(mcpIdentifier: "claude-code").enabled }
+        set {
+            mcpConfigManager.setMCPEnabled(
+                mcpIdentifier: "claude-code",
+                nameForEntry: "Claude Code",
+                enabled: newValue,
+                defaultCommand: ["claude-code"]
+            )
+            refreshMCPStatusMessage(for: "claude-code")
+        }
+    }
+
+    var isMacOSAutomatorEnabled: Bool {
+        get { mcpConfigManager.getMCPStatus(mcpIdentifier: "macos-automator").enabled }
+        set {
+            mcpConfigManager.setMCPEnabled(
+                mcpIdentifier: "macos-automator",
+                nameForEntry: "macOS Automator",
+                enabled: newValue,
+                defaultCommand: ["macos-automator"]
+            )
+            refreshMCPStatusMessage(for: "macos-automator")
+        }
+    }
+
+    var isXcodeBuildEnabled: Bool {
+        get { mcpConfigManager.getMCPStatus(mcpIdentifier: "XcodeBuildMCP").enabled }
+        set {
+            mcpConfigManager.setMCPEnabled(
+                mcpIdentifier: "XcodeBuildMCP",
+                nameForEntry: "XcodeBuildMCP",
+                enabled: newValue,
+                defaultCommand: ["XcodeBuildMCP"]
+            )
+            refreshMCPStatusMessage(for: "XcodeBuildMCP")
+        }
+    }
+
     // MARK: - Status Refresh Logic
+
     func refreshAllMCPStatusMessages() {
         let claudeStatus = mcpConfigManager.getMCPStatus(mcpIdentifier: "claude-code")
         self.claudeCodeStatusMessage = claudeStatus.displayStatus
@@ -231,27 +263,23 @@ public final class MainSettingsViewModel: ObservableObject {
         self.xcodeBuildSentryDisabled = xcodeStatus.sentryDisabled ?? false
 
         logger.info("Refreshed all MCP status messages.")
-        logger.info("Claude: \(self.claudeCodeStatusMessage), Automator: \(self.macOSAutomatorStatusMessage), Xcode: \(self.xcodeBuildStatusMessage)")
+        logger
+            .info(
+                "Claude: \(self.claudeCodeStatusMessage), Automator: \(self.macOSAutomatorStatusMessage), Xcode: \(self.xcodeBuildStatusMessage)"
+            )
     }
 
-    func refreshMCPStatusMessage(for mcpIdentifier: String) {
+    func refreshMCPStatusMessage(for _: String) {
         // Implementation of refreshMCPStatusMessage method
     }
-    
-    /// Enable a specific MCP by its identifier
-    public func enableMCP(_ mcpIdentifier: String) {
-        switch mcpIdentifier {
-        case "claude-code":
-            isClaudeCodeEnabled = true
-        case "macos-automator":
-            isMacOSAutomatorEnabled = true
-        case "XcodeBuildMCP":
-            isXcodeBuildEnabled = true
-        default:
-            logger.warning("Attempted to enable unknown MCP: \(mcpIdentifier)")
-        }
-        refreshAllMCPStatusMessages()
-    }
+
+    // MARK: Private
+
+    // Logger instance
+    private let logger = Logger(category: .settings)
+
+    // Dependencies
+    private let loginItemManager: LoginItemManager
 
     // MARK: - Rule Set Management - This section will be removed.
 
@@ -266,7 +294,7 @@ public final class MainSettingsViewModel: ObservableObject {
         panel.canChooseDirectories = true
         panel.allowsMultipleSelection = false
         panel.message = title
-        
+
         // Running modal synchronously is fine here as it's a user-driven action.
         if panel.runModal() == .OK {
             return panel.url

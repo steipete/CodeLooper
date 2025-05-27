@@ -1,15 +1,9 @@
-import SwiftUI
 import DesignSystem
+import SwiftUI
 
 struct AboutSettingsView: View {
-    private var appVersion: String {
-        Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "Unknown"
-    }
-    
-    private var buildNumber: String {
-        Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "Unknown"
-    }
-    
+    // MARK: Internal
+
     var body: some View {
         VStack(spacing: Spacing.xLarge) {
             // App Info Card
@@ -17,37 +11,41 @@ struct AboutSettingsView: View {
                 VStack(spacing: Spacing.large) {
                     // App Icon and Name
                     VStack(spacing: Spacing.medium) {
-                        Image("AppIcon")
-                            .resizable()
-                            .frame(width: 128, height: 128)
-                            .cornerRadiusDS(Layout.CornerRadius.xLarge)
-                            .shadowStyle(Layout.Shadow.large)
-                        
+                        if let appIcon = NSApplication.shared.applicationIconImage {
+                            Image(nsImage: appIcon)
+                                .resizable()
+                                .frame(width: 128, height: 128)
+                                .cornerRadiusDS(Layout.CornerRadius.xLarge)
+                                .shadowStyle(Layout.Shadow.large)
+                        }
+
                         Text("CodeLooper")
                             .font(Typography.largeTitle())
                             .foregroundColor(ColorPalette.text)
-                        
+
                         Text("The Cursor Connection Guardian")
                             .font(Typography.body())
                             .foregroundColor(ColorPalette.textSecondary)
-                        
+
                         HStack(spacing: Spacing.small) {
                             DSBadge("Version \(appVersion)", style: .primary)
                             DSBadge("Build \(buildNumber)", style: .default)
                         }
                     }
-                    
+
                     DSDivider()
-                    
+
                     // Description
-                    Text("CodeLooper keeps your Cursor AI sessions running smoothly by automatically detecting and resolving connection issues, stuck states, and other common problems.")
-                        .font(Typography.body())
-                        .foregroundColor(ColorPalette.text)
-                        .multilineTextAlignment(.center)
-                        .frame(maxWidth: 400)
+                    Text(
+                        "CodeLooper keeps your Cursor AI sessions running smoothly by automatically detecting and resolving connection issues, stuck states, and other common problems."
+                    )
+                    .font(Typography.body())
+                    .foregroundColor(ColorPalette.text)
+                    .multilineTextAlignment(.center)
+                    .frame(maxWidth: 400)
                 }
             }
-            
+
             // Links Section
             DSSettingsSection("Resources") {
                 LinkRow(
@@ -56,27 +54,27 @@ struct AboutSettingsView: View {
                     subtitle: "Visit our homepage",
                     url: "https://codelooper.app"
                 )
-                
+
                 DSDivider()
-                
+
                 LinkRow(
                     icon: "doc.text",
                     title: "Documentation",
                     subtitle: "Learn how to use CodeLooper",
                     url: "https://github.com/steipete/codelooper/wiki"
                 )
-                
+
                 DSDivider()
-                
+
                 LinkRow(
                     icon: "exclamationmark.bubble",
                     title: "Report an Issue",
                     subtitle: "Help us improve CodeLooper",
                     url: "https://github.com/steipete/codelooper/issues"
                 )
-                
+
                 DSDivider()
-                
+
                 LinkRow(
                     icon: "star",
                     title: "Star on GitHub",
@@ -84,31 +82,41 @@ struct AboutSettingsView: View {
                     url: "https://github.com/steipete/codelooper"
                 )
             }
-            
+
             // Credits
             DSCard(style: .filled) {
                 VStack(spacing: Spacing.small) {
                     Text("Created with ❤️ by")
                         .font(Typography.caption1())
                         .foregroundColor(ColorPalette.textSecondary)
-                    
+
                     Button(action: { openURL("https://twitter.com/steipete") }) {
                         Text("@steipete")
                             .font(Typography.body(.medium))
                             .foregroundColor(ColorPalette.primary)
                     }
                     .buttonStyle(.plain)
-                    
+
                     Text("© 2024 CodeLooper. All rights reserved.")
                         .font(Typography.caption2())
                         .foregroundColor(ColorPalette.textTertiary)
                 }
             }
-            
+
             Spacer()
         }
     }
-    
+
+    // MARK: Private
+
+    private var appVersion: String {
+        Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "Unknown"
+    }
+
+    private var buildNumber: String {
+        Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "Unknown"
+    }
+
     private func openURL(_ urlString: String) {
         if let url = URL(string: urlString) {
             NSWorkspace.shared.open(url)
@@ -117,14 +125,15 @@ struct AboutSettingsView: View {
 }
 
 // MARK: - Link Row Component
+
 private struct LinkRow: View {
+    // MARK: Internal
+
     let icon: String
     let title: String
     let subtitle: String
     let url: String
-    
-    @State private var isHovered = false
-    
+
     var body: some View {
         Button(action: { openURL() }) {
             HStack(spacing: Spacing.small) {
@@ -132,19 +141,19 @@ private struct LinkRow: View {
                     .font(.system(size: 20))
                     .foregroundColor(ColorPalette.primary)
                     .frame(width: 32)
-                
+
                 VStack(alignment: .leading, spacing: Spacing.xxxSmall) {
                     Text(title)
                         .font(Typography.body(.medium))
                         .foregroundColor(ColorPalette.text)
-                    
+
                     Text(subtitle)
                         .font(Typography.caption1())
                         .foregroundColor(ColorPalette.textSecondary)
                 }
-                
+
                 Spacer()
-                
+
                 Image(systemName: "arrow.up.forward")
                     .font(.system(size: 12))
                     .foregroundColor(ColorPalette.textSecondary)
@@ -160,7 +169,11 @@ private struct LinkRow: View {
         .scaleEffect(isHovered ? 1.02 : 1.0)
         .animation(.spring(response: 0.3, dampingFraction: 0.8), value: isHovered)
     }
-    
+
+    // MARK: Private
+
+    @State private var isHovered = false
+
     private func openURL() {
         if let url = URL(string: url) {
             NSWorkspace.shared.open(url)
@@ -169,14 +182,15 @@ private struct LinkRow: View {
 }
 
 // MARK: - Preview
+
 #if DEBUG
-struct AboutSettingsView_Previews: PreviewProvider {
-    static var previews: some View {
-        AboutSettingsView()
-            .frame(width: 500, height: 700)
-            .padding()
-            .background(ColorPalette.background)
-            .withDesignSystem()
+    struct AboutSettingsView_Previews: PreviewProvider {
+        static var previews: some View {
+            AboutSettingsView()
+                .frame(width: 500, height: 700)
+                .padding()
+                .background(ColorPalette.background)
+                .withDesignSystem()
+        }
     }
-}
 #endif

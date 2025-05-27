@@ -12,10 +12,7 @@ public enum LogLevel: Int, Comparable, Sendable, Codable, CaseIterable {
     case critical = 5
     case fault = 6
 
-    /// Allows comparing log levels to filter by minimum threshold
-    public static func < (lhs: LogLevel, rhs: LogLevel) -> Bool {
-        lhs.rawValue < rhs.rawValue
-    }
+    // MARK: Public
 
     /// Get a formatted name suitable for display
     public var displayName: String {
@@ -59,5 +56,10 @@ public enum LogLevel: Int, Comparable, Sendable, Codable, CaseIterable {
         case .critical: "🚨"
         case .fault: "💥"
         }
+    }
+
+    /// Allows comparing log levels to filter by minimum threshold
+    public static func < (lhs: LogLevel, rhs: LogLevel) -> Bool {
+        lhs.rawValue < rhs.rawValue
     }
 }

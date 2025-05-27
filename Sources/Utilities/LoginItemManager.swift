@@ -1,7 +1,7 @@
 import Combine
 import Defaults
-@preconcurrency import Foundation
 import Diagnostics
+@preconcurrency import Foundation
 import LaunchAtLogin
 import os.log
 
@@ -9,17 +9,7 @@ import os.log
 /// Uses the LaunchAtLogin library for simplified management
 @MainActor
 public final class LoginItemManager: ObservableObject {
-    // MARK: - Shared instance
-
-    public static let shared = LoginItemManager()
-
-    // MARK: - Properties
-
-    private let logger = Logger(category: .utilities)
-    private static let statusChangedNotification = Notification.Name("LaunchAtLoginStatusChanged")
-
-    // Store notification observation token for proper cleanup
-    private var notificationToken: NSObjectProtocol?
+    // MARK: Lifecycle
 
     // MARK: - Initialization
 
@@ -57,6 +47,14 @@ public final class LoginItemManager: ObservableObject {
             }
         }
     }
+
+    // MARK: Public
+
+    // MARK: - Shared instance
+
+    public static let shared = LoginItemManager()
+
+    // MARK: Internal
 
     // MARK: - Public Methods
 
@@ -120,19 +118,6 @@ public final class LoginItemManager: ObservableObject {
         return LaunchAtLogin.isEnabled
     }
 
-    /// Sync UserDefaults with the actual system state
-    /// This ensures the UI correctly reflects the actual system status
-    @MainActor
-    private func syncWithSystemState() {
-        let systemState = LaunchAtLogin.isEnabled
-        let userDefaultsState = Defaults[.startAtLogin]
-
-        if systemState != userDefaultsState {
-            logger.info("Syncing UserDefaults with system state: \(systemState)")
-            Defaults[.startAtLogin] = systemState
-        }
-    }
-
     /// Ensure the login item status matches the preference
     /// - Returns: Whether the sync was successful
     @discardableResult
@@ -142,7 +127,10 @@ public final class LoginItemManager: ObservableObject {
         let shouldStartAtLogin = Defaults[.startAtLogin]
         let currentStatus = LaunchAtLogin.isEnabled
 
-        logger.info("Synchronizing login item status - preference: \(shouldStartAtLogin), actual system state: \(currentStatus)")
+        logger
+            .info(
+                "Synchronizing login item status - preference: \(shouldStartAtLogin), actual system state: \(currentStatus)"
+            )
 
         // If there's a mismatch, use the preference value and apply to system
         if shouldStartAtLogin != currentStatus {
@@ -187,6 +175,28 @@ public final class LoginItemManager: ObservableObject {
         // Create an observation that removes the observer when cancelled
         return CallbackObservation {
             NotificationCenter.default.removeObserver(token)
+        }
+    }
+
+    // MARK: Private
+
+    private static let statusChangedNotification = Notification.Name("LaunchAtLoginStatusChanged")
+
+    private let logger = Logger(category: .utilities)
+
+    // Store notification observation token for proper cleanup
+    private var notificationToken: NSObjectProtocol?
+
+    /// Sync UserDefaults with the actual system state
+    /// This ensures the UI correctly reflects the actual system status
+    @MainActor
+    private func syncWithSystemState() {
+        let systemState = LaunchAtLogin.isEnabled
+        let userDefaultsState = Defaults[.startAtLogin]
+
+        if systemState != userDefaultsState {
+            logger.info("Syncing UserDefaults with system state: \(systemState)")
+            Defaults[.startAtLogin] = systemState
         }
     }
 }

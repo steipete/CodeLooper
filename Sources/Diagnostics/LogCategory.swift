@@ -6,30 +6,30 @@ public enum LogCategory: String, CaseIterable {
     // Application lifecycle and general app events
     case app = "App"
     case appDelegate = "AppDelegate"
-    
+
     // Core functionality
     case axorcist = "AXorcist"
     case accessibility = "Accessibility"
     case cursorMonitor = "CursorMonitor"
     case interventionEngine = "InterventionEngine"
     case supervision = "Supervision"
-    
+
     // UI and Settings
     case settings = "Settings"
     case statusBar = "StatusBar"
     case ui = "UI"
-    
+
     // Managers and Utilities
     case defaults = "Defaults"
     case mcpConfig = "MCPConfigManager"
     case sound = "SoundManager"
     case utilities = "Utilities"
-    
+
     // Specific features or components
     case onboarding = "Onboarding"
     case updates = "Updates"
     case diagnostics = "Diagnostics"
-    
+
     // Default or general purpose
     case general = "General"
 
@@ -50,6 +50,8 @@ public enum LogCategory: String, CaseIterable {
     case mcpConfiguration
     case appLifecycle
     case unknown
+
+    // MARK: Public
 
     /// Get a formatted name suitable for display
     public var displayName: String {

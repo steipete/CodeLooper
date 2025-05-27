@@ -7,12 +7,7 @@ import SwiftUI
 /// Coordinator for triggering the settings window using the native Settings framework
 @MainActor
 public final class MainSettingsCoordinator: NSObject {
-    // MARK: - Properties
-
-    private let logger = Logger(category: .settings)
-    private var cancellables = Set<AnyCancellable>()
-    private let loginItemManager: LoginItemManager
-    private let updaterViewModel: UpdaterViewModel
+    // MARK: Lifecycle
 
     // MARK: - Initialization
 
@@ -26,6 +21,18 @@ public final class MainSettingsCoordinator: NSObject {
 
         logger.info("Settings coordinator initialized")
     }
+
+    // MARK: - Cleanup
+
+    deinit {
+        // Use MainActor.assumeIsolated to safely access MainActor-isolated properties
+        MainActor.assumeIsolated {
+            cancellables.removeAll()
+            logger.info("Settings coordinator deinitialized")
+        }
+    }
+
+    // MARK: Public
 
     // MARK: - Public Interface
 
@@ -43,6 +50,13 @@ public final class MainSettingsCoordinator: NSObject {
         logger.info("Native settings don't need to be explicitly closed")
     }
 
+    // MARK: Private
+
+    private let logger = Logger(category: .settings)
+    private var cancellables = Set<AnyCancellable>()
+    private let loginItemManager: LoginItemManager
+    private let updaterViewModel: UpdaterViewModel
+
     // MARK: - Private Methods
 
     private func setupObservers() {
@@ -51,20 +65,13 @@ public final class MainSettingsCoordinator: NSObject {
             .publisher(for: .showSettingsWindow)
             .sink { [weak self] _ in
                 Task { @MainActor in
-                    self?.logger.info("Received .showSettingsWindow notification, calling MainSettingsCoordinator.showSettings()")
+                    self?.logger
+                        .info(
+                            "Received .showSettingsWindow notification, calling MainSettingsCoordinator.showSettings()"
+                        )
                     self?.showSettings()
                 }
             }
             .store(in: &cancellables)
-    }
-
-    // MARK: - Cleanup
-
-    deinit {
-        // Use MainActor.assumeIsolated to safely access MainActor-isolated properties
-        MainActor.assumeIsolated {
-            cancellables.removeAll()
-            logger.info("Settings coordinator deinitialized")
-        }
     }
 }

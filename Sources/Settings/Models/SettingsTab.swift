@@ -12,19 +12,21 @@ public enum SettingsTab: String, CaseIterable, Identifiable, Sendable {
     case cursorInputWatcher = "Cursor Input Watcher"
     case about = "About"
 
+    // MARK: Public
+
     public var id: String { self.rawValue }
 
     public var systemImageName: String {
         switch self {
-        case .general: return "gearshape"
-        case .supervision: return "eye"
-        case .ruleSets: return "list.bullet.rectangle"
-        case .externalMCPs: return "puzzlepiece.extension"
-        case .advanced: return "slider.horizontal.3"
-        case .log: return "doc.text"
-        case .developer: return "hammer"
-        case .cursorInputWatcher: return "eyeglass"
-        case .about: return "info.circle"
+        case .general: "gearshape"
+        case .supervision: "eye"
+        case .ruleSets: "list.bullet.rectangle"
+        case .externalMCPs: "puzzlepiece.extension"
+        case .advanced: "slider.horizontal.3"
+        case .log: "doc.text"
+        case .developer: "hammer"
+        case .cursorInputWatcher: "eyeglass"
+        case .about: "info.circle"
         }
     }
-} 
+}

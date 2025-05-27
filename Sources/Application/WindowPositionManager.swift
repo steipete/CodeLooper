@@ -5,14 +5,7 @@ import Foundation
 @objc(WindowPositionManager)
 @MainActor
 final class WindowPositionManager: NSObject {
-    // MARK: - Singleton
-
-    @MainActor static let shared = WindowPositionManager()
-
-    // MARK: - Properties
-
-    private var savedWindowPositions: [String: NSRect] = [:]
-    private let windowPositionsKey = "savedWindowPositions"
+    // MARK: Lifecycle
 
     // MARK: - Initialization
 
@@ -20,6 +13,12 @@ final class WindowPositionManager: NSObject {
         super.init()
         loadSavedPositions()
     }
+
+    // MARK: Internal
+
+    // MARK: - Singleton
+
+    @MainActor static let shared = WindowPositionManager()
 
     // MARK: - Public Methods
 
@@ -29,7 +28,7 @@ final class WindowPositionManager: NSObject {
     ///   - position: The new position (x, y coordinates)
     @objc
     func moveWindow(_ window: NSWindow?, to position: NSPoint) {
-        guard let window = window else { return }
+        guard let window else { return }
 
         let newFrame = NSRect(
             origin: position,
@@ -45,7 +44,7 @@ final class WindowPositionManager: NSObject {
     ///   - size: The new size (width, height)
     @objc
     func resizeWindow(_ window: NSWindow?, to size: NSSize) {
-        guard let window = window else { return }
+        guard let window else { return }
 
         let newFrame = NSRect(
             origin: window.frame.origin,
@@ -61,7 +60,7 @@ final class WindowPositionManager: NSObject {
     ///   - frame: The new frame (x, y, width, height)
     @objc
     func setWindowFrame(_ window: NSWindow?, to frame: NSRect) {
-        guard let window = window else { return }
+        guard let window else { return }
         window.setFrame(frame, display: true, animate: true)
     }
 
@@ -69,7 +68,7 @@ final class WindowPositionManager: NSObject {
     /// - Parameter window: The window to center
     @objc
     func centerWindow(_ window: NSWindow?) {
-        guard let window = window else { return }
+        guard let window else { return }
         window.center()
     }
 
@@ -78,7 +77,7 @@ final class WindowPositionManager: NSObject {
     ///   - window: The window to save position for
     ///   - identifier: Unique identifier for the window
     func saveWindowPosition(_ window: NSWindow?, identifier: String) {
-        guard let window = window else { return }
+        guard let window else { return }
         savedWindowPositions[identifier] = window.frame
         saveToDisk()
     }
@@ -89,13 +88,18 @@ final class WindowPositionManager: NSObject {
     ///   - identifier: Unique identifier for the window
     @discardableResult
     func restoreWindowPosition(_ window: NSWindow?, identifier: String) -> Bool {
-        guard let window = window, let savedFrame = savedWindowPositions[identifier] else {
+        guard let window, let savedFrame = savedWindowPositions[identifier] else {
             return false
         }
 
         window.setFrame(savedFrame, display: true, animate: true)
         return true
     }
+
+    // MARK: Private
+
+    private var savedWindowPositions: [String: NSRect] = [:]
+    private let windowPositionsKey = "savedWindowPositions"
 
     // MARK: - Private Methods
 
@@ -106,7 +110,7 @@ final class WindowPositionManager: NSObject {
                 "x": rect.origin.x,
                 "y": rect.origin.y,
                 "width": rect.size.width,
-                "height": rect.size.height
+                "height": rect.size.height,
             ]
         }
 
@@ -122,9 +126,9 @@ final class WindowPositionManager: NSObject {
 
         savedWindowPositions = savedData.compactMapValues { dict -> NSRect? in
             guard let xPos = dict["x"],
-                let yPos = dict["y"],
-                let width = dict["width"],
-                let height = dict["height"]
+                  let yPos = dict["y"],
+                  let width = dict["width"],
+                  let height = dict["height"]
             else {
                 return nil
             }

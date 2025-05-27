@@ -3,9 +3,8 @@ import Cocoa
 
 /// Observes application launch and termination events.
 class AXApplicationObserver {
-    private let axorcist: AXorcist?
-    private var monitoredBundleIdentifiers: Set<String> = []
-    private let notificationCenter = NSWorkspace.shared.notificationCenter
+    // MARK: Lifecycle
+
     // Logger instance will be added when integrating with main app
 
     init(axorcist: AXorcist?) {
@@ -16,6 +15,21 @@ class AXApplicationObserver {
     deinit {
         removeObservers()
     }
+
+    // MARK: Internal
+
+    /// Updates the set of application bundle identifiers to be monitored.
+    /// - Parameter bundleIdentifiers: An array of bundle identifiers (String).
+    func updateObservedApplications(bundleIdentifiers: [String]) {
+        monitoredBundleIdentifiers = Set(bundleIdentifiers)
+        // Log: Updated monitored applications: \(monitoredBundleIdentifiers.joined(separator: ", "))
+    }
+
+    // MARK: Private
+
+    private let axorcist: AXorcist?
+    private var monitoredBundleIdentifiers: Set<String> = []
+    private let notificationCenter = NSWorkspace.shared.notificationCenter
 
     private func setupObservers() {
         NSWorkspace.shared.notificationCenter.addObserver(
@@ -37,18 +51,12 @@ class AXApplicationObserver {
         notificationCenter.removeObserver(self)
     }
 
-    /// Updates the set of application bundle identifiers to be monitored.
-    /// - Parameter bundleIdentifiers: An array of bundle identifiers (String).
-    func updateObservedApplications(bundleIdentifiers: [String]) {
-        monitoredBundleIdentifiers = Set(bundleIdentifiers)
-        // Log: Updated monitored applications: \(monitoredBundleIdentifiers.joined(separator: ", "))
-    }
-
     @objc
     private func applicationDidLaunch(notification: Notification) {
         guard let app = notification.userInfo?[NSWorkspace.applicationUserInfoKey] as? NSRunningApplication,
-            let bundleIdentifier = app.bundleIdentifier,
-            let _ = app.localizedName else {
+              let bundleIdentifier = app.bundleIdentifier,
+              let _ = app.localizedName
+        else {
             // Log error: Missing application information
             return
         }
@@ -70,8 +78,9 @@ class AXApplicationObserver {
     @objc
     private func applicationDidTerminate(notification: Notification) {
         guard let app = notification.userInfo?[NSWorkspace.applicationUserInfoKey] as? NSRunningApplication,
-            let bundleIdentifier = app.bundleIdentifier,
-            let _ = app.localizedName else {
+              let bundleIdentifier = app.bundleIdentifier,
+              let _ = app.localizedName
+        else {
             // Log error: Missing application information
             return
         }

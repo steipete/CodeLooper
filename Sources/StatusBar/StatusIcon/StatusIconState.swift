@@ -21,6 +21,8 @@ public enum StatusIconState: String, Sendable, Hashable, CaseIterable {
     /// Unauthenticated state (shown briefly after logout)
     case unauthenticated
 
+    // MARK: Public
+
     /// Returns a user-friendly description of the state
     public var description: String {
         switch self {

@@ -6,37 +6,7 @@ import OSLog
 /// Class responsible for animating the status bar icon
 @MainActor
 class IconAnimator {
-    // MARK: - Properties
-
-    /// Logger for this class
-    private let logger = Logger(category: .statusBar)
-
-    /// Weak reference to status item to avoid reference cycles
-    private weak var statusItem: NSStatusItem?
-
-    /// Animation frames
-    private var frames: [NSImage] = []
-
-    /// Current frame index
-    private var currentFrameIndex: Int = 0
-
-    /// Animation timer
-    private var animationTimer: Timer?
-
-    /// Animation interval in seconds
-    private var animationInterval: TimeInterval = 0.25
-
-    /// Whether animation is running
-    private var isAnimating: Bool = false
-
-    /// Original image to restore when animation stops
-    private var originalImage: NSImage?
-
-    /// Original tooltip to restore when animation stops
-    private var originalTooltip: String?
-
-    /// Completion handler called when animation is stopped
-    private var completionHandler: (() -> Void)?
+    // MARK: Lifecycle
 
     // MARK: - Initialization
 
@@ -48,126 +18,11 @@ class IconAnimator {
         logger.info("IconAnimator initialized with \(frames.count) frames at \(interval)s interval")
     }
 
-    // MARK: - Animation Control
-
-    /// Start animating with the given frames
-    /// - Parameters:
-    ///   - newFrames: Animation frames (optional, uses existing frames if nil)
-    ///   - interval: Animation interval in seconds (optional, uses existing interval if nil)
-    ///   - tooltipFormat: Format string for tooltip, can include %d for frame number
-    ///   - completion: Handler called when animation is stopped
-    func startAnimating(
-        frames newFrames: [NSImage]? = nil,
-        interval: TimeInterval? = nil,
-        tooltipFormat: String? = nil,
-        completion: (() -> Void)? = nil
-    ) {
-        guard let button = statusItem?.button else {
-            logger.error("Cannot start animation: statusItem button is nil")
-            return
-        }
-
-        // Store original state to restore later
-        originalImage = button.image
-        originalTooltip = button.toolTip
-
-        // Update frames and interval if provided
-        if let newFrames, !newFrames.isEmpty {
-            frames = newFrames
-        }
-
-        if let interval {
-            animationInterval = interval
-        }
-
-        // Store completion handler
-        completionHandler = completion
-
-        // Validate we have frames to animate
-        guard !frames.isEmpty else {
-            logger.error("Cannot start animation: no frames provided")
-            return
-        }
-
-        // Stop any existing animation
-        stopAnimating(executeCompletion: false)
-
-        // Reset frame index
-        currentFrameIndex = 0
-
-        // Create and start animation timer
-        animationTimer = Timer.scheduledTimer(
-            withTimeInterval: animationInterval,
-            repeats: true
-        ) { [weak self] _ in
-            // Use Task to ensure we respect the MainActor isolation
-            Task { @MainActor in
-                guard let self else { return }
-                self.advanceFrame(tooltipFormat: tooltipFormat)
-            }
-        }
-
-        // Show the first frame and mark as animating
-        advanceFrame(tooltipFormat: tooltipFormat)
-        isAnimating = true
-        logger.info("Started icon animation with \(self.frames.count) frames")
-    }
-
-    /// Advance to the next animation frame
-    /// - Parameter tooltipFormat: Format string for tooltip, can include %d for frame number
-    private func advanceFrame(tooltipFormat: String? = nil) {
-        guard let button = statusItem?.button, !frames.isEmpty else { return }
-
-        // Get the current frame and update the button image
-        let frame = frames[currentFrameIndex]
-        button.image = frame
-
-        // Update tooltip if format provided
-        if let format = tooltipFormat {
-            let progress = Int(Double(currentFrameIndex + 1) / Double(frames.count) * 100)
-            button.toolTip = String(format: format, progress)
-        }
-
-        // Advance to next frame, wrapping around to start if needed
-        currentFrameIndex = (currentFrameIndex + 1) % frames.count
-    }
-
-    /// Stop the animation and restore original state
-    /// - Parameter executeCompletion: Whether to execute the completion handler
-    func stopAnimating(executeCompletion: Bool = true) {
-        guard isAnimating else { return }
-
-        // Invalidate and clear timer
-        animationTimer?.invalidate()
-        animationTimer = nil
-
-        // Restore original state
-        if let button = statusItem?.button {
-            button.image = originalImage
-            button.toolTip = originalTooltip
-        }
-
-        isAnimating = false
-        logger.info("Stopped icon animation")
-
-        // Execute completion handler if requested
-        if executeCompletion, let completionHandler {
-            completionHandler()
-            self.completionHandler = nil
-        }
-    }
+    // MARK: Internal
 
     /// Check if animation is currently running
     var isCurrentlyAnimating: Bool {
         isAnimating && animationTimer != nil
-    }
-
-    /// Clean up resources
-    func cleanup() {
-        stopAnimating()
-        frames = []
-        originalImage = nil
-        originalTooltip = nil
     }
 
     // MARK: - Helper Methods
@@ -176,7 +31,8 @@ class IconAnimator {
     /// - Parameters:
     ///   - baseImage: Base image to use for animation
     ///   - count: Number of frames to generate
-    ///   - dotColor: Custom color for the animation dots. If nil, will automatically use appropriate color for current appearance
+    ///   - dotColor: Custom color for the animation dots. If nil, will automatically use appropriate color for current
+    /// appearance
     /// - Returns: Array of animation frames
     static func createSyncingAnimationFrames(
         baseImage: NSImage,
@@ -254,5 +110,154 @@ class IconAnimator {
     /// - Returns: Array of animation frames
     static func createAlternatingFrames(image1: NSImage, image2: NSImage) -> [NSImage] {
         [image1, image2]
+    }
+
+    // MARK: - Animation Control
+
+    /// Start animating with the given frames
+    /// - Parameters:
+    ///   - newFrames: Animation frames (optional, uses existing frames if nil)
+    ///   - interval: Animation interval in seconds (optional, uses existing interval if nil)
+    ///   - tooltipFormat: Format string for tooltip, can include %d for frame number
+    ///   - completion: Handler called when animation is stopped
+    func startAnimating(
+        frames newFrames: [NSImage]? = nil,
+        interval: TimeInterval? = nil,
+        tooltipFormat: String? = nil,
+        completion: (() -> Void)? = nil
+    ) {
+        guard let button = statusItem?.button else {
+            logger.error("Cannot start animation: statusItem button is nil")
+            return
+        }
+
+        // Store original state to restore later
+        originalImage = button.image
+        originalTooltip = button.toolTip
+
+        // Update frames and interval if provided
+        if let newFrames, !newFrames.isEmpty {
+            frames = newFrames
+        }
+
+        if let interval {
+            animationInterval = interval
+        }
+
+        // Store completion handler
+        completionHandler = completion
+
+        // Validate we have frames to animate
+        guard !frames.isEmpty else {
+            logger.error("Cannot start animation: no frames provided")
+            return
+        }
+
+        // Stop any existing animation
+        stopAnimating(executeCompletion: false)
+
+        // Reset frame index
+        currentFrameIndex = 0
+
+        // Create and start animation timer
+        animationTimer = Timer.scheduledTimer(
+            withTimeInterval: animationInterval,
+            repeats: true
+        ) { [weak self] _ in
+            // Use Task to ensure we respect the MainActor isolation
+            Task { @MainActor in
+                guard let self else { return }
+                self.advanceFrame(tooltipFormat: tooltipFormat)
+            }
+        }
+
+        // Show the first frame and mark as animating
+        advanceFrame(tooltipFormat: tooltipFormat)
+        isAnimating = true
+        logger.info("Started icon animation with \(self.frames.count) frames")
+    }
+
+    /// Stop the animation and restore original state
+    /// - Parameter executeCompletion: Whether to execute the completion handler
+    func stopAnimating(executeCompletion: Bool = true) {
+        guard isAnimating else { return }
+
+        // Invalidate and clear timer
+        animationTimer?.invalidate()
+        animationTimer = nil
+
+        // Restore original state
+        if let button = statusItem?.button {
+            button.image = originalImage
+            button.toolTip = originalTooltip
+        }
+
+        isAnimating = false
+        logger.info("Stopped icon animation")
+
+        // Execute completion handler if requested
+        if executeCompletion, let completionHandler {
+            completionHandler()
+            self.completionHandler = nil
+        }
+    }
+
+    /// Clean up resources
+    func cleanup() {
+        stopAnimating()
+        frames = []
+        originalImage = nil
+        originalTooltip = nil
+    }
+
+    // MARK: Private
+
+    /// Logger for this class
+    private let logger = Logger(category: .statusBar)
+
+    /// Weak reference to status item to avoid reference cycles
+    private weak var statusItem: NSStatusItem?
+
+    /// Animation frames
+    private var frames: [NSImage] = []
+
+    /// Current frame index
+    private var currentFrameIndex: Int = 0
+
+    /// Animation timer
+    private var animationTimer: Timer?
+
+    /// Animation interval in seconds
+    private var animationInterval: TimeInterval = 0.25
+
+    /// Whether animation is running
+    private var isAnimating: Bool = false
+
+    /// Original image to restore when animation stops
+    private var originalImage: NSImage?
+
+    /// Original tooltip to restore when animation stops
+    private var originalTooltip: String?
+
+    /// Completion handler called when animation is stopped
+    private var completionHandler: (() -> Void)?
+
+    /// Advance to the next animation frame
+    /// - Parameter tooltipFormat: Format string for tooltip, can include %d for frame number
+    private func advanceFrame(tooltipFormat: String? = nil) {
+        guard let button = statusItem?.button, !frames.isEmpty else { return }
+
+        // Get the current frame and update the button image
+        let frame = frames[currentFrameIndex]
+        button.image = frame
+
+        // Update tooltip if format provided
+        if let format = tooltipFormat {
+            let progress = Int(Double(currentFrameIndex + 1) / Double(frames.count) * 100)
+            button.toolTip = String(format: format, progress)
+        }
+
+        // Advance to next frame, wrapping around to start if needed
+        currentFrameIndex = (currentFrameIndex + 1) % frames.count
     }
 }

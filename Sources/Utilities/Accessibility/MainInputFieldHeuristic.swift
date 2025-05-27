@@ -9,7 +9,6 @@ import Foundation
 struct MainInputFieldHeuristic: AXElementHeuristic {
     let locatorType: LocatorType = .mainInputField
 
-
     @MainActor func discover(for pid: pid_t, axorcist: AXorcist) async -> Locator? {
         // Strategy 1: Look for a text area that is enabled
         let strategy1 = Locator(
@@ -24,7 +23,7 @@ struct MainInputFieldHeuristic: AXElementHeuristic {
         )
         let queryResponse1 = axorcist.handleQuery(command: queryCommand1, maxDepth: nil)
         if queryResponse1.payload != nil { return strategy1 }
-        
+
         // Strategy 2: Look for a text field that is enabled
         let strategy2 = Locator(
             matchAll: true,
@@ -46,7 +45,7 @@ struct MainInputFieldHeuristic: AXElementHeuristic {
                 "role_exact": "AXTextArea",
                 "AXRoleDescription_exact": "text area", // AXRoleDescription is an attribute name
                 "AXIdentifier_exact": "main_chat_input", // AXIdentifier is an attribute name
-                "AXPlaceholderValue_contains": "message" // AXPlaceholderValue is an attribute name
+                "AXPlaceholderValue_contains": "message", // AXPlaceholderValue is an attribute name
             ])
         )
         let queryCommand3 = QueryCommand(
@@ -57,7 +56,7 @@ struct MainInputFieldHeuristic: AXElementHeuristic {
         )
         let queryResponse3 = axorcist.handleQuery(command: queryCommand3, maxDepth: nil)
         if queryResponse3.payload != nil { return strategy3 }
-        
+
         return nil
     }
-} 
+}

@@ -6,13 +6,24 @@ import Foundation
 /// Shared user info structure that can be used for serialization
 /// and data exchange throughout the app
 struct SharedUserInfo {
+    // MARK: Lifecycle
+
+    init(name: String?, email: String, avatarURL: String? = nil, avatarData: Data? = nil) {
+        self.name = name
+        self.email = email
+        self.avatarURL = avatarURL
+
+        // Use the setter with validation
+        if let avatarData {
+            self.avatarData = avatarData
+        }
+    }
+
+    // MARK: Internal
+
     var name: String?
     var email: String
     var avatarURL: String?
-    private var _avatarData: Data?
-
-    // Maximum size for avatar data: 1MB
-    private static let maxAvatarSize = 1024 * 1024
 
     // Property with validation logic
     var avatarData: Data? {
@@ -39,26 +50,19 @@ struct SharedUserInfo {
         }
     }
 
-    init(name: String?, email: String, avatarURL: String? = nil, avatarData: Data? = nil) {
-        self.name = name
-        self.email = email
-        self.avatarURL = avatarURL
+    // MARK: Private
 
-        // Use the setter with validation
-        if let avatarData {
-            self.avatarData = avatarData
-        }
-    }
+    // Maximum size for avatar data: 1MB
+    private static let maxAvatarSize = 1024 * 1024
+
+    private var _avatarData: Data?
 }
 
 // MARK: - CodableUserInfo
 
 /// Legacy codable user info for compatibility with older versions and serialization
 struct CodableUserInfo: Codable {
-    var name: String?
-    var email: String
-    var avatarURL: String?
-    var avatarData: Data?
+    // MARK: Lifecycle
 
     // Initialize from SharedUserInfo
     init(from sharedInfo: SharedUserInfo) {
@@ -75,4 +79,11 @@ struct CodableUserInfo: Codable {
         self.avatarURL = avatarURL
         self.avatarData = avatarData
     }
+
+    // MARK: Internal
+
+    var name: String?
+    var email: String
+    var avatarURL: String?
+    var avatarData: Data?
 }
