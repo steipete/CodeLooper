@@ -47,11 +47,6 @@ struct GeneralSettingsView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: Spacing.xLarge) {
-                // Accessibility Permissions
-                DSSettingsSection("Permissions") {
-                    PermissionsView(showTitle: false, compact: false)
-                }
-
                 // General Application Behavior
                 DSSettingsSection("General") {
                     DSToggle(
@@ -169,21 +164,6 @@ struct GeneralSettingsView: View {
                     .disabled(updaterViewModel.isUpdateInProgress)
                 }
 
-                // Troubleshooting & Reset
-                DSSettingsSection("Troubleshooting") {
-                    DSButton("Reset Welcome Guide", style: .tertiary) {
-                        Defaults[.hasShownWelcomeGuide] = false
-                        if let appDelegate = NSApp.delegate as? AppDelegate {
-                            appDelegate.windowManager?.showWelcomeWindow()
-                        }
-                    }
-
-                    DSDivider()
-
-                    DSButton("Reset All Settings to Default", style: .destructive) {
-                        resetAllSettings()
-                    }
-                }
 
                 // Version info
                 HStack {
@@ -199,32 +179,6 @@ struct GeneralSettingsView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(ColorPalette.background)
         .withDesignSystem()
-    }
-
-    private func resetAllSettings() {
-        Defaults.reset(
-            .startAtLogin,
-            .showInMenuBar,
-            .showInDock,
-            .automaticallyCheckForUpdates,
-            .isGlobalMonitoringEnabled,
-            .monitoringIntervalSeconds,
-            .maxInterventionsBeforePause,
-            .maxConnectionIssueRetries,
-            .maxConsecutiveRecoveryFailures,
-            .playSoundOnIntervention,
-            .sendNotificationOnPersistentError,
-            .textForCursorStopsRecovery,
-            .monitorSidebarActivity,
-            .postInterventionObservationWindowSeconds,
-            .stuckDetectionTimeoutSeconds,
-            .showDebugMenu
-        )
-        NotificationCenter.default.post(
-            name: .menuBarVisibilityChanged,
-            object: nil,
-            userInfo: ["visible": Defaults[.showInMenuBar]]
-        )
     }
 }
 

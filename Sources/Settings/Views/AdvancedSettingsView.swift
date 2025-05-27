@@ -1,3 +1,4 @@
+import AppKit
 import Defaults
 import DesignSystem
 import SwiftUI
@@ -10,6 +11,11 @@ struct AdvancedSettingsView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: Spacing.xLarge) {
+            // System Permissions
+            DSSettingsSection("System Permissions") {
+                AllPermissionsView()
+            }
+
             // Developer Options
             DSSettingsSection("Developer Options") {
                 DSToggle(
@@ -49,36 +55,6 @@ struct AdvancedSettingsView: View {
                 }
             }
 
-            // Window Behavior
-            DSSettingsSection("Window Behavior") {
-                DSPicker(
-                    "Window Float Level",
-                    selection: $windowFloatLevel,
-                    options: [
-                        ("normal", "Normal"),
-                        ("floating", "Floating"),
-                        ("screenSaver", "Always on Top"),
-                    ]
-                )
-            }
-
-            // Recovery Behavior
-            DSSettingsSection("Recovery Behavior") {
-                DSToggle(
-                    "Allow Concurrent Interventions",
-                    isOn: $allowConcurrentInterventions,
-                    description: "Handle multiple Cursor issues simultaneously"
-                )
-
-                DSDivider()
-
-                DSToggle(
-                    "Use Aggressive Recovery",
-                    isOn: $useAggressiveRecovery,
-                    description: "Try harder recovery methods when gentle approaches fail"
-                )
-            }
-
             // Developer Actions
             DSSettingsSection("Developer Actions") {
                 HStack(spacing: Spacing.small) {
@@ -91,6 +67,16 @@ struct AdvancedSettingsView: View {
                         NotificationCenter.default.post(name: .showAXpectorWindow, object: nil)
                     }
                     .frame(maxWidth: .infinity)
+                }
+            }
+
+            // Troubleshooting
+            DSSettingsSection("Troubleshooting") {
+                DSButton("Reset Welcome Guide", style: .tertiary) {
+                    Defaults[.hasShownWelcomeGuide] = false
+                    if let appDelegate = NSApp.delegate as? AppDelegate {
+                        appDelegate.windowManager?.showWelcomeWindow()
+                    }
                 }
             }
 
@@ -110,14 +96,14 @@ struct AdvancedSettingsView: View {
                             .font(Typography.caption1())
                             .foregroundColor(ColorPalette.textSecondary)
 
-                        HStack(spacing: Spacing.small) {
-                            DSButton("Reset All Preferences", style: .destructive, size: .small) {
+                        VStack(spacing: Spacing.small) {
+                            DSButton("Reset All Settings to Default", style: .destructive) {
                                 showResetConfirmation = true
                             }
                             .frame(maxWidth: .infinity)
 
-                            DSButton("Clear All Data", style: .destructive, size: .small) {
-                                clearAllData()
+                            DSButton("Clear All Data", style: .destructive) {
+                                showClearDataConfirmation = true
                             }
                             .frame(maxWidth: .infinity)
                         }
@@ -128,13 +114,21 @@ struct AdvancedSettingsView: View {
 
             Spacer()
         }
-        .alert("Reset All Preferences?", isPresented: $showResetConfirmation) {
+        .alert("Reset All Settings?", isPresented: $showResetConfirmation) {
             Button("Cancel", role: .cancel) {}
             Button("Reset", role: .destructive) {
-                resetAllPreferences()
+                resetAllSettings()
             }
         } message: {
             Text("This will reset all CodeLooper settings to their default values.")
+        }
+        .alert("Clear All Data?", isPresented: $showClearDataConfirmation) {
+            Button("Cancel", role: .cancel) {}
+            Button("Clear", role: .destructive) {
+                clearAllData()
+            }
+        } message: {
+            Text("This will clear all CodeLooper data including settings and logs.")
         }
         .alert("Logs Cleared", isPresented: $showLogsClearedAlert) {
             Button("OK") {}
@@ -152,11 +146,9 @@ struct AdvancedSettingsView: View {
 
     @State private var enableDetailedLogging = false
     @State private var logToFile = false
-    @State private var windowFloatLevel = "normal"
-    @State private var allowConcurrentInterventions = false
-    @State private var useAggressiveRecovery = false
 
     @State private var showResetConfirmation = false
+    @State private var showClearDataConfirmation = false
     @State private var showLogsClearedAlert = false
     @State private var showMcpJsonNotFoundAlert = false
     @State private var mcpJsonNotFoundPath: String = ""
@@ -173,17 +165,36 @@ struct AdvancedSettingsView: View {
         showLogsClearedAlert = true
     }
 
-    private func resetAllPreferences() {
+    private func resetAllSettings() {
         // Reset all Defaults keys
-        if let bundleID = Bundle.main.bundleIdentifier {
-            UserDefaults.standard.removePersistentDomain(forName: bundleID)
-            UserDefaults.standard.synchronize()
-        }
+        Defaults.reset(
+            .startAtLogin,
+            .showInMenuBar,
+            .showInDock,
+            .automaticallyCheckForUpdates,
+            .isGlobalMonitoringEnabled,
+            .monitoringIntervalSeconds,
+            .maxInterventionsBeforePause,
+            .maxConnectionIssueRetries,
+            .maxConsecutiveRecoveryFailures,
+            .playSoundOnIntervention,
+            .sendNotificationOnPersistentError,
+            .textForCursorStopsRecovery,
+            .monitorSidebarActivity,
+            .postInterventionObservationWindowSeconds,
+            .stuckDetectionTimeoutSeconds,
+            .showDebugMenu
+        )
+        NotificationCenter.default.post(
+            name: .menuBarVisibilityChanged,
+            object: nil,
+            userInfo: ["visible": Defaults[.showInMenuBar]]
+        )
     }
 
     private func clearAllData() {
         // Clear all app data
-        resetAllPreferences()
+        resetAllSettings()
         clearLogs()
     }
 

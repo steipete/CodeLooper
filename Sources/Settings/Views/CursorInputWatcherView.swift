@@ -34,12 +34,31 @@ struct CursorInputWatcherView: View {
                             // JS Hook status indicator
                             if viewModel.hookedWindows.contains(window.id) {
                                 HStack(spacing: 4) {
+                                    // Hook status icon
                                     Image(systemName: "checkmark.seal.fill")
                                         .foregroundColor(.green)
+                                    
+                                    // Port number
                                     if let port = viewModel.getPort(for: window.id) {
                                         Text(":\(port)")
                                             .font(.caption2)
                                             .foregroundColor(.secondary)
+                                    }
+                                    
+                                    // Heartbeat indicator
+                                    if let heartbeat = viewModel.getHeartbeatStatus(for: window.id) {
+                                        if heartbeat.isAlive {
+                                            Image(systemName: "heart.fill")
+                                                .foregroundColor(heartbeat.resumeNeeded ? .orange : .green)
+                                                .font(.caption2)
+                                                .animation(.easeInOut(duration: 0.5).repeatForever(autoreverses: true), value: heartbeat.isAlive)
+                                                .help(heartbeat.resumeNeeded ? "Resume needed" : "Heartbeat active")
+                                        } else {
+                                            Image(systemName: "heart.slash")
+                                                .foregroundColor(.gray)
+                                                .font(.caption2)
+                                                .help("No heartbeat")
+                                        }
                                     }
                                 }
                                 .help("JS Hook installed on port \(viewModel.getPort(for: window.id) ?? 0)")
@@ -64,6 +83,66 @@ struct CursorInputWatcherView: View {
                         .padding(.vertical, 4)
                         .background(Color.secondary.opacity(0.1))
                         .cornerRadius(4)
+                        
+                        // AI Status button - only show if window is hooked
+                        if viewModel.hookedWindows.contains(window.id) {
+                            HStack {
+                                Spacer()
+                                Button(action: {
+                                    Task {
+                                        await viewModel.analyzeWindowWithAI(window: window)
+                                    }
+                                }) {
+                                    HStack(spacing: 4) {
+                                        Text("🧠")
+                                        Text("AI Status")
+                                            .font(.caption)
+                                    }
+                                }
+                                .buttonStyle(.bordered)
+                                .disabled(viewModel.getAIAnalysisStatus(for: window.id)?.isAnalyzing ?? false)
+                                
+                                Spacer()
+                            }
+                            .padding(.top, 4)
+                            
+                            // Show AI analysis result
+                            if let aiStatus = viewModel.getAIAnalysisStatus(for: window.id) {
+                                VStack(alignment: .leading, spacing: 4) {
+                                    if aiStatus.isAnalyzing {
+                                        HStack {
+                                            ProgressView()
+                                                .scaleEffect(0.7)
+                                            Text("Analyzing window...")
+                                                .font(.caption)
+                                                .foregroundColor(.secondary)
+                                        }
+                                        .padding(.horizontal, 8)
+                                    } else if let status = aiStatus.status {
+                                        Text(status)
+                                            .font(.caption)
+                                            .foregroundColor(.primary)
+                                            .padding(.horizontal, 8)
+                                            .padding(.vertical, 2)
+                                            .background(Color.secondary.opacity(0.1))
+                                            .cornerRadius(4)
+                                    } else if let error = aiStatus.error {
+                                        Text("Error: \(error)")
+                                            .font(.caption)
+                                            .foregroundColor(.red)
+                                            .padding(.horizontal, 8)
+                                    }
+                                    
+                                    if let lastAnalysis = aiStatus.lastAnalysis {
+                                        Text("Last checked: \(lastAnalysis, style: .relative)")
+                                            .font(.caption2)
+                                            .foregroundColor(.secondary)
+                                            .padding(.horizontal, 8)
+                                    }
+                                }
+                                .padding(.top, 2)
+                            }
+                        }
                     }
                 }
                 .padding(.bottom)

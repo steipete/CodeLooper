@@ -6,10 +6,9 @@ public enum SettingsTab: String, CaseIterable, Identifiable, Sendable {
     case supervision = "Supervision"
     case ruleSets = "Rule Sets"
     case externalMCPs = "External MCPs"
+    case ai = "AI"
     case advanced = "Advanced"
     case log = "Log"
-    case developer = "Developer"
-    case cursorInputWatcher = "Cursor Input Watcher"
     case about = "About"
 
     // MARK: Public
@@ -22,10 +21,9 @@ public enum SettingsTab: String, CaseIterable, Identifiable, Sendable {
         case .supervision: "eye"
         case .ruleSets: "list.bullet.rectangle"
         case .externalMCPs: "puzzlepiece.extension"
+        case .ai: "brain"
         case .advanced: "slider.horizontal.3"
         case .log: "doc.text"
-        case .developer: "hammer"
-        case .cursorInputWatcher: "eyeglass"
         case .about: "info.circle"
         }
     }
