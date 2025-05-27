@@ -54,7 +54,7 @@ struct GeneralSettingsView: View {
                     DSToggle(
                         "Show CodeLooper in Dock",
                         isOn: $showInDock,
-                        description: "Display CodeLooper icon in the dock (requires restart)"
+                        description: "Display CodeLooper icon in the dock"
                     )
                 }
 

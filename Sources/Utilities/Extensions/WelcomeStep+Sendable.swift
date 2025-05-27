@@ -19,8 +19,3 @@ import Foundation
 // since we can't add direct Sendable conformance in a different file from the original definition
 extension WelcomeStep: @unchecked Sendable {}
 
-// MARK: - User Info Types - Proper Sendable Implementation
-
-// SharedUserInfo is a struct with immutable properties, making it safe for Sendable
-// but we need to use @unchecked since we can't add direct Sendable conformance in a different file
-extension SharedUserInfo: @unchecked Sendable {}

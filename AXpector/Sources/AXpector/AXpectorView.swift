@@ -63,7 +63,9 @@ private struct PermissionRequiredView: View {
                     NSWorkspace.shared.open(url)
                 }
                 // Also request access to trigger the system prompt
-                AXPermissions.requestAccess()
+                Task {
+                    _ = await AXPermissionHelpers.requestPermissions()
+                }
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)

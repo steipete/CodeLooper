@@ -161,17 +161,33 @@ struct AccessibilityStepView: View {
             .padding(.bottom, 20)
 
             Text(
-                "CodeLooper needs Accessibility permissions to monitor and interact with other applications on your behalf. This is essential for its core functionality."
+                "CodeLooper needs permissions to monitor and interact with applications on your behalf."
             )
             .font(.headline.weight(.regular))
             .foregroundColor(.secondary)
             .multilineTextAlignment(.center)
             .padding(.horizontal, 40) // Adjusted padding
-            .padding(.bottom, 30)
+            .padding(.bottom, 20)
 
-            // Use the reusable PermissionsView component
-            PermissionsView(showTitle: false, compact: false)
-                .padding(.horizontal, 40)
+            // Permissions section
+            VStack(spacing: 16) {
+                // Accessibility permissions
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("Accessibility")
+                        .font(.subheadline)
+                        .fontWeight(.semibold)
+                    PermissionsView(showTitle: false, compact: false)
+                }
+                
+                // Automation permissions
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("Automation (for Cursor)")
+                        .font(.subheadline)
+                        .fontWeight(.semibold)
+                    AutomationPermissionsView(showTitle: false, compact: false)
+                }
+            }
+            .padding(.horizontal, 40)
 
             Spacer(minLength: 10)
         }

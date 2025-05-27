@@ -197,9 +197,6 @@ class WindowManager: ObservableObject {
         }
     }
 
-    // Remove the old checkAndHandleAccessibilityPermissions and ensureAccessibilityWithPrompt methods
-    // as their logic is now consolidated into checkAndPromptForAccessibilityPermissions.
-
     // MARK: Private
 
     // Standardized logger

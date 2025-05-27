@@ -293,9 +293,9 @@ public class AppDelegate: NSObject, NSApplicationDelegate,
         updateDockVisibility()
         
         // Observe changes to the showInDock preference
-        Defaults.observe(\.showInDock) { [weak self] change in
+        Defaults.observe(.showInDock) { [weak self] change in
             self?.logger.info("Dock visibility preference changed to: \(change.newValue)")
-            self?.showDockVisibilityRestartAlert()
+            self?.updateDockVisibility()
         }
         .tieToLifetime(of: self)
     }
@@ -309,32 +309,6 @@ public class AppDelegate: NSObject, NSApplicationDelegate,
         } else {
             NSApp.setActivationPolicy(.accessory)
         }
-    }
-    
-    private func showDockVisibilityRestartAlert() {
-        Task { @MainActor in
-            let alert = NSAlert()
-            alert.messageText = "Restart Required"
-            alert.informativeText = "Changes to dock visibility will take effect after restarting CodeLooper."
-            alert.alertStyle = .informational
-            alert.addButton(withTitle: "Restart Now")
-            alert.addButton(withTitle: "Later")
-            
-            let response = alert.runModal()
-            if response == .alertFirstButtonReturn {
-                restartApplication()
-            }
-        }
-    }
-    
-    private func restartApplication() {
-        let url = URL(fileURLWithPath: Bundle.main.resourcePath!)
-        let path = url.deletingLastPathComponent().deletingLastPathComponent().absoluteString
-        let task = Process()
-        task.launchPath = "/usr/bin/open"
-        task.arguments = [path]
-        task.launch()
-        NSApp.terminate(nil)
     }
 
     // MARK: - Notification Observers

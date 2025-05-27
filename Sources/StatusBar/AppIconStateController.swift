@@ -134,6 +134,15 @@ class AppIconStateController: ObservableObject {
     private var flashTask: Task<Void, Never>? // To manage the flash duration
     private var isSetupComplete: Bool = false // Track if setup is complete
 
+    private func updateTintColor(_ newTintColor: NSColor?) {
+        // Only update tint if not flashing
+        if !isFlashing {
+            currentTintColor = newTintColor
+        } else {
+            preFlashTintColor = newTintColor
+        }
+    }
+
     private func calculateAndApplyIconState() {
         // Don't update state until setup is complete to avoid background thread issues
         guard isSetupComplete else {
@@ -143,26 +152,14 @@ class AppIconStateController: ObservableObject {
 
         guard let monitor = self.cursorMonitor else {
             currentIconState = globalMonitoringEnabled ? .black : .gray // Default if monitor not set up
-            let newTintColor = currentIconState.tintColor
-            // Only update tint if not flashing
-            if !isFlashing {
-                currentTintColor = newTintColor
-            } else {
-                preFlashTintColor = newTintColor
-            }
+            updateTintColor(currentIconState.tintColor)
             Self.logger.debug("CursorMonitor not available, tint color: \\(String(describing: newTintColor))")
             return
         }
 
         if !globalMonitoringEnabled {
             currentIconState = .gray
-            let newTintColor = currentIconState.tintColor
-            // Only update tint if not flashing
-            if !isFlashing {
-                currentTintColor = newTintColor
-            } else {
-                preFlashTintColor = newTintColor
-            }
+            updateTintColor(currentIconState.tintColor)
             Self.logger.debug("Global monitoring disabled, tint color: gray")
             return
         }
@@ -171,13 +168,7 @@ class AppIconStateController: ObservableObject {
 
         if instances.isEmpty {
             currentIconState = .black // No instances, but monitoring is on
-            let newTintColor = currentIconState.tintColor
-            // Only update tint if not flashing
-            if !isFlashing {
-                currentTintColor = newTintColor
-            } else {
-                preFlashTintColor = newTintColor
-            }
+            updateTintColor(currentIconState.tintColor)
             Self.logger
                 .debug("Global monitoring enabled, no instances, tint color: \\(String(describing: newTintColor))")
             return
@@ -214,15 +205,13 @@ class AppIconStateController: ObservableObject {
         }
 
         let newTintColor = currentIconState.tintColor
-        // Only update tint if not flashing
-        if !isFlashing {
-            currentTintColor = newTintColor
-        } else {
-            preFlashTintColor = newTintColor
-        }
+        updateTintColor(newTintColor)
 
         Self.logger.debug(
-            "Calculated state: \\(currentIconState) with tint: \\(String(describing: newTintColor)) (Red: \\(hasRed), Yellow: \\(hasYellow), Green: \\(hasGreen))"
+            """
+            Calculated state: \\(currentIconState) with tint: \\(String(describing: newTintColor)) \
+            (Red: \\(hasRed), Yellow: \\(hasYellow), Green: \\(hasGreen))
+            """
         )
     }
 }

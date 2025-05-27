@@ -9,15 +9,6 @@ public class UpdaterViewModel: ObservableObject {
     // Standard Initializer
     public init(sparkleUpdaterManager: SparkleUpdaterManager?) {
         self.sparkleUpdaterManager = sparkleUpdaterManager
-        // TODO: Observe properties from SparkleUpdaterManager or SPUUpdater if needed
-        // For example, SPUUpdater's canCheckForUpdates publisher
-        // self.sparkleUpdaterManager?.updaterController.updater.publisher(for: \.canCheckForUpdates)
-        // .receive(on: DispatchQueue.main)
-        // .sink { [weak self] canCheck in
-        // self?.canCheckForUpdates = canCheck
-        // }
-        // .store(in: &cancellables)
-
         // For isUpdateInProgress, Sparkle itself might not have a direct publisher.
         // We might need to infer this from delegate methods or notifications.
         // For now, it's a manually toggled placeholder.
@@ -38,8 +29,6 @@ public class UpdaterViewModel: ObservableObject {
         isUpdateInProgress = true
         manager.updaterController.checkForUpdates(nil) // Pass nil for sender
 
-        // TODO: Listen to Sparkle notifications/delegate calls to set isUpdateInProgress = false
-        // and update lastUpdateCheckDate.
         // For now, just simulate it ending after a delay.
         DispatchQueue.main.asyncAfter(deadline: .now() + 5) { [weak self] in
             self?.isUpdateInProgress = false

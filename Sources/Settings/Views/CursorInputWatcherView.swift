@@ -22,7 +22,7 @@ struct CursorInputWatcherView: View {
                     Text("Cursor Windows")
                         .font(.headline)
                         .padding(.bottom, 4)
-                    
+
                     ForEach(viewModel.cursorWindows) { window in
                         HStack {
                             Image(systemName: "window.ceiling")
@@ -30,6 +30,31 @@ struct CursorInputWatcherView: View {
                             Text(window.windowTitle ?? "Untitled Window")
                                 .font(.system(.body, design: .monospaced))
                             Spacer()
+
+                            // JS Hook status indicator
+                            if viewModel.hookedWindows.contains(window.id) {
+                                HStack(spacing: 4) {
+                                    Image(systemName: "checkmark.seal.fill")
+                                        .foregroundColor(.green)
+                                    if let port = viewModel.getPort(for: window.id) {
+                                        Text(":\(port)")
+                                            .font(.caption2)
+                                            .foregroundColor(.secondary)
+                                    }
+                                }
+                                .help("JS Hook installed on port \(viewModel.getPort(for: window.id) ?? 0)")
+                            }
+
+                            // Inject/Reinject button
+                            Button(viewModel.hookedWindows.contains(window.id) ? "Reinject" : "Inject JS") {
+                                Task {
+                                    await viewModel.injectJSHook(into: window)
+                                }
+                            }
+                            .font(.caption)
+                            .buttonStyle(.bordered)
+                            .disabled(viewModel.isInjectingHook)
+
                             if window.isPaused {
                                 Image(systemName: "pause.circle.fill")
                                     .foregroundColor(.yellow)
@@ -42,7 +67,7 @@ struct CursorInputWatcherView: View {
                     }
                 }
                 .padding(.bottom)
-                
+
                 Divider()
                     .padding(.bottom)
             }

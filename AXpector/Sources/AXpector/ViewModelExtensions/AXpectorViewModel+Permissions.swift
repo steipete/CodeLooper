@@ -1,12 +1,12 @@
 import SwiftUI // For @MainActor
-import AXorcist // For AXPermissions
+import AXorcist // For AXPermissionHelpers
 // import OSLog // For Logger // REMOVE OSLog
 // AXorcist import already includes logging utilities
 
 // MARK: - Accessibility Permissions Check
 extension AXpectorViewModel {
     func checkAccessibilityPermissions(initialCheck: Bool = false, promptIfNeeded: Bool = false) {
-        let trusted = AXPermissions.currentStatus
+        let trusted = AXPermissionHelpers.hasAccessibilityPermissions()
         
         let previousState = self.isAccessibilityEnabled
         if self.isAccessibilityEnabled != trusted {
@@ -29,7 +29,9 @@ extension AXpectorViewModel {
                 // We don't need to immediately re-assign 'trusted' or 'isAccessibilityEnabled' here,
                 // as the user interaction will be async. The view can use 'Re-check' or will update on next view appearance.
                 if promptIfNeeded {
-                    AXPermissions.requestAccess()
+                    Task {
+                        _ = await AXPermissionHelpers.requestPermissions()
+                    }
                 }
             }
         }
@@ -37,7 +39,7 @@ extension AXpectorViewModel {
     
     func startMonitoringPermissions() {
         permissionTask = Task {
-            for await isGranted in AXPermissions.statusUpdates {
+            for await isGranted in AXPermissionHelpers.permissionChanges() {
                 guard !Task.isCancelled else { break }
                 await MainActor.run {
                     let previousState = self.isAccessibilityEnabled

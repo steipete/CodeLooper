@@ -2,6 +2,7 @@ import AXorcist // Import AXorcist module
 @preconcurrency import Combine
 import Diagnostics
 import SwiftUI
+import AppKit
 
 // MARK: - axorc Output Structures (Element is provided by AXorcist, so these might be simplified or removed)
 
@@ -15,12 +16,21 @@ class CursorInputWatcherViewModel: ObservableObject {
     init(projectRoot: String = "/Users/steipete/Projects/CodeLooper") { // Default for dev
         self.projectRoot = projectRoot
         loadAndParseAllQueries()
+        loadPortMappings()
         setupWindowsSubscription()
+        
+        // Port probing for pre-existing windows now happens automatically
+        // when windows are first detected in setupWindowsSubscription()
     }
 
     deinit {
         timerSubscription?.cancel()
         windowsSubscription?.cancel()
+        // Clean up JS hooks
+        for _ in jsHooks.values {
+            // CursorJSHook doesn't have explicit cleanup, but we'll clear our references
+        }
+        jsHooks.removeAll()
     }
 
     // MARK: Internal
@@ -31,6 +41,8 @@ class CursorInputWatcherViewModel: ObservableObject {
     ]
     @Published var statusMessage: String = "Watcher is disabled."
     @Published var cursorWindows: [MonitoredWindowInfo] = []
+    @Published var hookedWindows: Set<String> = [] // Track which windows have JS hooks installed
+    @Published var isInjectingHook: Bool = false // Track injection state
 
     @Published var isWatchingEnabled: Bool = false {
         didSet {
@@ -40,6 +52,97 @@ class CursorInputWatcherViewModel: ObservableObject {
                 stopWatching()
             }
         }
+    }
+
+    // MARK: - JS Hook Management
+
+    func injectJSHook(into window: MonitoredWindowInfo) async {
+        isInjectingHook = true
+        defer { isInjectingHook = false }
+
+        // First, probe for existing hooks
+        statusMessage = "Probing for existing hook in \(window.windowTitle ?? "window")..."
+
+        // Try to probe using the existing port for this window, if any
+        if let existingPort = windowPorts[window.id] {
+            if await probePort(existingPort, for: window) {
+                return // Hook already exists
+            }
+        }
+
+        // Try common ports to see if a hook exists from a previous session
+        for port in stride(from: basePort, to: basePort + 10, by: 1) {
+            if await probePort(port, for: window) {
+                return // Found existing hook
+            }
+        }
+
+        // No existing hook found, inject a new one
+        do {
+            let port = getOrAssignPort(for: window.id)
+
+            // Create a new JS hook instance with specific port
+            let hook = try await CursorJSHook(applicationName: "Cursor", port: port)
+
+            // Store the hook and mark the window as hooked
+            jsHooks[window.id] = hook
+            hookedWindows.insert(window.id)
+
+            // Test the hook by running a simple JS command
+            let testResult = try await hook.runJS("'Hook installed successfully on port \(port)'")
+            Logger(category: .settings)
+                .info("JS Hook installed for window \(window.windowTitle ?? "Unknown") on port \(port): \(testResult)")
+
+            statusMessage = "JS Hook installed in \(window.windowTitle ?? "window") on port \(port)"
+
+            // Save port mapping
+            savePortMappings()
+        } catch {
+            Logger(category: .settings)
+                .error(
+                    "Failed to inject JS hook into window \(window.windowTitle ?? "Unknown"): \(error.localizedDescription)"
+                )
+            
+            // Log the specific error code for debugging
+            if let nsError = error as NSError? {
+                Logger(category: .settings)
+                    .error("JS Hook injection error code: \(nsError.code), domain: \(nsError.domain)")
+            }
+            
+            // Provide more specific error messages based on the error
+            if let nsError = error as NSError? {
+                switch nsError.code {
+                case -1743:
+                    statusMessage = "Automation permission denied. Grant permission in System Settings > Privacy & Security > Automation"
+                    // Show the permission alert on main thread
+                    Task { @MainActor in
+                        showAutomationPermissionAlert()
+                    }
+                case -600:
+                    statusMessage = "Cursor is not running. Please start Cursor first."
+                case -10004:
+                    statusMessage = "Privilege violation. Check accessibility permissions."
+                default:
+                    statusMessage = "Failed: \(error.localizedDescription)"
+                }
+            } else {
+                statusMessage = "Failed to inject JS hook: \(error.localizedDescription)"
+            }
+
+            // Remove from hooked windows if injection failed
+            hookedWindows.remove(window.id)
+            jsHooks.removeValue(forKey: window.id)
+            windowPorts.removeValue(forKey: window.id)
+        }
+    }
+
+    func checkHookStatus(for window: MonitoredWindowInfo) -> Bool {
+        guard let hook = jsHooks[window.id] else { return false }
+        return hook.isHooked
+    }
+
+    func getPort(for windowId: String) -> UInt16? {
+        windowPorts[windowId]
     }
 
     // MARK: Private
@@ -78,6 +181,11 @@ class CursorInputWatcherViewModel: ObservableObject {
         let match_type: String? // Optional match type string (e.g., "contains", "exact")
     }
 
+    private var jsHooks: [String: CursorJSHook] = [:] // Store JS hooks by window ID
+    private var windowPorts: [String: UInt16] = [:] // Store port assignments by window ID
+    private let basePort: UInt16 = 9001
+    private var nextPort: UInt16 = 9001
+
     private var timerSubscription: AnyCancellable?
     private let axorcist = AXorcist() // AXorcist instance
     private var projectRoot: String = ""
@@ -95,10 +203,25 @@ class CursorInputWatcherViewModel: ObservableObject {
             .receive(on: DispatchQueue.main)
             .sink { [weak self] apps in
                 guard let self else { return }
+                let previousWindowCount = self.cursorWindows.count
                 if let cursorApp = apps.first {
                     self.cursorWindows = cursorApp.windows
                 } else {
                     self.cursorWindows = []
+                }
+                
+                // If we just got windows for the first time (startup case), probe for existing hooks
+                if previousWindowCount == 0 && !self.cursorWindows.isEmpty {
+                    Task {
+                        await self.probeAllWindowsForExistingHooks()
+                    }
+                }
+                
+                // For new windows that appear during runtime, we can optimize by not probing
+                // since they likely don't have hooks yet
+                if previousWindowCount > 0 && self.cursorWindows.count > previousWindowCount {
+                    // New windows detected during runtime - these are fresh and won't have hooks
+                    Logger(category: .settings).info("New windows detected during runtime, skipping probe")
                 }
             }
     }
@@ -234,6 +357,8 @@ class CursorInputWatcherViewModel: ObservableObject {
             for i in self.watchedInputs.indices {
                 self.queryInputText(forInputIndex: i)
             }
+            // Also check hook statuses periodically
+            self.updateHookStatuses()
         }
         if let firstInputName = watchedInputs.first?.name {
             statusMessage = "Watching input(s) including: \(firstInputName)"
@@ -390,6 +515,138 @@ class CursorInputWatcherViewModel: ObservableObject {
                         self.statusMessage = "Watcher active. All inputs OK."
                     }
                 }
+            }
+        }
+    }
+
+    // Periodically check hook status and update UI
+    private func updateHookStatuses() {
+        for windowId in hookedWindows {
+            if let window = cursorWindows.first(where: { $0.id == windowId }),
+               let hook = jsHooks[windowId]
+            {
+                if !hook.isHooked {
+                    // Hook was lost, remove it
+                    hookedWindows.remove(windowId)
+                    jsHooks.removeValue(forKey: windowId)
+                    Logger(category: .settings)
+                        .warning("JS Hook lost for window \(window.windowTitle ?? "Unknown")")
+                }
+            }
+        }
+    }
+
+    // MARK: - Port Management
+
+    private func getOrAssignPort(for windowId: String) -> UInt16 {
+        if let existingPort = windowPorts[windowId] {
+            return existingPort
+        }
+
+        // Find next available port
+        while windowPorts.values.contains(nextPort) {
+            nextPort += 1
+        }
+
+        let assignedPort = nextPort
+        windowPorts[windowId] = assignedPort
+        nextPort += 1
+
+        return assignedPort
+    }
+
+    private func probePort(_ port: UInt16, for window: MonitoredWindowInfo) async -> Bool {
+        do {
+            // Create a hook in probe mode (no injection)
+            let probeHook = try await CursorJSHook(applicationName: "Cursor", port: port, skipInjection: true)
+
+            // Wait for existing hook to connect
+            if await probeHook.probeForExistingHook(timeout: 1.0) {
+                // Hook exists! Store it
+                jsHooks[window.id] = probeHook
+                hookedWindows.insert(window.id)
+                windowPorts[window.id] = port
+
+                // Test the existing hook
+                if let testResult = try? await probeHook.runJS("'Existing hook found on port \(port)'") {
+                    Logger(category: .settings)
+                        .info(
+                            "Found existing JS Hook for window \(window.windowTitle ?? "Unknown") on port \(port): \(testResult)"
+                        )
+                    statusMessage = "Found existing hook in \(window.windowTitle ?? "window") on port \(port)"
+                } else {
+                    statusMessage = "Found existing hook on port \(port) (no response)"
+                }
+
+                savePortMappings()
+                return true
+            }
+        } catch {
+            // Port probe failed, continue to next
+        }
+
+        return false
+    }
+
+    // MARK: - Persistence
+
+    private func probeAllWindowsForExistingHooks() async {
+        statusMessage = "Probing for existing hooks..."
+
+        for window in cursorWindows {
+            // Check if we already have a hook for this window
+            if hookedWindows.contains(window.id) {
+                continue
+            }
+
+            // Try to find existing hook
+            if let existingPort = windowPorts[window.id] {
+                _ = await probePort(existingPort, for: window)
+            }
+        }
+
+        if hookedWindows.isEmpty {
+            statusMessage = "No existing hooks found"
+        } else {
+            statusMessage = "Found \(hookedWindows.count) existing hook(s)"
+        }
+    }
+
+    private func loadPortMappings() {
+        if let data = UserDefaults.standard.data(forKey: "CursorJSHookPortMappings"),
+           let mappings = try? JSONDecoder().decode([String: UInt16].self, from: data)
+        {
+            windowPorts = mappings
+
+            // Update nextPort to avoid conflicts
+            if let maxPort = mappings.values.max() {
+                nextPort = maxPort + 1
+            }
+
+            Logger(category: .settings).info("Loaded port mappings: \(mappings)")
+        }
+    }
+
+    private func savePortMappings() {
+        if let data = try? JSONEncoder().encode(windowPorts) {
+            UserDefaults.standard.set(data, forKey: "CursorJSHookPortMappings")
+            Logger(category: .settings).info("Saved port mappings: \(windowPorts)")
+        }
+    }
+    
+    private func showAutomationPermissionAlert() {
+        let alert = NSAlert()
+        alert.messageText = "Automation Permission Required"
+        alert.informativeText = "CodeLooper needs permission to control Cursor via automation.\n\nPlease grant permission in System Settings > Privacy & Security > Automation, then try again."
+        alert.alertStyle = .warning
+        alert.addButton(withTitle: "Open System Settings")
+        alert.addButton(withTitle: "Cancel")
+        
+        let response = alert.runModal()
+        if response == .alertFirstButtonReturn {
+            // Open System Settings to the Automation pane
+            if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Automation") {
+                NSWorkspace.shared.open(url)
             }
         }
     }

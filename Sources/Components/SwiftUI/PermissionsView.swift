@@ -92,21 +92,23 @@ class PermissionsViewModel: ObservableObject {
 
     func requestPermissions() {
         logger.info("Requesting accessibility permissions")
-        AXPermissionHelpers.requestPermissions { [weak self] granted in
-            Task { @MainActor [weak self] in
-                self?.hasPermissions = granted
-                self?.logger.info("Accessibility permissions request result: \(granted)")
+        Task {
+            let granted = await AXPermissionHelpers.requestPermissions()
+            await MainActor.run {
+                self.hasPermissions = granted
+                self.logger.info("Accessibility permissions request result: \(granted)")
             }
         }
     }
 
     // MARK: Private
 
-    private var permissionTimer: Timer?
+    private var monitoringTask: Task<Void, Never>?
     private let logger = Logger(category: .permissions)
 
-    // Timer will be invalidated when the view model is deallocated
-    // due to weak self reference in the timer closure
+    deinit {
+        monitoringTask?.cancel()
+    }
 
     private func checkPermissions() {
         hasPermissions = AXPermissionHelpers.hasAccessibilityPermissions()
@@ -114,32 +116,25 @@ class PermissionsViewModel: ObservableObject {
     }
 
     private func startMonitoring() {
-        var lastState = hasPermissions
-
-        permissionTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in
-            Task { @MainActor [weak self] in
-                guard let self else { return }
-                let currentState = AXPermissionHelpers.hasAccessibilityPermissions()
-                if currentState != lastState {
-                    lastState = currentState
-                    self.hasPermissions = currentState
-                    self.logger.info("Accessibility permissions changed to: \(currentState)")
-
+        monitoringTask = Task {
+            for await permissionGranted in AXPermissionHelpers.permissionChanges() {
+                guard !Task.isCancelled else { break }
+                
+                await MainActor.run {
+                    self.hasPermissions = permissionGranted
+                    self.logger.info("Accessibility permissions changed to: \(permissionGranted)")
+                    
                     // Post notification for other parts of the app
                     NotificationCenter.default.post(
                         name: .accessibilityPermissionsChanged,
                         object: nil,
-                        userInfo: ["granted": currentState]
+                        userInfo: ["granted": permissionGranted]
                     )
                 }
             }
         }
     }
 
-    private func stopMonitoring() {
-        permissionTimer?.invalidate()
-        permissionTimer = nil
-    }
 }
 
 // MARK: - Preview

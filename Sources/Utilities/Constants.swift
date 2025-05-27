@@ -40,9 +40,6 @@ public enum Constants: UIConstantsProvider {
     /// Name of the icon image resource
     public static let menuBarIconName = "menu-bar-icon"
 
-    /// Added to trigger Mac CI build
-    public static let ciTriggerComment = "Trigger CI"
-
     /// Standard size for settings windows
     public static let settingsWindowSize = NSSize(width: 350, height: 440)
 

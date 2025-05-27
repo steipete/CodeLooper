@@ -45,8 +45,8 @@ struct SettingsPanesContainerView: View {
                         Label("General", systemImage: "gear")
                     }
                     .tag(SettingsTab.general)
-                    .focusable() // Added for keyboard focus
-                    .focused($focusedTab, equals: .general) // Added for keyboard focus
+                    .focusable()
+                    .focused($focusedTab, equals: .general)
 
                 CursorSupervisionSettingsView()
                     .readHeight() // Apply readHeight
@@ -54,8 +54,8 @@ struct SettingsPanesContainerView: View {
                         Label("Supervision", systemImage: "eye.fill")
                     }
                     .tag(SettingsTab.supervision)
-                    .focusable() // Added for keyboard focus
-                    .focused($focusedTab, equals: .supervision) // Added for keyboard focus
+                    .focusable()
+                    .focused($focusedTab, equals: .supervision)
 
                 CursorRuleSetsSettingsView()
                     .readHeight() // Apply readHeight
@@ -63,8 +63,8 @@ struct SettingsPanesContainerView: View {
                         Label("Rule Sets", systemImage: "list.star")
                     }
                     .tag(SettingsTab.ruleSets)
-                    .focusable() // Added for keyboard focus
-                    .focused($focusedTab, equals: .ruleSets) // Added for keyboard focus
+                    .focusable()
+                    .focused($focusedTab, equals: .ruleSets)
 
                 ExternalMCPsSettingsView()
                     .readHeight() // Apply readHeight
@@ -72,8 +72,8 @@ struct SettingsPanesContainerView: View {
                         Label("External MCPs", systemImage: "server.rack")
                     }
                     .tag(SettingsTab.externalMCPs)
-                    .focusable() // Added for keyboard focus
-                    .focused($focusedTab, equals: .externalMCPs) // Added for keyboard focus
+                    .focusable()
+                    .focused($focusedTab, equals: .externalMCPs)
 
                 AdvancedSettingsView()
                     .readHeight() // Apply readHeight
@@ -81,8 +81,8 @@ struct SettingsPanesContainerView: View {
                         Label("Advanced", systemImage: "slider.horizontal.3")
                     }
                     .tag(SettingsTab.advanced)
-                    .focusable() // Added for keyboard focus
-                    .focused($focusedTab, equals: .advanced) // Added for keyboard focus
+                    .focusable()
+                    .focused($focusedTab, equals: .advanced)
 
                 AXInspectorLogView() // Renamed from Text(...)
                     .readHeight() // Apply readHeight
@@ -90,8 +90,8 @@ struct SettingsPanesContainerView: View {
                         Label("Log", systemImage: "doc.text.fill")
                     }
                     .tag(SettingsTab.log)
-                    .focusable() // Added for keyboard focus
-                    .focused($focusedTab, equals: .log) // Added for keyboard focus
+                    .focusable()
+                    .focused($focusedTab, equals: .log)
             }
             .environmentObject(mainSettingsViewModel) // Provide to tabs that need it
             // .frame(maxWidth: .infinity, maxHeight: .infinity) // Remove fixed max height
@@ -127,7 +127,7 @@ struct SettingsPanesContainerView: View {
     // MARK: Private
 
     @State private var idealContentHeight: CGFloat = 450 // Default/initial height, adjusted slightly
-    @FocusState private var focusedTab: SettingsTab? // Added for keyboard focus
+    @FocusState private var focusedTab: SettingsTab?
 }
 
 #if DEBUG

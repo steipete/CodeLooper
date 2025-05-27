@@ -96,3 +96,6 @@ fastlane/Preview.html
 fastlane/screenshots/**/*.png
 fastlane/test_output
 /.tmp
+
+# SwiftLint
+swiftlint_report.json

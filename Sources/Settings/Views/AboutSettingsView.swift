@@ -37,7 +37,10 @@ struct AboutSettingsView: View {
 
                     // Description
                     Text(
-                        "CodeLooper keeps your Cursor AI sessions running smoothly by automatically detecting and resolving connection issues, stuck states, and other common problems."
+                        """
+                        CodeLooper keeps your Cursor AI sessions running smoothly by automatically \
+                        detecting and resolving connection issues, stuck states, and other common problems.
+                        """
                     )
                     .font(Typography.body())
                     .foregroundColor(ColorPalette.text)
@@ -90,11 +93,14 @@ struct AboutSettingsView: View {
                         .font(Typography.caption1())
                         .foregroundColor(ColorPalette.textSecondary)
 
-                    Button(action: { openURL("https://twitter.com/steipete") }) {
-                        Text("@steipete")
-                            .font(Typography.body(.medium))
-                            .foregroundColor(ColorPalette.primary)
-                    }
+                    Button(
+                        action: { openURL("https://twitter.com/steipete") },
+                        label: {
+                            Text("@steipete")
+                                .font(Typography.body(.medium))
+                                .foregroundColor(ColorPalette.primary)
+                        }
+                    )
                     .buttonStyle(.plain)
 
                     Text("© 2024 CodeLooper. All rights reserved.")
@@ -135,8 +141,10 @@ private struct LinkRow: View {
     let url: String
 
     var body: some View {
-        Button(action: { openURL() }) {
-            HStack(spacing: Spacing.small) {
+        Button(
+            action: { openURL() },
+            label: {
+                HStack(spacing: Spacing.small) {
                 Image(systemName: icon)
                     .font(.system(size: 20))
                     .foregroundColor(ColorPalette.primary)
@@ -158,10 +166,11 @@ private struct LinkRow: View {
                     .font(.system(size: 12))
                     .foregroundColor(ColorPalette.textSecondary)
                     .opacity(isHovered ? 1 : 0.5)
+                }
+                .padding(.vertical, Spacing.xxSmall)
+                .contentShape(Rectangle())
             }
-            .padding(.vertical, Spacing.xxSmall)
-            .contentShape(Rectangle())
-        }
+        )
         .buttonStyle(.plain)
         .onHover { hovering in
             isHovered = hovering

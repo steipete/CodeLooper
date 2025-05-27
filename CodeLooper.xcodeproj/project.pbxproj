@@ -60,6 +60,7 @@
 		623B91BBBFF6F9A13A91A77E /* SingleInstanceLock.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7CB42AA3921D5AB47CB70203 /* SingleInstanceLock.swift */; };
 		63169EF8DD3EF86F5B345C29 /* Color+Swift6.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6C40A6D501C2A6FECE921C16 /* Color+Swift6.swift */; };
 		6754DA4FD34332D937F7FC1D /* ResumeConnectionButtonHeuristic.swift in Sources */ = {isa = PBXBuildFile; fileRef = 10A7A335B8AAB7AEE8632F01 /* ResumeConnectionButtonHeuristic.swift */; };
+		6804DC2663666F0FACBAE4F8 /* AutomationPermissionsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 845BD2DF5FB220F516B7797F /* AutomationPermissionsView.swift */; };
 		689862F3C2C1F565B766D868 /* ErrorMessagePopupHeuristic.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3A933DA0E286DD8E1B13FDA9 /* ErrorMessagePopupHeuristic.swift */; };
 		6AD6BA226B1BA06E85100263 /* DesignSystem in Frameworks */ = {isa = PBXBuildFile; productRef = 9B1F7BAF768299D7040A748A /* DesignSystem */; };
 		6DB88BE458BB478BDCAC3AD0 /* AXorcist in Frameworks */ = {isa = PBXBuildFile; productRef = 62A53CC7AEA8471CC32FB29F /* AXorcist */; };
@@ -105,7 +106,6 @@
 		BDA9C21C437EE2BB5BDE4630 /* AXpector in Frameworks */ = {isa = PBXBuildFile; productRef = C82404169CD50D644E1ED271 /* AXpector */; };
 		BE1E2B0D4EF60BB8E67EE87B /* ShortcutNames.swift in Sources */ = {isa = PBXBuildFile; fileRef = 429F3143DECE0A4487E6973D /* ShortcutNames.swift */; };
 		BEA8E437B90E47F214BEA68C /* MonitoredInstance.swift in Sources */ = {isa = PBXBuildFile; fileRef = 90A1E59EC95A4931C96D3D81 /* MonitoredInstance.swift */; };
-		BEC25C968C5A64F18A491E67 /* SharedUserInfo.swift in Sources */ = {isa = PBXBuildFile; fileRef = 80F621C4145AB08008EA4340 /* SharedUserInfo.swift */; };
 		BF010B6CD25240B33FE6AF36 /* SparkleUpdaterManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = AD3561279CC1D48D1FB0850F /* SparkleUpdaterManager.swift */; };
 		C38FC68EC5B5ABC820F98C3A /* Defaults in Frameworks */ = {isa = PBXBuildFile; productRef = 5EC9776FF97D257EE8DCC72B /* Defaults */; };
 		C3A35BD57103BE6A0024863B /* WelcomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9DF4FBC48BDEA24BA56013AC /* WelcomeView.swift */; };
@@ -234,7 +234,7 @@
 		7CB42AA3921D5AB47CB70203 /* SingleInstanceLock.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SingleInstanceLock.swift; sourceTree = "<group>"; };
 		7F9EAD76C5C89A6F3A55977D /* SettingsService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsService.swift; sourceTree = "<group>"; };
 		7FC1B35DF6546A73EF154B3C /* LogSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LogSettingsView.swift; sourceTree = "<group>"; };
-		80F621C4145AB08008EA4340 /* SharedUserInfo.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SharedUserInfo.swift; sourceTree = "<group>"; };
+		845BD2DF5FB220F516B7797F /* AutomationPermissionsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutomationPermissionsView.swift; sourceTree = "<group>"; };
 		86D2A836363CA4B076AC653B /* TuistAssets+CodeLooper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "TuistAssets+CodeLooper.swift"; sourceTree = "<group>"; };
 		86E260B66207064C7D367FF1 /* MainSettingsViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainSettingsViewModel.swift; sourceTree = "<group>"; };
 		8AEDA438357E9954BE03F165 /* StatusIconState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatusIconState.swift; sourceTree = "<group>"; };
@@ -486,6 +486,7 @@
 			isa = PBXGroup;
 			children = (
 				9F6844B122B73F116ABB586A /* SettingsTabs */,
+				845BD2DF5FB220F516B7797F /* AutomationPermissionsView.swift */,
 				86E260B66207064C7D367FF1 /* MainSettingsViewModel.swift */,
 				495E51B8F7A1CB99E64DD6F4 /* PermissionsView.swift */,
 				2B6278C5464E1B76A5CFCB11 /* RadioButtonRow.swift */,
@@ -556,7 +557,6 @@
 				AB7C53CC004E9707E9ACCE6A /* MCPConfigManager.swift */,
 				F2735263696E5EA29D4C6F5A /* NotificationName.swift */,
 				CCB26FA3F63E3E25AAC37895 /* Operations.swift */,
-				80F621C4145AB08008EA4340 /* SharedUserInfo.swift */,
 				C467BB1503BCC53AF2CAB88D /* SoundManager.swift */,
 				5155FDDF1B6AB290E77FE745 /* UserNotificationManager.swift */,
 			);
@@ -804,6 +804,7 @@
 				AC86747DE4D2D8A2669E58A5 /* WelcomeWindowCoordinator.swift in Sources */,
 				D47A468A7532556136027150 /* WindowManager.swift in Sources */,
 				13290A379685F6EF795F40A9 /* WindowPositionManager.swift in Sources */,
+				6804DC2663666F0FACBAE4F8 /* AutomationPermissionsView.swift in Sources */,
 				F2BF45CB229B5E11283F78A6 /* MainSettingsViewModel.swift in Sources */,
 				2E3C05865BABF6FCD093D1AB /* PermissionsView.swift in Sources */,
 				2E9F8879A48D4AF242B32AB1 /* RadioButtonRow.swift in Sources */,
@@ -890,7 +891,6 @@
 				AC442D50BB1BFF315156E4D1 /* InfoKey.swift in Sources */,
 				15EF9B2323CD1EA9F609E2E0 /* ResourceLoader.swift in Sources */,
 				A9AD761EC7A2CB64199E730A /* SymbolGenerator.swift in Sources */,
-				BEC25C968C5A64F18A491E67 /* SharedUserInfo.swift in Sources */,
 				2BB6CDCAE09922634734199B /* SoundManager.swift in Sources */,
 				0EF0A04BF8B2D11F081CBE91 /* UserNotificationManager.swift in Sources */,
 			);

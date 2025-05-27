@@ -3,12 +3,18 @@ import DesignSystem
 import SwiftUI
 
 struct CursorSupervisionSettingsView: View {
-    @Default(.monitorSidebarActivity) var monitorSidebarActivity
-    @Default(.postInterventionObservationWindowSeconds) var postInterventionObservationWindowSeconds
-    @Default(.stuckDetectionTimeoutSeconds) var stuckDetectionTimeoutSeconds
-    @Default(.sendNotificationOnPersistentError) var sendNotificationOnPersistentError
-    @Default(.maxConnectionIssueRetries) var maxConnectionIssueRetries
-    @Default(.maxConsecutiveRecoveryFailures) var maxConsecutiveRecoveryFailures
+    @Default(.monitorSidebarActivity)
+    var monitorSidebarActivity
+    @Default(.postInterventionObservationWindowSeconds)
+    var postInterventionObservationWindowSeconds
+    @Default(.stuckDetectionTimeoutSeconds)
+    var stuckDetectionTimeoutSeconds
+    @Default(.sendNotificationOnPersistentError)
+    var sendNotificationOnPersistentError
+    @Default(.maxConnectionIssueRetries)
+    var maxConnectionIssueRetries
+    @Default(.maxConsecutiveRecoveryFailures)
+    var maxConsecutiveRecoveryFailures
 
     var body: some View {
         VStack(alignment: .leading, spacing: Spacing.xLarge) {
@@ -27,9 +33,8 @@ struct CursorSupervisionSettingsView: View {
                     in: 5 ... 60,
                     step: 5,
                     label: "Stuck Detection Timeout",
-                    showValue: true,
-                    valueFormatter: { "\(Int($0))s" }
-                )
+                    showValue: true
+                ) { "\(Int($0))s" }
 
                 DSDivider()
 
@@ -38,9 +43,8 @@ struct CursorSupervisionSettingsView: View {
                     in: 1 ... 10,
                     step: 1,
                     label: "Post-Intervention Observation",
-                    showValue: true,
-                    valueFormatter: { "\(Int($0))s" }
-                )
+                    showValue: true
+                ) { "\(Int($0))s" }
             }
 
             // Recovery Settings
@@ -94,7 +98,10 @@ struct CursorSupervisionSettingsView: View {
                         Text("Supervision Strategy")
                             .font(Typography.callout(.semibold))
                         Text(
-                            "CodeLooper monitors Cursor instances and automatically recovers from common issues like connection drops and stuck states."
+                            """
+                            CodeLooper monitors Cursor instances and automatically recovers from \
+                            common issues like connection drops and stuck states.
+                            """
                         )
                         .font(Typography.caption1())
                         .foregroundColor(ColorPalette.textSecondary)
