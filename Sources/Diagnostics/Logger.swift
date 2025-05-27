@@ -115,7 +115,7 @@ private struct MyOSLogHandler: LogHandler {
 
         let effectiveMetadata = self.metadata.merging(metadata ?? [:]) { _, new in new }
 
-        var richMessage = "[\(source)] \(message.description)"
+        var richMessage = "\(message.description)"
         if !effectiveMetadata.isEmpty {
             richMessage += " " + effectiveMetadata.map { "\($0.key): \($0.value)" }.joined(separator: ", ")
         }
