@@ -77,12 +77,12 @@ The analysis of the dump file revealed the following path to the target element:
 
 Based on these findings, a targeted query successfully retrieved the element's details:
 
-```json
-{
+    ```json
+    {
   "command_id": "cursor-input-find-aislash-textarea-001",
   "command": "query",
-  "application": "com.todesktop.230313mzl4w4u92",
-  "locator": {
+      "application": "com.todesktop.230313mzl4w4u92",
+      "locator": {
     "criteria": [
       {
         "attribute": "AXRole",
@@ -281,4 +281,84 @@ The addition of detailed, fine-grained logging throughout the element search and
 The logs themselves, though voluminous, would be invaluable for pinpointing the exact step where a failure occurs if the intermittent issues return. The current hypothesis is that the traversal logic, especially around child fetching or criteria matching, might have been sensitive to timing or unhandled states that the logging, by slightly altering execution flow or by making the process more observable, has mitigated or helped bypass.
 
 The problem of `AXValue` itself being intermittently unreadable (as distinct from the element not being found) was not specifically re-tested with a focus on the `ValueUnwrapper` logs in this latest round, as the element finding stability became the primary focus. However, with the element now being found reliably, future tests can re-focus on `AXValue` if it becomes problematic again.
+
+# AXorcist / debugloop – Cursor project internal notes (2025-05-27)
+
+These notes capture the accessibility-debugging deep-dive we ran while
+teaching AXorcist to locate the chat-input textarea inside the **Cursor**
+Electron app.
+
+## 1  Electron accessibility model recap
+• Each Electron window is an `AXWindow` that contains a single
+  `AXWebArea` (the Chromium renderer).
+• Chromium keeps its real accessibility tree in a **remote renderer
+  process**.  The host process exposes *only* a proxy `BrowserAccessibilityCocoa`
+  node.  By default this proxy has **no children** – depth stalls at
+  ~30–40.
+• macOS pulls a subtree from the renderer *only* for:
+  – the element that currently has accessibility focus, or
+  – elements explicitly fetched via Chromium's internal IPC (not exposed
+    through the generic AXUIElement API).
+
+## 2  Traversal lessons
+1. `kAXChildren` on an `AXApplication` returns **only the front-most
+   window**.  Additional windows live in the `kAXWindows` attribute.
+2. Our original optimisation (filtered container roles) prevented
+   descending through non-container leaves, making deep WebArea walks
+   impossible.  We added:
+   - `--scan-all` flag → ignores `containerRoles` guard.
+   - cycle guard (`VisitedSet`) → prevents infinite loops.
+3. We added an unconditional `collectApplicationWindows()` call so every
+   window is always reachable, even in brute-force mode.
+4. Global counters/logging:
+   - `axorcTraversalTimeout` (CLI `--timeout`)
+   - `traversalNodeCounter`  (nodes visited)
+   - `SearchVisitor.deepestDepthReached`
+
+## 3  CLI flags added
+| flag              | effect                                                     |
+|-------------------|------------------------------------------------------------|
+| `--verbose`       | full diagnostic logs                                        |
+| `--debug`         | concise diagnostic logs                                     |
+| `--scan-all`      | visit every child regardless of role pruning               |
+| `--no-stop-first` | don't exit after first criteria match (breadth search)     |
+| `--timeout n`     | override 30 s default traversal deadline                   |
+
+Global vars exposed in `ElementSearch.swift`:
+```swift
+public var axorcScanAll: Bool
+public var axorcStopAtFirstMatch: Bool
+```
+
+## 4  When brute-force still fails
+Even with `scan-all` + `no-stop-first` the walker stops at depth≈38,
+because Chromium's remote tree remains hidden.  **Solution**:
+1. Focus the desired element (e.g. send `AXPress` or click the editor).
+2. Query the focused element:
+```json
+{ "command":"getFocusedElement", "attributes_to_return":["AXValue"] }
+```
+This returns the remote `AXTextArea` with `AXValue` = chat text.
+
+## 5  Best-practice query templates
+### Focused element query
+```jsonc
+{ "command":"getFocusedElement", "command_id":"focused-chat", "application":"com.todesktop.230313mzl4w4u92", "attributes_to_return":["AXValue","AXDOMClassList"] }
+```
+### Perform action to focus textarea
+```jsonc
+{ "command":"performAction", "command_id":"focus-chat", "application":"com.todesktop.230313mzl4w4u92", "locator":{"criteria":[{"attribute":"AXRole","value":"AXTextArea"},{"attribute":"DOM","value":"aislash-editor-input","match_type":"contains"}]}, "action":"AXPress" }
+```
+
+## 6  Generic troubleshooting checklist
+1. Run with `--verbose --scan-all --no-stop-first --timeout 600` to see
+   node/depth counts.
+2. If depth < 40, you're stuck in host-process tree ⇒ need focus-based
+   query.
+3. If depth grows but value not found, refine criteria (check
+   `AXDOMClassList`/`AXDOMIdentifier`).
+
+---
+This file is intentionally committed under `.cursor/rules/` so future
+sessions can import these learnings without re-discovering them.
 

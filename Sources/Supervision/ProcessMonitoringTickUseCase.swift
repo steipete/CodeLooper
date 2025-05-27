@@ -178,9 +178,10 @@ class ProcessMonitoringTickUseCase {
         var newStatus = currentStatus
         var newStatusMessage = statusMessage
 
-        self.logger.debug(
-            "PID \(self.pid): Intervention type is \(String(describing: interventionType.rawValue)). Assuming running okay or positive activity."
-        )
+        self.logger.debug("""
+            PID \(self.pid): Intervention type is \(String(describing: interventionType.rawValue)). \
+            Assuming running okay or positive activity.
+            """)
 
         if case .error = self.currentInfo.status {
             newStatus = .idle
@@ -412,9 +413,10 @@ class ProcessMonitoringTickUseCase {
             return nil
         }
 
-        self.logger.error(
-            "PID \(self.pid) has reached max consecutive recovery failures (\(Defaults[.maxConsecutiveRecoveryFailures])). Marking as unrecoverable."
-        )
+        self.logger.error("""
+            PID \(self.pid) has reached max consecutive recovery failures \
+            (\(Defaults[.maxConsecutiveRecoveryFailures])). Marking as unrecoverable.
+            """)
         self.sessionLogger.log(
             level: .error,
             message: "Reached max consecutive recovery failures. Marking as unrecoverable.",

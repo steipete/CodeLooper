@@ -263,10 +263,10 @@ public final class MainSettingsViewModel: ObservableObject {
         self.xcodeBuildSentryDisabled = xcodeStatus.sentryDisabled ?? false
 
         logger.info("Refreshed all MCP status messages.")
-        logger
-            .info(
-                "Claude: \(self.claudeCodeStatusMessage), Automator: \(self.macOSAutomatorStatusMessage), Xcode: \(self.xcodeBuildStatusMessage)"
-            )
+        logger.info("""
+            Claude: \(self.claudeCodeStatusMessage), Automator: \(self.macOSAutomatorStatusMessage), \
+            Xcode: \(self.xcodeBuildStatusMessage)
+            """)
     }
 
     func refreshMCPStatusMessage(for _: String) {

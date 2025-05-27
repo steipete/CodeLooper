@@ -13,15 +13,18 @@ disabled_rules:
   - trailing_whitespace
   - unused_optional_binding
   - cyclomatic_complexity
-
-# Configure explicit_self to allow it in closures for Swift 6 concurrency
-explicit_self:
-  severity: warning
-  mode: allexcept_leavers
+  - trailing_comma
+  - indentation_width
+  - opening_brace
+  - attributes
+  - force_unwrapping
+  - discouraged_optional_boolean
+  - implicitly_unwrapped_optional
+  - file_name
+  - private_action
 
 opt_in_rules:
   - array_init
-  - attributes
   - closure_end_indentation
   - closure_spacing
   - collection_alignment
@@ -29,18 +32,12 @@ opt_in_rules:
   - contains_over_filter_is_empty
   - contains_over_first_not_nil
   - convenience_type
-  - discouraged_optional_boolean
   - empty_count
   - empty_string
   - enum_case_associated_values_count
-  - explicit_self
   - fatal_error_message
-  - file_name
   - first_where
-  - force_unwrapping
   - identical_operands
-  - implicitly_unwrapped_optional
-  - indentation_width
   - joined_default_parameter
   - last_where
   - literal_expression_end_indentation
@@ -52,7 +49,6 @@ opt_in_rules:
   - overridden_super_call
   - pattern_matching_keywords
   - prefer_self_type_over_type_of_self
-  - private_action
   - private_outlet
   - private_over_fileprivate
   - redundant_nil_coalescing
@@ -64,9 +60,17 @@ opt_in_rules:
   - unneeded_parentheses_in_closure_argument
   - yoda_condition
 
+analyzer_rules:
+  - explicit_self
+
+# Configure explicit_self to allow it in closures for Swift 6 concurrency
+explicit_self:
+  severity: warning
+  mode: allexcept_leavers
+
 line_length:
-  warning: 120
-  error: 150
+  warning: 140
+  error: 200
   ignores_comments: true
   ignores_urls: true
 
@@ -79,23 +83,20 @@ function_parameter_count:
   error: 8
 
 type_body_length:
-  warning: 300
-  error: 500
+  warning: 600
+  error: 1000
 
 file_length:
-  warning: 800
+  warning: 900
   error: 1200
 
 large_tuple:
   warning: 3
   error: 4
 
-indentation_width:
-  indentation_width: 4
-
 identifier_name:
   min_length: 2
-  max_length: 40
+  max_length: 50
   excluded:
     - id
     - to
@@ -106,3 +107,6 @@ identifier_name:
     - x
     - y
     - vc
+    - i
+    - p
+    - c

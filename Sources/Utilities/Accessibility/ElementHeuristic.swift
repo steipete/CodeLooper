@@ -131,12 +131,12 @@ extension AXElementHeuristic {
 
             if keyParts.count > 1 {
                 let matchTypeString = String(keyParts[1])
-                if matchTypeString == "contains" { matchType = .contains }
-                else if matchTypeString == "contains_any" { matchType = .containsAny }
-                else if matchTypeString == "prefix" { matchType = .prefix }
-                else if matchTypeString == "suffix" { matchType = .suffix }
-                else if matchTypeString == "regex" { matchType = .regex }
-                else { matchType = JSONPathHintComponent.MatchType(rawValue: matchTypeString) ?? .exact }
+                if matchTypeString == "contains" { matchType = .contains
+                } else if matchTypeString == "contains_any" { matchType = .containsAny
+                } else if matchTypeString == "prefix" { matchType = .prefix
+                } else if matchTypeString == "suffix" { matchType = .suffix
+                } else if matchTypeString == "regex" { matchType = .regex
+                } else { matchType = JSONPathHintComponent.MatchType(rawValue: matchTypeString) ?? .exact }
             }
             criteriaArray.append(Criterion(attribute: attributeName, value: value, matchType: matchType))
         }

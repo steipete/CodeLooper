@@ -69,9 +69,7 @@ extension NSMenuItem {
 extension NSMenu {
     /// Get the first `NSMenuItem` whose internal identifier string matches the given value.
     func item(withInternalIdentifier identifier: String) -> NSMenuItem? {
-        self.items.first(where: {
-            $0.internalIdentifier?.elementsEqual(identifier) ?? false
-        })
+        self.items.first { $0.internalIdentifier?.elementsEqual(identifier) ?? false }
     }
 
     /// Get the first `NSMenuItem` whose title is equivalent to the localized string referenced
@@ -103,9 +101,7 @@ private extension Mirror {
 
     /// The first child of the reflection subject whose label matches the given string.
     func firstChild(withLabel label: String) -> Child? {
-        self.children.first(where: {
-            $0.label?.elementsEqual(label) ?? false
-        })
+        self.children.first { $0.label?.elementsEqual(label) ?? false }
     }
 
     /// The unconditional first child of the given subject.

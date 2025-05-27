@@ -69,7 +69,6 @@ public final class CursorJSHook {
         guard let conn, handshakeCompleted else { throw HookError.notConnected }
         return try await send(source, over: conn)
     }
-
     // MARK: Private
 
     // ──────────────────────────────  public API  ──────────────────────────────
@@ -150,6 +149,7 @@ public final class CursorJSHook {
         try executeAppleScript(script)
     }
 
+    // swiftlint:disable:next function_body_length
     private func generateJavaScriptHook() -> String {
         """
         (function() {
@@ -188,7 +188,8 @@ public final class CursorJSHook {
                         // Auto-reconnect logic
                         if (reconnectAttempts < maxReconnectAttempts) {
                             reconnectAttempts++;
-                            console.log(`🔄 CodeLooper: Reconnecting in ${reconnectDelay/1000}s... (attempt ${reconnectAttempts}/${maxReconnectAttempts})`);
+                            console.log(`🔄 CodeLooper: Reconnecting in ${reconnectDelay/1000}s... ` +
+                                `(attempt ${reconnectAttempts}/${maxReconnectAttempts})`);
                             setTimeout(connect, reconnectDelay);
                         } else {
                             console.log('🔄 CodeLooper: Max reconnection attempts reached. Hook disabled.');
@@ -293,7 +294,6 @@ public final class CursorJSHook {
         end tell
         """
     }
-
 
     private func executeAppleScript(_ script: String) throws {
         let appleScript = NSAppleScript(source: script)
@@ -412,63 +412,88 @@ public final class CursorJSHook {
                     print("泵 CursorJSHook self is nil, cannot process message.")
                     return
                 }
-                // Ensure the connection being processed is still the active one.
-                guard self.conn === connection else {
-                    print(
-                        "泵 Stale connection \(connection.debugDescription), current is \(self.conn?.debugDescription ?? "nil"). Ignoring message."
-                    )
-                    return
-                }
+                
+                self.handleReceivedMessage(
+                    on: connection,
+                    data: data,
+                    isComplete: isComplete,
+                    error: error
+                )
+            }
+        }
+    }
+    
+    private func handleReceivedMessage(
+        on connection: NWConnection,
+        data: Data?,
+        isComplete: Bool,
+        error: Error?
+    ) {
+        // Ensure the connection being processed is still the active one.
+        guard self.conn === connection else {
+            print(
+                """
+                泵 Stale connection \(connection.debugDescription), current is \
+                \(self.conn?.debugDescription ?? "nil"). Ignoring message.
+                """
+            )
+            return
+        }
 
-                var shouldContinuePumping = true
+        var shouldContinuePumping = true
 
-                if let error {
-                    print(
-                        "🌀 WS Receive error on \(connection.debugDescription): \(error.localizedDescription). Cleaning up connection."
-                    )
-                    self.cleanupConnection(error: .connectionLost(underlyingError: error))
-                    shouldContinuePumping = false // Stop pumping on error
-                }
+        if let error {
+            print(
+                "🌀 WS Receive error on \(connection.debugDescription): \(error.localizedDescription). Cleaning up connection."
+            )
+            self.cleanupConnection(error: .connectionLost(underlyingError: error))
+            shouldContinuePumping = false // Stop pumping on error
+        }
 
-                if shouldContinuePumping, let messageData = data, !messageData.isEmpty,
-                   let txt = String(data: messageData, encoding: .utf8)
-                {
-                    print("🌀 WS Received on \(connection.debugDescription): \(txt)")
-                    if txt == "ready" {
-                        if !self.handshakeCompleted {
-                            self.handshakeCompleted = true
-                            print("🤝 Handshake 'ready' message processed for \(connection.debugDescription).")
-                        } else {
-                            print(
-                                "⚠️ Received 'ready' message again on \(connection.debugDescription), but handshake already completed."
-                            )
-                        }
-                    } else {
-                        if let pendingContinuation = self.pending {
-                            self.pending = nil
-                            pendingContinuation.resume(returning: txt)
-                            print("🌀 Resumed pending continuation with: \(txt) for \(connection.debugDescription)")
-                        } else {
-                            print(
-                                "⚠️ Received data '\(txt)' on \(connection.debugDescription) but no pending continuation."
-                            )
-                        }
-                    }
-                } else if shouldContinuePumping, isComplete {
-                    print("🌀 WS Received complete message but no valid text data on \(connection.debugDescription).")
-                }
+        if shouldContinuePumping, let messageData = data, !messageData.isEmpty,
+           let txt = String(data: messageData, encoding: .utf8)
+        {
+            processReceivedText(txt, on: connection)
+        } else if shouldContinuePumping, isComplete {
+            print("🌀 WS Received complete message but no valid text data on \(connection.debugDescription).")
+        }
 
-                // Continue the loop by re-calling pump if no terminal error occurred and connection is still active
-                if shouldContinuePumping, self.conn === connection { // Check conn again before re-pumping
-                    print("🌀 Re-pumping for \(connection.debugDescription)")
-                    self.pump(connection) // Re-call pump to set up the next receive
-                } else if shouldContinuePumping, self.conn !== connection {
-                    print(
-                        "🌀 Not re-pumping for stale connection \(connection.debugDescription). Current is \(self.conn?.debugDescription ?? "nil")"
-                    )
-                } else {
-                    print("🌀 Not re-pumping for \(connection.debugDescription) as shouldContinuePumping is false.")
-                }
+        // Continue the loop by re-calling pump if no terminal error occurred and connection is still active
+        if shouldContinuePumping, self.conn === connection { // Check conn again before re-pumping
+            print("🌀 Re-pumping for \(connection.debugDescription)")
+            self.pump(connection) // Re-call pump to set up the next receive
+        } else if shouldContinuePumping, self.conn !== connection {
+            print(
+                """
+                🌀 Not re-pumping for stale connection \(connection.debugDescription). \
+                Current is \(self.conn?.debugDescription ?? "nil")
+                """
+            )
+        } else {
+            print("🌀 Not re-pumping for \(connection.debugDescription) as shouldContinuePumping is false.")
+        }
+    }
+    
+    private func processReceivedText(_ txt: String, on connection: NWConnection) {
+        print("🌀 WS Received on \(connection.debugDescription): \(txt)")
+        if txt == "ready" {
+            if !self.handshakeCompleted {
+                self.handshakeCompleted = true
+                print("🤝 Handshake 'ready' message processed for \(connection.debugDescription).")
+            } else {
+                print(
+                    "⚠️ Received 'ready' message again on \(connection.debugDescription), but handshake already completed."
+                )
+            }
+        } else {
+            if let pendingContinuation = self.pending {
+                self.pending = nil
+                pendingContinuation.resume(returning: txt)
+                print("🌀 Resumed pending continuation with: \(txt) for \(connection.debugDescription)")
+            } else {
+                print(
+                    "⚠️ Received data '\(txt)' on \(connection.debugDescription) but no pending continuation."
+                )
             }
         }
     }

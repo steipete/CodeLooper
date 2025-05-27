@@ -434,13 +434,13 @@ public class CursorMonitor: ObservableObject {
             // ... decision logic ...
 
             // If intervention logic is per-window:
-            for windowInfo in appInfo.windows {
-                if monitoringCycleCount % 10 == 0 {
+            if monitoringCycleCount % 10 == 0 {
+                for windowInfo in appInfo.windows {
                     logger.debug("  Window: \(windowInfo.windowTitle ?? "N/A")")
                 }
-                // ... intervention logic for this specific window ...
-                // This might involve using instanceStateManager with a window-specific ID if needed
             }
+            // ... intervention logic for specific windows would go here ...
+            // This might involve using instanceStateManager with a window-specific ID if needed
         }
 
         // Update total intervention count for display
@@ -584,10 +584,10 @@ public class CursorMonitor: ObservableObject {
         }
         appInfo.windows = newWindowInfos
         if monitoringCycleCount % 10 == 0 {
-            logger
-                .debug(
-                    "Updated \(newWindowInfos.count) windows for PID \(appInfo.pid). Titles: \(newWindowInfos.map { $0.windowTitle ?? "N/A" })"
-                )
+            logger.debug("""
+                Updated \(newWindowInfos.count) windows for PID \(appInfo.pid). \
+                Titles: \(newWindowInfos.map { $0.windowTitle ?? "N/A" })
+                """)
         }
     }
 

@@ -200,7 +200,7 @@ public class AppDelegate: NSObject, NSApplicationDelegate,
         guard let loginItemManager, let updaterViewModel else {
             logger
                 .error(
-                    "Failed to initialize settings coordinator - missing required services (loginItemManager or updaterViewModel)"
+                    "Failed to initialize settings coordinator - missing required services"
                 )
             return
         }

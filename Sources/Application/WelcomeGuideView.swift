@@ -53,7 +53,7 @@ struct WelcomeGuideView: View {
             Button(action: {
                 hasShownWelcomeGuide = true
                 onGetStarted() // Call the closure to dismiss and proceed
-            }) {
+            }, label: {
                 Text("Let\'s Get Started!")
                     .fontWeight(.semibold)
                     .frame(maxWidth: .infinity)

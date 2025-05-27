@@ -45,16 +45,16 @@ public class CursorAppLifecycleManager: ObservableObject {
             .map(\.processIdentifier)
 
         let pidsToShutdown = Set(runningAppInfo.keys).subtracting(currentlyRunningPIDs)
-        for pid in pidsToShutdown {
-            if runningAppInfo.removeValue(forKey: pid) != nil {
-                logger.info("Instance PID \\(pid) no longer running (detected by refresh). Removing.")
-                Task { sessionLogger.log(
+        for pid in pidsToShutdown where runningAppInfo.removeValue(forKey: pid) != nil {
+            logger.info("Instance PID \\(pid) no longer running (detected by refresh). Removing.")
+            Task {
+                sessionLogger.log(
                     level: .info,
                     message: "Instance PID \\(pid) no longer running (detected by refresh). Removing.",
                     pid: pid
-                ) }
-                owner?.didTerminateInstance(pid: pid)
+                )
             }
+            owner?.didTerminateInstance(pid: pid)
         }
         updatePublishedMonitoredApps() // Update published list
 
