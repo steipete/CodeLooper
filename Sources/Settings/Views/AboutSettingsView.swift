@@ -5,112 +5,99 @@ struct AboutSettingsView: View {
     // MARK: Internal
 
     var body: some View {
-        VStack(spacing: Spacing.xLarge) {
-            // App Info Card
-            DSCard(style: .elevated) {
-                VStack(spacing: Spacing.large) {
-                    // App Icon and Name
-                    VStack(spacing: Spacing.medium) {
-                        if let appIcon = NSApplication.shared.applicationIconImage {
-                            Image(nsImage: appIcon)
-                                .resizable()
-                                .frame(width: 128, height: 128)
-                                .cornerRadiusDS(Layout.CornerRadius.xLarge)
-                                .shadowStyle(Layout.Shadow.large)
-                        }
+        VStack(spacing: 0) {
+            // Main content with padding
+            ScrollView {
+                VStack(spacing: Spacing.xLarge) {
+                    // App Info Card
+                    DSCard(style: .elevated) {
+                        VStack(spacing: Spacing.large) {
+                            // App Icon and Name
+                            VStack(spacing: Spacing.medium) {
+                                if let appIcon = NSApplication.shared.applicationIconImage {
+                                    Image(nsImage: appIcon)
+                                        .resizable()
+                                        .frame(width: 128, height: 128)
+                                        .cornerRadiusDS(Layout.CornerRadius.xLarge)
+                                        .shadowStyle(Layout.Shadow.large)
+                                }
 
-                        Text("CodeLooper")
-                            .font(Typography.largeTitle())
-                            .foregroundColor(ColorPalette.text)
+                                Text("CodeLooper")
+                                    .font(Typography.largeTitle())
+                                    .foregroundColor(ColorPalette.text)
 
-                        Text("The Cursor Connection Guardian")
+                                Text("The Cursor Connection Guardian")
+                                    .font(Typography.body())
+                                    .foregroundColor(ColorPalette.textSecondary)
+
+                                HStack(spacing: Spacing.small) {
+                                    DSBadge("Version \(appVersion)", style: .primary)
+                                    DSBadge("Build \(buildNumber)", style: .default)
+                                }
+                            }
+
+                            DSDivider()
+
+                            // Description
+                            Text(
+                                """
+                                CodeLooper keeps your Cursor AI sessions running smoothly by automatically \
+                                detecting and resolving connection issues, stuck states, and other common problems.
+                                """
+                            )
                             .font(Typography.body())
-                            .foregroundColor(ColorPalette.textSecondary)
-
-                        HStack(spacing: Spacing.small) {
-                            DSBadge("Version \(appVersion)", style: .primary)
-                            DSBadge("Build \(buildNumber)", style: .default)
+                            .foregroundColor(ColorPalette.text)
+                            .multilineTextAlignment(.center)
+                            .frame(maxWidth: 400)
                         }
                     }
 
-                    DSDivider()
+                    // Links Section
+                    DSSettingsSection("Resources") {
+                        LinkRow(
+                            icon: "globe",
+                            title: "Website",
+                            subtitle: "Visit our homepage",
+                            url: "https://codelooper.app"
+                        )
 
-                    // Description
-                    Text(
-                        """
-                        CodeLooper keeps your Cursor AI sessions running smoothly by automatically \
-                        detecting and resolving connection issues, stuck states, and other common problems.
-                        """
-                    )
-                    .font(Typography.body())
-                    .foregroundColor(ColorPalette.text)
-                    .multilineTextAlignment(.center)
-                    .frame(maxWidth: 400)
+                        DSDivider()
+
+                        LinkRow(
+                            icon: "doc.text",
+                            title: "Documentation",
+                            subtitle: "Learn how to use CodeLooper",
+                            url: "https://github.com/steipete/codelooper/wiki"
+                        )
+
+                        DSDivider()
+
+                        LinkRow(
+                            icon: "exclamationmark.bubble",
+                            title: "Report an Issue",
+                            subtitle: "Help us improve CodeLooper",
+                            url: "https://github.com/steipete/codelooper/issues"
+                        )
+
+                        DSDivider()
+
+                        LinkRow(
+                            icon: "star",
+                            title: "Star on GitHub",
+                            subtitle: "Show your support",
+                            url: "https://github.com/steipete/codelooper"
+                        )
+                    }
                 }
+                .padding(Spacing.xLarge)
             }
 
-            // Links Section
-            DSSettingsSection("Resources") {
-                LinkRow(
-                    icon: "globe",
-                    title: "Website",
-                    subtitle: "Visit our homepage",
-                    url: "https://codelooper.app"
-                )
+            Spacer(minLength: 0)
 
-                DSDivider()
-
-                LinkRow(
-                    icon: "doc.text",
-                    title: "Documentation",
-                    subtitle: "Learn how to use CodeLooper",
-                    url: "https://github.com/steipete/codelooper/wiki"
-                )
-
-                DSDivider()
-
-                LinkRow(
-                    icon: "exclamationmark.bubble",
-                    title: "Report an Issue",
-                    subtitle: "Help us improve CodeLooper",
-                    url: "https://github.com/steipete/codelooper/issues"
-                )
-
-                DSDivider()
-
-                LinkRow(
-                    icon: "star",
-                    title: "Star on GitHub",
-                    subtitle: "Show your support",
-                    url: "https://github.com/steipete/codelooper"
-                )
-            }
-
-            // Credits
-            DSCard(style: .filled) {
-                VStack(spacing: Spacing.small) {
-                    Text("Created with ❤️ by")
-                        .font(Typography.caption1())
-                        .foregroundColor(ColorPalette.textSecondary)
-
-                    Button(
-                        action: { openURL("https://twitter.com/steipete") },
-                        label: {
-                            Text("@steipete")
-                                .font(Typography.body(.medium))
-                                .foregroundColor(ColorPalette.primary)
-                        }
-                    )
-                    .buttonStyle(.plain)
-
-                    Text("© 2024 CodeLooper. All rights reserved.")
-                        .font(Typography.caption2())
-                        .foregroundColor(ColorPalette.textTertiary)
-                }
-            }
-
-            Spacer()
+            // Full-width footer
+            AboutFooterView()
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
     // MARK: Private
@@ -123,6 +110,89 @@ struct AboutSettingsView: View {
         Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "Unknown"
     }
 
+    private func openURL(_ urlString: String) {
+        if let url = URL(string: urlString) {
+            NSWorkspace.shared.open(url)
+        }
+    }
+}
+
+// MARK: - About Footer View
+
+private struct AboutFooterView: View {
+    var body: some View {
+        VStack(spacing: 0) {
+            // Top section with credits
+            VStack(spacing: Spacing.small) {
+                HStack(spacing: Spacing.xxSmall) {
+                    Text("Created with")
+                        .font(Typography.caption1())
+                        .foregroundColor(ColorPalette.textSecondary)
+                    
+                    Text("❤️")
+                        .font(Typography.caption1())
+                    
+                    Text("by")
+                        .font(Typography.caption1())
+                        .foregroundColor(ColorPalette.textSecondary)
+                    
+                    Button(
+                        action: { openURL("https://twitter.com/steipete") },
+                        label: {
+                            Text("@steipete")
+                                .font(Typography.caption1(.medium))
+                                .foregroundColor(ColorPalette.primary)
+                        }
+                    )
+                    .buttonStyle(.plain)
+                    .onHover { hovering in
+                        if hovering {
+                            NSCursor.pointingHand.push()
+                        } else {
+                            NSCursor.pop()
+                        }
+                    }
+                }
+                
+                Text("© 2024 CodeLooper. All rights reserved.")
+                    .font(Typography.caption2())
+                    .foregroundColor(ColorPalette.textTertiary)
+            }
+            .padding(.vertical, Spacing.large)
+            .frame(maxWidth: .infinity)
+            .background(ColorPalette.backgroundTertiary)
+            
+            // Bottom section with links and tagline
+            HStack {
+                Button(action: { openURL("https://github.com/steipete/codelooper") }) {
+                    Label("GitHub", systemImage: "link")
+                        .font(Typography.caption1())
+                }
+                .buttonStyle(.plain)
+                .foregroundColor(ColorPalette.primary)
+                
+                Text("•")
+                    .foregroundColor(ColorPalette.textTertiary)
+                
+                Button(action: { openURL("https://github.com/steipete/codelooper/wiki") }) {
+                    Label("Documentation", systemImage: "book")
+                        .font(Typography.caption1())
+                }
+                .buttonStyle(.plain)
+                .foregroundColor(ColorPalette.primary)
+                
+                Spacer()
+                
+                Text("Made with ❤️ for Cursor users")
+                    .font(Typography.caption1())
+                    .foregroundColor(ColorPalette.textSecondary)
+            }
+            .padding(.horizontal, Spacing.large)
+            .padding(.vertical, Spacing.small)
+            .background(ColorPalette.backgroundSecondary)
+        }
+    }
+    
     private func openURL(_ urlString: String) {
         if let url = URL(string: urlString) {
             NSWorkspace.shared.open(url)
