@@ -18,4 +18,3 @@ import Foundation
 // These enum types are value types with no mutable state, but we need to use @unchecked
 // since we can't add direct Sendable conformance in a different file from the original definition
 extension WelcomeStep: @unchecked Sendable {}
-

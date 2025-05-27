@@ -9,13 +9,14 @@ import Foundation
 struct ConnectionErrorIndicatorHeuristic: AXElementHeuristic {
     let locatorType: LocatorType = .connectionErrorIndicator
 
-    @MainActor func discover(for pid: pid_t, axorcist: AXorcist) async -> Locator? {
+    @MainActor
+    func discover(for pid: pid_t, axorcist: AXorcist) async -> Locator? {
         // Strategy 1: Look for a static text element with title "Connection error"
         let strategy1 = Locator(
             matchAll: false,
             criteria: Self.convertDictionaryToCriteriaArray([
                 "role_exact": "AXStaticText",
-                "title_exact": "Connection error",
+                "title_exact": "Connection error"
             ])
         )
         let queryCommand1 = QueryCommand(
@@ -32,7 +33,7 @@ struct ConnectionErrorIndicatorHeuristic: AXElementHeuristic {
             matchAll: false,
             criteria: Self.convertDictionaryToCriteriaArray([
                 "role_exact": "AXStaticText",
-                "title_contains_any": "Connection error,Unable to connect,Network error",
+                "title_contains_any": "Connection error,Unable to connect,Network error"
             ])
         )
         let queryCommand2 = QueryCommand(

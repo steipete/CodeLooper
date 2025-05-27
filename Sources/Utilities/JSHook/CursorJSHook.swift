@@ -73,7 +73,6 @@ public final class CursorJSHook: Sendable {
     private var listener: NWListener!
     private var conn: NWConnection?
     private var pending: CheckedContinuation<String, Error>?
-    private var ready: CheckedContinuation<Void, Error>?
 
     // 1️⃣ Web-Socket listener
     private func startListener() async throws {
@@ -94,10 +93,8 @@ public final class CursorJSHook: Sendable {
                 guard let self else { return }
                 print("🌀 Listener state updated: \(newState)")
                 if case let .failed(error) = newState {
-                    if let readyContinuation = self.ready {
-                        self.ready = nil
-                        readyContinuation.resume(throwing: error)
-                    }
+                    // Handle listener failure - connection cleanup will be handled elsewhere
+                    print("🌀 Listener failed: \(error)")
                 }
             }
         }
@@ -290,10 +287,6 @@ public final class CursorJSHook: Sendable {
     private func cleanupConnection(error: HookError) {
         conn = nil
         handshakeCompleted = false
-        if let readyContinuation = self.ready {
-            self.ready = nil
-            readyContinuation.resume(throwing: error)
-        }
         if let pendingContinuation = self.pending {
             self.pending = nil
             pendingContinuation.resume(throwing: error)
@@ -336,8 +329,6 @@ public final class CursorJSHook: Sendable {
                     if txt == "ready" {
                         if !self.handshakeCompleted {
                             self.handshakeCompleted = true
-                            self.ready?.resume()
-                            self.ready = nil
                             print("🤝 Handshake 'ready' message processed for \(c.debugDescription).")
                         } else {
                             print(
