@@ -65,7 +65,7 @@ class InterventionRecoveryHandler {
         )
         let response = self.axorcist.handleQuery(command: queryCommand, maxDepth: 5)
 
-        guard let axData = response.payload?.value else {
+        guard (response.payload?.value) != nil else {
             self.logger
                 .error("PID \(String(describing: pid)): No connection error link found. Falling back to nudge.")
 
