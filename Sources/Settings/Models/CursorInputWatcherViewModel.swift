@@ -9,6 +9,7 @@ import SwiftUI
 // We'll rely on AXorcist.Element for success cases.
 // Error handling will be based on HandlerResponse.error.
 
+// swiftlint:disable:next type_body_length
 @MainActor
 class CursorInputWatcherViewModel: ObservableObject {
     // MARK: Lifecycle
@@ -87,24 +88,17 @@ class CursorInputWatcherViewModel: ObservableObject {
 
     // Temporary struct to match the JSON query file structure for decoding
     private struct RawQueryFile: Codable {
-        enum CodingKeys: String, CodingKey {
+        let applicationIdentifier: String
+        let locator: RawLocator
+
+        // swiftlint:disable:next nesting
+        private enum CodingKeys: String, CodingKey {
             case applicationIdentifier = "application_identifier"
             case locator
         }
-
-        let applicationIdentifier: String
-        let locator: RawLocator
     }
 
     private struct RawLocator: Codable {
-        enum CodingKeys: String, CodingKey {
-            case criteria
-            case rootElementPathHint = "root_element_path_hint"
-            case attributesToFetch = "attributes_to_fetch"
-            case maxDepthForSearch = "max_depth_for_search"
-            case requireAction = "require_action"
-        }
-
         let criteria: [String: String] // Key might be "attributeName_matchType" or just "attributeName"
         let rootElementPathHint: [RawPathHintComponent]?
         // descendant_criteria and descendant_criteria_exclusions are not directly used by AXorcist.Locator
@@ -114,10 +108,20 @@ class CursorInputWatcherViewModel: ObservableObject {
         let attributesToFetch: [String]
         let maxDepthForSearch: Int?
         let requireAction: Bool?
+
+        // swiftlint:disable:next nesting
+        private enum CodingKeys: String, CodingKey {
+            case criteria
+            case rootElementPathHint = "root_element_path_hint"
+            case attributesToFetch = "attributes_to_fetch"
+            case maxDepthForSearch = "max_depth_for_search"
+            case requireAction = "require_action"
+        }
     }
 
     private struct RawPathHintComponent: Codable {
-        enum CodingKeys: String, CodingKey {
+        // swiftlint:disable:next nesting
+        private enum CodingKeys: String, CodingKey {
             case attribute, value, depth
             case matchType = "match_type"
         }
@@ -217,80 +221,98 @@ class CursorInputWatcherViewModel: ObservableObject {
             jsHookManager.jsHooks[window.id] = hook
             jsHookManager.addHookedWindow(window.id)
 
-            // Test the hook with a sanity check - get browser/app info
-            let versionCheck = """
-            JSON.stringify({
-                userAgent: navigator.userAgent,
-                platform: navigator.platform,
-                language: navigator.language,
-                onLine: navigator.onLine,
-                cookieEnabled: navigator.cookieEnabled,
-                windowLocation: window.location.href,
-                timestamp: new Date().toISOString()
-            })
-            """
+            // Test the hook and verify browser info
+            let testResult = try await testHookConnection(hook, window: window, port: port)
             
-            let testResult = try await hook.runJS(versionCheck)
-            Logger(category: .settings)
-                .info("JS Hook installed for window \(window.windowTitle ?? "Unknown") on port \(port)")
-            
-            // Parse and display browser info
-            if let data = testResult.data(using: .utf8),
-               let browserInfo = try? JSONDecoder().decode(BrowserInfo.self, from: data) {
-                Logger(category: .settings)
-                    .info("Browser info - UserAgent: \(browserInfo.userAgent), Location: \(browserInfo.windowLocation)")
-                
-                // Verify this is actually a Cursor instance
-                guard browserInfo.windowLocation.contains("Cursor.app") else {
-                    Logger(category: .settings)
-                        .warning("Hook connected but not to Cursor app. Location: \(browserInfo.windowLocation)")
-                    statusMessage = "Warning: Connected to non-Cursor window on port \(port)"
-                    return
-                }
-                
-                // Extract Chrome version from user agent if available
-                if let chromeRange = browserInfo.userAgent.range(of: "Chrome/[0-9.]+", options: .regularExpression),
-                   let versionRange = browserInfo.userAgent[chromeRange].range(of: "[0-9.]+", options: .regularExpression) {
-                    let chromeVersion = String(browserInfo.userAgent[chromeRange][versionRange])
-                    statusMessage = "Connected to Cursor (Chrome \(chromeVersion)) on port \(port)"
-                } else {
-                    statusMessage = "Connected to Cursor on port \(port)"
-                }
-                
-                // Show a friendly alert after a short delay to demonstrate the connection
-                Task {
-                    try? await Task.sleep(for: .seconds(2))
-                    
-                    let alertScript = """
-                    (function() {
-                        const message = '👋 Hi from CodeLooper!\\n\\nThis JS is running via our tunnel on port \(port).\\n\\nYou can now use CodeLooper to monitor and interact with Cursor.';
-                        const style = 'background: linear-gradient(45deg, #667eea 0%, #764ba2 100%); color: white; font-size: 14px; padding: 20px; border-radius: 8px; font-weight: bold;';
-                        console.log('%c' + message, style);
-                        
-                        // Also show a toast notification if possible
-                        if (typeof Notification !== 'undefined' && Notification.permission === 'granted') {
-                            new Notification('CodeLooper Connected! 🎉', {
-                                body: 'JS tunnel established on port \(port). You can now monitor and interact with Cursor.',
-                                icon: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="%23667eea" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M8 12a4 4 0 0 0 8 0"/></svg>'
-                            });
-                        }
-                        
-                        return 'CodeLooper connection confirmed! 🚀';
-                    })()
-                    """
-                    
-                    if let alertResult = try? await hook.runJS(alertScript) {
-                        Logger(category: .settings)
-                            .info("Showed connection confirmation: \(alertResult)")
-                    }
-                }
-            } else {
-                statusMessage = "JS Hook installed on port \(port) (sanity check: \(testResult.prefix(50))...)"
+            if let browserInfo = testResult {
+                await showConnectionConfirmation(hook, port: port)
             }
             
             jsHookManager.savePortMappings()
         } catch {
             handleHookInstallationError(error, for: window)
+        }
+    }
+    
+    private func testHookConnection(_ hook: CursorJSHook, window: MonitoredWindowInfo, port: UInt16) async throws -> BrowserInfo? {
+        let versionCheck = """
+        JSON.stringify({
+            userAgent: navigator.userAgent,
+            platform: navigator.platform,
+            language: navigator.language,
+            onLine: navigator.onLine,
+            cookieEnabled: navigator.cookieEnabled,
+            windowLocation: window.location.href,
+            timestamp: new Date().toISOString()
+        })
+        """
+        
+        let testResult = try await hook.runJS(versionCheck)
+        Logger(category: .settings)
+            .info("JS Hook installed for window \(window.windowTitle ?? "Unknown") on port \(port)")
+        
+        // Parse and display browser info
+        guard let data = testResult.data(using: .utf8),
+              let browserInfo = try? JSONDecoder().decode(BrowserInfo.self, from: data) else {
+            statusMessage = "JS Hook installed on port \(port) (sanity check: \(testResult.prefix(50))...)"
+            return nil
+        }
+        
+        Logger(category: .settings)
+            .info("Browser info - UserAgent: \(browserInfo.userAgent), Location: \(browserInfo.windowLocation)")
+        
+        // Verify this is actually a Cursor instance
+        guard browserInfo.windowLocation.contains("Cursor.app") else {
+            Logger(category: .settings)
+                .warning("Hook connected but not to Cursor app. Location: \(browserInfo.windowLocation)")
+            statusMessage = "Warning: Connected to non-Cursor window on port \(port)"
+            return nil
+        }
+        
+        // Update status with Chrome version if available
+        updateStatusWithChromeVersion(browserInfo.userAgent, port: port)
+        return browserInfo
+    }
+    
+    private func updateStatusWithChromeVersion(_ userAgent: String, port: UInt16) {
+        if let chromeRange = userAgent.range(of: "Chrome/[0-9.]+", options: .regularExpression),
+           let versionRange = userAgent[chromeRange].range(of: "[0-9.]+", options: .regularExpression) {
+            let chromeVersion = String(userAgent[chromeRange][versionRange])
+            statusMessage = "Connected to Cursor (Chrome \(chromeVersion)) on port \(port)"
+        } else {
+            statusMessage = "Connected to Cursor on port \(port)"
+        }
+    }
+    
+    private func showConnectionConfirmation(_ hook: CursorJSHook, port: UInt16) async {
+        try? await Task.sleep(for: .seconds(2))
+        
+        let alertScript = """
+        (function() {
+            const message = '👋 Hi from CodeLooper!\\n\\n' +
+                          'This JS is running via our tunnel on port \(port).\\n\\n' +
+                          'You can now use CodeLooper to monitor and interact with Cursor.';
+            const style = 'background: linear-gradient(45deg, #667eea 0%, #764ba2 100%); color: white; ' +
+                        'font-size: 14px; padding: 20px; border-radius: 8px; font-weight: bold;';
+            console.log('%c' + message, style);
+            
+            // Also show a toast notification if possible
+            if (typeof Notification !== 'undefined' && Notification.permission === 'granted') {
+                new Notification('CodeLooper Connected! 🎉', {
+                    body: 'JS tunnel established on port \(port). You can now monitor and interact with Cursor.',
+                    icon: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" ' +
+                          'viewBox="0 0 24 24" fill="none" stroke="%23667eea" stroke-width="2">' +
+                          '<circle cx="12" cy="12" r="10"/><path d="M8 12a4 4 0 0 0 8 0"/></svg>'
+                });
+            }
+            
+            return 'CodeLooper connection confirmed! 🚀';
+        })()
+        """
+        
+        if let alertResult = try? await hook.runJS(alertScript) {
+            Logger(category: .settings)
+                .info("Showed connection confirmation: \(alertResult)")
         }
     }
 
@@ -551,9 +573,10 @@ class CursorInputWatcherViewModel: ObservableObject {
 
         if foundElements.count > 1 {
             Logger(category: .accessibility)
-                .info(
-                    "Query for \(inputInfo.name) (query: \(queryData.queryFile)) returned \(foundElements.count) elements. Processed the first."
-                )
+                .info("""
+                    Query for \(inputInfo.name) (query: \(queryData.queryFile)) returned \(foundElements.count) elements. \
+                    Processed the first.
+                    """)
         }
     }
 
@@ -572,17 +595,21 @@ class CursorInputWatcherViewModel: ObservableObject {
             let typeStr = String(describing: type(of: responseData.value))
             let descStr = String(desc.prefix(200))
             Logger(category: .accessibility)
-                .warning(
-                    "AXorcist response data for \(inputInfo.name) (query: \(queryFile)) was not Element/[Element]. Type: \(typeStr), Desc: \(descStr)"
-                )
+                .warning("""
+                    AXorcist response data for \(inputInfo.name) (query: \(queryFile)) was not Element/[Element]. \
+                    Type: \(typeStr), Desc: \(descStr)
+                    """)
             self.watchedInputs[index].lastError = "Unexpected data format from AXorcist."
             self.statusMessage = "Format error for \(inputInfo.name)."
             return []
         }
     }
 
-    private func extractTextFromElement(_ element: Element, attributesToFetch: [String],
-                                        inputInfo: CursorWindowInfo) -> String?
+    private func extractTextFromElement(
+        _ element: Element,
+        attributesToFetch: [String],
+        inputInfo: CursorWindowInfo
+    ) -> String?
     {
         guard let attributes = element.attributes else { return nil }
 
@@ -624,7 +651,7 @@ class CursorInputWatcherViewModel: ObservableObject {
 
     private func updateWatcherStatus() {
         if self.isWatchingEnabled {
-            let activeErrorCount = self.watchedInputs.count(where: { $0.lastError != nil })
+            let activeErrorCount = self.watchedInputs.count { $0.lastError != nil }
             if activeErrorCount > 0 {
                 self.statusMessage = "Watcher active with \(activeErrorCount) error(s)."
             } else {
@@ -671,38 +698,43 @@ class CursorInputWatcherViewModel: ObservableObject {
 
     private func probePort(_ port: UInt16, for window: MonitoredWindowInfo) async -> Bool {
         // First, let's check if there's already a hook in the browser without starting a listener
-        if let existingPort = await checkForExistingHookInBrowser(window: window) {
-            if existingPort == port {
-                // There's a hook on this port, let's try to connect to it
-                do {
-                    let probeHook = try await CursorJSHook(
-                        applicationName: "Cursor",
-                        port: port,
-                        skipInjection: true,
-                        targetWindowTitle: window.windowTitle
-                    )
-                    
-                    if await probeHook.probeForExistingHook(timeout: 2.0) {
-                        // Successfully connected to existing hook
-                        jsHookManager.jsHooks[window.id] = probeHook
-                        jsHookManager.addHookedWindow(window.id)
-                        jsHookManager.windowPorts[window.id] = port
-                        
-                        Logger(category: .settings)
-                            .info("Successfully connected to existing hook on port \(port)")
-                        
-                        return true
-                    }
-                } catch {
-                    // Port might be in use by something else
-                    Logger(category: .settings)
-                        .debug("Failed to connect to port \(port): \(error)")
-                }
-            }
-            return false
+        if let existingPort = await checkForExistingHookInBrowser(window: window), existingPort == port {
+            return await tryConnectToExistingHook(port: port, window: window)
         }
         
         // No existing hook found in browser, try the normal probe
+        return await probeForHookConnection(port: port, window: window)
+    }
+    
+    private func tryConnectToExistingHook(port: UInt16, window: MonitoredWindowInfo) async -> Bool {
+        do {
+            let probeHook = try await CursorJSHook(
+                applicationName: "Cursor",
+                port: port,
+                skipInjection: true,
+                targetWindowTitle: window.windowTitle
+            )
+            
+            if await probeHook.probeForExistingHook(timeout: 2.0) {
+                // Successfully connected to existing hook
+                jsHookManager.jsHooks[window.id] = probeHook
+                jsHookManager.addHookedWindow(window.id)
+                jsHookManager.windowPorts[window.id] = port
+                
+                Logger(category: .settings)
+                    .info("Successfully connected to existing hook on port \(port)")
+                
+                return true
+            }
+        } catch {
+            // Port might be in use by something else
+            Logger(category: .settings)
+                .debug("Failed to connect to port \(port): \(error)")
+        }
+        return false
+    }
+    
+    private func probeForHookConnection(port: UInt16, window: MonitoredWindowInfo) async -> Bool {
         do {
             // Create a hook in probe mode (no injection)
             let probeHook = try await CursorJSHook(
@@ -719,74 +751,78 @@ class CursorInputWatcherViewModel: ObservableObject {
                 jsHookManager.addHookedWindow(window.id)
                 jsHookManager.windowPorts[window.id] = port
 
-                // Test the existing hook with browser info check
-                let versionCheck = """
-                JSON.stringify({
-                    userAgent: navigator.userAgent,
-                    platform: navigator.platform,
-                    language: navigator.language,
-                    onLine: navigator.onLine,
-                    cookieEnabled: navigator.cookieEnabled,
-                    windowLocation: window.location.href,
-                    timestamp: new Date().toISOString()
-                })
-                """
-                
-                if let testResult = try? await probeHook.runJS(versionCheck),
-                   let data = testResult.data(using: .utf8),
-                   let browserInfo = try? JSONDecoder().decode(BrowserInfo.self, from: data) {
-                    
-                    // Verify this is actually a Cursor instance
-                    guard browserInfo.windowLocation.contains("Cursor.app") else {
-                        Logger(category: .settings)
-                            .warning("Found hook but not for Cursor app. Location: \(browserInfo.windowLocation)")
-                        return false // Not a valid Cursor hook
-                    }
-                    
-                    Logger(category: .settings)
-                        .info(
-                            "Found existing JS Hook for Cursor window \(window.windowTitle ?? "Unknown") on port \(port)"
-                        )
-                    
-                    // Extract Chrome version from user agent if available
-                    if let chromeRange = browserInfo.userAgent.range(of: "Chrome/[0-9.]+", options: .regularExpression),
-                       let versionRange = browserInfo.userAgent[chromeRange].range(of: "[0-9.]+", options: .regularExpression) {
-                        let chromeVersion = String(browserInfo.userAgent[chromeRange][versionRange])
-                        statusMessage = "Reconnected to Cursor (Chrome \(chromeVersion)) on port \(port)"
-                    } else {
-                        statusMessage = "Reconnected to Cursor on port \(port)"
-                    }
-                    
-                    // Show a reconnection message
-                    Task {
-                        try? await Task.sleep(for: .seconds(1))
-                        
-                        let reconnectScript = """
-                        (function() {
-                            const message = '🔄 CodeLooper Reconnected!\\n\\nFound existing JS tunnel on port \(port).';
-                            const style = 'background: linear-gradient(45deg, #22c55e 0%, #16a34a 100%); color: white; font-size: 14px; padding: 15px; border-radius: 8px; font-weight: bold;';
-                            console.log('%c' + message, style);
-                            return 'Reconnection confirmed! ✅';
-                        })()
-                        """
-                        
-                        if let result = try? await probeHook.runJS(reconnectScript) {
-                            Logger(category: .settings)
-                                .info("Showed reconnection confirmation: \(result)")
-                        }
-                    }
-                } else {
-                    statusMessage = "Found existing hook on port \(port) (sanity check failed)"
+                // Verify it's a valid Cursor hook
+                if await verifyHookIsForCursor(probeHook, window: window, port: port) {
+                    await showReconnectionMessage(probeHook, port: port)
+                    return true
                 }
-
-                jsHookManager.savePortMappings()
-                return true
+                return false
             }
         } catch {
-            // Port probe failed, continue to next
+            // Failed to create probe hook
+            Logger(category: .settings)
+                .debug("Failed to probe port \(port): \(error)")
         }
-
         return false
+    }
+    
+    private func verifyHookIsForCursor(_ hook: CursorJSHook, window: MonitoredWindowInfo, port: UInt16) async -> Bool {
+        // Test the existing hook with browser info check
+        let versionCheck = """
+        JSON.stringify({
+            userAgent: navigator.userAgent,
+            platform: navigator.platform,
+            language: navigator.language,
+            onLine: navigator.onLine,
+            cookieEnabled: navigator.cookieEnabled,
+            windowLocation: window.location.href,
+            timestamp: new Date().toISOString()
+        })
+        """
+        
+        guard let testResult = try? await hook.runJS(versionCheck),
+              let data = testResult.data(using: .utf8),
+              let browserInfo = try? JSONDecoder().decode(BrowserInfo.self, from: data) else {
+            return false
+        }
+        
+        // Verify this is actually a Cursor instance
+        guard browserInfo.windowLocation.contains("Cursor.app") else {
+            Logger(category: .settings)
+                .warning("Found hook but not for Cursor app. Location: \(browserInfo.windowLocation)")
+            return false // Not a valid Cursor hook
+        }
+        
+        Logger(category: .settings)
+            .info(
+                "Found existing JS Hook for Cursor window \(window.windowTitle ?? "Unknown") on port \(port)"
+            )
+        
+        // Update status with Chrome version
+        updateStatusWithChromeVersion(browserInfo.userAgent, port: port)
+        return true
+    }
+    
+    private func showReconnectionMessage(_ hook: CursorJSHook, port: UInt16) async {
+        statusMessage = "Reconnected to Cursor on port \(port)"
+        
+        // Show a reconnection message
+        try? await Task.sleep(for: .seconds(1))
+        
+        let reconnectScript = """
+        (function() {
+            const message = '🔄 CodeLooper Reconnected!\\n\\nFound existing JS tunnel on port \(port).';
+            const style = 'background: linear-gradient(45deg, #22c55e 0%, #16a34a 100%); color: white; ' +
+                        'font-size: 14px; padding: 15px; border-radius: 8px; font-weight: bold;';
+            console.log('%c' + message, style);
+            return 'Reconnection confirmed! ✅';
+        })()
+        """
+        
+        if let result = try? await hook.runJS(reconnectScript) {
+            Logger(category: .settings)
+                .info("Showed reconnection confirmation: \(result)")
+        }
     }
 
     // MARK: - Persistence
