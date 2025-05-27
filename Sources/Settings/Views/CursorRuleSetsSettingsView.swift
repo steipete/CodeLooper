@@ -52,9 +52,9 @@ struct CursorRuleSetsSettingsView: View {
             }
         }
         .sheet(isPresented: $showAddRule) {
-            AddRuleSheet(onAdd: { rule in
+            AddRuleSheet { rule in
                 rules.append(rule)
-            })
+            }
         }
     }
 
@@ -179,7 +179,8 @@ private struct RuleCard: View {
 private struct AddRuleSheet: View {
     // MARK: Internal
 
-    @Environment(\.dismiss) var dismiss
+    @Environment(\.dismiss)
+    var dismiss
 
     let onAdd: (InterventionRule) -> Void
 

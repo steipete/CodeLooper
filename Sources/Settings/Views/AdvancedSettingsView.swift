@@ -5,7 +5,8 @@ import SwiftUI
 struct AdvancedSettingsView: View {
     // MARK: Internal
 
-    @Default(.showDebugMenu) var showDebugMenu
+    @Default(.showDebugMenu)
+    var showDebugMenu
 
     var body: some View {
         VStack(alignment: .leading, spacing: Spacing.xLarge) {

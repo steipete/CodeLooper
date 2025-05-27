@@ -115,8 +115,12 @@ struct SettingsPanesContainerView: View {
             // Common Footer (Spec 3.3)
             Divider()
             HStack(spacing: 20) {
-                Link("CodeLooper.app", destination: URL(string: "https://codelooper.app/")!)
-                Link("Follow @CodeLoopApp on X", destination: URL(string: "https://x.com/CodeLoopApp")!)
+                if let codeLooperURL = URL(string: "https://codelooper.app/") {
+                    Link("CodeLooper.app", destination: codeLooperURL)
+                }
+                if let twitterURL = URL(string: "https://x.com/CodeLoopApp") {
+                    Link("Follow @CodeLoopApp on X", destination: twitterURL)
+                }
             }
             .padding(.horizontal)
             .padding(.bottom, 10)
