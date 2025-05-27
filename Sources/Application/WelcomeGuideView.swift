@@ -61,7 +61,7 @@ struct WelcomeGuideView: View {
                     .background(Color.accentColor)
                     .foregroundColor(.white)
                     .cornerRadius(10)
-            }
+            })
             .buttonStyle(.plain) // Use plain to allow full custom background and foreground
             .padding(.horizontal, 40)
             .padding(.bottom, 30)

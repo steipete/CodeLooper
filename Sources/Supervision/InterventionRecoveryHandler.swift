@@ -241,9 +241,9 @@ class InterventionRecoveryHandler {
 
         guard actionResponse.error == nil else {
             self.logger.error("""
-                PID \(String(describing: pid)): Failed to click \(elementName). \
-                Error: \(String(describing: actionResponse.error?.message))
-                """)
+            PID \(String(describing: pid)): Failed to click \(elementName). \
+            Error: \(String(describing: actionResponse.error?.message))
+            """)
             self.sessionLogger
                 .log(
                     level: .error,

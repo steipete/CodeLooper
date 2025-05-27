@@ -107,7 +107,7 @@ private struct MyOSLogHandler: LogHandler {
         level: Logging.Logger.Level,
         message: Logging.Logger.Message,
         metadata: Logging.Logger.Metadata?,
-        source: String,
+        source _: String,
         file _: String,
         function _: String,
         line _: UInt

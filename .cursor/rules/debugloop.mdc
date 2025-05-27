@@ -1,6 +1,6 @@
 ---
 description: 
-globs: 
+globs: axorc
 alwaysApply: false
 ---
 # AXorcist Debugging: Finding the Cursor AI Slash Input Field
@@ -357,6 +357,30 @@ This returns the remote `AXTextArea` with `AXValue` = chat text.
    query.
 3. If depth grows but value not found, refine criteria (check
    `AXDOMClassList`/`AXDOMIdentifier`).
+
+## 7  System-wide focus path
+Electron/Chromium inserts the renderer proxy subtree **only** under the *system-wide* accessibility root, not under the application node.  The attribute chain is:
+
+```
+AXSystemWide  ─▶  AXFocusedUIElement  ─▶  BrowserAccessibilityCocoa proxy  ─▶  … deep subtree …
+```
+
+Therefore a reliable, focus-based query uses a two-step `path_from_root`:
+
+```jsonc
+{
+  "path_from_root": [
+    { "attribute":"AXRole",             "value":"AXSystemWide", "depth":0 },
+    { "attribute":"AXFocusedUIElement", "value":"*",            "matchType":"any", "depth":0 }
+  ],
+  "criteria": [
+    { "attribute":"AXRole", "value":"AXTextArea" },
+    { "attribute":"DOM",    "value":"aislash-editor-input", "match_type":"contains" }
+  ]
+}
+```
+
+This works regardless of how many windows the app has or whether the proxy appears as a child in the per-application tree.
 
 ---
 This file is intentionally committed under `.cursor/rules/` so future

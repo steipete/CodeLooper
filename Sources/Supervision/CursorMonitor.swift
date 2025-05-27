@@ -585,9 +585,9 @@ public class CursorMonitor: ObservableObject {
         appInfo.windows = newWindowInfos
         if monitoringCycleCount % 10 == 0 {
             logger.debug("""
-                Updated \(newWindowInfos.count) windows for PID \(appInfo.pid). \
-                Titles: \(newWindowInfos.map { $0.windowTitle ?? "N/A" })
-                """)
+            Updated \(newWindowInfos.count) windows for PID \(appInfo.pid). \
+            Titles: \(newWindowInfos.map { $0.windowTitle ?? "N/A" })
+            """)
         }
     }
 

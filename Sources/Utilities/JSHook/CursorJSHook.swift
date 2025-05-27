@@ -1,6 +1,19 @@
 import Foundation
 import Network
 
+extension String {
+    /// Converts a String to a properly escaped AppleScript string literal
+    var appleScriptLiteral: String {
+        // Escape backslashes first, then quotes, then newlines
+        let escaped = self
+            .replacingOccurrences(of: "\\", with: "\\\\")
+            .replacingOccurrences(of: "\"", with: "\\\"")
+            .replacingOccurrences(of: "\n", with: "\\n")
+            .replacingOccurrences(of: "\r", with: "\\r")
+        return "\"\(escaped)\""
+    }
+}
+
 @MainActor
 public final class CursorJSHook {
     // MARK: Lifecycle
@@ -25,6 +38,12 @@ public final class CursorJSHook {
             try injectViaAppleScript() // Changed to synchronous throw
             try await waitForRendererHandshake()
         }
+    }
+
+    deinit {
+        // Clean up listener and connection
+        listener?.cancel()
+        conn?.cancel()
     }
 
     // MARK: Public
@@ -64,11 +83,79 @@ public final class CursorJSHook {
         return false
     }
 
-    /// Eval JS inside Cursor and get the JSON-encoded result
-    public func runJS(_ source: String) async throws -> String {
+    /// Send a command to the JS hook and get the JSON-encoded result
+    /// - Parameter command: A dictionary representing the command to send
+    /// - Returns: The JSON-encoded result from the browser
+    public func sendCommand(_ command: [String: Any]) async throws -> String {
         guard let conn, handshakeCompleted else { throw HookError.notConnected }
-        return try await send(source, over: conn)
+        let jsonData = try JSONSerialization.data(withJSONObject: command)
+        let jsonString = String(data: jsonData, encoding: .utf8) ?? "{}"
+        return try await send(jsonString, over: conn)
     }
+    
+    /// Legacy method - attempts to run raw JS code (will fail with Trusted Types)
+    @available(*, deprecated, message: "Use sendCommand or specific helper methods instead")
+    public func runJS(_ source: String) async throws -> String {
+        let command = ["type": "rawCode", "code": source]
+        return try await sendCommand(command)
+    }
+    
+    // MARK: - Command Helpers
+    
+    /// Get system information from the browser
+    public func getSystemInfo() async throws -> String {
+        try await sendCommand(["type": "getSystemInfo"])
+    }
+    
+    /// Query for an element using a CSS selector
+    public func querySelector(_ selector: String) async throws -> String {
+        try await sendCommand(["type": "querySelector", "selector": selector])
+    }
+    
+    /// Get detailed information about an element
+    public func getElementInfo(_ selector: String) async throws -> String {
+        try await sendCommand(["type": "getElementInfo", "selector": selector])
+    }
+    
+    /// Click an element
+    public func clickElement(_ selector: String) async throws -> String {
+        try await sendCommand(["type": "clickElement", "selector": selector])
+    }
+    
+    /// Get information about the currently focused element
+    public func getActiveElement() async throws -> String {
+        try await sendCommand(["type": "getActiveElement"])
+    }
+    
+    /// Show a notification in Cursor
+    /// - Parameters:
+    ///   - message: The message to display
+    ///   - showToast: If true, shows a toast notification in the DOM
+    ///   - duration: How long to show the toast (in milliseconds)
+    ///   - browserNotification: If true, attempts to show a browser notification
+    ///   - title: Title for browser notification
+    public func showNotification(
+        _ message: String,
+        showToast: Bool = true,
+        duration: Int = 3000,
+        browserNotification: Bool = false,
+        title: String? = nil
+    ) async throws -> String {
+        var command: [String: Any] = [
+            "type": "showNotification",
+            "message": message,
+            "showToast": showToast,
+            "duration": duration,
+            "browserNotification": browserNotification
+        ]
+        
+        if let title = title {
+            command["title"] = title
+        }
+        
+        return try await sendCommand(command)
+    }
+
     // MARK: Private
 
     // ──────────────────────────────  public API  ──────────────────────────────
@@ -96,21 +183,21 @@ public final class CursorJSHook {
             print("❌ Failed to create listener on port \(port): \(error)")
             throw HookError.portInUse(port: port.rawValue)
         }
-        
+
         listener.newConnectionHandler = { [weak self] connection in
             print("🌀 Listener received new connection attempt.")
             Task { @MainActor in
                 self?.adopt(connection)
             }
         }
-        
+
         var listenerStarted = false
         let startContinuation = await withCheckedContinuation { continuation in
             listener.stateUpdateHandler = { [weak self] newState in
                 Task { @MainActor in
                     guard self != nil else { return }
                     print("🌀 Listener state updated: \(newState)")
-                    
+
                     switch newState {
                     case .ready:
                         if !listenerStarted {
@@ -128,14 +215,14 @@ public final class CursorJSHook {
                     }
                 }
             }
-            
+
             listener.start(queue: .main)
         }
-        
+
         if !startContinuation {
             throw HookError.portInUse(port: port.rawValue)
         }
-        
+
         print("🌀  Listening on ws://127.0.0.1:\(port) for \(self.applicationName)")
     }
 
@@ -153,38 +240,79 @@ public final class CursorJSHook {
     private func generateJavaScriptHook() -> String {
         """
         (function() {
-            // Check if hook already exists
-            if (window.__codeLooperHook && window.__codeLooperHook.readyState === WebSocket.OPEN) {
-                console.log('🔄 CodeLooper: Hook already active on port ' + window.__codeLooperHook.url);
-                return 'CodeLooper hook already active';
+            // Check if hook already exists and clean it up
+            if (window.__codeLooperHook) {
+                console.log('🔄 CodeLooper: Cleaning up existing hook on port ' + window.__codeLooperPort);
+                try {
+                    if (window.__codeLooperHook.readyState === WebSocket.OPEN || 
+                        window.__codeLooperHook.readyState === WebSocket.CONNECTING) {
+                        window.__codeLooperHook.close();
+                    }
+                } catch (e) {
+                    console.log('🔄 CodeLooper: Error closing existing connection:', e);
+                }
+                window.__codeLooperHook = null;
+                window.__codeLooperPort = null;
             }
-            
+
             const port = \(port);
             const url = 'ws://127.0.0.1:' + port;
             let reconnectAttempts = 0;
             const maxReconnectAttempts = 5;
             const reconnectDelay = 3000; // 3 seconds
-            
+
             function connect() {
                 console.log('🔄 CodeLooper: Attempting to connect to ' + url);
-                
+
                 try {
                     const ws = new WebSocket(url);
-                    
+
                     ws.onopen = () => {
                         console.log('🔄 CodeLooper: Connected to ' + url);
                         ws.send('ready');
                         reconnectAttempts = 0; // Reset on successful connection
+                        
+                        // Show success notification
+                        try {
+                            // Create a toast notification in Cursor's UI
+                            const notification = document.createElement('div');
+                            notification.innerHTML = '✅ CodeLooper connected successfully!';
+                            notification.style.cssText = 'position: fixed; top: 20px; right: 20px; background: #10b981; color: white; padding: 12px 24px; border-radius: 8px; font-weight: 500; z-index: 999999; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); animation: slideIn 0.3s ease-out; font-family: -apple-system, BlinkMacSystemFont, sans-serif; font-size: 14px;';
+                            
+                            // Add animation
+                            const style = document.createElement('style');
+                            style.textContent = '@keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }';
+                            document.head.appendChild(style);
+                            
+                            document.body.appendChild(notification);
+                            
+                            // Remove notification after 5 seconds
+                            setTimeout(() => {
+                                notification.style.opacity = '0';
+                                notification.style.transform = 'translateX(100%)';
+                                notification.style.transition = 'all 0.3s ease-out';
+                                setTimeout(() => notification.remove(), 300);
+                            }, 5000);
+                            
+                            // Also show in console
+                            console.log('%c✅ CodeLooper Hook Active!', 'color: #10b981; font-size: 16px; font-weight: bold;');
+                            console.log('Port:', port);
+                            console.log('Ready to receive commands');
+                            
+                        } catch (e) {
+                            console.error('Failed to show notification:', e);
+                        }
                     };
-                    
+
                     ws.onerror = (e) => {
                         console.log('🔄 CodeLooper: WebSocket error', e);
                     };
-                    
+
                     ws.onclose = (e) => {
                         console.log('🔄 CodeLooper: WebSocket closed', e);
                         window.__codeLooperHook = null;
-                        
+                        window.__codeLooperPort = null;
+
                         // Auto-reconnect logic
                         if (reconnectAttempts < maxReconnectAttempts) {
                             reconnectAttempts++;
@@ -195,54 +323,157 @@ public final class CursorJSHook {
                             console.log('🔄 CodeLooper: Max reconnection attempts reached. Hook disabled.');
                         }
                     };
-                    
-                    ws.onmessage = (e) => {
+
+                    ws.onmessage = async (e) => {
                         let result;
                         try {
-                            // Try using Function constructor as a fallback for eval
-                            const AsyncFunction = (async function() {}).constructor;
-                            const fn = new AsyncFunction('return (' + e.data + ')');
-                            result = fn();
+                            // Parse message as a command instead of evaluating code
+                            const command = JSON.parse(e.data);
                             
-                            // Handle promises
-                            if (result && typeof result.then === 'function') {
-                                result.then(r => ws.send(JSON.stringify(r)))
-                                       .catch(err => ws.send(JSON.stringify({ error: err.message, stack: err.stack })));
-                                return;
-                            }
-                        } catch(error) {
-                            // If Function constructor also fails, try to execute as a simple expression
-                            try {
-                                // For simple property access, we can use a safer approach
-                                if (e.data.match(/^[\\w\\.\\[\\]'"]+$/)) {
-                                    result = Function('"use strict"; return ' + e.data)();
-                                } else {
-                                    result = { 
-                                        error: 'Trusted Types policy prevents eval. Code execution limited.', 
-                                        attempted: e.data,
-                                        actualError: error.message 
+                            switch(command.type) {
+                                case 'getSystemInfo':
+                                    result = {
+                                        userAgent: navigator.userAgent,
+                                        platform: navigator.platform,
+                                        language: navigator.language,
+                                        onLine: navigator.onLine,
+                                        cookieEnabled: navigator.cookieEnabled,
+                                        windowLocation: window.location.href,
+                                        timestamp: new Date().toISOString()
                                     };
-                                }
-                            } catch(innerError) {
-                                result = { error: innerError.message, stack: innerError.stack };
+                                    break;
+                                    
+                                case 'querySelector':
+                                    const element = document.querySelector(command.selector);
+                                    result = element ? {
+                                        found: true,
+                                        tagName: element.tagName,
+                                        id: element.id,
+                                        className: element.className,
+                                        text: element.textContent?.substring(0, 100)
+                                    } : { found: false };
+                                    break;
+                                    
+                                case 'getElementInfo':
+                                    const el = document.querySelector(command.selector);
+                                    if (el) {
+                                        const rect = el.getBoundingClientRect();
+                                        result = {
+                                            found: true,
+                                            position: { x: rect.x, y: rect.y },
+                                            size: { width: rect.width, height: rect.height },
+                                            visible: rect.width > 0 && rect.height > 0,
+                                            text: el.textContent?.substring(0, 200)
+                                        };
+                                    } else {
+                                        result = { found: false };
+                                    }
+                                    break;
+                                    
+                                case 'clickElement':
+                                    const target = document.querySelector(command.selector);
+                                    if (target && target instanceof HTMLElement) {
+                                        target.click();
+                                        result = { success: true, clicked: command.selector };
+                                    } else {
+                                        result = { success: false, error: 'Element not found or not clickable' };
+                                    }
+                                    break;
+                                    
+                                case 'getActiveElement':
+                                    const active = document.activeElement;
+                                    result = {
+                                        tagName: active?.tagName,
+                                        id: active?.id,
+                                        className: active?.className,
+                                        value: active?.value || active?.textContent
+                                    };
+                                    break;
+                                    
+                                case 'showNotification':
+                                    // Display a notification in the console with custom styling
+                                    const message = command.message || 'Hello from CodeLooper!';
+                                    const style = command.style || 'background: linear-gradient(45deg, #667eea 0%, #764ba2 100%); color: white; font-size: 14px; padding: 20px; border-radius: 8px; font-weight: bold;';
+                                    console.log('%c' + message, style);
+                                    
+                                    // Try to show a browser notification if permissions allow
+                                    if (command.browserNotification && typeof Notification !== 'undefined' && Notification.permission === 'granted') {
+                                        new Notification(command.title || 'CodeLooper', {
+                                            body: message,
+                                            icon: command.icon || 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="%23667eea" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M8 12a4 4 0 0 0 8 0"/></svg>'
+                                        });
+                                    }
+                                    
+                                    // Create a temporary DOM element for visual feedback
+                                    if (command.showToast) {
+                                        const toast = document.createElement('div');
+                                        toast.textContent = message;
+                                        toast.style.cssText = 'position: fixed; top: 20px; right: 20px; background: linear-gradient(45deg, #667eea 0%, #764ba2 100%); color: white; padding: 16px 24px; border-radius: 8px; font-family: -apple-system, BlinkMacSystemFont, sans-serif; font-size: 14px; font-weight: 500; box-shadow: 0 4px 12px rgba(0,0,0,0.15); z-index: 999999; animation: slideIn 0.3s ease-out;';
+                                        
+                                        // Add animation
+                                        const styleEl = document.createElement('style');
+                                        styleEl.textContent = '@keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }';
+                                        document.head.appendChild(styleEl);
+                                        
+                                        document.body.appendChild(toast);
+                                        
+                                        // Remove after delay
+                                        setTimeout(() => {
+                                            toast.style.animation = 'slideOut 0.3s ease-in forwards';
+                                            toast.style.animationName = 'slideOut';
+                                            setTimeout(() => {
+                                                toast.remove();
+                                                styleEl.remove();
+                                            }, 300);
+                                        }, command.duration || 3000);
+                                        
+                                        // Add slide out animation
+                                        styleEl.textContent += ' @keyframes slideOut { from { transform: translateX(0); opacity: 1; } to { transform: translateX(100%); opacity: 0; } }';
+                                    }
+                                    
+                                    result = { success: true, message: 'Notification shown' };
+                                    break;
+                                    
+                                case 'rawCode':
+                                    // Fallback for backward compatibility - will fail with Trusted Types
+                                    result = {
+                                        error: 'Trusted Types policy prevents eval. Use predefined commands instead.',
+                                        suggestion: 'Available commands: getSystemInfo, querySelector, getElementInfo, clickElement, getActiveElement, showNotification'
+                                    };
+                                    break;
+                                    
+                                default:
+                                    result = {
+                                        error: 'Unknown command type',
+                                        type: command.type,
+                                        availableCommands: ['getSystemInfo', 'querySelector', 'getElementInfo', 'clickElement', 'getActiveElement', 'showNotification']
+                                    };
                             }
+                        } catch (e) {
+                            // Fallback for non-JSON messages (backward compatibility)
+                            result = {
+                                error: 'Invalid command format. Expected JSON with type field.',
+                                received: e.data,
+                                actualError: e.message,
+                                suggestion: 'Send commands as JSON: {"type": "getSystemInfo"}'
+                            };
                         }
                         ws.send(JSON.stringify(result));
                     };
-                    
+
                     // Store reference globally
                     window.__codeLooperHook = ws;
                     window.__codeLooperPort = port;
-                    
+
                 } catch(err) {
                     console.error('🔄 CodeLooper: Failed to create WebSocket', err);
                     return 'CodeLooper hook failed: ' + err.message;
                 }
             }
-            
+
             // Start connection
             connect();
-            
+
             return 'CodeLooper hook installing on port ' + port + '...';
         })();
         """
@@ -261,32 +492,33 @@ public final class CursorJSHook {
             tell process "\(self.applicationName)"
                 # Target specific window by name if provided, otherwise use front window
                 set targetWindow to \(windowTarget)
-                
+
                 # Focus the window
                 set frontmost to true
                 set focused of targetWindow to true
                 delay 0.5
+
+                # Use menu bar to open developer tools
+                # Access Help menu and click Toggle Developer Tools
+                click menu item "Toggle Developer Tools" of menu 1 of menu bar item "Help" of menu bar 1
+                delay 3.0
                 
-                # Toggle developer tools console
-                keystroke "P" using {shift down, command down}
-                delay 1.0
-                keystroke ">Developer: Toggle Developer Tools"
+                # Focus on the console tab (if not already selected)
+                # Click in the console input area at the bottom
+                # Use escape key to ensure we're in the console
+                key code 53 # Escape
+                delay 0.2
+                
+                # Clear any existing content in console
+                keystroke "l" using {command down} # Cmd+L clears console
                 delay 0.5
-                key code 36 # Enter
-                delay 2.0
                 
-                # Clear any existing content
-                keystroke "a" using {command down}
-                delay 0.2
-                key code 117 # Delete
-                delay 0.2
-                
-                # Paste the JavaScript
-                set the clipboard to "\(js)"
+                # Now type/paste the JavaScript
+                set the clipboard to \(js.appleScriptLiteral)
                 delay 0.3
                 keystroke "v" using {command down}
                 delay 0.5
-                
+
                 # Execute
                 key code 36 # Enter
                 delay 0.5
@@ -395,12 +627,6 @@ public final class CursorJSHook {
         }
         // Optional: Notify listener or attempt to re-establish if appropriate for the use case
     }
-    
-    deinit {
-        // Clean up listener and connection
-        listener?.cancel()
-        conn?.cancel()
-    }
 
     // pump is already @MainActor isolated
     private func pump(_ connection: NWConnection) {
@@ -412,7 +638,7 @@ public final class CursorJSHook {
                     print("泵 CursorJSHook self is nil, cannot process message.")
                     return
                 }
-                
+
                 self.handleReceivedMessage(
                     on: connection,
                     data: data,
@@ -422,7 +648,7 @@ public final class CursorJSHook {
             }
         }
     }
-    
+
     private func handleReceivedMessage(
         on connection: NWConnection,
         data: Data?,
@@ -473,7 +699,7 @@ public final class CursorJSHook {
             print("🌀 Not re-pumping for \(connection.debugDescription) as shouldContinuePumping is false.")
         }
     }
-    
+
     private func processReceivedText(_ txt: String, on connection: NWConnection) {
         print("🌀 WS Received on \(connection.debugDescription): \(txt)")
         if txt == "ready" {
