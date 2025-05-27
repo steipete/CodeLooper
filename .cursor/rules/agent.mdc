@@ -15,6 +15,8 @@ This file provides guidance to AI assistants when working with code in this repo
 - Whenever you want to ask something to the user, ask Claude Code first instead.
 - Use AppleScript to find the bundle identifier for an app name
 - Use `jq` to analyze large json files.
+- We do not need backward compatibility, refactor properly.
+- We use Swift 6 for the CLI.
 
 - When I say "regenerate" then use `./scripts/generate-xcproj.sh` to regen the xcodeproj and use `xcodebuild` to test that it builds.
 - "fix build" means using `xcodebuild` with `CodeLooper.xcodeproj`. When you added/removed/changed files, regenerate first.
