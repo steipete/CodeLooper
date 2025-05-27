@@ -6,20 +6,34 @@ import SwiftUI
 
 struct GeneralSettingsView: View {
     @EnvironmentObject var mainSettingsViewModel: MainSettingsViewModel
-    @Default(.automaticallyCheckForUpdates) var automaticallyCheckForUpdates
-    @Default(.isGlobalMonitoringEnabled) var isGlobalMonitoringEnabled
-    @Default(.showInDock) var showInDock
-    @Default(.monitoringIntervalSeconds) var monitoringIntervalSeconds
-    @Default(.maxInterventionsBeforePause) var maxInterventionsBeforePause
-    @Default(.maxConnectionIssueRetries) var maxConnectionIssueRetries
-    @Default(.maxConsecutiveRecoveryFailures) var maxConsecutiveRecoveryFailures
-    @Default(.playSoundOnIntervention) var playSoundOnIntervention
-    @Default(.sendNotificationOnPersistentError) var sendNotificationOnPersistentError
-    @Default(.textForCursorStopsRecovery) var textForCursorStopsRecovery
-    @Default(.monitorSidebarActivity) var monitorSidebarActivity
-    @Default(.postInterventionObservationWindowSeconds) var postInterventionObservationWindowSeconds
-    @Default(.stuckDetectionTimeoutSeconds) var stuckDetectionTimeoutSeconds
-    @Default(.showDebugMenu) var showDebugMenu
+    @Default(.automaticallyCheckForUpdates)
+    var automaticallyCheckForUpdates
+    @Default(.isGlobalMonitoringEnabled)
+    var isGlobalMonitoringEnabled
+    @Default(.showInDock)
+    var showInDock
+    @Default(.monitoringIntervalSeconds)
+    var monitoringIntervalSeconds
+    @Default(.maxInterventionsBeforePause)
+    var maxInterventionsBeforePause
+    @Default(.maxConnectionIssueRetries)
+    var maxConnectionIssueRetries
+    @Default(.maxConsecutiveRecoveryFailures)
+    var maxConsecutiveRecoveryFailures
+    @Default(.playSoundOnIntervention)
+    var playSoundOnIntervention
+    @Default(.sendNotificationOnPersistentError)
+    var sendNotificationOnPersistentError
+    @Default(.textForCursorStopsRecovery)
+    var textForCursorStopsRecovery
+    @Default(.monitorSidebarActivity)
+    var monitorSidebarActivity
+    @Default(.postInterventionObservationWindowSeconds)
+    var postInterventionObservationWindowSeconds
+    @Default(.stuckDetectionTimeoutSeconds)
+    var stuckDetectionTimeoutSeconds
+    @Default(.showDebugMenu)
+    var showDebugMenu
     @ObservedObject var updaterViewModel: UpdaterViewModel
 
     private var appVersion: String {
@@ -99,9 +113,8 @@ struct GeneralSettingsView: View {
                         in: 0.5 ... 5.0,
                         step: 0.5,
                         label: "Monitoring Interval",
-                        showValue: true,
-                        valueFormatter: { String(format: "%.1fs", $0) }
-                    )
+                        showValue: true
+                    ) { String(format: "%.1fs", $0) }
 
                     DSDivider()
 

@@ -1,5 +1,5 @@
-import SwiftUI
 import AXorcist // Assuming LogEntry and GlobalAXLogger are here
+import SwiftUI
 
 // Simple view for a single log entry
 struct AXInspectorLogEntryRow: View { // Renamed
@@ -50,14 +50,14 @@ struct AXInspectorLogEntryRow: View { // Renamed
 struct AXInspectorLogView: View { // Renamed
     @State private var logEntries: [AXLogEntry] = []
     @State private var filterText: String = ""
-    @State private var selectedLogLevel: AXLogLevel? = nil
+    @State private var selectedLogLevel: AXLogLevel?
     @State private var refreshTimer: Timer?
 
     var filteredLogEntries: [AXLogEntry] {
         logEntries.filter { entry in
             let textMatch = filterText.isEmpty || 
-                            entry.message.localizedCaseInsensitiveContains(filterText) ||
-                            (entry.details?.values.contains(where: { "\($0)".localizedCaseInsensitiveContains(filterText) }) ?? false)
+                entry.message.localizedCaseInsensitiveContains(filterText) ||
+                (entry.details?.values.contains { "\($0)".localizedCaseInsensitiveContains(filterText) } ?? false)
             let levelMatch = selectedLogLevel == nil || entry.level == selectedLogLevel
             return textMatch && levelMatch
         }

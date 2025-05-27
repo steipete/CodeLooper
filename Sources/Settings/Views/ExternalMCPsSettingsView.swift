@@ -99,7 +99,7 @@ struct ExternalMCPsSettingsView: View {
             description: "Interact with AWS services",
             enabled: false,
             icon: "cloud"
-        ),
+        )
     ]
 
     @State private var showAddMCP = false
@@ -238,7 +238,8 @@ private struct EmptyStateView: View {
 // MARK: - MCP Browser Sheet
 
 private struct MCPBrowserSheet: View {
-    @Environment(\.dismiss) var dismiss
+    @Environment(\.dismiss)
+    var dismiss
 
     var body: some View {
         VStack(spacing: Spacing.large) {
@@ -247,10 +248,13 @@ private struct MCPBrowserSheet: View {
                 Text("Browse MCP Extensions")
                     .font(Typography.title3())
                 Spacer()
-                Button(action: { dismiss() }) {
-                    Image(systemName: "xmark.circle.fill")
-                        .foregroundColor(ColorPalette.textSecondary)
-                }
+                Button(
+                    action: { dismiss() },
+                    label: {
+                        Image(systemName: "xmark.circle.fill")
+                            .foregroundColor(ColorPalette.textSecondary)
+                    }
+                )
                 .buttonStyle(.plain)
             }
 

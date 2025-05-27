@@ -15,11 +15,55 @@ import SwiftUI
 // private let MAX_CONNECTION_ISSUE_RETRIES: Int = 2
 // private let MAX_CONSECUTIVE_RECOVERY_FAILURES: Int = 3
 
+/// Monitors Cursor AI application instances and manages automated interventions.
+///
+/// CursorMonitor is the core component responsible for detecting and resolving
+/// common issues in Cursor AI sessions, such as connection problems, stuck states,
+/// and unresponsive UI elements.
+///
+/// ## Features
+///
+/// - Real-time monitoring of Cursor instances
+/// - Automatic detection of stuck or error states  
+/// - Intelligent intervention strategies
+/// - Configurable monitoring parameters
+/// - Session logging and diagnostics
+///
+/// ## Topics
+///
+/// ### Monitoring Control
+/// - ``startMonitoring()``
+/// - ``stopMonitoring()``
+/// - ``shared``
+///
+/// ### Monitored Apps
+/// - ``monitoredApps``
+/// - ``addApp(_:)``
+/// - ``removeApp(_:)``
+///
+/// ### Configuration
+/// - ``isMonitoring``
+/// - ``monitoringTask``
+///
+/// ## Usage
+///
+/// ```swift
+/// let monitor = CursorMonitor.shared
+/// monitor.startMonitoring()
+/// 
+/// // Monitor will automatically detect and handle Cursor issues
+/// ```
 @MainActor
 public class CursorMonitor: ObservableObject {
     // MARK: Lifecycle
 
-    // Public initializer allowing AXorcist injection
+    /// Creates a new CursorMonitor with the specified dependencies.
+    ///
+    /// - Parameters:
+    ///   - axorcist: The AXorcist instance for accessibility operations
+    ///   - sessionLogger: Logger for recording monitoring sessions
+    ///   - locatorManager: Manager for UI element location strategies
+    ///   - instanceStateManager: Manager for tracking instance states
     public init(
         axorcist: AXorcist,
         sessionLogger: SessionLogger,
@@ -365,6 +409,7 @@ public class CursorMonitor: ObservableObject {
     private let sessionLogger: SessionLogger
     private let locatorManager: LocatorManager
     private let instanceStateManager: CursorInstanceStateManager
+    private var monitoringCycleCount: Int = 0
 
     private var cancellables = Set<AnyCancellable>()
     private var interventionEngine: CursorInterventionEngine!
@@ -376,7 +421,11 @@ public class CursorMonitor: ObservableObject {
             return
         }
 
-        logger.info("Performing monitoring cycle for \(monitoredApps.count) app(s).")
+        // Only log every 10th cycle to reduce verbosity
+        if monitoringCycleCount % 10 == 0 {
+            logger.debug("Monitoring cycle #\(monitoringCycleCount): \(monitoredApps.count) app(s)")
+        }
+        monitoringCycleCount += 1
 
         // First, update window information for all monitored apps
         await processMonitoredApps() // This updates the .windows property of each app in monitoredApps
@@ -384,10 +433,12 @@ public class CursorMonitor: ObservableObject {
         // Existing intervention logic would go here, iterating through apps and their windows
         for appInfo in monitoredApps {
             // If you need to operate on windows, iterate appInfo.windows
-            logger
-                .debug(
-                    "Processing app: \(appInfo.displayName) (PID: \(appInfo.pid)) with \(appInfo.windows.count) windows."
-                )
+            if monitoringCycleCount % 10 == 0 {
+                logger
+                    .debug(
+                        "Processing app: \(appInfo.displayName) (PID: \(appInfo.pid)) with \(appInfo.windows.count) windows."
+                    )
+            }
 
             // Example: If intervention logic is per-app based on aggregated window states or app-level checks
             // let currentStatus = instanceStateManager.getStatus(for: appInfo.pid)
@@ -395,7 +446,9 @@ public class CursorMonitor: ObservableObject {
 
             // If intervention logic is per-window:
             for windowInfo in appInfo.windows {
-                logger.debug("  Window: \(windowInfo.windowTitle ?? "N/A")")
+                if monitoringCycleCount % 10 == 0 {
+                    logger.debug("  Window: \(windowInfo.windowTitle ?? "N/A")")
+                }
                 // ... intervention logic for this specific window ...
                 // This might involve using instanceStateManager with a window-specific ID if needed
             }
@@ -503,18 +556,24 @@ public class CursorMonitor: ObservableObject {
             return
         }
 
-        logger
-            .debug("Attempting to fetch windows for PID \(appInfo.pid) using element: \(appElement.briefDescription())")
-        guard let windowElements: [Element] = appElement.windows() else {
+        if monitoringCycleCount % 10 == 0 {
             logger
-                .info(
-                    "Application PID \(appInfo.pid) has no windows or failed to fetch (appElement.windows() returned nil)."
-                )
+                .debug("Attempting to fetch windows for PID \(appInfo.pid) using element: \(appElement.briefDescription())")
+        }
+        guard let windowElements: [Element] = appElement.windows() else {
+            if monitoringCycleCount % 10 == 0 {
+                logger
+                    .debug(
+                        "Application PID \(appInfo.pid) has no windows or failed to fetch (appElement.windows() returned nil)."
+                    )
+            }
             appInfo.windows = []
             return
         }
 
-        logger.info("Fetched \(windowElements.count) raw window elements for PID \(appInfo.pid).")
+        if monitoringCycleCount % 10 == 0 {
+            logger.debug("Fetched \(windowElements.count) raw window elements for PID \(appInfo.pid).")
+        }
 
         var newWindowInfos: [MonitoredWindowInfo] = []
         for (index, windowElement) in windowElements.enumerated() {
@@ -533,10 +592,12 @@ public class CursorMonitor: ObservableObject {
             )) // Pass AX element and default isPaused
         }
         appInfo.windows = newWindowInfos
-        logger
-            .info(
-                "Updated \(newWindowInfos.count) windows for PID \(appInfo.pid). Titles: \(newWindowInfos.map { $0.windowTitle ?? "N/A" })"
-            )
+        if monitoringCycleCount % 10 == 0 {
+            logger
+                .debug(
+                    "Updated \(newWindowInfos.count) windows for PID \(appInfo.pid). Titles: \(newWindowInfos.map { $0.windowTitle ?? "N/A" })"
+                )
+        }
     }
 
     // In your main monitoring loop or when an app is detected:

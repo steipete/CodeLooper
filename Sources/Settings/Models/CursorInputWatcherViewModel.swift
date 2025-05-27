@@ -70,16 +70,36 @@ class CursorInputWatcherViewModel: ObservableObject {
             }
         }
 
-        // Try common ports to see if a hook exists from a previous session
-        for port in stride(from: basePort, to: basePort + 10, by: 1) {
-            if await probePort(port, for: window) {
-                return // Found existing hook
+        // Try common ports in parallel to see if a hook exists from a previous session
+        let portsToProbe = Array(stride(from: basePort, to: basePort + 10, by: 1))
+        let probeResults = await withTaskGroup(of: (UInt16, Bool).self) { group in
+            for port in portsToProbe {
+                group.addTask {
+                    let result = await self.probePort(port, for: window)
+                    return (port, result)
+                }
             }
+            
+            var results: [(UInt16, Bool)] = []
+            for await result in group {
+                results.append(result)
+                if result.1 { // If probe was successful
+                    group.cancelAll() // Cancel remaining probes
+                    return results
+                }
+            }
+            return results
+        }
+        
+        // Check if any probe was successful
+        if probeResults.contains(where: { $0.1 }) {
+            return // Found existing hook
         }
 
         // No existing hook found, inject a new one
         do {
             let port = getOrAssignPort(for: window.id)
+            statusMessage = "Installing CodeLooper hook on port \(port)..."
 
             // Create a new JS hook instance with specific port
             let hook = try await CursorJSHook(applicationName: "Cursor", port: port)
@@ -103,14 +123,23 @@ class CursorInputWatcherViewModel: ObservableObject {
                     "Failed to inject JS hook into window \(window.windowTitle ?? "Unknown"): \(error.localizedDescription)"
                 )
             
+            // Extract the underlying error from HookError
+            var underlyingError: NSError?
+            if case let CursorJSHook.HookError.injectionFailed(innerError) = error,
+               let nsError = innerError as NSError? {
+                underlyingError = nsError
+            } else if let nsError = error as NSError? {
+                underlyingError = nsError
+            }
+            
             // Log the specific error code for debugging
-            if let nsError = error as NSError? {
+            if let nsError = underlyingError {
                 Logger(category: .settings)
                     .error("JS Hook injection error code: \(nsError.code), domain: \(nsError.domain)")
             }
             
             // Provide more specific error messages based on the error
-            if let nsError = error as NSError? {
+            if let nsError = underlyingError {
                 switch nsError.code {
                 case -1743:
                     statusMessage = "Automation permission denied. Grant permission in System Settings > Privacy & Security > Automation"
@@ -560,8 +589,8 @@ class CursorInputWatcherViewModel: ObservableObject {
             // Create a hook in probe mode (no injection)
             let probeHook = try await CursorJSHook(applicationName: "Cursor", port: port, skipInjection: true)
 
-            // Wait for existing hook to connect
-            if await probeHook.probeForExistingHook(timeout: 1.0) {
+            // Wait for existing hook to connect (longer timeout since we probe in parallel)
+            if await probeHook.probeForExistingHook(timeout: 2.0) {
                 // Hook exists! Store it
                 jsHooks[window.id] = probeHook
                 hookedWindows.insert(window.id)
@@ -593,15 +622,19 @@ class CursorInputWatcherViewModel: ObservableObject {
     private func probeAllWindowsForExistingHooks() async {
         statusMessage = "Probing for existing hooks..."
 
-        for window in cursorWindows {
-            // Check if we already have a hook for this window
-            if hookedWindows.contains(window.id) {
-                continue
-            }
+        // Filter windows that need probing
+        let windowsToProbe = cursorWindows.filter { window in
+            !hookedWindows.contains(window.id) && windowPorts[window.id] != nil
+        }
 
-            // Try to find existing hook
-            if let existingPort = windowPorts[window.id] {
-                _ = await probePort(existingPort, for: window)
+        // Probe all windows in parallel
+        await withTaskGroup(of: Void.self) { group in
+            for window in windowsToProbe {
+                if let existingPort = windowPorts[window.id] {
+                    group.addTask {
+                        _ = await self.probePort(existingPort, for: window)
+                    }
+                }
             }
         }
 
@@ -635,6 +668,9 @@ class CursorInputWatcherViewModel: ObservableObject {
     }
     
     private func showAutomationPermissionAlert() {
+        // Ensure the app is active before showing the alert
+        NSApp.activate(ignoringOtherApps: true)
+        
         let alert = NSAlert()
         alert.messageText = "Automation Permission Required"
         alert.informativeText = "CodeLooper needs permission to control Cursor via automation.\n\nPlease grant permission in System Settings > Privacy & Security > Automation, then try again."
@@ -642,11 +678,24 @@ class CursorInputWatcherViewModel: ObservableObject {
         alert.addButton(withTitle: "Open System Settings")
         alert.addButton(withTitle: "Cancel")
         
-        let response = alert.runModal()
-        if response == .alertFirstButtonReturn {
-            // Open System Settings to the Automation pane
-            if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Automation") {
-                NSWorkspace.shared.open(url)
+        // Find the key window to attach the alert to
+        if let window = NSApp.keyWindow ?? NSApp.windows.first {
+            alert.beginSheetModal(for: window) { response in
+                if response == .alertFirstButtonReturn {
+                    // Open System Settings to the Automation pane
+                    if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Automation") {
+                        NSWorkspace.shared.open(url)
+                    }
+                }
+            }
+        } else {
+            // Fallback to modal if no window is available
+            let response = alert.runModal()
+            if response == .alertFirstButtonReturn {
+                // Open System Settings to the Automation pane
+                if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Automation") {
+                    NSWorkspace.shared.open(url)
+                }
             }
         }
     }

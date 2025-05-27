@@ -84,7 +84,7 @@ struct CursorRuleSetsSettingsView: View {
             description: "Stop generations that take too long",
             trigger: .generationTimeout,
             action: .stopGeneration
-        ),
+        )
     ]
 
     @State private var selectedRule: InterventionRule?
@@ -190,10 +190,13 @@ private struct AddRuleSheet: View {
                 Text("New Intervention Rule")
                     .font(Typography.title3())
                 Spacer()
-                Button(action: { dismiss() }) {
-                    Image(systemName: "xmark.circle.fill")
-                        .foregroundColor(ColorPalette.textSecondary)
-                }
+                Button(
+                    action: { dismiss() },
+                    label: {
+                        Image(systemName: "xmark.circle.fill")
+                            .foregroundColor(ColorPalette.textSecondary)
+                    }
+                )
                 .buttonStyle(.plain)
             }
 

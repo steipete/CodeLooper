@@ -1,17 +1,53 @@
 import SwiftUI
 
+/// A versatile button component with consistent styling across the design system.
+///
+/// DSButton provides various styles and sizes to fit different use cases while
+/// maintaining visual consistency throughout the application.
+///
+/// ## Topics
+///
+/// ### Button Styles
+/// - ``Style``
+/// - ``Size``
+///
+/// ### Creating Buttons
+/// - ``init(title:icon:style:size:isFullWidth:action:)``
+/// - ``init(title:style:size:isFullWidth:action:)``
+///
+/// ## Usage
+///
+/// ```swift
+/// DSButton(
+///     title: "Save Changes",
+///     style: .primary,
+///     size: .medium
+/// ) {
+///     // Handle button tap
+/// }
+/// ```
 public struct DSButton: View {
+    /// The visual style of the button.
     public enum Style {
+        /// Primary action button with high emphasis
         case primary
+        /// Secondary action button with medium emphasis
         case secondary
+        /// Tertiary action button with low emphasis
         case tertiary
+        /// Destructive action button for dangerous operations
         case destructive
+        /// Ghost button with minimal visual weight
         case ghost
     }
     
+    /// The size of the button.
     public enum Size {
+        /// Small button for compact layouts
         case small
+        /// Medium button for standard use
         case medium
+        /// Large button for prominent actions
         case large
     }
     

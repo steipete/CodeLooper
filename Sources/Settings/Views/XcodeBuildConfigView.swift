@@ -82,7 +82,7 @@ struct XcodeBuildConfigView: View {
         let params: [String: Any] = [
             "incrementalBuildsEnabled": incrementalBuilds,
             "sentryDisabled": sentryDisabled,
-            "version": versionOverride.isEmpty ? NSNull() : versionOverride, // Send NSNull to clear if empty
+            "version": versionOverride.isEmpty ? NSNull() : versionOverride // Send NSNull to clear if empty
         ]
         _ = viewModel.mcpConfigManager.updateMCPConfiguration(mcpIdentifier: "XcodeBuildMCP", params: params)
         viewModel.refreshAllMCPStatusMessages() // Refresh status in main settings view
