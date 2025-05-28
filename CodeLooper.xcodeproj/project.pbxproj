@@ -117,7 +117,6 @@
 		8F0314A4BCE80567A91812CD /* MenuBarIconManager+Debug.swift in Sources */ = {isa = PBXBuildFile; fileRef = EFF0E89AC6C44C8478328EB5 /* MenuBarIconManager+Debug.swift */; };
 		917659D24C33F6FEA689A286 /* AIWindowAnalyzer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 05BDDCA5679D76904D68F2C7 /* AIWindowAnalyzer.swift */; };
 		9762650D20B8F2DF934FFF7E /* Logging in Frameworks */ = {isa = PBXBuildFile; productRef = 5258361B849FE66B888D2295 /* Logging */; };
-		97A369DE2E426F5838211CFA /* CursorMonitor_Old.swift in Sources */ = {isa = PBXBuildFile; fileRef = 346944231FF5C3C3340C155A /* CursorMonitor_Old.swift */; };
 		9D320E02C6E6574F7BDF2378 /* CNContactStore+Sendable.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A7BA47E47C6D7E4B47B351B /* CNContactStore+Sendable.swift */; };
 		A0DB96201159F88783C053AD /* AIService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B41A403856987292C6EBDBB7 /* AIService.swift */; };
 		A23B565C8A05C2C3CEF183C1 /* Logging in Frameworks */ = {isa = PBXBuildFile; productRef = 6D5DC3C3E8500359BA1743CA /* Logging */; };
@@ -253,7 +252,6 @@
 		2D5FAB75EF6B072AB222608D /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		32DC4B14985C4A4A5689DD75 /* ExternalMCPsSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExternalMCPsSettingsView.swift; sourceTree = "<group>"; };
 		34339A12627520D195994567 /* LogConfiguration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LogConfiguration.swift; sourceTree = "<group>"; };
-		346944231FF5C3C3340C155A /* CursorMonitor_Old.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CursorMonitor_Old.swift; sourceTree = "<group>"; };
 		3627917CAA03B1A93F5E99EA /* WelcomeWindowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WelcomeWindowView.swift; sourceTree = "<group>"; };
 		38B4AEAFFCFB7B07CF5F8A3D /* Constants.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Constants.swift; sourceTree = "<group>"; };
 		3A933DA0E286DD8E1B13FDA9 /* ErrorMessagePopupHeuristic.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ErrorMessagePopupHeuristic.swift; sourceTree = "<group>"; };
@@ -472,7 +470,6 @@
 				10BDD8C7BDEABDA95017ECB4 /* CursorInstanceStateManager.swift */,
 				F595B21BD668B28B8EE19311 /* CursorInterventionEngine.swift */,
 				B57B97EA8BFA539E3CC108FE /* CursorInterventionMethods.swift */,
-				346944231FF5C3C3340C155A /* CursorMonitor_Old.swift */,
 				7B425EA51475F4BEC7D5140A /* CursorMonitor.swift */,
 				A3C85D760A327AA46D870C36 /* CursorMonitoringLoop.swift */,
 				08974B870271ABD09ACEF9AC /* CursorMonitorLifecycle.swift */,
@@ -1068,7 +1065,6 @@
 				149EB0EDB74F82A5642EC9AF /* CursorInterventionMethods.swift in Sources */,
 				1EB3DAF90502B431C374B95C /* CursorMonitor.swift in Sources */,
 				7A1636B2F77B3180663D0B64 /* CursorMonitorLifecycle.swift in Sources */,
-				97A369DE2E426F5838211CFA /* CursorMonitor_Old.swift in Sources */,
 				4AD5158FA21D5A54A64BF335 /* CursorMonitoringLoop.swift in Sources */,
 				F725B02AD8500D5895832104 /* CursorWindowManager.swift in Sources */,
 				C2FA68474BFEC37ED57FD692 /* DocumentPathTracker.swift in Sources */,
