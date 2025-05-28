@@ -3,7 +3,7 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 55;
+	objectVersion = 60;
 	objects = {
 
 /* Begin PBXBuildFile section */
@@ -179,7 +179,6 @@
 		E67764AA7985113055BDA48E /* CursorInputWatcherView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8E4817E4B4701359E59975BB /* CursorInputWatcherView.swift */; };
 		E8D96FAA47286A50222A8E62 /* DefaultsKeys.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51FC857EE374CA0BDF9C759A /* DefaultsKeys.swift */; };
 		EA5012D1FD36D8FF398A8577 /* CustomObservation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6C1EE04870CCBE096DCED567 /* CustomObservation.swift */; };
-		EB1A07B5BD013FEF94A72FF0 /* CodeLooper.sdef in Resources */ = {isa = PBXBuildFile; fileRef = 1E072564F6C7363162D5F526 /* CodeLooper.sdef */; };
 		EC007E2B27D262FA76FD5573 /* ClaudeCodeConfigView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9B648992B100A3B714E042F2 /* ClaudeCodeConfigView.swift */; };
 		ECD1849617FD75144BF4FC68 /* NativeToolbarSettingsWindow.swift in Sources */ = {isa = PBXBuildFile; fileRef = C462596FFBEB83B48578DAA0 /* NativeToolbarSettingsWindow.swift */; };
 		EED2BB62D40EF4F355D2D365 /* Documentation.docc in Sources */ = {isa = PBXBuildFile; fileRef = EFDC8F616B9D55B4C7B37C63 /* Documentation.docc */; };
@@ -242,7 +241,6 @@
 		13E3BD55C4561D42055015EA /* AboutSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AboutSettingsView.swift; sourceTree = "<group>"; };
 		16D1B5B9949C8968D7A0F2F2 /* DynamicLocatorDiscoverer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DynamicLocatorDiscoverer.swift; sourceTree = "<group>"; };
 		1A6D25A4C30168291D9BEDC3 /* AppleScriptInjector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppleScriptInjector.swift; sourceTree = "<group>"; };
-		1E072564F6C7363162D5F526 /* CodeLooper.sdef */ = {isa = PBXFileReference; path = CodeLooper.sdef; sourceTree = "<group>"; };
 		1EFADA1713C359300C3593C1 /* MainPopoverView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainPopoverView.swift; sourceTree = "<group>"; };
 		2211667F248167934388EAC1 /* Debouncer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Debouncer.swift; sourceTree = "<group>"; };
 		280180EAB3BF6DE88BF80470 /* WindowManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WindowManager.swift; sourceTree = "<group>"; };
@@ -276,7 +274,7 @@
 		5A7BA47E47C6D7E4B47B351B /* CNContactStore+Sendable.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "CNContactStore+Sendable.swift"; sourceTree = "<group>"; };
 		5ABEF7DF05613D31FB3F18B9 /* Diagnostics-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = "Diagnostics-Info.plist"; sourceTree = "<group>"; };
 		5B90EE899110CFF876B12F5C /* GeneralSettingsTab.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GeneralSettingsTab.swift; sourceTree = "<group>"; };
-		606FD31E5CDAD9A2D805242B /* AXorcist */ = {isa = PBXFileReference; lastKnownFileType = folder; name = AXorcist; path = AXorcist; sourceTree = "<group>"; };
+		606FD31E5CDAD9A2D805242B /* AXorcist */ = {isa = PBXFileReference; lastKnownFileType = folder; path = AXorcist; sourceTree = "<group>"; };
 		60FF15D35BFD9B8FD55390A7 /* OpenAIService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OpenAIService.swift; sourceTree = "<group>"; };
 		610127ADC0A5012E495B3C26 /* APIKeyService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIKeyService.swift; sourceTree = "<group>"; };
 		62F13848032738E908F5FD24 /* Diagnostics.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Diagnostics.framework; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -290,7 +288,7 @@
 		70CB63C0A4B720286208438E /* FileLogger.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileLogger.swift; sourceTree = "<group>"; };
 		729A0B35457D4688E40A04FB /* DefaultsManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DefaultsManager.swift; sourceTree = "<group>"; };
 		72CAF9D1E03CFD28069B089F /* CodeLooper.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = CodeLooper.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		7413E3D792A60AC390808102 /* AXpector */ = {isa = PBXFileReference; lastKnownFileType = folder; name = AXpector; path = AXpector; sourceTree = "<group>"; };
+		7413E3D792A60AC390808102 /* AXpector */ = {isa = PBXFileReference; lastKnownFileType = folder; path = AXpector; sourceTree = "<group>"; };
 		74E0F37B7E709C861887661C /* chain_link_lottie.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = chain_link_lottie.json; sourceTree = "<group>"; };
 		76F24870919EA7083C92D456 /* MacOSAutomatorConfigView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MacOSAutomatorConfigView.swift; sourceTree = "<group>"; };
 		77BD422F9926B58B0FEF44C4 /* NotificationManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationManager.swift; sourceTree = "<group>"; };
@@ -360,7 +358,7 @@
 		CC10D906EAF6E924567E3DB3 /* MainMenu.nib */ = {isa = PBXFileReference; lastKnownFileType = wrapper.nib; path = MainMenu.nib; sourceTree = "<group>"; };
 		CCAF8B6DB0B277CAE7371C70 /* WindowPositionManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WindowPositionManager.swift; sourceTree = "<group>"; };
 		CCB26FA3F63E3E25AAC37895 /* Operations.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Operations.swift; sourceTree = "<group>"; };
-		CDAC1075ADD1DD56A1C7CC99 /* DesignSystem */ = {isa = PBXFileReference; lastKnownFileType = folder; name = DesignSystem; path = DesignSystem; sourceTree = "<group>"; };
+		CDAC1075ADD1DD56A1C7CC99 /* DesignSystem */ = {isa = PBXFileReference; lastKnownFileType = folder; path = DesignSystem; sourceTree = "<group>"; };
 		CE560FF0D822A2EC83FCF2F5 /* GeneratingIndicatorTextHeuristic.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GeneratingIndicatorTextHeuristic.swift; sourceTree = "<group>"; };
 		D214BE806EB879A2A4C332A8 /* InterventionConstants.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InterventionConstants.swift; sourceTree = "<group>"; };
 		D2582E4F978B5EFB89BFD9A1 /* SidebarActivityAreaHeuristic.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SidebarActivityAreaHeuristic.swift; sourceTree = "<group>"; };
@@ -756,7 +754,6 @@
 			children = (
 				0FCE9F3F5529BA902C630865 /* JavaScript */,
 				74E0F37B7E709C861887661C /* chain_link_lottie.json */,
-				1E072564F6C7363162D5F526 /* CodeLooper.sdef */,
 				CC10D906EAF6E924567E3DB3 /* MainMenu.nib */,
 			);
 			path = Resources;
@@ -906,8 +903,6 @@
 			attributes = {
 				BuildIndependentTargetsInParallel = YES;
 				ORGANIZATIONNAME = "Anantus Machina";
-				TargetAttributes = {
-				};
 			};
 			buildConfigurationList = FBE341AF29B5C7CB419128FE /* Build configuration list for PBXProject "CodeLooper" */;
 			compatibilityVersion = "Xcode 14.0";
@@ -958,7 +953,6 @@
 			files = (
 				2309882229180AE2FA7EB995 /* Assets.xcassets in Resources */,
 				13ED50F2F28C4EEF3532770A /* Main.storyboard in Resources */,
-				EB1A07B5BD013FEF94A72FF0 /* CodeLooper.sdef in Resources */,
 				AE40CB2D386F76F851DF362B /* cursor-hook.js in Resources */,
 				3EB93F9333F97BEB98D906BF /* MainMenu.nib in Resources */,
 				B1FECEDB162E6A3A48101432 /* chain_link_lottie.json in Resources */,
@@ -1191,10 +1185,7 @@
 				PRODUCT_NAME = Diagnostics;
 				SDKROOT = macosx;
 				SKIP_INSTALL = YES;
-				SWIFT_ACTIVE_COMPILATION_CONDITIONS = (
-					"$(inherited)",
-					DEBUG,
-				);
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "$(inherited) DEBUG";
 				SWIFT_COMPILATION_MODE = singlefile;
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = 6.0;
@@ -1291,10 +1282,7 @@
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
 				MTL_ENABLE_DEBUG_INFO = YES;
 				ONLY_ACTIVE_ARCH = YES;
-				OTHER_SWIFT_FLAGS = (
-					"$(inherited) -warn-concurrency -enable-actor-data-race-checks",
-					"-strict-concurrency=complete",
-				);
+				OTHER_SWIFT_FLAGS = "$(inherited) -warn-concurrency -enable-actor-data-race-checks -strict-concurrency=complete";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_VERSION = 6.0;
 			};
@@ -1385,10 +1373,7 @@
 				PRODUCT_BUNDLE_IDENTIFIER = me.steipete.codelooper;
 				PRODUCT_NAME = CodeLooper;
 				SDKROOT = macosx;
-				SWIFT_ACTIVE_COMPILATION_CONDITIONS = (
-					"$(inherited)",
-					DEBUG,
-				);
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "$(inherited) DEBUG";
 				SWIFT_COMPILATION_MODE = singlefile;
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 			};
