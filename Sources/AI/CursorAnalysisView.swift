@@ -86,7 +86,7 @@ public struct CursorAnalysisView: View {
                     Text(type.rawValue).tag(type)
                 }
             }
-            .pickerStyle(.segmented)
+            .pickerStyle(.menu)
             
             if selectedPromptType == .custom {
                 VStack(alignment: .leading, spacing: 4) {
