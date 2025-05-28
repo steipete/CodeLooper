@@ -294,7 +294,7 @@ struct AISettingsView: View {
         }
     }
 
-    private func testConnection() async {
+    func testConnection() async {
         isTestingConnection = true
         connectionTestResult = nil
 
