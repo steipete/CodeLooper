@@ -12,142 +12,100 @@ struct MainPopoverView: View {
     private static let logger = Logger(category: .statusBar)
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
+        VStack(alignment: .leading, spacing: Spacing.medium) {
+            // Header
             Text("CodeLooper Supervision")
-                .font(.title2)
-                .padding(.bottom, 5)
+                .font(Typography.title3())
+                .foregroundColor(ColorPalette.text)
 
+            // Permissions section
             PermissionsView(showTitle: false, compact: true)
-                .padding(.bottom, 5)
 
-            Defaults.Toggle("Enable Cursor Supervision", key: .isGlobalMonitoringEnabled)
-
-            Divider()
-
-            if let cursorApp = cursorMonitor.monitoredApps.first {
-                Text("Monitored: \(cursorApp.displayName)")
-                    .font(.subheadline)
-                    .foregroundColor(isGlobalMonitoringEnabled ? .primary : .secondary)
-
-                if !isGlobalMonitoringEnabled {
-                    Text("  (Supervision Paused)")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                        .padding(.leading)
-                }
-
-                // Use windowStates from diagnosticsManager, which includes AI analysis status
-                let windowStatesArray = diagnosticsManager.windowStates.values.filter { ws in
-                    // Ensure we only show windows belonging to the currently monitored cursorApp PID
-                    cursorApp.windows.contains(where: { $0.id == ws.id })
-                }.sorted(by: { ($0.windowTitle ?? "Z") < ($1.windowTitle ?? "Z") })
-
-                if windowStatesArray.isEmpty {
-                    Text("  No windows detected or ready for AI diagnostics.")
-                        .foregroundColor(.secondary)
-                        .padding(.leading)
+            // Enable supervision toggle
+            DSToggle(
+                "Enable Cursor Supervision",
+                isOn: $isGlobalMonitoringEnabled
+            )
+            .onChange(of: isGlobalMonitoringEnabled) { oldValue, newValue in
+                if newValue {
+                    diagnosticsManager.enableLiveWatchingForAllWindows()
                 } else {
-                    List(windowStatesArray) { windowState in // Iterate over windowStates
-                        VStack(alignment: .leading, spacing: 6) {
-                            HStack {
-                                aiStatusIndicator(status: windowState.lastAIAnalysisStatus)
-                                Text(windowState.windowTitle ?? "Untitled Window")
-                                    .font(.system(.body, design: .monospaced))
-                                    .foregroundColor(isGlobalMonitoringEnabled ? .primary : .secondary)
-                                Spacer()
-                                jsHookStatusView(for: windowState.id)
-                            }
-                            if let docPath = windowState.documentPath, !docPath.isEmpty {
-                                Text("    \(docPath)")
-                                    .font(.caption2)
-                                    .foregroundColor(.gray)
-                                    .lineLimit(1)
-                                    .truncationMode(.middle)
-                            }
-                            
-                            if windowState.lastAIAnalysisStatus != .off {
-                                if let message = windowState.lastAIAnalysisResponseMessage, !message.isEmpty {
-                                    Text("    AI: \(message)")
-                                        .font(.caption)
-                                        .foregroundColor(windowState.lastAIAnalysisStatus == .error ? .red : .orange)
-                                }
-                                if let timestamp = windowState.lastAIAnalysisTimestamp {
-                                    Text("    Last check: \(timestamp, style: .time)")
-                                        .font(.caption2)
-                                        .foregroundColor(.secondary)
-                                }
-                            }
-
-                            HStack {
-                                Toggle("Live Analysis", isOn: Binding(
-                                    get: { diagnosticsManager.windowStates[windowState.id]?.isLiveWatchingEnabled ?? false },
-                                    set: { _ in diagnosticsManager.toggleLiveWatching(for: windowState.id) }
-                                ))
-                                .disabled(!isGlobalMonitoringEnabled)
-                                .scaleEffect(0.9)
-                                .frame(maxWidth: 140)
-                                
-                                if diagnosticsManager.windowStates[windowState.id]?.isLiveWatchingEnabled ?? false {
-                                    // REMOVED Stepper for interval
-                                }
-                            }
-                            .padding(.leading, 20)
-                            
-                        }
-                        .listRowBackground(Color.clear)
-                        .padding(.vertical, 4)
-                        .contentShape(Rectangle())
-                        .onTapGesture {
-                            Self.logger.info("Tapped on window item: \(windowState.windowTitle ?? windowState.id). Attempting to raise.")
-                            if let axElement = windowState.windowAXElement {
-                                do {
-                                    try axElement.performAction(.raise)
-                                    Self.logger.info("Successfully performed raise action for window: \(windowState.windowTitle ?? windowState.id)")
-                                } catch {
-                                    let windowTitle = windowState.windowTitle ?? windowState.id
-                                    Self.logger.warning("Failed to perform raise action for window: \(windowTitle): \(error)")
-                                }
-                            } else {
-                                Self.logger.warning("Cannot raise window: AXElement is nil for \(windowState.windowTitle ?? windowState.id)")
-                            }
-                        }
-                    }
-                    .listStyle(.plain)
-                }
-            } else {
-                if isGlobalMonitoringEnabled {
-                    Text("No Cursor app detected.")
-                        .foregroundColor(.secondary)
-                } else {
-                    Text("Cursor supervision is paused.")
-                        .foregroundColor(.secondary)
+                    diagnosticsManager.disableLiveWatchingForAllWindows()
                 }
             }
 
-            Divider()
-            Text("Session Interventions: \(cursorMonitor.totalAutomaticInterventionsThisSessionDisplay)")
-                .font(.caption)
+            DSDivider()
 
+            // Monitoring status section
+            if let cursorApp = cursorMonitor.monitoredApps.first {
+                VStack(alignment: .leading, spacing: Spacing.xSmall) {
+                    HStack {
+                        Text("Monitored:")
+                            .font(Typography.body())
+                            .foregroundColor(ColorPalette.textSecondary)
+                        Text(cursorApp.displayName)
+                            .font(Typography.body(.medium))
+                            .foregroundColor(isGlobalMonitoringEnabled ? ColorPalette.text : ColorPalette.textSecondary)
+                    }
+
+                }
+
+                // Windows list
+                CursorWindowsList(style: .popover)
+                    .padding(.top, Spacing.small)
+            } else {
+                // Empty state
+                DSCard(style: .filled) {
+                    HStack {
+                        Image(systemName: isGlobalMonitoringEnabled ? "exclamationmark.circle" : "pause.circle")
+                            .font(.title3)
+                            .foregroundColor(isGlobalMonitoringEnabled ? ColorPalette.warning : ColorPalette.textSecondary)
+                        
+                        Text(isGlobalMonitoringEnabled ? "No Cursor app detected." : "Cursor supervision is paused.")
+                            .font(Typography.body())
+                            .foregroundColor(ColorPalette.textSecondary)
+                    }
+                }
+            }
+
+            DSDivider()
+            
+            // Session stats
             HStack {
-                SettingsLink {
-                    Text("Open Settings")
-                }
-                .tint(.accentColor)
-                .simultaneousGesture(TapGesture().onEnded {})
+                Image(systemName: "chart.bar.xaxis")
+                    .font(.caption)
+                    .foregroundColor(ColorPalette.textTertiary)
+                Text("Session Interventions: \(cursorMonitor.totalAutomaticInterventionsThisSessionDisplay)")
+                    .font(Typography.caption1())
+                    .foregroundColor(ColorPalette.textSecondary)
+            }
 
-                Button("Reset All Counters") {
-                    Task { await CursorMonitor.shared.resetAllInstancesAndResume() }
+            // Action buttons
+            HStack {
+                DSButton(
+                    "",
+                    icon: Image(systemName: "gearshape.fill"),
+                    style: .secondary
+                ) {
+                    NSApplication.shared.openSettings()
                 }
+                .help("Open Settings")
+                
                 Spacer()
-                Button("Quit") {
+                
+                DSButton(
+                    "Quit",
+                    style: .tertiary
+                ) {
                     NSApp.terminate(nil)
                 }
             }
-            .padding(.top, 5)
+            .padding(.top, Spacing.xSmall)
         }
-        .padding()
+        .padding(Spacing.large)
         .frame(width: 480)
         .fixedSize(horizontal: false, vertical: true)
+        .background(ColorPalette.background)
         .animation(.default, value: isGlobalMonitoringEnabled)
         .animation(.default, value: diagnosticsManager.windowStates.count)
     }
@@ -156,56 +114,7 @@ struct MainPopoverView: View {
 
     @ObservedObject private var cursorMonitor = CursorMonitor.shared
     @ObservedObject private var diagnosticsManager = WindowAIDiagnosticsManager.shared
-    @ObservedObject private var inputWatcherViewModel = CursorInputWatcherViewModel()
     @Default(.isGlobalMonitoringEnabled) private var isGlobalMonitoringEnabled
-
-    private func aiStatusColor(_ status: AIAnalysisStatus) -> Color {
-        switch status {
-        case .working: 
-            return ColorPalette.success
-        case .notWorking: 
-            return ColorPalette.error
-        case .pending: 
-            return ColorPalette.info
-        case .error: 
-            return ColorPalette.error
-        case .off: 
-            return ColorPalette.textTertiary
-        case .unknown:
-            return ColorPalette.warning
-        }
-    }
-
-    @ViewBuilder
-    private func aiStatusIndicator(status: AIAnalysisStatus) -> some View {
-        Image(systemName: "circle.fill")
-            .font(.caption)
-            .foregroundColor(aiStatusColor(status))
-            .help(status.displayName)
-    }
-
-    @ViewBuilder
-    private func jsHookStatusView(for windowId: String) -> some View {
-        let heartbeatStatus = inputWatcherViewModel.getHeartbeatStatus(for: windowId)
-        let port = inputWatcherViewModel.getPort(for: windowId)
-        let isHookActive = heartbeatStatus?.isAlive == true || port != nil
-
-        if isHookActive {
-            HStack(spacing: 3) {
-                if let port = port {
-                    Text(":\(port)")
-                        .font(.caption2)
-                        .foregroundColor(.secondary)
-                }
-                Image(systemName: heartbeatStatus?.isAlive == true ? "heart.fill" : "heart.slash.fill")
-                    .font(.caption)
-                    .foregroundColor(heartbeatStatus?.isAlive == true ? .green : .orange)
-                    .help(heartbeatStatus?.isAlive == true ? "JS Hook Active (Port: \(port ?? 0))" : "JS Hook Inactive/No Heartbeat (Port: \(port ?? 0))")
-            }
-        } else {
-            EmptyView()
-        }
-    }
 }
 
 // MARK: - Preview
