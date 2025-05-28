@@ -35,65 +35,75 @@ struct AISettingsView: View {
     private let apiKeyDebouncer = Debouncer(delay: 2.0)
     
     var body: some View {
-        Form {
-            Section {
-                Picker("AI Provider", selection: $aiProvider) {
-                    ForEach(AIProvider.allCases) { provider in
-                        Text(provider.displayName).tag(provider)
-                    }
-                }
-                .pickerStyle(.segmented)
-                .onChange(of: aiProvider) { _, newValue in
-                    configureAIManager()
-                    aiModel = availableModels.first ?? .gpt4o
-                    connectionTestResult = nil
-                    isAutoTesting = false
-                    
-                    // Test the new provider automatically
-                    Task {
-                        try? await Task.sleep(nanoseconds: 200_000_000) // 0.2 seconds
-                        
-                        if (newValue == .openAI && !openAIAPIKey.isEmpty) ||
-                           (newValue == .ollama) {
-                            connectionTestResult = StatusMessage.checkingProvider(newValue.displayName)
-                            await testConnection()
+        ScrollView {
+            VStack(alignment: .leading, spacing: Spacing.xLarge) {
+                // AI Provider Configuration
+                DSSettingsSection("AI Provider") {
+                    Picker("AI Provider", selection: $aiProvider) {
+                        ForEach(AIProvider.allCases) { provider in
+                            Text(provider.displayName).tag(provider)
                         }
+                    }
+                    .pickerStyle(.segmented)
+                    .onChange(of: aiProvider) { _, newValue in
+                        configureAIManager()
+                        aiModel = availableModels.first ?? .gpt4o
+                        connectionTestResult = nil
+                        isAutoTesting = false
+                        
+                        // Test the new provider automatically
+                        Task {
+                            try? await Task.sleep(nanoseconds: 200_000_000) // 0.2 seconds
+                            
+                            if (newValue == .openAI && !openAIAPIKey.isEmpty) ||
+                               (newValue == .ollama) {
+                                connectionTestResult = StatusMessage.checkingProvider(newValue.displayName)
+                                await testConnection()
+                            }
+                        }
+                    }
+                    
+                    DSDivider()
+                    
+                    Picker("Model", selection: $aiModel) {
+                        ForEach(availableModels) { model in
+                            Text(model.displayName).tag(model)
+                        }
+                    }
+                    .disabled(availableModels.isEmpty)
+                }
+                
+                // Provider-specific Settings
+                DSSettingsSection("Configuration") {
+                    switch aiProvider {
+                    case .openAI:
+                        openAISettings
+                    case .ollama:
+                        ollamaSettings
                     }
                 }
                 
-                Picker("Model", selection: $aiModel) {
-                    ForEach(availableModels) { model in
-                        Text(model.displayName).tag(model)
+                // Connection Test
+                DSSettingsSection("Connection") {
+                    connectionTestSection
+                }
+                
+                // AI Usage Information
+                DSSettingsSection("About AI Image Analysis") {
+                    VStack(alignment: .leading, spacing: Spacing.small) {
+                        Text("The AI service will be used to analyze screenshots of Cursor windows and provide insights about what the application is currently doing.")
+                            .font(Typography.caption1())
+                            .foregroundColor(ColorPalette.textSecondary)
                     }
                 }
-                .disabled(availableModels.isEmpty)
+                
+                Spacer()
             }
-            
-            Section {
-                switch aiProvider {
-                case .openAI:
-                    openAISettings
-                case .ollama:
-                    ollamaSettings
-                }
-            }
-            
-            Section {
-                connectionTestSection
-            }
-            
-            Section {
-                VStack(alignment: .leading, spacing: 8) {
-                    Text("AI Image Analysis")
-                        .font(.headline)
-                    Text("The AI service will be used to analyze screenshots of Cursor windows and provide insights about what the application is currently doing.")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                }
-            }
+            .padding(Spacing.xLarge)
         }
-        .formStyle(.grouped)
-        .frame(width: 500)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(ColorPalette.background)
+        .withDesignSystem()
         .onAppear {
             openAIAPIKey = loadAPIKeyFromKeychain(service: "CODELOOPER_OPENAI_API_KEY")
             
@@ -115,26 +125,32 @@ struct AISettingsView: View {
     }
     
     private var openAISettings: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            HStack {
-                if showAPIKey {
-                    TextField("API Key", text: $openAIAPIKey)
-                        .textFieldStyle(.roundedBorder)
-                        .onChange(of: openAIAPIKey) { _, newValue in
-                            handleAPIKeyChange(newValue)
-                        }
-                } else {
-                    SecureField("API Key", text: $openAIAPIKey)
-                        .textFieldStyle(.roundedBorder)
-                        .onChange(of: openAIAPIKey) { _, newValue in
-                            handleAPIKeyChange(newValue)
-                        }
-                }
+        VStack(alignment: .leading, spacing: Spacing.medium) {
+            VStack(alignment: .leading, spacing: Spacing.xSmall) {
+                Text("API Key")
+                    .font(Typography.body(.medium))
+                    .foregroundColor(ColorPalette.text)
                 
-                Button(action: { showAPIKey.toggle() }) {
-                    Image(systemName: showAPIKey ? "eye.slash" : "eye")
+                HStack {
+                    if showAPIKey {
+                        TextField("API Key", text: $openAIAPIKey)
+                            .textFieldStyle(.roundedBorder)
+                            .onChange(of: openAIAPIKey) { _, newValue in
+                                handleAPIKeyChange(newValue)
+                            }
+                    } else {
+                        SecureField("API Key", text: $openAIAPIKey)
+                            .textFieldStyle(.roundedBorder)
+                            .onChange(of: openAIAPIKey) { _, newValue in
+                                handleAPIKeyChange(newValue)
+                            }
+                    }
+                    
+                    Button(action: { showAPIKey.toggle() }) {
+                        Image(systemName: showAPIKey ? "eye.slash" : "eye")
+                    }
+                    .buttonStyle(.borderless)
                 }
-                .buttonStyle(.borderless)
             }
             
             if isAutoTesting || connectionTestResult != nil {
@@ -144,42 +160,53 @@ struct AISettingsView: View {
                             .scaleEffect(0.8)
                     }
                     Text(connectionTestResult ?? "")
-                        .font(.caption)
-                        .foregroundColor(connectionTestResult?.contains("✓") == true ? .green : 
-                                       connectionTestResult?.contains("✗") == true ? .red : .secondary)
+                        .font(Typography.caption1())
+                        .foregroundColor(connectionTestResult?.contains("✓") == true ? ColorPalette.success : 
+                                       connectionTestResult?.contains("✗") == true ? ColorPalette.error : ColorPalette.textSecondary)
                 }
-                .padding(.top, 4)
+                .padding(.top, Spacing.xxSmall)
             }
             
             Link("Get your API key from OpenAI", destination: URL(string: "https://platform.openai.com/api-keys")!)
-                .font(.caption)
+                .font(Typography.caption1())
+                .foregroundColor(ColorPalette.primary)
         }
     }
     
     private var ollamaSettings: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            TextField("Base URL", text: $ollamaBaseURL)
-                .textFieldStyle(.roundedBorder)
-                .onChange(of: ollamaBaseURL) { _, newValue in
-                    configureAIManager()
-                    
-                    // Auto-test if URL looks valid
-                    let trimmed = newValue.trimmingCharacters(in: .whitespacesAndNewlines)
-                    if !trimmed.isEmpty {
-                        connectionTestResult = StatusMessage.validatingSoon
-                        isAutoTesting = true
-                        apiKeyDebouncer.call {
-                            Task { @MainActor in
-                                self.connectionTestResult = StatusMessage.validatingOllama
-                                await self.testConnection()
-                                self.isAutoTesting = false
+        VStack(alignment: .leading, spacing: Spacing.medium) {
+            VStack(alignment: .leading, spacing: Spacing.xSmall) {
+                Text("Base URL")
+                    .font(Typography.body(.medium))
+                    .foregroundColor(ColorPalette.text)
+                
+                TextField("Base URL", text: $ollamaBaseURL)
+                    .textFieldStyle(.roundedBorder)
+                    .onChange(of: ollamaBaseURL) { _, newValue in
+                        configureAIManager()
+                        
+                        // Auto-test if URL looks valid
+                        let trimmed = newValue.trimmingCharacters(in: .whitespacesAndNewlines)
+                        if !trimmed.isEmpty {
+                            connectionTestResult = StatusMessage.validatingSoon
+                            isAutoTesting = true
+                            apiKeyDebouncer.call {
+                                Task { @MainActor in
+                                    self.connectionTestResult = StatusMessage.validatingOllama
+                                    await self.testConnection()
+                                    self.isAutoTesting = false
+                                }
                             }
+                        } else {
+                            connectionTestResult = nil
+                            isAutoTesting = false
                         }
-                    } else {
-                        connectionTestResult = nil
-                        isAutoTesting = false
                     }
-                }
+                
+                Text("Default: http://localhost:11434")
+                    .font(Typography.caption1())
+                    .foregroundColor(ColorPalette.textSecondary)
+            }
             
             if isAutoTesting || connectionTestResult != nil {
                 HStack {
@@ -188,24 +215,21 @@ struct AISettingsView: View {
                             .scaleEffect(0.8)
                     }
                     Text(connectionTestResult ?? "")
-                        .font(.caption)
-                        .foregroundColor(connectionTestResult?.contains("✓") == true ? .green : 
-                                       connectionTestResult?.contains("✗") == true ? .red : .secondary)
+                        .font(Typography.caption1())
+                        .foregroundColor(connectionTestResult?.contains("✓") == true ? ColorPalette.success : 
+                                       connectionTestResult?.contains("✗") == true ? ColorPalette.error : ColorPalette.textSecondary)
                 }
-                .padding(.top, 4)
+                .padding(.top, Spacing.xxSmall)
             }
             
-            Text("Default: http://localhost:11434")
-                .font(.caption)
-                .foregroundColor(.secondary)
-            
             Link("Install Ollama", destination: URL(string: "https://ollama.ai")!)
-                .font(.caption)
+                .font(Typography.caption1())
+                .foregroundColor(ColorPalette.primary)
         }
     }
     
     private var connectionTestSection: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: Spacing.small) {
             HStack {
                 DSButton("Test Connection", style: .secondary) {
                     Task {
@@ -219,11 +243,13 @@ struct AISettingsView: View {
                     ProgressView()
                         .scaleEffect(0.5)
                 }
+                
+                Spacer()
             }
             
             Text("Connection will be automatically tested when you enter valid credentials")
-                .font(.caption)
-                .foregroundColor(.secondary)
+                .font(Typography.caption1())
+                .foregroundColor(ColorPalette.textSecondary)
         }
     }
     
@@ -350,3 +376,16 @@ struct AISettingsView: View {
         return image
     }
 }
+
+// MARK: - Preview
+
+#if DEBUG
+    struct AISettingsView_Previews: PreviewProvider {
+        static var previews: some View {
+            AISettingsView()
+                .frame(width: 600, height: 700)
+                .background(ColorPalette.background)
+                .withDesignSystem()
+        }
+    }
+#endif
