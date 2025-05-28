@@ -22,7 +22,7 @@ struct CodeLooperApp: App {
         // Opens settings automatically in debug builds for faster development
         #if DEBUG
             DispatchQueue.main.async {
-                NSApp.openSettings()
+                MainSettingsCoordinator.shared.showSettings()
             }
         #endif
     }
@@ -44,10 +44,15 @@ struct CodeLooperApp: App {
         .menuBarExtraAccess(isPresented: $isMenuPresented) { _ in
         }
 
-        Settings {
+        WindowGroup("CodeLooper Settings", id: "settings") {
             SettingsSceneView()
                 .environmentObject(sessionLogger)
         }
+        .windowStyle(.hiddenTitleBar)
+        .windowResizability(.contentSize)
+        .defaultSize(width: 640, height: 950)
+        .commandsRemoved()
+        .handlesExternalEvents(matching: Set(arrayLiteral: "settings"))
     }
 
     // MARK: Private
@@ -78,17 +83,24 @@ struct CodeLooperApp: App {
 
 struct MenuBarIconView: View {
     @StateObject private var menuBarIconManager = MenuBarIconManager.shared
-    @EnvironmentObject var appIconStateController: AppIconStateController // Keep for tint color
-    @Default(.isGlobalMonitoringEnabled) private var isGlobalMonitoringEnabled // Keep for tint color
+    @EnvironmentObject var appIconStateController: AppIconStateController // Keep for status display
+    @Default(.isGlobalMonitoringEnabled) private var isGlobalMonitoringEnabled
+    @Default(.useDynamicMenuBarIcon) private var useDynamicMenuBarIcon
 
     var body: some View {
-        HStack(spacing: 2) { // Use an HStack to combine a base icon and the dynamic text
-            Image("MenuBarTemplateIcon")
-                .renderingMode(.template)
-                // Use the tint color logic similar to what was there before for the base icon
-                .foregroundColor(isGlobalMonitoringEnabled ? Color(appIconStateController.currentTintColor ?? NSColor.controlAccentColor) : .gray.opacity(0.7))
+        HStack(spacing: 4) {
+            // Icon based on user preference
+            if useDynamicMenuBarIcon {
+                // Lottie animation icon
+                LottieMenuBarView()
+            } else {
+                // Static PNG icon
+                CodeLooperAsset.menuBarTemplateIcon.swiftUIImage
+                    .renderingMode(.template)
+                    .frame(width: 16, height: 16)
+            }
             
-            // Display the AttributedString from the manager
+            // Display the status text from the manager
             Text(menuBarIconManager.currentIconAttributedString)
                 .font(.system(size: 12, weight: .medium)) 
         }
@@ -97,21 +109,32 @@ struct MenuBarIconView: View {
 }
 
 struct SettingsSceneView: View {
-    // MARK: Internal
-
     var body: some View {
         SettingsContainerView()
             .environmentObject(mainSettingsViewModel)
             .onReceive(SettingsService.openSettingsSubject) { _ in
-                openSettingsInternal()
+                // Handle settings opening if needed
+            }
+            .onAppear {
+                ensureSingleSettingsWindow()
             }
     }
-
-    // MARK: Private
 
     @StateObject private var mainSettingsViewModel = MainSettingsViewModel(
         loginItemManager: LoginItemManager.shared,
         updaterViewModel: UpdaterViewModel(sparkleUpdaterManager: nil)
     )
-    @Environment(\.openSettings) private var openSettingsInternal // For macOS 14+
+    
+    private func ensureSingleSettingsWindow() {
+        // Close any duplicate settings windows
+        let settingsWindows = NSApp.windows.filter { window in
+            window.title.contains("Settings") || window.identifier?.rawValue == "settings"
+        }
+        
+        // Keep only the first one, close the rest
+        for window in settingsWindows.dropFirst() {
+            print("Closing duplicate settings window: \(window.title)")
+            window.close()
+        }
+    }
 }
