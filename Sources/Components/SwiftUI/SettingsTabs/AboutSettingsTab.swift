@@ -39,6 +39,7 @@ struct AboutSettingsTab: View {
                 with your development workflow.
                 """)
                 .multilineTextAlignment(.center)
+                .lineSpacing(5)
                 .frame(maxWidth: 400)
                 .padding(.horizontal)
                 .padding(.vertical, 2)

@@ -44,6 +44,7 @@ struct ScreenRecordingPermissionsView: View {
                                 "CodeLooper needs permission to capture Cursor windows without shadows for AI analysis.")
                                 .font(.caption)
                                 .foregroundColor(.secondary)
+                                .lineSpacing(3)
                         }
                     }
 

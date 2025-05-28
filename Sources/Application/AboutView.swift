@@ -119,6 +119,7 @@ struct AboutView: View {
     private let websiteURL = URL(string: "https://codelooper.app")!
     private let documentationURL = URL(string: "https://github.com/steipete/codelooper/wiki")!
     private let issuesURL = URL(string: "https://github.com/steipete/codelooper/issues")!
+}
 
 #if DEBUG
     struct AboutView_Previews: PreviewProvider {

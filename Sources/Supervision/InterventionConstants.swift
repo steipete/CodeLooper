@@ -42,6 +42,8 @@ enum InterventionConstants {
         60.0 // If positive activity detected, reset intervention counters after this time
     static let automatedInterventionCooldown: TimeInterval =
         30.0 // Minimum time between automated interventions for same instance
+    static let postInterventionObservationWindow: TimeInterval = 3.0 // Seconds to observe after intervention
+    static let stuckDetectionTimeout: TimeInterval = 60.0 // Seconds before considering process stuck
 
     // MARK: - Limits
 

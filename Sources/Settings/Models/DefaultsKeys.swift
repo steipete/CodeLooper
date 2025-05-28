@@ -11,20 +11,10 @@ extension Defaults.Keys {
         default: 5
     ) // "Max Auto-Interventions Per Instance"
 
-    // --- Intervention Specific Limits (Spec 3.3.E & CursorMonitor) ---
-    static let maxConnectionIssueRetries = Key<Int>(
-        "maxConnectionIssueRetries",
-        default: 3
-    ) // "Max 'Resume' clicks before typing text"
-    static let maxConsecutiveRecoveryFailures = Key<Int>(
-        "maxConsecutiveRecoveryFailures",
-        default: 3
-    ) // "Max recovery cycles before 'Persistent Error'"
 
     // --- General Behavior & Notifications (Spec 3.3.A / 3.3.E) ---
     static let playSoundOnIntervention = Key<Bool>("playSoundOnIntervention", default: true)
     static let successfulInterventionSoundName = Key<String>("successfulInterventionSoundName", default: "Funk")
-    static let sendNotificationOnPersistentError = Key<Bool>("sendNotificationOnPersistentError", default: true)
     static let sendNotificationOnMaxInterventions = Key<Bool>("sendNotificationOnMaxInterventions", default: true)
     static let notificationSoundName = Key<String?>("notificationSoundName",
                                                     default: "Default")
@@ -46,17 +36,10 @@ extension Defaults.Keys {
     ) // Used in AppDelegate for menu bar icon visibility
 
     // --- Cursor Supervision Tab (Spec 3.3.B) ---
-    static let monitorSidebarActivity = Key<Bool>("monitorSidebarActivity", default: true) // Default ON as per Spec
     static let enableConnectionIssuesRecovery = Key<Bool>("enableConnectionIssuesRecovery", default: true)
     static let enableCursorForceStoppedRecovery = Key<Bool>("enableCursorForceStoppedRecovery", default: true)
     static let enableCursorStopsRecovery = Key<Bool>("enableCursorStopsRecovery", default: true)
 
-    // --- Advanced Tab - Supervision Tuning (Spec 3.3.E) ---
-    static let postInterventionObservationWindowSeconds = Key<TimeInterval>(
-        "postInterventionObservationWindowSeconds",
-        default: 3.0
-    )
-    static let stuckDetectionTimeoutSeconds = Key<TimeInterval>("stuckDetectionTimeoutSeconds", default: 60.0)
 
     // --- Onboarding ---
     static let hasShownWelcomeGuide = Key<Bool>("hasShownWelcomeGuide", default: false)
@@ -120,6 +103,9 @@ extension Defaults.Keys {
 
     // --- Path for the MCP configuration file ---
     static let mcpConfigFilePath = Key<String>("mcpConfigFilePath", default: "~/.cursor/mcp_config.json")
+    
+    // --- MCP Auto-reload setting ---
+    static let autoReloadMCPsOnChanges = Key<Bool>("autoReloadMCPsOnChanges", default: true)
 
     // --- AI Settings ---
     static let aiProvider = Key<AIProvider>("aiProvider", default: .openAI)

@@ -7,18 +7,6 @@ import SwiftUI
 struct CursorSupervisionSettingsView: View {
     // MARK: Internal
 
-    @Default(.monitorSidebarActivity)
-    var monitorSidebarActivity
-    @Default(.postInterventionObservationWindowSeconds)
-    var postInterventionObservationWindowSeconds
-    @Default(.stuckDetectionTimeoutSeconds)
-    var stuckDetectionTimeoutSeconds
-    @Default(.sendNotificationOnPersistentError)
-    var sendNotificationOnPersistentError
-    @Default(.maxConnectionIssueRetries)
-    var maxConnectionIssueRetries
-    @Default(.maxConsecutiveRecoveryFailures)
-    var maxConsecutiveRecoveryFailures
     @Default(.aiGlobalAnalysisIntervalSeconds)
     var aiGlobalAnalysisIntervalSeconds
     @Default(.isGlobalMonitoringEnabled)
@@ -31,7 +19,8 @@ struct CursorSupervisionSettingsView: View {
                 DSToggle(
                     "Enable Cursor Supervision",
                     isOn: $isGlobalMonitoringEnabled,
-                    description: "Master switch to enable/disable all CodeLooper supervision features for Cursor, including JS hooks and AI diagnostics."
+                    description: "Master switch to enable/disable all CodeLooper supervision features for Cursor, including JS hooks and AI diagnostics.",
+                    descriptionLineSpacing: 4
                 )
                 .onChange(of: isGlobalMonitoringEnabled) { _, newValue in
                     if newValue {
@@ -50,12 +39,10 @@ struct CursorSupervisionSettingsView: View {
 
                 cursorWindowsView
 
-                // Global AI Analysis Interval
+                // Update Interval
                 if inputWatcherViewModel.isWatchingEnabled, !inputWatcherViewModel.cursorWindows.isEmpty {
                     DSDivider()
                         .padding(.vertical, Spacing.small)
-                    Text("Global AI Analysis Interval")
-                        .font(Typography.callout(.semibold))
                     DSSlider(
                         value: Binding(
                             get: { Double(aiGlobalAnalysisIntervalSeconds) },
@@ -63,79 +50,10 @@ struct CursorSupervisionSettingsView: View {
                         ),
                         in: 5 ... 60,
                         step: 5,
-                        label: "Interval",
+                        label: "Update Interval",
                         showValue: true
                     ) { "\(Int($0))s" }
-                        .padding(.top, Spacing.xxSmall)
                 }
-            }
-            // Detection Settings
-            DSSettingsSection("Detection") {
-                DSToggle(
-                    "Monitor Sidebar Activity",
-                    isOn: $monitorSidebarActivity,
-                    description: "Track activity in Cursor's sidebar to detect stuck states"
-                )
-
-                DSDivider()
-
-                DSSlider(
-                    value: $stuckDetectionTimeoutSeconds,
-                    in: 5 ... 60,
-                    step: 5,
-                    label: "Stuck Detection Timeout",
-                    showValue: true
-                ) { "\(Int($0))s" }
-
-                DSDivider()
-
-                DSSlider(
-                    value: $postInterventionObservationWindowSeconds,
-                    in: 1 ... 10,
-                    step: 1,
-                    label: "Post-Intervention Observation",
-                    showValue: true
-                ) { "\(Int($0))s" }
-            }
-
-            // Recovery Settings
-            DSSettingsSection("Recovery") {
-                HStack {
-                    Text("Max Connection Retries")
-                        .font(Typography.body())
-                    Spacer()
-                    Stepper(
-                        "\(maxConnectionIssueRetries)",
-                        value: $maxConnectionIssueRetries,
-                        in: 1 ... 10
-                    )
-                    .labelsHidden()
-                    .fixedSize()
-                }
-
-                DSDivider()
-
-                HStack {
-                    Text("Max Consecutive Recovery Failures")
-                        .font(Typography.body())
-                    Spacer()
-                    Stepper(
-                        "\(maxConsecutiveRecoveryFailures)",
-                        value: $maxConsecutiveRecoveryFailures,
-                        in: 1 ... 10
-                    )
-                    .labelsHidden()
-                    .fixedSize()
-                }
-            }
-
-            // Notifications
-            DSSettingsSection("Notifications") {
-                DSToggle(
-                    "Send Notification on Persistent Errors",
-                    isOn: $sendNotificationOnPersistentError,
-                    description: "Get notified when Cursor encounters repeated connection issues"
-                )
             }
 
             Spacer()

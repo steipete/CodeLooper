@@ -21,7 +21,8 @@ struct AdvancedSettingsView: View {
                 DSToggle(
                     "Show Debug Tab",
                     isOn: $showDebugTab,
-                    description: "Show the Debug tab in settings with Lottie animation tests and debugging tools"
+                    description: "Show the Debug tab in settings with Lottie animation tests and debugging tools",
+                    descriptionLineSpacing: 3
                 )
 
                 DSDivider()
@@ -29,7 +30,8 @@ struct AdvancedSettingsView: View {
                 DSToggle(
                     "Enable Detailed Logging",
                     isOn: $enableDetailedLogging,
-                    description: "Log verbose information for troubleshooting"
+                    description: "Log verbose information for troubleshooting",
+                    descriptionLineSpacing: 3
                 )
 
                 DSDivider()
@@ -37,7 +39,8 @@ struct AdvancedSettingsView: View {
                 DSToggle(
                     "Log to File",
                     isOn: $logToFile,
-                    description: "Save logs to ~/Library/Logs/CodeLooper/"
+                    description: "Save logs to ~/Library/Logs/CodeLooper/",
+                    descriptionLineSpacing: 3
                 )
 
                 if logToFile {
@@ -86,6 +89,7 @@ struct AdvancedSettingsView: View {
                             Text("This action will reset all settings and restart the app. This cannot be undone.")
                                 .font(Typography.caption1())
                                 .foregroundColor(ColorPalette.textSecondary)
+                                .lineSpacing(3)
                         }
 
                         Spacer()
@@ -154,14 +158,8 @@ struct AdvancedSettingsView: View {
             .isGlobalMonitoringEnabled,
             .monitoringIntervalSeconds,
             .maxInterventionsBeforePause,
-            .maxConnectionIssueRetries,
-            .maxConsecutiveRecoveryFailures,
             .playSoundOnIntervention,
-            .sendNotificationOnPersistentError,
             .textForCursorStopsRecovery,
-            .monitorSidebarActivity,
-            .postInterventionObservationWindowSeconds,
-            .stuckDetectionTimeoutSeconds,
             .showDebugMenu,
             .gitClientApp,
             .showDebugTab,

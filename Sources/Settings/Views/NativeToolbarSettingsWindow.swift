@@ -18,7 +18,7 @@ final class NativeToolbarSettingsWindow: NSWindow {
         )
         
         super.init(
-            contentRect: NSRect(x: 0, y: 0, width: 700, height: 600),
+            contentRect: NSRect(x: 0, y: 0, width: 800, height: 1000),
             styleMask: [.closable, .miniaturizable, .resizable, .titled, .unifiedTitleAndToolbar, .fullSizeContentView],
             backing: .buffered,
             defer: false
@@ -32,6 +32,9 @@ final class NativeToolbarSettingsWindow: NSWindow {
         self.isReleasedWhenClosed = false
         // Use system background color that adapts to light/dark mode
         self.backgroundColor = .windowBackgroundColor
+        
+        // Set minimum window size
+        self.minSize = NSSize(width: 600, height: 400)
         
         // Try to reduce spacing with titlebar separator
         if #available(macOS 11.0, *) {
@@ -96,18 +99,148 @@ private class PassThroughStackView: NSStackView {
     }
 }
 
-/// An image view that passes through all mouse events
+/// An image view that passes through all mouse events and dims when window is inactive
+@MainActor
 private class PassThroughImageView: NSImageView {
+    private var becomeKeyObserver: NSObjectProtocol?
+    private var resignKeyObserver: NSObjectProtocol?
+    var onClick: (() -> Void)?
+    
+    override func viewDidMoveToWindow() {
+        super.viewDidMoveToWindow()
+        
+        // Remove previous observers
+        if let observer = becomeKeyObserver {
+            NotificationCenter.default.removeObserver(observer)
+            becomeKeyObserver = nil
+        }
+        if let observer = resignKeyObserver {
+            NotificationCenter.default.removeObserver(observer)
+            resignKeyObserver = nil
+        }
+        
+        // Set initial state
+        updateAppearance()
+        
+        // Observe window focus changes
+        if let window = window {
+            becomeKeyObserver = NotificationCenter.default.addObserver(
+                forName: NSWindow.didBecomeKeyNotification,
+                object: window,
+                queue: .main
+            ) { [weak self] _ in
+                Task { @MainActor in
+                    self?.updateAppearance()
+                }
+            }
+            
+            resignKeyObserver = NotificationCenter.default.addObserver(
+                forName: NSWindow.didResignKeyNotification,
+                object: window,
+                queue: .main
+            ) { [weak self] _ in
+                Task { @MainActor in
+                    self?.updateAppearance()
+                }
+            }
+        }
+    }
+    
+    private func updateAppearance() {
+        if let window = window, window.isKeyWindow {
+            self.alphaValue = 1.0
+        } else {
+            self.alphaValue = 0.6 // Dimmed when not focused
+        }
+    }
+    
+    deinit {
+        // Cleanup will happen when window is removed
+    }
+    
+    override func mouseDown(with event: NSEvent) {
+        onClick?()
+    }
+    
+    override func hitTest(_ point: NSPoint) -> NSView? {
+        // Return self to capture mouse events
+        let boundsCheck = self.bounds.contains(self.convert(point, from: superview))
+        return boundsCheck ? self : nil
+    }
+    
+    override var mouseDownCanMoveWindow: Bool {
+        return false // Don't allow window dragging from the icon
+    }
+    
+    override func acceptsFirstMouse(for event: NSEvent?) -> Bool {
+        return true
+    }
+}
+
+/// A text field that passes through mouse events and dims when window is inactive
+@MainActor
+private class PassThroughTextField: NSTextField {
+    private var becomeKeyObserver: NSObjectProtocol?
+    private var resignKeyObserver: NSObjectProtocol?
+    
+    override func viewDidMoveToWindow() {
+        super.viewDidMoveToWindow()
+        
+        // Remove previous observers
+        if let observer = becomeKeyObserver {
+            NotificationCenter.default.removeObserver(observer)
+            becomeKeyObserver = nil
+        }
+        if let observer = resignKeyObserver {
+            NotificationCenter.default.removeObserver(observer)
+            resignKeyObserver = nil
+        }
+        
+        // Set initial state
+        updateAppearance()
+        
+        // Observe window focus changes
+        if let window = window {
+            becomeKeyObserver = NotificationCenter.default.addObserver(
+                forName: NSWindow.didBecomeKeyNotification,
+                object: window,
+                queue: .main
+            ) { [weak self] _ in
+                Task { @MainActor in
+                    self?.updateAppearance()
+                }
+            }
+            
+            resignKeyObserver = NotificationCenter.default.addObserver(
+                forName: NSWindow.didResignKeyNotification,
+                object: window,
+                queue: .main
+            ) { [weak self] _ in
+                Task { @MainActor in
+                    self?.updateAppearance()
+                }
+            }
+        }
+    }
+    
+    private func updateAppearance() {
+        if let window = window, window.isKeyWindow {
+            self.alphaValue = 1.0
+        } else {
+            self.alphaValue = 0.6 // Dimmed when not focused
+        }
+    }
+    
+    deinit {
+        // Cleanup will happen when window is removed
+    }
+    
     override func hitTest(_ point: NSPoint) -> NSView? {
         return nil
     }
     
     override var mouseDownCanMoveWindow: Bool {
         return true
-    }
-    
-    override func acceptsFirstMouse(for event: NSEvent?) -> Bool {
-        return false
     }
 }
 
@@ -154,7 +287,6 @@ private class SettingsToolbarDelegate: NSObject, NSToolbarDelegate {
         if showDebugTab {
             tabItems.append(.debug)
         }
-        tabItems.append(.about)
     }
     
     private func reloadToolbar() {
@@ -218,8 +350,15 @@ private class SettingsToolbarDelegate: NSObject, NSToolbarDelegate {
             iconView.imageScaling = .scaleProportionallyDown
             iconView.unregisterDraggedTypes()
             
+            // Make icon clickable to open CodeLooper website
+            iconView.onClick = {
+                if let url = URL(string: "https://codelooper.app") {
+                    NSWorkspace.shared.open(url)
+                }
+            }
+            
             // Title label
-            let titleLabel = NSTextField(labelWithString: "CodeLooper")
+            let titleLabel = PassThroughTextField(labelWithString: "CodeLooper")
             titleLabel.font = .systemFont(ofSize: 13, weight: .semibold)
             titleLabel.textColor = .labelColor
             titleLabel.alignment = .left
@@ -428,8 +567,6 @@ private extension SettingsTab {
         case .ai: return "AI"
         case .advanced: return "Advanced"
         case .debug: return "Debug"
-        case .about: return "About"
-        default: return ""
         }
     }
     
@@ -442,8 +579,6 @@ private extension SettingsTab {
         case .ai: return "brain"
         case .advanced: return "wrench.and.screwdriver"
         case .debug: return "ladybug"
-        case .about: return "info.circle"
-        default: return "questionmark"
         }
     }
 }
@@ -480,7 +615,7 @@ private struct SettingsContentView: View {
             currentTab = selectedTab.value
         }
         .onReceive(selectedTab) { newTab in
-            withAnimation {
+            withAnimation(.easeInOut(duration: 0.175)) {
                 currentTab = newTab
             }
         }
@@ -503,10 +638,6 @@ private struct SettingsContentView: View {
             AdvancedSettingsView()
         case .debug:
             DebugSettingsView()
-        case .about:
-            AboutSettingsView()
-        default:
-            EmptyView()
         }
     }
 }

@@ -126,8 +126,7 @@ class InterventionStateChecker {
     }
 
     func checkSidebarActivity(for pid: pid_t) async -> CursorInterventionEngine.InterventionType? {
-        guard Defaults[.monitorSidebarActivity],
-              let sidebarLocator = await self.locatorManager.getLocator(for: .sidebarActivityArea, pid: pid)
+        guard let sidebarLocator = await self.locatorManager.getLocator(for: .sidebarActivityArea, pid: pid)
         else {
             return nil
         }
@@ -192,7 +191,7 @@ class InterventionStateChecker {
             return nil
         }
 
-        let timeoutThreshold = Defaults[.stuckDetectionTimeoutSeconds]
+        let timeoutThreshold = InterventionConstants.stuckDetectionTimeout
         if Date().timeIntervalSince(lastActive) > timeoutThreshold {
             return .generalError
         }

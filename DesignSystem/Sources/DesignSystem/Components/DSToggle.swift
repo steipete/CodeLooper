@@ -4,15 +4,18 @@ public struct DSToggle: View {
     @Binding private var isOn: Bool
     private let label: String
     private let description: String?
+    private let descriptionLineSpacing: CGFloat?
     
     public init(
         _ label: String,
         isOn: Binding<Bool>,
-        description: String? = nil
+        description: String? = nil,
+        descriptionLineSpacing: CGFloat? = nil
     ) {
         self.label = label
         self._isOn = isOn
         self.description = description
+        self.descriptionLineSpacing = descriptionLineSpacing
     }
     
     public var body: some View {
@@ -36,6 +39,7 @@ public struct DSToggle: View {
                 Text(description)
                     .font(Typography.caption1())
                     .foregroundColor(ColorPalette.textSecondary)
+                    .lineSpacing(descriptionLineSpacing ?? 0)
                     .padding(.trailing, 60) // Account for toggle width
             }
         }

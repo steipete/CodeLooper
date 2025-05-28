@@ -76,6 +76,7 @@ struct WelcomeStepView: View {
                     .font(.headline.weight(.regular))
                     .foregroundColor(.secondary)
                     .multilineTextAlignment(.center)
+                    .lineSpacing(4)
                     .padding(.horizontal, 30) // Ensure text wraps nicely
             }
             .padding(.bottom, 20)
@@ -166,6 +167,7 @@ struct AccessibilityStepView: View {
             .font(.headline.weight(.regular))
             .foregroundColor(.secondary)
             .multilineTextAlignment(.center)
+            .lineSpacing(4)
             .padding(.horizontal, 40) // Adjusted padding
             .padding(.bottom, 20)
 
@@ -234,6 +236,7 @@ struct SettingsStepView: View {
                 .font(.headline.weight(.regular))
                 .foregroundColor(.secondary)
                 .multilineTextAlignment(.center)
+                .lineSpacing(4)
                 .padding(.horizontal, 40)
                 .padding(.bottom, 30)
 
@@ -329,6 +332,7 @@ struct CompletionStepView: View {
                     .font(.headline.weight(.regular))
                     .foregroundColor(.secondary)
                     .multilineTextAlignment(.center)
+                    .lineSpacing(4)
                     .padding(.horizontal, 40)
                     .padding(.bottom, 20)
             }
@@ -360,6 +364,7 @@ struct CompletionStepView: View {
                             .font(.caption)
                             .foregroundColor(.secondary)
                             .multilineTextAlignment(.center)
+                            .lineSpacing(3)
                             .padding(.horizontal, 30)
                     }
 

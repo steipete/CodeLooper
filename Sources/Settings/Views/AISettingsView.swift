@@ -54,7 +54,11 @@ struct AISettingsView: View {
                     .frame(maxWidth: .infinity)
                     .onChange(of: aiProvider) { _, newValue in
                         configureAIManager()
-                        aiModel = availableModels.first ?? .gpt4o
+                        // Ensure we select a model that's available for the new provider
+                        let newAvailableModels = AIModel.allCases.filter { $0.provider == newValue }
+                        if !newAvailableModels.contains(aiModel) {
+                            aiModel = newAvailableModels.first ?? .gpt4o
+                        }
                         connectionTestResult = nil
                         isAutoTesting = false
 
@@ -93,10 +97,12 @@ struct AISettingsView: View {
                 }
             }
 
-            // Connection Test
-            DSSettingsSection("Connection") {
-                connectionTestSection
-            }
+            // Connection Test Note
+            Text("Connection will be automatically tested when you enter valid credentials")
+                .font(Typography.caption1())
+                .foregroundColor(ColorPalette.textSecondary)
+                .frame(maxWidth: .infinity, alignment: .center)
+                .padding(.vertical, Spacing.medium)
 
             // Manual AI Window Analysis
             DSSettingsSection("Manual AI Window Analysis") {
@@ -110,6 +116,7 @@ struct AISettingsView: View {
                 )
                 .font(Typography.caption1())
                 .foregroundColor(ColorPalette.textSecondary)
+                .lineSpacing(4)
                 .frame(maxWidth: .infinity, alignment: .leading)
             }
 
@@ -141,23 +148,25 @@ struct AISettingsView: View {
 
     private var openAISettings: some View {
         VStack(alignment: .leading, spacing: Spacing.medium) {
-            VStack(alignment: .leading, spacing: Spacing.xSmall) {
+            HStack {
                 Text("API Key")
                     .font(Typography.body(.medium))
                     .foregroundColor(ColorPalette.text)
-
+                
+                Spacer()
+                
                 HStack {
                     if showAPIKey {
-                        TextField("API Key", text: $openAIAPIKey)
+                        TextField("", text: $openAIAPIKey)
                             .textFieldStyle(.roundedBorder)
-                            .frame(maxWidth: .infinity)
+                            .frame(maxWidth: 400)
                             .onChange(of: openAIAPIKey) { _, newValue in
                                 handleAPIKeyChange(newValue)
                             }
                     } else {
-                        SecureField("API Key", text: $openAIAPIKey)
+                        SecureField("", text: $openAIAPIKey)
                             .textFieldStyle(.roundedBorder)
-                            .frame(maxWidth: .infinity)
+                            .frame(maxWidth: 400)
                             .onChange(of: openAIAPIKey) { _, newValue in
                                 handleAPIKeyChange(newValue)
                             }
@@ -248,32 +257,6 @@ struct AISettingsView: View {
         }
     }
 
-    private var connectionTestSection: some View {
-        VStack(alignment: .leading, spacing: Spacing.small) {
-            HStack {
-                DSButton("Test Connection", style: .secondary) {
-                    Task {
-                        isAutoTesting = false
-                        await testConnection()
-                    }
-                }
-                .disabled(isTestingConnection || isAutoTesting || (aiProvider == .openAI && openAIAPIKey.isEmpty))
-
-                if isTestingConnection, !isAutoTesting {
-                    ProgressView()
-                        .scaleEffect(0.5)
-                }
-
-                Spacer()
-            }
-            .frame(maxWidth: .infinity)
-
-            Text("Connection will be automatically tested when you enter valid credentials")
-                .font(Typography.caption1())
-                .foregroundColor(ColorPalette.textSecondary)
-                .frame(maxWidth: .infinity, alignment: .leading)
-        }
-    }
 
     private var availableModels: [AIModel] {
         AIModel.allCases.filter { $0.provider == aiProvider }

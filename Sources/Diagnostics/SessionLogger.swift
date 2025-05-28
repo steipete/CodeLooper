@@ -1,9 +1,5 @@
 import Foundation
-
-// OSLog import might still be useful for other purposes or if LogLevel itself uses it.
-import AppKit // Added AppKit for NSWindowController, NSWindow etc.
 import OSLog
-import SwiftUI // Added SwiftUI for NSHostingView and LogSettingsView if it's SwiftUI
 
 // LogLevel is now imported from LogLevel.swift
 
@@ -52,24 +48,9 @@ public final class SessionLogger: ObservableObject {
     @Published public private(set) var entries: [LogEntry] = []
 
     public func showLogWindow() { // Implicitly @MainActor
-        if Self.logWindowController == nil {
-            let logView = LogSettingsView()
-
-            let window = NSWindow(
-                contentRect: NSRect(x: 0, y: 0, width: 800, height: 600),
-                styleMask: [.titled, .closable, .resizable, .miniaturizable],
-                backing: .buffered,
-                defer: false
-            )
-            window.center()
-            window.title = "Session Log"
-            window.contentView = NSHostingView(rootView: logView.environmentObject(self))
-            window.isReleasedWhenClosed = false
-
-            Self.logWindowController = NSWindowController(window: window)
-        }
-        Self.logWindowController?.showWindow(nil)
-        NSApp.activate(ignoringOtherApps: true)
+        // Log window functionality has been integrated into the Debug tab in Settings
+        // This method is kept for backward compatibility but no longer shows a separate window
+        print("Log viewer is now available in Settings > Debug tab")
     }
 
     public func log(level: LogLevel, message: String, pid: pid_t? = nil) { // Implicitly @MainActor
@@ -93,10 +74,6 @@ public final class SessionLogger: ObservableObject {
     // deinit removed as unused properties requiring cleanup are gone.
 
     // MARK: Private
-
-    // logWindowController is static and already marked @MainActor in its previous declaration.
-    // Making it private static as it's only used within showLogWindow.
-    private static var logWindowController: NSWindowController?
 
     // logFileURL and fileHandle removed as they were unused.
     private var maxEntriesInMemory: Int

@@ -55,7 +55,6 @@ struct SettingsContainerView: View {
             baseTabs.append((.debug, "Debug", "ladybug"))
         }
 
-        baseTabs.append((.about, "About", "info.circle"))
         return baseTabs
     }
 
@@ -76,8 +75,6 @@ struct SettingsContainerView: View {
             AdvancedSettingsView()
         case .debug:
             DebugSettingsView()
-        case .about:
-            AboutSettingsView()
         default:
             EmptyView()
         }

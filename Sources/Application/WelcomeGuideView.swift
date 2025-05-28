@@ -23,6 +23,7 @@ struct WelcomeGuideView: View {
                 Text(
                     "CodeLooper helps you keep your Cursor application running smoothly and enhances your AI-assisted development workflow."
                 )
+                .lineSpacing(4)
                 .fixedSize(horizontal: false, vertical: true)
 
                 FeatureHighlightView(
@@ -88,6 +89,7 @@ struct FeatureHighlightView: View {
                 Text(description)
                     .font(.subheadline)
                     .foregroundColor(.secondary)
+                    .lineSpacing(3)
                     .fixedSize(horizontal: false, vertical: true)
             }
         }

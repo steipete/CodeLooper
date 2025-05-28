@@ -56,6 +56,7 @@ struct GeneralSettingsView: View {
                                 Text("Define a global keyboard shortcut to quickly toggle monitoring")
                                     .font(Typography.caption1())
                                     .foregroundColor(ColorPalette.textSecondary)
+                                    .lineSpacing(3)
                             }
 
                             Spacer()
@@ -90,6 +91,7 @@ struct GeneralSettingsView: View {
                         Text("Path to your Git client application (e.g., Tower, SourceTree, GitKraken)")
                             .font(Typography.caption1())
                             .foregroundColor(ColorPalette.textSecondary)
+                            .lineSpacing(3)
                     }
                 }
 

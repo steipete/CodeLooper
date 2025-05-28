@@ -42,6 +42,7 @@ struct PermissionsView: View {
                                 : "CodeLooper needs accessibility permissions to monitor and assist with Cursor.")
                                 .font(.caption)
                                 .foregroundColor(.secondary)
+                                .lineSpacing(3)
                         }
                     }
 

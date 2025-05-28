@@ -44,6 +44,7 @@ struct AutomationPermissionsView: View {
                                 "CodeLooper needs permission to control Cursor for advanced features like JS injection.")
                                 .font(.caption)
                                 .foregroundColor(.secondary)
+                                .lineSpacing(3)
                         }
                     }
 

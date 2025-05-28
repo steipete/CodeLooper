@@ -97,7 +97,7 @@ class ProcessMonitoringTickUseCase {
             return
         }
 
-        let observationWindow = Defaults[.postInterventionObservationWindowSeconds]
+        let observationWindow = InterventionConstants.postInterventionObservationWindow
         if Date().timeIntervalSince(observationInfo.startTime) > observationWindow {
             let currentInterventionCount = self.instanceStateManager.getAutomaticInterventions(for: self.pid)
 
@@ -409,13 +409,13 @@ class ProcessMonitoringTickUseCase {
         status: CursorInstanceStatus,
         message: String
     )? {
-        guard self.instanceStateManager.getConsecutiveRecoveryFailures(for: self.pid) >= Defaults[.maxConsecutiveRecoveryFailures] else {
+        guard self.instanceStateManager.getConsecutiveRecoveryFailures(for: self.pid) >= InterventionConstants.maxConsecutiveRecoveryFailures else {
             return nil
         }
 
         self.logger.error("""
             PID \(self.pid) has reached max consecutive recovery failures \
-            (\(Defaults[.maxConsecutiveRecoveryFailures])). Marking as unrecoverable.
+            (\(InterventionConstants.maxConsecutiveRecoveryFailures)). Marking as unrecoverable.
             """)
         self.sessionLogger.log(
             level: .error,
@@ -423,7 +423,7 @@ class ProcessMonitoringTickUseCase {
             pid: self.pid
         )
 
-        if Defaults[.sendNotificationOnPersistentError] {
+        if true { // Always send notification on persistent error
             await UserNotificationManager.shared.sendNotification(
                 identifier: "persistent_failure_\(self.pid)",
                 title: "CodeLooper: Persistent Failure",
@@ -436,7 +436,7 @@ class ProcessMonitoringTickUseCase {
 
         return (
             status: .unrecoverable(reason: "Max consecutive recovery failures reached."),
-            message: "Unrecoverable: Max consecutive recovery failures reached (\(Defaults[.maxConsecutiveRecoveryFailures]))"
+            message: "Unrecoverable: Max consecutive recovery failures reached (\(InterventionConstants.maxConsecutiveRecoveryFailures))"
         )
     }
 

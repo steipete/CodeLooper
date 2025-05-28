@@ -125,7 +125,7 @@ public struct DSButton: View {
     
     private var verticalPadding: CGFloat {
         switch size {
-        case .small: return Spacing.xxSmall
+        case .small: return Spacing.xSmall  // Match DSTextField padding
         case .medium: return Spacing.xSmall
         case .large: return Spacing.small
         }

@@ -8,20 +8,12 @@ struct CursorRuleSetsSettingsView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: Spacing.large) {
             // Header
-            HStack {
-                VStack(alignment: .leading, spacing: Spacing.xxxSmall) {
-                    Text("Intervention Rules")
-                        .font(Typography.headline())
-                    Text("Define how CodeLooper should respond to different Cursor states")
-                        .font(Typography.caption1())
-                        .foregroundColor(ColorPalette.textSecondary)
-                }
-
-                Spacer()
-
-                DSButton("Add Rule", icon: Image(systemName: "plus"), style: .primary, size: .small) {
-                    showAddRule = true
-                }
+            VStack(alignment: .leading, spacing: Spacing.xxxSmall) {
+                Text("Intervention Rules")
+                    .font(Typography.headline())
+                Text("Define how CodeLooper should respond to different Cursor states")
+                    .font(Typography.caption1())
+                    .foregroundColor(ColorPalette.textSecondary)
             }
 
             // Rules List
@@ -32,8 +24,6 @@ struct CursorRuleSetsSettingsView: View {
                             selectedRule = rule
                         } onToggle: {
                             toggleRule(rule)
-                        } onDelete: {
-                            deleteRule(rule)
                         }
                     }
                 }
@@ -49,11 +39,6 @@ struct CursorRuleSetsSettingsView: View {
                 Spacer()
             }
             .padding(.top, Spacing.medium)
-        }
-        .sheet(isPresented: $showAddRule) {
-            AddRuleSheet { rule in
-                rules.append(rule)
-            }
         }
         .alert("Feature Not Yet Implemented", isPresented: $showNotImplementedAlert) {
             Button("OK", role: .cancel) {}
@@ -102,7 +87,6 @@ struct CursorRuleSetsSettingsView: View {
     ]
 
     @State private var selectedRule: InterventionRule?
-    @State private var showAddRule = false
     @State private var showNotImplementedAlert = false
     @State private var attemptedRuleName = ""
 
@@ -117,13 +101,6 @@ struct CursorRuleSetsSettingsView: View {
             rules[index].enabled.toggle()
         }
     }
-
-    private func deleteRule(_ rule: InterventionRule) {
-        rules.removeAll { $0.id == rule.id }
-        if selectedRule?.id == rule.id {
-            selectedRule = nil
-        }
-    }
 }
 
 // MARK: - Rule Card
@@ -135,7 +112,6 @@ private struct RuleCard: View {
     let isSelected: Bool
     let onSelect: () -> Void
     let onToggle: () -> Void
-    let onDelete: () -> Void
 
     var body: some View {
         DSCard(style: isSelected ? .elevated : .outlined) {
@@ -146,7 +122,7 @@ private struct RuleCard: View {
                     .frame(width: 8, height: 8)
 
                 // Rule info
-                VStack(alignment: .leading, spacing: Spacing.xxxSmall) {
+                VStack(alignment: .leading, spacing: Spacing.small) {
                     Text(rule.name)
                         .font(Typography.body(.medium))
                         .foregroundColor(ColorPalette.text)
@@ -154,6 +130,7 @@ private struct RuleCard: View {
                     Text(rule.description)
                         .font(Typography.caption1())
                         .foregroundColor(ColorPalette.textSecondary)
+                        .padding(.bottom, Spacing.xxSmall)
 
                     HStack(spacing: Spacing.small) {
                         DSBadge(rule.trigger.displayName, style: .info)
@@ -168,18 +145,24 @@ private struct RuleCard: View {
 
                 // Actions
                 HStack(spacing: Spacing.small) {
+                    // Info button
+                    if isHovered {
+                        Button(action: {
+                            showPopover = true
+                        }) {
+                            Image(systemName: "info.circle")
+                                .foregroundColor(ColorPalette.textSecondary)
+                        }
+                        .buttonStyle(.plain)
+                        .popover(isPresented: $showPopover) {
+                            RuleInfoPopover(rule: rule)
+                        }
+                    }
+                    
                     Toggle("", isOn: .constant(rule.enabled))
                         .toggleStyle(.switch)
                         .controlSize(.small)
                         .onTapGesture { onToggle() }
-
-                    if isHovered {
-                        Button(action: onDelete) {
-                            Image(systemName: "trash")
-                                .foregroundColor(ColorPalette.error)
-                        }
-                        .buttonStyle(.plain)
-                    }
                 }
             }
         }
@@ -194,6 +177,42 @@ private struct RuleCard: View {
     // MARK: Private
 
     @State private var isHovered = false
+    @State private var showPopover = false
+}
+
+// MARK: - Rule Info Popover
+
+private struct RuleInfoPopover: View {
+    let rule: InterventionRule
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: Spacing.medium) {
+            Text(rule.name)
+                .font(Typography.headline())
+                .padding(.bottom, Spacing.small)
+            
+            if let imageURL = rule.imageURL {
+                AsyncImage(url: imageURL) { image in
+                    image
+                        .resizable()
+                        .aspectRatio(contentMode: .fit)
+                        .frame(maxWidth: 400, maxHeight: 300)
+                        .cornerRadius(8)
+                } placeholder: {
+                    ProgressView()
+                        .frame(width: 300, height: 200)
+                }
+            }
+            
+            Text(rule.description)
+                .font(Typography.caption1())
+                .foregroundColor(ColorPalette.textSecondary)
+                .padding(.top, Spacing.small)
+        }
+        .padding(Spacing.large)
+        .frame(minWidth: 300, maxWidth: 450)
+        .background(ColorPalette.background)
+    }
 }
 
 // MARK: - Add Rule Sheet
@@ -287,6 +306,23 @@ private struct InterventionRule: Identifiable {
     var description: String
     var trigger: RuleTrigger
     var action: RuleAction
+    
+    var imageURL: URL? {
+        // Images from https://github.com/steipete/CodeLooper
+        let baseURL = "https://raw.githubusercontent.com/steipete/CodeLooper/main/assets/"
+        switch name {
+        case "Stop after 25 loops":
+            return URL(string: "\(baseURL)default-stop-25.png")
+        case "Plain Stop":
+            return URL(string: "\(baseURL)cursor-stopped.png")
+        case "Connection Issues":
+            return URL(string: "\(baseURL)trouble.png")
+        case "Edited in another chat":
+            return URL(string: "\(baseURL)edited-another-chat.png")
+        default:
+            return nil
+        }
+    }
 }
 
 private enum RuleTrigger: String, CaseIterable {

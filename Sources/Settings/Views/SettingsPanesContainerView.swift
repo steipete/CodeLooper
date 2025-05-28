@@ -35,6 +35,7 @@ struct SettingsPanesContainerView: View {
 
     @EnvironmentObject var mainSettingsViewModel: MainSettingsViewModel
     @EnvironmentObject var sessionLogger: SessionLogger // Assuming SessionLogger is provided higher up
+    @Default(.showDebugTab) private var showDebugTab
 
     var body: some View {
         VStack(spacing: 0) { // Use VStack to manage TabView and Footer
@@ -75,6 +76,15 @@ struct SettingsPanesContainerView: View {
                     .focusable()
                     .focused($focusedTab, equals: .externalMCPs)
 
+                AISettingsView()
+                    .readHeight() // Apply readHeight
+                    .tabItem {
+                        Label("AI", systemImage: "brain")
+                    }
+                    .tag(SettingsTab.ai)
+                    .focusable()
+                    .focused($focusedTab, equals: .ai)
+
                 AdvancedSettingsView()
                     .readHeight() // Apply readHeight
                     .tabItem {
@@ -84,14 +94,16 @@ struct SettingsPanesContainerView: View {
                     .focusable()
                     .focused($focusedTab, equals: .advanced)
 
-                AXInspectorLogView() // Renamed from Text(...)
-                    .readHeight() // Apply readHeight
-                    .tabItem {
-                        Label("Log", systemImage: "doc.text.fill")
-                    }
-                    .tag(SettingsTab.log)
-                    .focusable()
-                    .focused($focusedTab, equals: .log)
+                if showDebugTab {
+                    DebugSettingsView()
+                        .readHeight() // Apply readHeight
+                        .tabItem {
+                            Label("Debug", systemImage: "ladybug")
+                        }
+                        .tag(SettingsTab.debug)
+                        .focusable()
+                        .focused($focusedTab, equals: .debug)
+                }
             }
             .environmentObject(mainSettingsViewModel) // Provide to tabs that need it
             // .frame(maxWidth: .infinity, maxHeight: .infinity) // Remove fixed max height

@@ -1,8 +1,11 @@
+import Defaults
 import DesignSystem
 import SwiftUI
 
 struct ExternalMCPsSettingsView: View {
     // MARK: Internal
+    
+    @Default(.autoReloadMCPsOnChanges) var autoReloadMCPsOnChanges
 
     var body: some View {
         VStack(alignment: .leading, spacing: Spacing.large) {
@@ -13,6 +16,7 @@ struct ExternalMCPsSettingsView: View {
                 Text("Manage Model Context Protocol extensions for enhanced Cursor capabilities")
                     .font(Typography.caption1())
                     .foregroundColor(ColorPalette.textSecondary)
+                    .lineSpacing(3)
             }
 
             // Installed MCPs
@@ -53,8 +57,9 @@ struct ExternalMCPsSettingsView: View {
 
                 DSToggle(
                     "Auto-reload MCPs on changes",
-                    isOn: .constant(true),
-                    description: "Automatically reload extensions when configuration changes"
+                    isOn: $autoReloadMCPsOnChanges,
+                    description: "Automatically reload extensions when configuration changes",
+                    descriptionLineSpacing: 3
                 )
             }
 
@@ -71,7 +76,8 @@ struct ExternalMCPsSettingsView: View {
             version: "1.0.0",
             description: "Enables your IDE to make screenshots and ask questions about images",
             enabled: true,
-            icon: "camera.viewfinder"
+            icon: "camera.viewfinder",
+            githubURL: "https://github.com/danhilton1/mcp-peekaboo"
         ),
         MCPExtension(
             id: UUID(),
@@ -79,7 +85,8 @@ struct ExternalMCPsSettingsView: View {
             version: "1.0.0",
             description: "Manages a Terminal outside of the loop, so processes that might get stuck don't break the loop",
             enabled: true,
-            icon: "terminal"
+            icon: "terminal",
+            githubURL: "https://github.com/danhilton1/mcp-terminator"
         ),
         MCPExtension(
             id: UUID(),
@@ -87,7 +94,8 @@ struct ExternalMCPsSettingsView: View {
             version: "1.0.0",
             description: "A buddy for your IDE that your agent can ask if he's stuck. Can do coding task and offer \"a pair of fresh eyes\" that often un-stucks the loop",
             enabled: true,
-            icon: "brain"
+            icon: "brain",
+            githubURL: "https://github.com/claudehelper/claude-code-mcp"
         ),
         MCPExtension(
             id: UUID(),
@@ -95,7 +103,8 @@ struct ExternalMCPsSettingsView: View {
             version: "1.0.0",
             description: "Advanced file manipulation for faster refactoring",
             enabled: true,
-            icon: "doc.text.magnifyingglass"
+            icon: "doc.text.magnifyingglass",
+            githubURL: "https://github.com/jeremypress/mcp-conduit"
         ),
         MCPExtension(
             id: UUID(),
@@ -103,7 +112,8 @@ struct ExternalMCPsSettingsView: View {
             version: "1.0.0",
             description: "AppleScript for your IDE",
             enabled: true,
-            icon: "applescript"
+            icon: "applescript",
+            githubURL: "https://github.com/danhilton1/mcp-macos-automator"
         ),
     ]
 
@@ -157,9 +167,19 @@ private struct MCPCard: View {
                 // Info
                 VStack(alignment: .leading, spacing: Spacing.xxxSmall) {
                     HStack(spacing: Spacing.xSmall) {
-                        Text(mcp.name)
-                            .font(Typography.body(.medium))
-                            .foregroundColor(ColorPalette.text)
+                        if let githubURL = mcp.githubURL, let url = URL(string: githubURL) {
+                            Link(destination: url) {
+                                Text(mcp.name)
+                                    .font(Typography.body(.medium))
+                                    .foregroundColor(ColorPalette.primary)
+                                    .underline()
+                            }
+                            .buttonStyle(.plain)
+                        } else {
+                            Text(mcp.name)
+                                .font(Typography.body(.medium))
+                                .foregroundColor(ColorPalette.text)
+                        }
 
                         DSBadge("v\(mcp.version)", style: .default)
 
@@ -248,6 +268,7 @@ private struct MCPExtension: Identifiable {
     var description: String
     var enabled: Bool
     var icon: String
+    var githubURL: String?
 }
 
 // MARK: - Preview
