@@ -62,8 +62,7 @@ struct CursorSupervisionSettingsView: View {
 
                 cursorWindowsView
                 
-                // Manual AI Analysis Section (CursorAnalysisView)
-                // This can remain as is for now, or be re-evaluated later.
+                // Global AI Analysis Interval
                 if inputWatcherViewModel.isWatchingEnabled && !inputWatcherViewModel.cursorWindows.isEmpty {
                     DSDivider()
                         .padding(.vertical, Spacing.small)
@@ -80,13 +79,6 @@ struct CursorSupervisionSettingsView: View {
                         showValue: true
                     ) { "\(Int($0))s" }
                     .padding(.top, Spacing.xxSmall)
-                    
-                    DSDivider()
-                        .padding(.vertical, Spacing.small)
-                    Text("Manual AI Window Analysis")
-                        .font(Typography.callout(.semibold))
-                    CursorAnalysisView()
-                        .padding(.top, Spacing.small)
                 }
             }
             // Detection Settings

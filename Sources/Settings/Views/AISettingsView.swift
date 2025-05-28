@@ -91,6 +91,11 @@ struct AISettingsView: View {
                 connectionTestSection
             }
             
+            // Manual AI Window Analysis
+            DSSettingsSection("Manual AI Window Analysis") {
+                CursorAnalysisView()
+            }
+            
             // AI Usage Information
             DSSettingsSection("About AI Image Analysis") {
                 Text("The AI service will be used to analyze screenshots of Cursor windows and provide insights about what the application is currently doing.")

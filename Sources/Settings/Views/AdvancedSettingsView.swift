@@ -70,15 +70,6 @@ struct AdvancedSettingsView: View {
                 }
             }
 
-            // Troubleshooting
-            DSSettingsSection("Troubleshooting") {
-                DSButton("Reset Welcome Guide", style: .tertiary) {
-                    Defaults[.hasShownWelcomeGuide] = false
-                    if let appDelegate = NSApp.delegate as? AppDelegate {
-                        appDelegate.windowManager?.showWelcomeWindow()
-                    }
-                }
-            }
 
             // Danger Zone
             DSSettingsSection("Danger Zone") {

@@ -3,6 +3,8 @@ import SwiftUI
 
 struct AboutSettingsView: View {
     // MARK: Internal
+    
+    @State private var pulsateScale: CGFloat = 1.0
 
     var body: some View {
         VStack(spacing: 0) {
@@ -20,6 +22,15 @@ struct AboutSettingsView: View {
                                         .frame(width: 128, height: 128)
                                         .cornerRadiusDS(Layout.CornerRadius.xLarge)
                                         .shadowStyle(Layout.Shadow.large)
+                                        .scaleEffect(pulsateScale)
+                                        .animation(
+                                            Animation.easeInOut(duration: 2.0)
+                                                .repeatForever(autoreverses: true),
+                                            value: pulsateScale
+                                        )
+                                        .onAppear {
+                                            pulsateScale = 1.05
+                                        }
                                 }
 
                                 Text("CodeLooper")

@@ -98,10 +98,10 @@ private struct WindowRow: View {
         .contentShape(Rectangle())
         .scaleEffect(isHoveringCard ? 1.01 : 1.0)
         .shadow(
-            color: isHoveringCard ? Color.black.opacity(0.15) : Color.black.opacity(0.08),
-            radius: isHoveringCard ? 8 : 4,
+            color: isHoveringCard ? Color.black.opacity(0.08) : Color.black.opacity(0.04),
+            radius: isHoveringCard ? 4 : 2,
             x: 0,
-            y: isHoveringCard ? 3 : 2
+            y: isHoveringCard ? 1 : 1
         )
         .animation(.smooth(duration: 0.2), value: isHoveringCard)
         .onHover { hovering in

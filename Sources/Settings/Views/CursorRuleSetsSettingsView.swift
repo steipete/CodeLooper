@@ -40,16 +40,15 @@ struct CursorRuleSetsSettingsView: View {
             }
 
             // Info
-            DSCard(style: .filled) {
-                HStack(spacing: Spacing.small) {
-                    Image(systemName: "lightbulb.fill")
-                        .foregroundColor(ColorPalette.warning)
-
-                    Text("Rules are evaluated in order. The first matching rule will be applied.")
-                        .font(Typography.caption1())
-                        .foregroundColor(ColorPalette.textSecondary)
-                }
+            HStack {
+                Spacer()
+                Text("Rules are evaluated in order. The first matching rule will be applied.")
+                    .font(Typography.caption1())
+                    .foregroundColor(ColorPalette.textSecondary.opacity(0.8))
+                    .multilineTextAlignment(.center)
+                Spacer()
             }
+            .padding(.top, Spacing.medium)
         }
         .sheet(isPresented: $showAddRule) {
             AddRuleSheet { rule in

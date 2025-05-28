@@ -11,11 +11,8 @@ struct SettingsContainerView: View {
     var body: some View {
         GeometryReader { geometry in
             VStack(spacing: 0) {
-                // Header with app branding
-                HeaderView()
-
-                // Custom tab navigation
-                TabNavigationView(selectedTab: $selectedTab, tabs: tabs)
+                // Title bar area with integrated header and tabs
+                TitleBarView(selectedTab: $selectedTab, tabs: tabs)
                     .onChange(of: showDebugTab) { oldValue, newValue in
                         // If debug tab is disabled and currently selected, switch to general tab
                         if !newValue && selectedTab == .debug {
@@ -32,9 +29,6 @@ struct SettingsContainerView: View {
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
-            .onPreferenceChange(HeaderHeightKey.self) { height in
-                headerHeight = height
-            }
         }
         .frame(minWidth: 600, maxWidth: 880, 
                minHeight: 800, maxHeight: .infinity)
@@ -45,7 +39,6 @@ struct SettingsContainerView: View {
     // MARK: Private
 
     @State private var selectedTab: SettingsTab = .general
-    @State private var headerHeight: CGFloat = 0
 
     // Tab definitions
     private var tabs: [(id: SettingsTab, title: String, icon: String)] {
@@ -107,10 +100,10 @@ struct SettingsContainerView: View {
                     removal: AnyTransition.move(edge: .leading).combined(with: .opacity)
                 ))
         case .debug:
-            AboutSettingsView()
+            DebugSettingsView()
                 .transition(.asymmetric(
-                    insertion: AnyTransition.move(edge: .trailing).combined(with: .opacity),
-                    removal: AnyTransition.move(edge: .leading).combined(with: .opacity)
+                    insertion: .move(edge: .trailing).combined(with: .opacity),
+                    removal: .move(edge: .leading).combined(with: .opacity)
                 ))
         case .about:
             AboutSettingsView()
@@ -124,65 +117,36 @@ struct SettingsContainerView: View {
     }
 }
 
-// MARK: - Header View
+// MARK: - Title Bar View
 
-private struct HeaderView: View {
-    var body: some View {
-        HStack(spacing: Spacing.medium) {
-            // Add leading space to account for window buttons (close, minimize, maximize)
-            // Standard macOS window buttons are about 68pt wide
-            Spacer()
-                .frame(width: 68)
-            
-            if let appIcon = NSApplication.shared.applicationIconImage {
-                Image(nsImage: appIcon)
-                    .resizable()
-                    .frame(width: 32, height: 32) // Smaller icon for unified header
-                    .cornerRadiusDS(Layout.CornerRadius.medium)
-            }
-
-            VStack(alignment: .leading, spacing: Spacing.xxxSmall) {
-                Text("CodeLooper Settings")
-                    .font(Typography.title3(.semibold)) // Smaller font for unified header
-                    .foregroundColor(ColorPalette.text)
-
-                Text("Configure your Cursor supervision preferences")
-                    .font(Typography.caption2()) // Smaller caption
-                    .foregroundColor(ColorPalette.textSecondary)
-            }
-
-            Spacer()
-        }
-        .padding(.horizontal, Spacing.large)
-        .padding(.top, Spacing.small) // Reduced top padding to align with window buttons
-        .padding(.bottom, Spacing.medium)
-        .background(ColorPalette.backgroundSecondary)
-        .background(
-            GeometryReader { geometry in
-                Color.clear
-                    .preference(
-                        key: HeaderHeightKey.self,
-                        value: geometry.size.height
-                    )
-            }
-        )
-    }
-}
-
-// MARK: - Tab Navigation
-
-private struct TabNavigationView: View {
-    // MARK: Internal
-
+private struct TitleBarView: View {
     @Binding var selectedTab: SettingsTab
-
     let tabs: [(id: SettingsTab, title: String, icon: String)]
+    @State private var hoveredTab: SettingsTab?
 
     var body: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: Spacing.medium) {
+        HStack(spacing: 0) {
+            // Left side with app icon and title
+            HStack(spacing: Spacing.small) {
+                // App icon and title
+                if let appIcon = NSApplication.shared.applicationIconImage {
+                    Image(nsImage: appIcon)
+                        .resizable()
+                        .frame(width: 67, height: 67)
+                        .cornerRadiusDS(Layout.CornerRadius.small)
+                }
+                
+                Text("CodeLooper")
+                    .font(Typography.body(.semibold))
+                    .foregroundColor(ColorPalette.text)
+            }
+            
+            Spacer()
+            
+            // Tabs in the center
+            HStack(spacing: Spacing.small) {
                 ForEach(tabs, id: \.id) { tab in
-                    TabButton(
+                    TitleBarTabButton(
                         title: tab.title,
                         icon: tab.icon,
                         isSelected: selectedTab == tab.id,
@@ -197,25 +161,30 @@ private struct TabNavigationView: View {
                     }
                 }
             }
-            .padding(.horizontal, Spacing.medium)
-            .padding(.vertical, Spacing.small)
+            
+            Spacer()
         }
-        .background(ColorPalette.backgroundTertiary)
+        .padding(.horizontal, Spacing.medium)
+        .padding(.vertical, Spacing.xSmall)
+        .background(ColorPalette.backgroundSecondary)
         .overlay(
             DSDivider()
                 .frame(height: Layout.BorderWidth.regular),
             alignment: .bottom
         )
+        .gesture(
+            DragGesture()
+                .onChanged { _ in
+                    // Move the window when dragging the title bar
+                    if let window = NSApp.keyWindow {
+                        window.performDrag(with: NSApp.currentEvent!)
+                    }
+                }
+        )
     }
-
-    // MARK: Private
-
-    @State private var hoveredTab: SettingsTab?
 }
 
-private struct TabButton: View {
-    // MARK: Internal
-
+private struct TitleBarTabButton: View {
     let title: String
     let icon: String
     let isSelected: Bool
@@ -224,30 +193,28 @@ private struct TabButton: View {
 
     var body: some View {
         Button(action: action) {
-            VStack(spacing: Spacing.xxSmall) {
+            VStack(spacing: Spacing.xxxSmall) {
                 Image(systemName: icon)
-                    .font(.system(size: 20, weight: .medium))
+                    .font(.system(size: 18, weight: .medium))
                     .foregroundColor(iconColor)
-                    .frame(height: 24)
+                    .frame(height: 20)
 
                 Text(title)
-                    .font(Typography.caption1(.medium))
+                    .font(.system(size: 10, weight: .medium))
                     .foregroundColor(textColor)
+                    .lineLimit(1)
             }
-            .padding(.horizontal, Spacing.medium)
+            .padding(.horizontal, Spacing.small)
             .padding(.vertical, Spacing.xSmall)
             .background(backgroundColor)
-            .cornerRadiusDS(Layout.CornerRadius.medium)
+            .cornerRadiusDS(Layout.CornerRadius.small)
             .overlay(
-                RoundedRectangle(cornerRadius: Layout.CornerRadius.medium)
+                RoundedRectangle(cornerRadius: Layout.CornerRadius.small)
                     .strokeBorder(borderColor, lineWidth: borderWidth)
             )
-            .scaleEffect(isSelected ? 1.0 : (isHovered ? 0.95 : 1.0))
         }
         .buttonStyle(.plain)
     }
-
-    // MARK: Private
 
     private var iconColor: Color {
         if isSelected {
@@ -273,7 +240,7 @@ private struct TabButton: View {
         if isSelected {
             ColorPalette.background
         } else if isHovered {
-            ColorPalette.backgroundSecondary
+            ColorPalette.backgroundSecondary.opacity(0.7)
         } else {
             Color.clear
         }
@@ -288,18 +255,12 @@ private struct TabButton: View {
     }
 
     private var borderWidth: CGFloat {
-        isSelected ? Layout.BorderWidth.medium : 0
+        isSelected ? Layout.BorderWidth.thin : 0
     }
+
 }
 
 
-private struct HeaderHeightKey: PreferenceKey {
-    static let defaultValue: CGFloat = 0
-    
-    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
-        value = nextValue()
-    }
-}
 
 // MARK: - Preview
 
