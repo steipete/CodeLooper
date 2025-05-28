@@ -180,6 +180,20 @@ public class AppDelegate: NSObject, NSApplicationDelegate,
         windowManager?.showAboutWindow()
     }
 
+    // MARK: - Dock Icon Handling
+    
+    public func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
+        logger.info("Dock icon clicked, hasVisibleWindows: \(flag)")
+        
+        // Always open/focus the settings window when dock icon is clicked
+        Task { @MainActor in
+            SettingsService.openSettingsSubject.send()
+            logger.info("Requested settings window open/focus via dock icon click")
+        }
+        
+        return true
+    }
+
     // MARK: - Update Handling (Sparkle)
 
     @IBAction func checkForUpdates(_ sender: Any?) {
