@@ -267,6 +267,11 @@ private struct WindowRow: View {
                         }
                         .onHover { isHovering in
                             isHoveringFolderIcon = isHovering
+                            if isHovering {
+                                NSCursor.pointingHand.push()
+                            } else {
+                                NSCursor.pop()
+                            }
                         }
                         
                 }
