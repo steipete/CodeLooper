@@ -12,6 +12,13 @@ class JSHookManager {
     private(set) var hookedWindows: Set<String> = []
     var windowPorts: [String: UInt16] = [:]
     var nextPort: UInt16 = 9001
+    
+    // MARK: - Probing State
+    
+    private var isProbingActive = false
+    private var probingTask: Task<Void, Never>?
+    private var newWindowProbeQueue: [MonitoredWindowInfo] = []
+    private var isProcessingQueue = false
 
     // MARK: - Public Methods
 
@@ -36,8 +43,10 @@ class JSHookManager {
     }
 
     func installHook(for window: MonitoredWindowInfo) async throws {
+        logger.info("🔨 Checking if hook exists for window \(window.id)")
         guard !hasHookForWindow(window.id) else {
-            logger.debug("🔄 Hook already exists for window \(window.id) - skipping installation")
+            logger.warning("🔄 Hook already exists for window \(window.id) - skipping installation")
+            logger.debug("🔍 Hooked windows: \(hookedWindows)")
             return
         }
 
@@ -73,6 +82,46 @@ class JSHookManager {
         }
     }
 
+    func startProactiveProbing() {
+        guard !isProbingActive else {
+            logger.debug("🔄 Proactive probing already active")
+            return
+        }
+        
+        isProbingActive = true
+        logger.info("🚀 Starting proactive JS hook probing")
+        
+        probingTask = Task { [weak self] in
+            while !Task.isCancelled {
+                await self?.probeExistingPorts()
+                // Wait 3 seconds between full probes
+                try? await Task.sleep(nanoseconds: 3_000_000_000)
+            }
+        }
+    }
+    
+    func stopProactiveProbing() {
+        guard isProbingActive else { return }
+        
+        logger.info("🛑 Stopping proactive JS hook probing")
+        isProbingActive = false
+        probingTask?.cancel()
+        probingTask = nil
+    }
+    
+    func addWindowForFastProbing(_ window: MonitoredWindowInfo) {
+        guard !hasHookForWindow(window.id) else { return }
+        
+        logger.info("⚡ Adding window '\(window.windowTitle ?? "Unknown")' for fast probing")
+        newWindowProbeQueue.append(window)
+        
+        if !isProcessingQueue {
+            Task { [weak self] in
+                await self?.processFastProbeQueue()
+            }
+        }
+    }
+    
     func probeForExistingHooks(windows: [MonitoredWindowInfo]) async {
         await withTaskGroup(of: Void.self) { group in
             for window in windows {
@@ -83,6 +132,84 @@ class JSHookManager {
                 }
             }
         }
+    }
+    
+    private func probeExistingPorts() async {
+        let startPort: UInt16 = 9001
+        let endPort: UInt16 = 9050
+        
+        logger.debug("🔍 Probing ports \(startPort)-\(endPort) for existing hooks")
+        
+        for port in startPort...endPort {
+            // Quick probe - only 0.5 second timeout for background probing
+            do {
+                let probeHook = try await CursorJSHook(
+                    applicationName: "Cursor",
+                    port: port,
+                    skipInjection: true,
+                    targetWindowTitle: nil
+                )
+                
+                if await probeHook.probeForExistingHook(timeout: 0.5) {
+                    // Found a hook but we don't know which window it belongs to
+                    // This will be resolved when actual windows are detected
+                    logger.info("🎆 Found existing hook on port \(port) - waiting for window identification")
+                }
+            } catch {
+                // Continue to next port
+                continue
+            }
+        }
+    }
+    
+    private func processFastProbeQueue() async {
+        guard !isProcessingQueue else { return }
+        isProcessingQueue = true
+        defer { isProcessingQueue = false }
+        
+        while !newWindowProbeQueue.isEmpty {
+            let window = newWindowProbeQueue.removeFirst()
+            
+            logger.info("⚡ Fast-probing window '\(window.windowTitle ?? "Unknown")'")
+            
+            // Fast probe with shorter timeout and more targeted approach
+            await fastProbeWindow(window)
+            
+            // Small delay between fast probes to avoid overwhelming the system
+            try? await Task.sleep(nanoseconds: 100_000_000) // 0.1 second
+        }
+    }
+    
+    private func fastProbeWindow(_ window: MonitoredWindowInfo) async {
+        let commonPorts: [UInt16] = [9001, 9002, 9003, 9004, 9005, 9006, 9007, 9008, 9009, 9010]
+        let windowTitle = window.windowTitle ?? "Unknown"
+        
+        logger.info("⚡ Fast-probing window '\(windowTitle)' on common ports")
+        
+        for port in commonPorts {
+            do {
+                let probeHook = try await CursorJSHook(
+                    applicationName: "Cursor",
+                    port: port,
+                    skipInjection: true,
+                    targetWindowTitle: window.windowTitle
+                )
+                
+                if await probeHook.probeForExistingHook(timeout: 1.0) {
+                    jsHooks[window.id] = probeHook
+                    hookedWindows.insert(window.id)
+                    windowPorts[window.id] = port
+                    
+                    logger.info("⚡ Fast-probe SUCCESS: Found hook for '\(windowTitle)' on port \(port)")
+                    savePortMappings()
+                    return
+                }
+            } catch {
+                continue
+            }
+        }
+        
+        logger.debug("⚡ Fast-probe completed: No hook found for '\(windowTitle)'")
     }
 
     func updateHookStatuses() {
@@ -163,6 +290,9 @@ class JSHookManager {
     private func probePort(_ window: MonitoredWindowInfo) async {
         let startPort: UInt16 = 9001
         let endPort: UInt16 = 9050
+        let windowTitle = window.windowTitle ?? "Unknown"
+        
+        logger.info("🔍 Starting port probe for window '\(windowTitle)' (ID: \(window.id))")
 
         for port in startPort ... endPort {
             do {
@@ -173,24 +303,30 @@ class JSHookManager {
                     targetWindowTitle: window.windowTitle
                 )
 
-                logger.debug("🔍 Probing port \(port) for window \(window.windowTitle ?? "Unknown")...")
+                logger.debug("🔍 Probing port \(port) for window '\(windowTitle)'...")
                 
                 if await probeHook.probeForExistingHook(timeout: 2.0) {
                     jsHooks[window.id] = probeHook
                     hookedWindows.insert(window.id)
                     windowPorts[window.id] = port
 
-                    logger.info("🎆 Found existing hook for window \(window.windowTitle ?? "Unknown") on port \(port)!")
+                    logger.info("🎆 Found existing hook for window '\(windowTitle)' on port \(port)!")
                     logger.info("🔗 Reconnected to existing JS hook")
+                    logger.info("📋 Total hooked windows after probe: \(hookedWindows.count)")
                     savePortMappings()
                     break
                 } else {
                     logger.debug("🔕 No hook found on port \(port)")
                 }
             } catch {
+                logger.debug("❌ Error probing port \(port): \(error)")
                 // Continue to next port
                 continue
             }
+        }
+        
+        if !hasHookForWindow(window.id) {
+            logger.info("🔍 No existing hook found for window '\(windowTitle)' after probing all ports")
         }
     }
 }

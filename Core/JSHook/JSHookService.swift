@@ -8,125 +8,92 @@ class JSHookService {
     // MARK: Lifecycle
 
     init() {
-        loadPortMappings()
+        jsHookManager.loadPortMappings()
+        
+        // Start proactive probing immediately
+        Task { @MainActor in
+            jsHookManager.startProactiveProbing()
+        }
     }
 
     // MARK: Internal
 
-    private(set) var hookedWindows = Set<String>()
+    var hookedWindows: Set<String> {
+        jsHookManager.hookedWindows
+    }
 
     func isWindowHooked(_ windowId: String) -> Bool {
-        hookedWindows.contains(windowId)
+        jsHookManager.hasHookForWindow(windowId)
     }
 
     func loadPortMappings() {
-        // Load persisted port mappings if needed
-        logger.debug("Loading port mappings")
+        jsHookManager.loadPortMappings()
     }
 
-    func injectHook(into window: MonitoredWindowInfo, portManager: PortManager) async {
-        guard !isWindowHooked(window.id) else {
-            logger.info("Window \(window.id) already hooked")
-            return
-        }
-
+    func injectHook(into window: MonitoredWindowInfo, portManager _: PortManager) async {
         logger.info("Starting JS hook injection for window: \(window.id)")
 
-        // Check for existing hook
-        if await checkForExistingHook(in: window, portManager: portManager) {
-            logger.info("Found existing hook for window: \(window.id)")
-            return
+        // Try fast probing first - this is very quick
+        jsHookManager.addWindowForFastProbing(window)
+        
+        // Give fast probe a moment to work (up to 2 seconds)
+        for i in 0..<20 {
+            if jsHookManager.hasHookForWindow(window.id) {
+                logger.info("Fast probe found existing hook for window: \(window.id)")
+                return
+            }
+            try? await Task.sleep(nanoseconds: 100_000_000) // 0.1 second
         }
 
-        // Probe common ports
-        if await probeCommonPorts(for: window, portManager: portManager) {
-            logger.info("Connected to existing hook on common port for window: \(window.id)")
-            return
+        // If no existing hook found, install new one
+        do {
+            try await jsHookManager.installHook(for: window)
+            logger.info("Successfully installed hook for window: \(window.id)")
+        } catch {
+            logger.error("Failed to install hook for window \(window.id): \(error)")
+            handleHookInstallationError(error, for: window)
         }
-
-        // Install new hook
-        await installNewHook(in: window, portManager: portManager)
+    }
+    
+    func addWindowForFastProbing(_ window: MonitoredWindowInfo) {
+        // Immediately start fast probing for new windows
+        jsHookManager.addWindowForFastProbing(window)
+    }
+    
+    func handleNewWindow(_ window: MonitoredWindowInfo) {
+        // Immediately start fast probing for new windows
+        addWindowForFastProbing(window)
+    }
+    
+    func installHook(for window: MonitoredWindowInfo) async throws {
+        try await jsHookManager.installHook(for: window)
     }
 
-    func checkForExistingHook(in window: MonitoredWindowInfo, portManager: PortManager) async -> Bool {
-        guard let element = window.windowAXElement else { return false }
-
-        // Check console for existing hooks
-        if let consoleResponse = await checkConsoleForHooks(element) {
-            logger.debug("Console response: \(consoleResponse)")
-            // Parse console output to find existing hook
-            if let data = consoleResponse.data(using: .utf8),
-               let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-               let port = json["port"] as? Int
-            {
-                let portNum = UInt16(port)
-                hookedWindows.insert(window.id)
-                portManager.assignPort(portNum, to: window.id)
-                return true
-            }
-        }
-
-        return false
+    func checkForExistingHook(in window: MonitoredWindowInfo, portManager _: PortManager) async -> Bool {
+        // Probe for existing hooks
+        await jsHookManager.probeForExistingHooks(windows: [window])
+        return jsHookManager.hasHookForWindow(window.id)
     }
 
-    func probeCommonPorts(for window: MonitoredWindowInfo, portManager: PortManager) async -> Bool {
-        let commonPorts: [UInt16] = [4545, 4546, 4547, 4548]
-
-        for port in commonPorts {
-            if await probePort(port, for: window, portManager: portManager) {
-                return true
-            }
-        }
-
-        return false
+    func probeCommonPorts(for window: MonitoredWindowInfo, portManager _: PortManager) async -> Bool {
+        // This is now handled by probeForExistingHooks
+        await jsHookManager.probeForExistingHooks(windows: [window])
+        return jsHookManager.hasHookForWindow(window.id)
     }
 
     func stopAllHooks() {
         logger.info("Stopping all JS hooks")
-        hookedWindows.removeAll()
+        // Clear all hooks from the manager
+        for windowId in jsHookManager.hookedWindows {
+            jsHookManager.removeHookedWindow(windowId)
+        }
     }
 
     // MARK: Private
 
     private let logger = Logger(category: .supervision)
+    private let jsHookManager = JSHookManager()
 
-    private func checkConsoleForHooks(_ element: Element) async -> String? {
-        _ = element // Will be used when JavaScript execution is implemented
-        // TODO: Implement JavaScript execution via AXorcist using element
-        // Script to check for existing hooks:
-        // (function() {
-        //     if (window.cursorHook) {
-        //         return JSON.stringify({
-        //             version: window.cursorHook.version,
-        //             port: window.cursorHook.port,
-        //             status: 'active'
-        //         });
-        //     }
-        //     return null;
-        // })();
-
-        // For now, return nil
-        return nil
-    }
-
-    private func probePort(_: UInt16, for _: MonitoredWindowInfo, portManager _: PortManager) async -> Bool {
-        // TODO: Implement test connection method
-        // For now, skip port probing
-        false
-    }
-
-    private func installNewHook(in window: MonitoredWindowInfo, portManager: PortManager) async {
-        guard window.windowAXElement != nil else {
-            logger.error("No AXElement for window \(window.id)")
-            return
-        }
-
-        let port = portManager.getOrAssignPort(for: window.id)
-        // TODO: Implement install in browser method
-        // For now, just mark as hooked
-        hookedWindows.insert(window.id)
-        logger.info("Successfully installed hook on port \(port) for window \(window.id)")
-    }
 
     private func handleHookInstallationError(_ error: Error, for _: MonitoredWindowInfo) {
         let nsError = error as NSError
