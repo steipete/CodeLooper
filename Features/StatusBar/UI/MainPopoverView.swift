@@ -11,10 +11,25 @@ struct MainPopoverView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: Spacing.medium) {
-            // Header
-            Text("CodeLooper Supervision")
-                .font(Typography.title3())
-                .foregroundColor(ColorPalette.text)
+            // Header with logo
+            HStack(spacing: Spacing.small) {
+                // App icon
+                if let iconImage = NSImage(named: NSImage.Name("AppIcon")) {
+                    Image(nsImage: iconImage)
+                        .resizable()
+                        .frame(width: 24, height: 24)
+                } else {
+                    Image(systemName: "link.circle.fill")
+                        .font(.title2)
+                        .foregroundColor(ColorPalette.primary)
+                }
+                
+                Text("CodeLooper")
+                    .font(Typography.title3(.medium))
+                    .foregroundColor(ColorPalette.text)
+                
+                Spacer()
+            }
 
             // Permissions section
             PermissionsView(showTitle: false, compact: true)
@@ -36,20 +51,8 @@ struct MainPopoverView: View {
 
             // Monitoring status section
             if let cursorApp = cursorMonitor.monitoredApps.first {
-                VStack(alignment: .leading, spacing: Spacing.xSmall) {
-                    HStack {
-                        Text("Monitored:")
-                            .font(Typography.body())
-                            .foregroundColor(ColorPalette.textSecondary)
-                        Text(cursorApp.displayName)
-                            .font(Typography.body(.medium))
-                            .foregroundColor(isGlobalMonitoringEnabled ? ColorPalette.text : ColorPalette.textSecondary)
-                    }
-                }
-
-                // Windows list
+                // Windows list without "Monitored:" label
                 CursorWindowsList(style: .popover)
-                    .padding(.top, Spacing.small)
             } else {
                 // Empty state
                 DSCard(style: .filled) {
@@ -80,23 +83,23 @@ struct MainPopoverView: View {
 
             // Action buttons
             HStack {
-                DSButton(
-                    "",
-                    icon: Image(systemName: "gearshape.fill"),
-                    style: .secondary
-                ) {
+                Button(action: {
                     MainSettingsCoordinator.shared.showSettings()
+                }) {
+                    Image(systemName: "gearshape")
+                        .font(.system(size: 16))
+                        .foregroundColor(ColorPalette.textSecondary)
                 }
+                .buttonStyle(.plain)
                 .help("Open Settings")
 
                 Spacer()
 
-                DSButton(
-                    "Quit",
-                    style: .tertiary
-                ) {
+                Button("Quit") {
                     NSApp.terminate(nil)
                 }
+                .buttonStyle(.plain)
+                .foregroundColor(ColorPalette.text)
             }
             .padding(.top, Spacing.xSmall)
         }
