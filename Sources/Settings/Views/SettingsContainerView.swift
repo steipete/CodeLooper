@@ -31,7 +31,7 @@ struct SettingsContainerView: View {
             }
         }
         .frame(minWidth: 600, maxWidth: 880, 
-               minHeight: 800, maxHeight: .infinity)
+               minHeight: 400, maxHeight: 1200)
         .background(ColorPalette.background)
         .withDesignSystem()
     }
@@ -132,7 +132,7 @@ private struct TitleBarView: View {
                 if let appIcon = NSApplication.shared.applicationIconImage {
                     Image(nsImage: appIcon)
                         .resizable()
-                        .frame(width: 67, height: 67)
+                        .frame(width: 40, height: 40)
                         .cornerRadiusDS(Layout.CornerRadius.small)
                 }
                 
@@ -214,6 +214,7 @@ private struct TitleBarTabButton: View {
             )
         }
         .buttonStyle(.plain)
+        .focusable(false)
     }
 
     private var iconColor: Color {

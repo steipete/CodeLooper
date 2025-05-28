@@ -215,7 +215,7 @@ class MCPConfigManager {
         // Add command info for display
         if let command = entry.command {
             statusParts.append("(\(command))")
-        } else if let url = entry.url {
+        } else if let _ = entry.url {
             statusParts.append("(URL)")
         }
 
