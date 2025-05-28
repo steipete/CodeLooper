@@ -15,35 +15,17 @@ struct SettingsContainerView: View {
             // Custom tab navigation
             TabNavigationView(selectedTab: $selectedTab, tabs: tabs)
 
-            // Content area with animated height
+            // Content area
             ScrollView {
                 VStack(spacing: 0) {
                     tabContent
                         .padding(Spacing.xLarge)
-                        .background(GeometryReader { geometry in
-                            Color.clear.preference(
-                                key: ContentHeightPreferenceKey.self,
-                                value: geometry.size.height
-                            )
-                        })
                 }
             }
-            .frame(height: contentHeight)
-            .animation(.spring(response: 0.5, dampingFraction: 0.8), value: contentHeight)
-            .onPreferenceChange(ContentHeightPreferenceKey.self) { height in
-                if !isAnimating {
-                    isAnimating = true
-                    contentHeight = min(max(height + 40, 400), 800) // Min 400, max 800
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                        isAnimating = false
-                    }
-                }
-            }
-
-            // Footer
-            SettingsFooterView()
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
-        .frame(width: 720) // Fixed width for settings - increased to prevent tab cutoff
+        .frame(minWidth: 720, idealWidth: 800, maxWidth: .infinity, 
+               minHeight: 400, idealHeight: 600, maxHeight: .infinity)
         .background(ColorPalette.background)
         .withDesignSystem()
     }
@@ -51,8 +33,6 @@ struct SettingsContainerView: View {
     // MARK: Private
 
     @State private var selectedTab: SettingsTab = .general
-    @State private var contentHeight: CGFloat = 600
-    @State private var isAnimating = false
 
     // Tab definitions
     private let tabs: [(id: SettingsTab, title: String, icon: String)] = [
@@ -265,66 +245,6 @@ private struct TabButton: View {
 
     private var borderWidth: CGFloat {
         isSelected ? Layout.BorderWidth.medium : 0
-    }
-}
-
-// MARK: - Footer
-
-private struct SettingsFooterView: View {
-    // MARK: Internal
-
-    var body: some View {
-        HStack {
-            Button(action: openGitHub) {
-                Label("GitHub", systemImage: "link")
-                    .font(Typography.caption1())
-            }
-            .buttonStyle(.plain)
-            .foregroundColor(ColorPalette.primary)
-
-            Text("•")
-                .foregroundColor(ColorPalette.textTertiary)
-
-            Button(action: openDocumentation) {
-                Label("Documentation", systemImage: "book")
-                    .font(Typography.caption1())
-            }
-            .buttonStyle(.plain)
-            .foregroundColor(ColorPalette.primary)
-
-            Spacer()
-
-            Text("Made with ❤️ for Cursor users")
-                .font(Typography.caption1())
-                .foregroundColor(ColorPalette.textSecondary)
-        }
-        .padding(.horizontal, Spacing.large)
-        .padding(.vertical, Spacing.small)
-        .background(ColorPalette.backgroundSecondary)
-    }
-
-    // MARK: Private
-
-    private func openGitHub() {
-        if let url = URL(string: "https://github.com/steipete/codelooper") {
-            NSWorkspace.shared.open(url)
-        }
-    }
-
-    private func openDocumentation() {
-        if let url = URL(string: "https://github.com/steipete/codelooper/wiki") {
-            NSWorkspace.shared.open(url)
-        }
-    }
-}
-
-// MARK: - Preference Key for Content Height
-
-private struct ContentHeightPreferenceKey: PreferenceKey {
-    static let defaultValue: CGFloat = 600
-
-    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
-        value = nextValue()
     }
 }
 
