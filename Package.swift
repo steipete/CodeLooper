@@ -18,6 +18,8 @@ let package = Package(
         .package(url: "https://github.com/apple/swift-log.git", from: "1.6.3"),
         // User experience - launch at login
         .package(url: "https://github.com/sindresorhus/LaunchAtLogin", .upToNextMajor(from: "5.0.0")),
+        // Keychain access
+        .package(url: "https://github.com/kishikawakatsumi/KeychainAccess.git", .upToNextMajor(from: "4.2.2")),
         // Accessibility utilities
         .package(path: "AXorcist"),
         .package(path: "AXpector"),
@@ -48,6 +50,7 @@ let package = Package(
                 "Defaults",
                 "LaunchAtLogin",
                 "KeyboardShortcuts",
+                "KeychainAccess",
                 "Diagnostics",
                 .product(name: "SwiftUIIntrospect", package: "SwiftUI-Introspect"),
                 .product(name: "Logging", package: "swift-log"),

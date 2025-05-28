@@ -1,5 +1,5 @@
 import Foundation
-import Security
+import KeychainAccess
 
 /// Service for securely storing and retrieving API keys from the macOS Keychain
 @MainActor
@@ -7,19 +7,19 @@ public final class APIKeyService {
     // MARK: - Types
     
     public enum KeychainError: Error, LocalizedError {
-        case saveFailed(OSStatus)
-        case loadFailed(OSStatus)
-        case deleteFailed(OSStatus)
+        case saveFailed(Error)
+        case loadFailed(Error)
+        case deleteFailed(Error)
         case invalidData
         
         public var errorDescription: String? {
             switch self {
-            case .saveFailed(let status):
-                return "Failed to save API key to keychain. Error: \(status)"
-            case .loadFailed(let status):
-                return "Failed to load API key from keychain. Error: \(status)"
-            case .deleteFailed(let status):
-                return "Failed to delete API key from keychain. Error: \(status)"
+            case .saveFailed(let error):
+                return "Failed to save API key to keychain. Error: \(error.localizedDescription)"
+            case .loadFailed(let error):
+                return "Failed to load API key from keychain. Error: \(error.localizedDescription)"
+            case .deleteFailed(let error):
+                return "Failed to delete API key from keychain. Error: \(error.localizedDescription)"
             case .invalidData:
                 return "Invalid data format in keychain"
             }
@@ -55,6 +55,7 @@ public final class APIKeyService {
     // MARK: - Properties
     
     public static let shared = APIKeyService()
+    private let keychain = Keychain(service: "com.codelooper.api-keys")
     
     // MARK: - Initialization
     
@@ -68,26 +69,12 @@ public final class APIKeyService {
     ///   - type: The type of API key (OpenAI, Anthropic, etc.)
     /// - Throws: KeychainError if the save operation fails
     public func saveAPIKey(_ apiKey: String, for type: APIKeyType) throws {
-        guard let data = apiKey.data(using: .utf8) else {
-            throw KeychainError.invalidData
-        }
-        
-        let query: [String: Any] = [
-            kSecClass as String: kSecClassGenericPassword,
-            kSecAttrService as String: type.service,
-            kSecAttrAccount as String: type.account,
-            kSecValueData as String: data,
-            kSecAttrAccessible as String: kSecAttrAccessibleWhenUnlockedThisDeviceOnly
-        ]
-        
-        // Try to delete existing item first
-        SecItemDelete(query as CFDictionary)
-        
-        // Add new item
-        let status = SecItemAdd(query as CFDictionary, nil)
-        
-        guard status == errSecSuccess else {
-            throw KeychainError.saveFailed(status)
+        do {
+            try keychain
+                .accessibility(.whenUnlockedThisDeviceOnly)
+                .set(apiKey, key: type.service)
+        } catch {
+            throw KeychainError.saveFailed(error)
         }
     }
     
@@ -96,30 +83,15 @@ public final class APIKeyService {
     /// - Returns: The API key if found, nil otherwise
     /// - Throws: KeychainError if the load operation fails with an error other than item not found
     public func loadAPIKey(for type: APIKeyType) throws -> String? {
-        let query: [String: Any] = [
-            kSecClass as String: kSecClassGenericPassword,
-            kSecAttrService as String: type.service,
-            kSecAttrAccount as String: type.account,
-            kSecReturnData as String: true,
-            kSecMatchLimit as String: kSecMatchLimitOne
-        ]
-        
-        var result: AnyObject?
-        let status = SecItemCopyMatching(query as CFDictionary, &result)
-        
-        switch status {
-        case errSecSuccess:
-            guard let data = result as? Data,
-                  let apiKey = String(data: data, encoding: .utf8) else {
-                throw KeychainError.invalidData
+        do {
+            return try keychain.get(type.service)
+        } catch let error as KeychainAccess.Status {
+            if error == .itemNotFound {
+                return nil
             }
-            return apiKey
-            
-        case errSecItemNotFound:
-            return nil
-            
-        default:
-            throw KeychainError.loadFailed(status)
+            throw KeychainError.loadFailed(error)
+        } catch {
+            throw KeychainError.loadFailed(error)
         }
     }
     
@@ -127,17 +99,15 @@ public final class APIKeyService {
     /// - Parameter type: The type of API key to delete
     /// - Throws: KeychainError if the delete operation fails
     public func deleteAPIKey(for type: APIKeyType) throws {
-        let query: [String: Any] = [
-            kSecClass as String: kSecClassGenericPassword,
-            kSecAttrService as String: type.service,
-            kSecAttrAccount as String: type.account
-        ]
-        
-        let status = SecItemDelete(query as CFDictionary)
-        
-        // Consider item not found as success
-        guard status == errSecSuccess || status == errSecItemNotFound else {
-            throw KeychainError.deleteFailed(status)
+        do {
+            try keychain.remove(type.service)
+        } catch let error as KeychainAccess.Status {
+            // Consider item not found as success
+            if error != .itemNotFound {
+                throw KeychainError.deleteFailed(error)
+            }
+        } catch {
+            throw KeychainError.deleteFailed(error)
         }
     }
     
@@ -145,15 +115,11 @@ public final class APIKeyService {
     /// - Parameter type: The type of API key to check
     /// - Returns: true if the key exists, false otherwise
     public func hasAPIKey(for type: APIKeyType) -> Bool {
-        let query: [String: Any] = [
-            kSecClass as String: kSecClassGenericPassword,
-            kSecAttrService as String: type.service,
-            kSecAttrAccount as String: type.account,
-            kSecReturnData as String: false
-        ]
-        
-        let status = SecItemCopyMatching(query as CFDictionary, nil)
-        return status == errSecSuccess
+        do {
+            return try keychain.contains(type.service)
+        } catch {
+            return false
+        }
     }
     
     /// Validate an API key format
