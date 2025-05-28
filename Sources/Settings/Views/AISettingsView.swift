@@ -1,6 +1,5 @@
 import SwiftUI
 import Defaults
-import Security
 import DesignSystem
 
 struct AISettingsView: View {
@@ -311,52 +310,25 @@ struct AISettingsView: View {
     }
     
     private func storeAPIKeyInKeychain(_ apiKey: String, service: String) {
-        let data = apiKey.data(using: .utf8)!
-        let query: [String: Any] = [
-            kSecClass as String: kSecClassGenericPassword,
-            kSecAttrService as String: service,
-            kSecAttrAccount as String: "api-key",
-            kSecValueData as String: data
-        ]
-        
-        // Try to delete existing item first
-        SecItemDelete(query as CFDictionary)
-        
-        // Add new item
-        let status = SecItemAdd(query as CFDictionary, nil)
-        if status != errSecSuccess {
-            print("Error storing API key: \(status)")
+        // Map the service string to APIKeyType
+        if service == "CODELOOPER_OPENAI_API_KEY" {
+            _ = APIKeyService.shared.saveOpenAIKey(apiKey)
         }
     }
     
     private func loadAPIKeyFromKeychain(service: String) -> String {
-        let query: [String: Any] = [
-            kSecClass as String: kSecClassGenericPassword,
-            kSecAttrService as String: service,
-            kSecAttrAccount as String: "api-key",
-            kSecReturnData as String: true
-        ]
-        
-        var result: AnyObject?
-        let status = SecItemCopyMatching(query as CFDictionary, &result)
-        
-        if status == errSecSuccess,
-           let data = result as? Data,
-           let apiKey = String(data: data, encoding: .utf8) {
-            return apiKey
+        // Map the service string to APIKeyType
+        if service == "CODELOOPER_OPENAI_API_KEY" {
+            return APIKeyService.shared.loadOpenAIKey()
         }
-        
         return ""
     }
     
     private func deleteAPIKeyFromKeychain(service: String) {
-        let query: [String: Any] = [
-            kSecClass as String: kSecClassGenericPassword,
-            kSecAttrService as String: service,
-            kSecAttrAccount as String: "api-key"
-        ]
-        
-        SecItemDelete(query as CFDictionary)
+        // Map the service string to APIKeyType
+        if service == "CODELOOPER_OPENAI_API_KEY" {
+            try? APIKeyService.shared.deleteAPIKey(for: .openAI)
+        }
     }
     
     private func handleAPIKeyChange(_ newValue: String) {
