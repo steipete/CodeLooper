@@ -1,4 +1,5 @@
 import AppKit
+import AXorcist
 import Combine
 import Defaults
 import DesignSystem
@@ -99,10 +100,11 @@ struct MainPopoverView: View {
                         .onTapGesture {
                             Self.logger.info("Tapped on window item: \(windowState.windowTitle ?? windowState.id). Attempting to raise.")
                             if let axElement = windowState.windowAXElement {
-                                if axElement.performAction(.raise) {
+                                do {
+                                    try axElement.performAction(AXActionNames.kAXRaiseAction)
                                     Self.logger.info("Successfully performed raise action for window: \(windowState.windowTitle ?? windowState.id)")
-                                } else {
-                                    Self.logger.warning("Failed to perform raise action for window: \(windowState.windowTitle ?? windowState.id)")
+                                } catch {
+                                    Self.logger.warning("Failed to perform raise action for window: \(windowState.windowTitle ?? windowState.id): \(error)")
                                 }
                             } else {
                                 Self.logger.warning("Cannot raise window: AXElement is nil for \(windowState.windowTitle ?? windowState.id)")

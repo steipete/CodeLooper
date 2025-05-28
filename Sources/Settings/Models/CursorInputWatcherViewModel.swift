@@ -939,17 +939,17 @@ class CursorInputWatcherViewModel: ObservableObject {
             object: nil,
             queue: nil
         ) { [weak self] notification in
-            // Capture userInfo outside the Task to avoid data race
-            let userInfo = notification.userInfo
+            // Extract values outside the Task to avoid data race
+            guard let userInfo = notification.userInfo,
+                  let port = userInfo["port"] as? UInt16,
+                  let location = userInfo["location"] as? String,
+                  let version = userInfo["version"] as? String,
+                  let resumeNeeded = userInfo["resumeNeeded"] as? Bool else {
+                return
+            }
+            
             Task { @MainActor in
-                guard let self = self,
-                      let userInfo = userInfo,
-                      let port = userInfo["port"] as? UInt16,
-                      let location = userInfo["location"] as? String,
-                      let version = userInfo["version"] as? String,
-                      let resumeNeeded = userInfo["resumeNeeded"] as? Bool else {
-                    return
-                }
+                guard let self = self else { return }
                 
                 // Find window ID by port
                 if let windowId = self.jsHookManager.windowPorts.first(where: { $0.value == port })?.key {

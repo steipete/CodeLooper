@@ -1,5 +1,7 @@
+import AXorcist
 import Defaults
 import DesignSystem
+import Diagnostics
 import SwiftUI
 
 struct CursorSupervisionSettingsView: View {
@@ -83,10 +85,11 @@ struct CursorSupervisionSettingsView: View {
             let logger = Logger(category: .settings)
             logger.info("Tapped on settings window item: \(window.windowTitle ?? window.id). Attempting to raise.")
             if let axElement = window.windowAXElement {
-                if axElement.performAction(.raise) {
+                do {
+                    try axElement.performAction(AXActionNames.kAXRaiseAction)
                     logger.info("Successfully performed raise action for settings window: \(window.windowTitle ?? window.id)")
-                } else {
-                    logger.warning("Failed to perform raise action for settings window: \(window.windowTitle ?? window.id)")
+                } catch {
+                    logger.warning("Failed to perform raise action for settings window: \(window.windowTitle ?? window.id): \(error)")
                 }
             } else {
                 logger.warning("Cannot raise settings window: AXElement is nil for \(window.windowTitle ?? window.id)")
