@@ -29,6 +29,16 @@ public struct CursorAnalysisView: View {
 
             Spacer()
         }
+        .onAppear {
+            // Check versions if not checked recently
+            Task {
+                if mcpVersionService.lastCheckDate == nil ||
+                    Date().timeIntervalSince(mcpVersionService.lastCheckDate!) > 3600
+                { // 1 hour
+                    await mcpVersionService.checkAllVersions()
+                }
+            }
+        }
     }
 
     // MARK: Private
@@ -61,7 +71,15 @@ public struct CursorAnalysisView: View {
         }
     }
 
+    private static let timeAgoFormatter: RelativeDateTimeFormatter = {
+        let formatter = RelativeDateTimeFormatter()
+        formatter.dateTimeStyle = .named
+        formatter.unitsStyle = .short
+        return formatter
+    }()
+
     @StateObject private var analyzer = CursorScreenshotAnalyzer()
+    @StateObject private var mcpVersionService = MCPVersionService.shared
     @State private var customPrompt = ""
     @State private var selectedPromptType = PromptType.general
 
@@ -69,19 +87,55 @@ public struct CursorAnalysisView: View {
     @Default(.aiModel) private var aiModel
 
     private var headerSection: some View {
-        HStack {
-            Image(systemName: "cpu")
-                .foregroundColor(ColorPalette.textSecondary)
-            Text("Provider: \(aiProvider.displayName)")
-                .font(Typography.caption1())
-                .foregroundColor(ColorPalette.textSecondary)
+        VStack(alignment: .leading, spacing: Spacing.small) {
+            HStack {
+                Image(systemName: "cpu")
+                    .foregroundColor(ColorPalette.textSecondary)
+                Text("Provider: \(aiProvider.displayName)")
+                    .font(Typography.caption1())
+                    .foregroundColor(ColorPalette.textSecondary)
 
-            Image(systemName: "brain")
-                .foregroundColor(ColorPalette.textSecondary)
-            Text("Model: \(aiModel.displayName)")
-                .font(Typography.caption1())
-                .foregroundColor(ColorPalette.textSecondary)
+                Image(systemName: "brain")
+                    .foregroundColor(ColorPalette.textSecondary)
+                Text("Model: \(aiModel.displayName)")
+                    .font(Typography.caption1())
+                    .foregroundColor(ColorPalette.textSecondary)
+
+                Spacer()
+
+                if mcpVersionService.isChecking {
+                    HStack {
+                        ProgressView()
+                            .scaleEffect(0.6)
+                        Text("Checking versions...")
+                            .font(Typography.caption1())
+                            .foregroundColor(ColorPalette.textSecondary)
+                    }
+                } else if let lastCheck = mcpVersionService.lastCheckDate {
+                    Text("Updated: \(Self.timeAgoFormatter.localizedString(for: lastCheck, relativeTo: Date()))")
+                        .font(Typography.caption1())
+                        .foregroundColor(ColorPalette.textSecondary)
+                }
+            }
+
+            // MCP Extensions Version Info
+            mcpExtensionsSection
         }
+    }
+
+    private var mcpExtensionsSection: some View {
+        VStack(alignment: .leading, spacing: Spacing.xSmall) {
+            Text("MCP Extensions")
+                .font(Typography.caption1(.medium))
+                .foregroundColor(ColorPalette.text)
+
+            LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 3), spacing: Spacing.xSmall) {
+                ForEach(MCPExtensionType.allCases) { mcpExtension in
+                    mcpExtensionRow(mcpExtension)
+                }
+            }
+        }
+        .padding(.top, Spacing.xSmall)
     }
 
     private var promptSection: some View {
@@ -91,7 +145,7 @@ public struct CursorAnalysisView: View {
                     .font(Typography.body(.medium))
                     .foregroundColor(ColorPalette.text)
                     .frame(width: 120, alignment: .leading)
-                
+
                 Picker("", selection: $selectedPromptType) {
                     ForEach(PromptType.allCases, id: \.self) { type in
                         Text(type.rawValue).tag(type)
@@ -99,7 +153,7 @@ public struct CursorAnalysisView: View {
                 }
                 .pickerStyle(.menu)
                 .frame(maxWidth: .infinity)
-                
+
                 Button("Analyze Cursor Window") {
                     Task {
                         await analyzeWindow()
@@ -132,6 +186,37 @@ public struct CursorAnalysisView: View {
         }
     }
 
+    private func mcpExtensionRow(_ mcpExtension: MCPExtensionType) -> some View {
+        HStack(spacing: Spacing.xxSmall) {
+            Image(systemName: mcpExtension.iconName)
+                .foregroundColor(ColorPalette.textSecondary)
+                .frame(width: 12)
+
+            Text(mcpExtension.displayName)
+                .font(Typography.caption2())
+                .foregroundColor(ColorPalette.text)
+                .lineLimit(1)
+
+            Spacer()
+
+            let latestVersion = mcpVersionService.getLatestVersion(for: mcpExtension)
+            let hasUpdate = mcpVersionService.hasUpdate(for: mcpExtension)
+
+            Text(latestVersion)
+                .font(Typography.caption2(.medium))
+                .foregroundColor(hasUpdate ? ColorPalette.warning : ColorPalette.success)
+
+            if hasUpdate {
+                Image(systemName: "arrow.up.circle.fill")
+                    .foregroundColor(ColorPalette.warning)
+                    .font(.caption2)
+            }
+        }
+        .padding(.horizontal, Spacing.xSmall)
+        .padding(.vertical, 2)
+        .background(ColorPalette.backgroundSecondary)
+        .cornerRadius(4)
+    }
 
     private func errorView(_ error: Error) -> some View {
         VStack(alignment: .leading, spacing: 8) {

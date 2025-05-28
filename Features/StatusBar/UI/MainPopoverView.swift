@@ -23,11 +23,11 @@ struct MainPopoverView: View {
                         .font(.title2)
                         .foregroundColor(ColorPalette.primary)
                 }
-                
+
                 Text("CodeLooper")
                     .font(Typography.title3(.medium))
                     .foregroundColor(ColorPalette.text)
-                
+
                 Spacer()
             }
 

@@ -158,7 +158,7 @@ private struct RuleCard: View {
                             RuleInfoPopover(rule: rule)
                         }
                     }
-                    
+
                     Toggle("", isOn: .constant(rule.enabled))
                         .toggleStyle(.switch)
                         .controlSize(.small)
@@ -184,13 +184,13 @@ private struct RuleCard: View {
 
 private struct RuleInfoPopover: View {
     let rule: InterventionRule
-    
+
     var body: some View {
         VStack(alignment: .leading, spacing: Spacing.medium) {
             Text(rule.name)
                 .font(Typography.headline())
                 .padding(.bottom, Spacing.small)
-            
+
             if let imageURL = rule.imageURL {
                 AsyncImage(url: imageURL) { image in
                     image
@@ -203,7 +203,7 @@ private struct RuleInfoPopover: View {
                         .frame(width: 450, height: 300)
                 }
             }
-            
+
             Text(rule.description)
                 .font(Typography.caption1())
                 .foregroundColor(ColorPalette.textSecondary)
@@ -306,7 +306,7 @@ private struct InterventionRule: Identifiable {
     var description: String
     var trigger: RuleTrigger
     var action: RuleAction
-    
+
     var imageURL: URL? {
         // Images from https://github.com/steipete/CodeLooper
         let baseURL = "https://raw.githubusercontent.com/steipete/CodeLooper/main/assets/"

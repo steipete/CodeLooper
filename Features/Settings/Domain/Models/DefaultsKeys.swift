@@ -11,7 +11,6 @@ extension Defaults.Keys {
         default: 5
     ) // "Max Auto-Interventions Per Instance"
 
-
     // --- General Behavior & Notifications (Spec 3.3.A / 3.3.E) ---
     static let playSoundOnIntervention = Key<Bool>("playSoundOnIntervention", default: true)
     static let successfulInterventionSoundName = Key<String>("successfulInterventionSoundName", default: "Funk")
@@ -39,7 +38,6 @@ extension Defaults.Keys {
     static let enableConnectionIssuesRecovery = Key<Bool>("enableConnectionIssuesRecovery", default: true)
     static let enableCursorForceStoppedRecovery = Key<Bool>("enableCursorForceStoppedRecovery", default: true)
     static let enableCursorStopsRecovery = Key<Bool>("enableCursorStopsRecovery", default: true)
-
 
     // --- Onboarding ---
     static let hasShownWelcomeGuide = Key<Bool>("hasShownWelcomeGuide", default: false)
@@ -103,7 +101,7 @@ extension Defaults.Keys {
 
     // --- Path for the MCP configuration file ---
     static let mcpConfigFilePath = Key<String>("mcpConfigFilePath", default: "~/.cursor/mcp_config.json")
-    
+
     // --- MCP Auto-reload setting ---
     static let autoReloadMCPsOnChanges = Key<Bool>("autoReloadMCPsOnChanges", default: true)
 

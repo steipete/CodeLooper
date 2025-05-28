@@ -55,8 +55,9 @@ class CursorInputWatcherViewModel: ObservableObject {
     @Published var cursorWindows: [MonitoredWindowInfo] = []
     @Published var windowHeartbeatStatus: [String: HeartbeatStatus] = [:]
     @Published var windowAIAnalysis: [String: WindowAIStatus] = [:]
-    
+
     // MARK: - Injection State
+
     @Published var windowInjectionStates: [String: InjectionState] = [:]
 
     var hookedWindows: Set<String> {
@@ -71,13 +72,13 @@ class CursorInputWatcherViewModel: ObservableObject {
 
     func injectJSHook(into window: MonitoredWindowInfo) async {
         let windowId = window.id
-        
+
         // Check if already hooked
         if jsHookManager.isWindowHooked(windowId) {
             windowInjectionStates[windowId] = .hooked
             return
         }
-        
+
         // Check if already working on this window
         if windowInjectionStates[windowId]?.isWorking == true {
             logger.warning("Already working on window \(windowId), skipping")
@@ -85,15 +86,15 @@ class CursorInputWatcherViewModel: ObservableObject {
         }
 
         logger.info("🔨 Starting injection process for window: \(window.windowTitle ?? "Unknown")")
-        
+
         // Start with probing state
         windowInjectionStates[windowId] = .probing
-        
+
         // Try fast probing first
         jsHookManager.addWindowForFastProbing(window)
-        
+
         // Give fast probe up to 3 seconds to work
-        for i in 0..<30 {
+        for i in 0 ..< 30 {
             if jsHookManager.isWindowHooked(windowId) {
                 logger.info("✅ Fast probe found existing hook for window: \(windowId)")
                 windowInjectionStates[windowId] = .hooked
@@ -105,7 +106,7 @@ class CursorInputWatcherViewModel: ObservableObject {
 
         // Move to injection state
         windowInjectionStates[windowId] = .injecting
-        
+
         // Perform actual injection
         do {
             try await jsHookManager.installHook(for: window)
@@ -115,10 +116,10 @@ class CursorInputWatcherViewModel: ObservableObject {
             logger.error("❌ Failed to inject hook for window \(windowId): \(error)")
             windowInjectionStates[windowId] = .failed(error.localizedDescription)
         }
-        
+
         updateWatcherStatus()
     }
-    
+
     func getInjectionState(for windowId: String) -> InjectionState {
         if jsHookManager.isWindowHooked(windowId) {
             return .hooked
@@ -188,10 +189,10 @@ class CursorInputWatcherViewModel: ObservableObject {
                 let currentWindowIds = Set(allWindows.map(\.id))
                 let newWindows = allWindows.filter { !previousWindowIds.contains($0.id) }
                 let removedWindowIds = previousWindowIds.subtracting(currentWindowIds)
-                
+
                 self.cursorWindows = allWindows
                 self.updateHookStatuses()
-                
+
                 // Clean up injection states for removed windows
                 for removedId in removedWindowIds {
                     self.windowInjectionStates.removeValue(forKey: removedId)
@@ -199,10 +200,11 @@ class CursorInputWatcherViewModel: ObservableObject {
 
                 // Handle new windows with fast probing
                 for newWindow in newWindows {
-                    self.logger.info("📝 New window detected: '\(newWindow.windowTitle ?? "Unknown")' - starting fast probe")
+                    self.logger
+                        .info("📝 New window detected: '\(newWindow.windowTitle ?? "Unknown")' - starting fast probe")
                     self.windowInjectionStates[newWindow.id] = .probing
                     self.jsHookManager.handleNewWindow(newWindow)
-                    
+
                     // Check probe results after a short delay
                     Task {
                         try? await Task.sleep(nanoseconds: 2_000_000_000) // 2 seconds
@@ -361,7 +363,9 @@ enum InjectionState {
     case injecting
     case hooked
     case failed(String)
-    
+
+    // MARK: Internal
+
     var displayText: String {
         switch self {
         case .idle:
@@ -372,11 +376,11 @@ enum InjectionState {
             "Injecting..."
         case .hooked:
             "Hooked"
-        case .failed(let error):
+        case let .failed(error):
             "Failed: \(error)"
         }
     }
-    
+
     var isWorking: Bool {
         switch self {
         case .probing, .injecting:

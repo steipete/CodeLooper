@@ -201,7 +201,6 @@ struct AdvancedSettingsView: View {
         // Terminate current app
         NSApplication.shared.terminate(nil)
     }
-
 }
 
 // MARK: - Preview

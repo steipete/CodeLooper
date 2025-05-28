@@ -50,7 +50,7 @@ struct AISettingsView: View {
                             .font(Typography.body(.medium))
                             .foregroundColor(ColorPalette.text)
                             .frame(width: 120, alignment: .leading)
-                        
+
                         Picker("", selection: $aiProvider) {
                             ForEach(AIProvider.allCases) { provider in
                                 Text(provider.displayName).tag(provider)
@@ -89,7 +89,7 @@ struct AISettingsView: View {
                             .font(Typography.body(.medium))
                             .foregroundColor(ColorPalette.text)
                             .frame(width: 120, alignment: .leading)
-                        
+
                         Picker("", selection: $aiModel) {
                             ForEach(availableModels) { model in
                                 Text(model.displayName).tag(model)
@@ -128,7 +128,7 @@ struct AISettingsView: View {
                     .foregroundColor(ColorPalette.textSecondary)
                     .lineSpacing(4)
                     .frame(maxWidth: .infinity, alignment: .leading)
-                    
+
                     CursorAnalysisView()
                 }
             }
@@ -166,7 +166,7 @@ struct AISettingsView: View {
                     .font(Typography.body(.medium))
                     .foregroundColor(ColorPalette.text)
                     .frame(width: 120, alignment: .leading)
-                
+
                 HStack {
                     if showAPIKey {
                         TextField("", text: $openAIAPIKey)
@@ -271,7 +271,6 @@ struct AISettingsView: View {
                 .foregroundColor(ColorPalette.primary)
         }
     }
-
 
     private var availableModels: [AIModel] {
         AIModel.allCases.filter { $0.provider == aiProvider }

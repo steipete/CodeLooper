@@ -100,7 +100,7 @@ private struct WindowRow: View {
     private var windowStatus: some View {
         let injectionState = viewModel.getInjectionState(for: window.id)
         let isHooked = viewModel.hookedWindows.contains(window.id)
-        
+
         if isHooked {
             HStack(spacing: 6) {
                 // Green heart when hooked and has heartbeat
@@ -138,7 +138,7 @@ private struct WindowRow: View {
                     ProgressView()
                         .scaleEffect(0.6)
                         .controlSize(.mini)
-                    
+
                     Text(injectionState.displayText)
                         .font(.caption)
                         .foregroundColor(.secondary)
@@ -160,8 +160,8 @@ private struct WindowRow: View {
                     .buttonStyle(.bordered)
                     .controlSize(.small)
                     .disabled(injectionState.isWorking)
-                    
-                    if case .failed(let error) = injectionState {
+
+                    if case let .failed(error) = injectionState {
                         Image(systemName: "exclamationmark.triangle.fill")
                             .foregroundColor(.orange)
                             .help("Error: \(error)")
@@ -206,7 +206,6 @@ private struct HeartbeatIndicator: View {
     // MARK: Internal
 
     let status: HeartbeatStatus
-    @State private var isPulsing = false
 
     var body: some View {
         HStack(spacing: 3) {
@@ -223,7 +222,7 @@ private struct HeartbeatIndicator: View {
                 Image(systemName: "heart")
                     .foregroundColor(status.resumeNeeded ? .orange : .red)
             }
-            
+
             // Status dot
             Circle()
                 .fill(color)
@@ -234,6 +233,8 @@ private struct HeartbeatIndicator: View {
 
     // MARK: Private
 
+    @State private var isPulsing = false
+
     private var color: Color {
         if status.resumeNeeded {
             .orange
@@ -243,7 +244,7 @@ private struct HeartbeatIndicator: View {
             .red
         }
     }
-    
+
     private var helpText: String {
         if status.isAlive {
             "Connected - Last heartbeat: \(status.lastHeartbeat?.formatted(.dateTime.hour().minute().second()) ?? "Unknown")"

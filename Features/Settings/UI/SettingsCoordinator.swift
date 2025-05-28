@@ -64,7 +64,7 @@ public final class MainSettingsCoordinator: NSObject {
     /// Closes the settings window
     public func closeSettings() {
         logger.info("Closing settings window")
-        
+
         settingsWindow?.close()
         settingsWindow = nil
     }
@@ -79,16 +79,16 @@ public final class MainSettingsCoordinator: NSObject {
 
     private func openNewSettingsWindow() {
         logger.info("Creating transparent settings window")
-        
+
         // Create the window
         settingsWindow = NativeToolbarSettingsWindow(
             loginItemManager: loginItemManager,
             updaterViewModel: updaterViewModel
         )
-        
+
         // Show the window
         settingsWindow?.makeKeyAndOrderFront(nil)
-        
+
         // Activate the app
         NSApp.activate(ignoringOtherApps: true)
     }

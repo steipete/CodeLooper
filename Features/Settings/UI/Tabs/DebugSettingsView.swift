@@ -419,10 +419,9 @@ private struct SimplifiedChainLinkIcon: View {
 // MARK: - Log Viewer Content
 
 private struct LogViewerContent: View {
+    // MARK: Internal
+
     let sessionLogger: SessionLogger
-    @State private var searchText: String = ""
-    @State private var selectedLogLevelFilter: LogLevel?
-    @State private var logEntries: [LogEntry] = []
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -494,6 +493,12 @@ private struct LogViewerContent: View {
             updateLogEntries()
         }
     }
+
+    // MARK: Private
+
+    @State private var searchText: String = ""
+    @State private var selectedLogLevelFilter: LogLevel?
+    @State private var logEntries: [LogEntry] = []
 
     private var filteredLogEntries: [LogEntry] {
         var filtered = logEntries

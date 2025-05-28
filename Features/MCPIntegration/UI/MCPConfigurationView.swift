@@ -158,7 +158,11 @@ private struct MCPCard: View {
         }
         .opacity(mcp.enabled ? 1.0 : 0.8)
     }
-    
+
+    // MARK: Private
+
+    @State private var isHovered = false
+
     @ViewBuilder
     private var cardContent: some View {
         DSCard(style: .filled) {
@@ -218,7 +222,7 @@ private struct MCPCard: View {
                         .frame(width: 20, height: 20)
                     }
                     .frame(width: 48) // Fixed width to reserve space
-                    
+
                     Toggle("", isOn: .constant(mcp.enabled))
                         .toggleStyle(.switch)
                         .controlSize(.small)
@@ -227,10 +231,6 @@ private struct MCPCard: View {
             }
         }
     }
-
-    // MARK: Private
-
-    @State private var isHovered = false
 }
 
 // MARK: - Empty State
