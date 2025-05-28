@@ -73,6 +73,7 @@
 		5B9FBB4E22A4CA773AEA4C4C /* SidebarActivityAreaHeuristic.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4A8E9914306D8A584ECB4DAC /* SidebarActivityAreaHeuristic.swift */; };
 		5F254D555D5E5C37772500BD /* GeneralSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCB2F412349341AED0BE35C0 /* GeneralSettingsView.swift */; };
 		60E1996918E2C404F0B6D511 /* SettingsSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = A71F7E04AC4E66D9257D4669 /* SettingsSection.swift */; };
+		613F6AF533E82FD1B823F167 /* MCPVersionService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 564C24959C1C3739E76F0846 /* MCPVersionService.swift */; };
 		617E308C577CC9199475B6B0 /* SessionLogger.swift in Sources */ = {isa = PBXBuildFile; fileRef = A6E4AF83D5B34296709C44F9 /* SessionLogger.swift */; };
 		62C64EE4CE95A1003EB1B3DB /* LogManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = F256179755CF3F87928E07C4 /* LogManager.swift */; };
 		63C6CE73CB3DE7E546C84C43 /* StatusIconState.swift in Sources */ = {isa = PBXBuildFile; fileRef = D03027C578774FD1A011A755 /* StatusIconState.swift */; };
@@ -270,6 +271,7 @@
 		53E64F72956B434F5F50AAC9 /* PermissionsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PermissionsView.swift; sourceTree = "<group>"; };
 		54B65F21681551CC52889E36 /* CursorInstanceStateManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CursorInstanceStateManager.swift; sourceTree = "<group>"; };
 		55FC1A83F3EA25C2E2C66D1D /* RadioButtonRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RadioButtonRow.swift; sourceTree = "<group>"; };
+		564C24959C1C3739E76F0846 /* MCPVersionService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MCPVersionService.swift; sourceTree = "<group>"; };
 		56E1C220A9680C8829B149EB /* UpdaterViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UpdaterViewModel.swift; sourceTree = "<group>"; };
 		59E145D453493067A465BDC6 /* CursorMonitorService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CursorMonitorService.swift; sourceTree = "<group>"; };
 		5ABEF7DF05613D31FB3F18B9 /* Diagnostics-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = "Diagnostics-Info.plist"; sourceTree = "<group>"; };
@@ -986,6 +988,7 @@
 			isa = PBXGroup;
 			children = (
 				0B5470464A7EE1102DD48BA4 /* MCPConfigurationService.swift */,
+				564C24959C1C3739E76F0846 /* MCPVersionService.swift */,
 			);
 			path = Domain;
 			sourceTree = "<group>";
@@ -1243,6 +1246,7 @@
 				74D6659760CE105EA6814138 /* InterventionStateChecker.swift in Sources */,
 				CA3E7BFA6105B0D7AD6C3763 /* InterventionExecutor.swift in Sources */,
 				17FC19EB1AD8F887DAB55B43 /* MCPConfigurationService.swift in Sources */,
+				613F6AF533E82FD1B823F167 /* MCPVersionService.swift in Sources */,
 				6DF53B1DFA19E01D5CCB27BA /* MCPConfigurationView.swift in Sources */,
 				C7150D5BC7B0B12C4349D194 /* CursorInstanceModels.swift in Sources */,
 				6F7FF41192392957DE96AB06 /* MonitoredInstance.swift in Sources */,

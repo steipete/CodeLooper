@@ -87,6 +87,11 @@ struct DebugSettingsView: View {
                     }
                     .frame(maxWidth: .infinity, minHeight: 44)
 
+                    DSButton("Show Welcome Screen", style: .secondary) {
+                        showWelcomeScreen()
+                    }
+                    .frame(maxWidth: .infinity, minHeight: 44)
+
                     DSButton("Clear All UserDefaults", style: .destructive) {
                         clearUserDefaults()
                     }
@@ -129,6 +134,11 @@ struct DebugSettingsView: View {
     private func triggerTestNotification() {
         NotificationCenter.default.post(name: .init("DebugTestNotification"), object: nil)
         print("DEBUG: Triggered test notification")
+    }
+
+    private func showWelcomeScreen() {
+        NotificationCenter.default.post(name: .showWelcomeWindow, object: nil)
+        print("DEBUG: Posted showWelcomeWindow notification")
     }
 }
 
