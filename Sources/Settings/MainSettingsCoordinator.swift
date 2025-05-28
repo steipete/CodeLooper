@@ -7,6 +7,13 @@ import SwiftUI
 /// Coordinator for triggering the settings window using the native Settings framework
 @MainActor
 public final class MainSettingsCoordinator: NSObject {
+    // MARK: - Shared Instance
+    
+    public static let shared = MainSettingsCoordinator(
+        loginItemManager: LoginItemManager.shared,
+        updaterViewModel: UpdaterViewModel(sparkleUpdaterManager: nil)
+    )
+    
     // MARK: Lifecycle
 
     // MARK: - Initialization
@@ -36,18 +43,77 @@ public final class MainSettingsCoordinator: NSObject {
 
     // MARK: - Public Interface
 
-    /// Shows the settings window
+    /// Shows the settings window (ensures only one instance)
     public func showSettings() {
         logger.info("Showing settings window")
 
-        // Use the native Settings framework with our custom SettingsContainerView
-        logger.info("Showing settings using native SwiftUI Settings framework with design system")
-        NSApp.sendAction(Selector(("showSettingsWindow:")), to: nil, from: nil)
+        // First, check if a settings window already exists
+        let existingSettingsWindows = NSApp.windows.filter { window in
+            window.title.contains("Settings") || window.identifier?.rawValue == "settings"
+        }
+        
+        if let existingWindow = existingSettingsWindows.first {
+            // If window exists, bring it to front
+            logger.info("Settings window already exists, bringing to front")
+            existingWindow.makeKeyAndOrderFront(nil)
+            existingWindow.orderFrontRegardless()
+            
+            // Close any duplicate windows
+            for window in existingSettingsWindows.dropFirst() {
+                logger.warning("Closing duplicate settings window")
+                window.close()
+            }
+        } else {
+            // Create new settings window using the WindowGroup
+            logger.info("Creating new settings window")
+            openNewSettingsWindow()
+        }
+    }
+    
+    private func openNewSettingsWindow() {
+        // Use the environment's openWindow action if available (macOS 13+)
+        if #available(macOS 13.0, *) {
+            // Try to open via URL scheme first
+            if let url = URL(string: "codelooper://settings") {
+                NSWorkspace.shared.open(url)
+                return
+            }
+        }
+        
+        // Fallback: use cmd+, keyboard shortcut simulation
+        let event = NSEvent.keyEvent(
+            with: .keyDown,
+            location: NSPoint.zero,
+            modifierFlags: [.command],
+            timestamp: 0,
+            windowNumber: 0,
+            context: nil,
+            characters: ",",
+            charactersIgnoringModifiers: ",",
+            isARepeat: false,
+            keyCode: 43
+        )
+        
+        if let event = event {
+            NSApp.sendEvent(event)
+        } else {
+            // Final fallback
+            NSApp.sendAction(Selector(("showPreferencesWindow:")), to: nil, from: nil)
+        }
     }
 
     /// Closes the settings window
     public func closeSettings() {
-        logger.info("Native settings don't need to be explicitly closed")
+        logger.info("Closing settings window")
+        
+        let settingsWindows = NSApp.windows.filter { window in
+            window.title.contains("Settings") || window.identifier?.rawValue == "settings"
+        }
+        
+        for window in settingsWindows {
+            logger.info("Closing settings window: \(window.title)")
+            window.close()
+        }
     }
 
     // MARK: Private

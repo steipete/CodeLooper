@@ -129,4 +129,14 @@ extension Defaults.Keys {
     
     // --- Git Client Settings ---
     static let gitClientApp = Key<String>("gitClientApp", default: "/Applications/Tower.app")
+    
+    // --- Debug Settings ---
+    static let showDebugTab = Key<Bool>("showDebugTab", default: {
+        #if DEBUG
+        return true
+        #else
+        return false
+        #endif
+    }())
+    static let useDynamicMenuBarIcon = Key<Bool>("useDynamicMenuBarIcon", default: false)
 }

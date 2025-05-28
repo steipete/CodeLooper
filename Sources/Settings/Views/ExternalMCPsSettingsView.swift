@@ -7,20 +7,12 @@ struct ExternalMCPsSettingsView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: Spacing.large) {
             // Header
-            HStack {
-                VStack(alignment: .leading, spacing: Spacing.xxxSmall) {
-                    Text("MCP Extensions")
-                        .font(Typography.headline())
-                    Text("Manage Model Context Protocol extensions for enhanced Cursor capabilities")
-                        .font(Typography.caption1())
-                        .foregroundColor(ColorPalette.textSecondary)
-                }
-
-                Spacer()
-
-                DSButton("Browse MCPs", icon: Image(systemName: "plus.app"), style: .primary, size: .small) {
-                    showAddMCP = true
-                }
+            VStack(alignment: .leading, spacing: Spacing.xxxSmall) {
+                Text("MCP Extensions")
+                    .font(Typography.headline())
+                Text("Manage Model Context Protocol extensions for enhanced Cursor capabilities")
+                    .font(Typography.caption1())
+                    .foregroundColor(ColorPalette.textSecondary)
             }
 
             // Installed MCPs
@@ -48,7 +40,7 @@ struct ExternalMCPsSettingsView: View {
                     Text("MCP Config Path")
                         .font(Typography.body())
                     Spacer()
-                    Text("~/.cursor/mcp/")
+                    Text("/Users/steipete/.cursor/mcp.json")
                         .font(Typography.monospaced(.small))
                         .foregroundColor(ColorPalette.textSecondary)
 
@@ -67,9 +59,6 @@ struct ExternalMCPsSettingsView: View {
             }
 
             Spacer()
-        }
-        .sheet(isPresented: $showAddMCP) {
-            MCPBrowserSheet()
         }
     }
 
@@ -118,7 +107,6 @@ struct ExternalMCPsSettingsView: View {
         ),
     ]
 
-    @State private var showAddMCP = false
     @State private var selectedMCP: MCPExtension?
 
     private func toggleMCP(_ mcp: MCPExtension) {
@@ -137,7 +125,7 @@ struct ExternalMCPsSettingsView: View {
     }
 
     private func openMCPConfigFolder() {
-        let mcpPath = NSHomeDirectory() + "/.cursor/mcp/"
+        let mcpPath = "/Users/steipete/.cursor/mcp.json"
         if let url = URL(string: "file://" + mcpPath) {
             NSWorkspace.shared.open(url)
         }
@@ -251,51 +239,6 @@ private struct EmptyStateView: View {
     }
 }
 
-// MARK: - MCP Browser Sheet
-
-private struct MCPBrowserSheet: View {
-    @Environment(\.dismiss)
-    var dismiss
-
-    var body: some View {
-        VStack(spacing: Spacing.large) {
-            // Header
-            HStack {
-                Text("Browse MCP Extensions")
-                    .font(Typography.title3())
-                Spacer()
-                Button(
-                    action: { dismiss() },
-                    label: {
-                        Image(systemName: "xmark.circle.fill")
-                            .foregroundColor(ColorPalette.textSecondary)
-                    }
-                )
-                .buttonStyle(.plain)
-            }
-
-            // Content placeholder
-            VStack {
-                Spacer()
-                Text("MCP Browser coming soon...")
-                    .font(Typography.body())
-                    .foregroundColor(ColorPalette.textSecondary)
-                Spacer()
-            }
-
-            // Actions
-            HStack {
-                DSButton("Close", style: .secondary) {
-                    dismiss()
-                }
-            }
-        }
-        .padding(Spacing.large)
-        .frame(width: 600, height: 400)
-        .background(ColorPalette.background)
-        .withDesignSystem()
-    }
-}
 
 // MARK: - Models
 

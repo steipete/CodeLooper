@@ -35,16 +35,17 @@ struct AISettingsView: View {
     private let apiKeyDebouncer = Debouncer(delay: 2.0)
     
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: Spacing.xLarge) {
-                // AI Provider Configuration
-                DSSettingsSection("AI Provider") {
+        VStack(alignment: .leading, spacing: Spacing.xLarge) {
+            // AI Provider Configuration
+            DSSettingsSection("AI Provider") {
+                VStack(alignment: .leading, spacing: Spacing.medium) {
                     Picker("AI Provider", selection: $aiProvider) {
                         ForEach(AIProvider.allCases) { provider in
                             Text(provider.displayName).tag(provider)
                         }
                     }
                     .pickerStyle(.segmented)
+                    .frame(maxWidth: .infinity)
                     .onChange(of: aiProvider) { _, newValue in
                         configureAIManager()
                         aiModel = availableModels.first ?? .gpt4o
@@ -70,36 +71,35 @@ struct AISettingsView: View {
                             Text(model.displayName).tag(model)
                         }
                     }
+                    .frame(maxWidth: .infinity)
                     .disabled(availableModels.isEmpty)
                 }
-                
-                // Provider-specific Settings
-                DSSettingsSection("Configuration") {
-                    switch aiProvider {
-                    case .openAI:
-                        openAISettings
-                    case .ollama:
-                        ollamaSettings
-                    }
-                }
-                
-                // Connection Test
-                DSSettingsSection("Connection") {
-                    connectionTestSection
-                }
-                
-                // AI Usage Information
-                DSSettingsSection("About AI Image Analysis") {
-                    VStack(alignment: .leading, spacing: Spacing.small) {
-                        Text("The AI service will be used to analyze screenshots of Cursor windows and provide insights about what the application is currently doing.")
-                            .font(Typography.caption1())
-                            .foregroundColor(ColorPalette.textSecondary)
-                    }
-                }
-                
-                Spacer()
             }
-            .padding(Spacing.xLarge)
+            
+            // Provider-specific Settings
+            DSSettingsSection("Configuration") {
+                switch aiProvider {
+                case .openAI:
+                    openAISettings
+                case .ollama:
+                    ollamaSettings
+                }
+            }
+            
+            // Connection Test
+            DSSettingsSection("Connection") {
+                connectionTestSection
+            }
+            
+            // AI Usage Information
+            DSSettingsSection("About AI Image Analysis") {
+                Text("The AI service will be used to analyze screenshots of Cursor windows and provide insights about what the application is currently doing.")
+                    .font(Typography.caption1())
+                    .foregroundColor(ColorPalette.textSecondary)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
+            
+            Spacer()
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(ColorPalette.background)
@@ -135,12 +135,14 @@ struct AISettingsView: View {
                     if showAPIKey {
                         TextField("API Key", text: $openAIAPIKey)
                             .textFieldStyle(.roundedBorder)
+                            .frame(maxWidth: .infinity)
                             .onChange(of: openAIAPIKey) { _, newValue in
                                 handleAPIKeyChange(newValue)
                             }
                     } else {
                         SecureField("API Key", text: $openAIAPIKey)
                             .textFieldStyle(.roundedBorder)
+                            .frame(maxWidth: .infinity)
                             .onChange(of: openAIAPIKey) { _, newValue in
                                 handleAPIKeyChange(newValue)
                             }
@@ -182,6 +184,7 @@ struct AISettingsView: View {
                 
                 TextField("Base URL", text: $ollamaBaseURL)
                     .textFieldStyle(.roundedBorder)
+                    .frame(maxWidth: .infinity)
                     .onChange(of: ollamaBaseURL) { _, newValue in
                         configureAIManager()
                         
@@ -246,10 +249,12 @@ struct AISettingsView: View {
                 
                 Spacer()
             }
+            .frame(maxWidth: .infinity)
             
             Text("Connection will be automatically tested when you enter valid credentials")
                 .font(Typography.caption1())
                 .foregroundColor(ColorPalette.textSecondary)
+                .frame(maxWidth: .infinity, alignment: .leading)
         }
     }
     

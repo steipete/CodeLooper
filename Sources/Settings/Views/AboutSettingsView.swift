@@ -52,6 +52,7 @@ struct AboutSettingsView: View {
                         }
                     }
 
+
                     // Links Section
                     DSSettingsSection("Resources") {
                         LinkRow(
@@ -93,9 +94,6 @@ struct AboutSettingsView: View {
             }
 
             Spacer(minLength: 0)
-
-            // Full-width footer
-            AboutFooterView()
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
@@ -117,88 +115,6 @@ struct AboutSettingsView: View {
     }
 }
 
-// MARK: - About Footer View
-
-private struct AboutFooterView: View {
-    var body: some View {
-        VStack(spacing: 0) {
-            // Top section with credits
-            VStack(spacing: Spacing.small) {
-                HStack(spacing: Spacing.xxSmall) {
-                    Text("Created with")
-                        .font(Typography.caption1())
-                        .foregroundColor(ColorPalette.textSecondary)
-                    
-                    Text("❤️")
-                        .font(Typography.caption1())
-                    
-                    Text("by")
-                        .font(Typography.caption1())
-                        .foregroundColor(ColorPalette.textSecondary)
-                    
-                    Button(
-                        action: { openURL("https://twitter.com/steipete") },
-                        label: {
-                            Text("@steipete")
-                                .font(Typography.caption1(.medium))
-                                .foregroundColor(ColorPalette.primary)
-                        }
-                    )
-                    .buttonStyle(.plain)
-                    .onHover { hovering in
-                        if hovering {
-                            NSCursor.pointingHand.push()
-                        } else {
-                            NSCursor.pop()
-                        }
-                    }
-                }
-                
-                Text("© 2024 CodeLooper. All rights reserved.")
-                    .font(Typography.caption2())
-                    .foregroundColor(ColorPalette.textTertiary)
-            }
-            .padding(.vertical, Spacing.large)
-            .frame(maxWidth: .infinity)
-            .background(ColorPalette.backgroundTertiary)
-            
-            // Bottom section with links and tagline
-            HStack {
-                Button(action: { openURL("https://github.com/steipete/codelooper") }) {
-                    Label("GitHub", systemImage: "link")
-                        .font(Typography.caption1())
-                }
-                .buttonStyle(.plain)
-                .foregroundColor(ColorPalette.primary)
-                
-                Text("•")
-                    .foregroundColor(ColorPalette.textTertiary)
-                
-                Button(action: { openURL("https://github.com/steipete/codelooper/wiki") }) {
-                    Label("Documentation", systemImage: "book")
-                        .font(Typography.caption1())
-                }
-                .buttonStyle(.plain)
-                .foregroundColor(ColorPalette.primary)
-                
-                Spacer()
-                
-                Text("Made with ❤️ for Cursor users")
-                    .font(Typography.caption1())
-                    .foregroundColor(ColorPalette.textSecondary)
-            }
-            .padding(.horizontal, Spacing.large)
-            .padding(.vertical, Spacing.small)
-            .background(ColorPalette.backgroundSecondary)
-        }
-    }
-    
-    private func openURL(_ urlString: String) {
-        if let url = URL(string: urlString) {
-            NSWorkspace.shared.open(url)
-        }
-    }
-}
 
 // MARK: - Link Row Component
 
@@ -259,6 +175,7 @@ private struct LinkRow: View {
         }
     }
 }
+
 
 // MARK: - Preview
 

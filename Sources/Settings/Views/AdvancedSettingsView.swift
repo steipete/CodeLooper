@@ -7,7 +7,7 @@ struct AdvancedSettingsView: View {
     // MARK: Internal
 
     @Default(.showDebugMenu) var showDebugMenu
-    @Default(.gitClientApp) var gitClientApp
+    @Default(.showDebugTab) var showDebugTab
 
     var body: some View {
         VStack(alignment: .leading, spacing: Spacing.xLarge) {
@@ -19,9 +19,9 @@ struct AdvancedSettingsView: View {
             // Developer Options
             DSSettingsSection("Developer Options") {
                 DSToggle(
-                    "Show Debug Menu",
-                    isOn: $showDebugMenu,
-                    description: "Enable additional debug options in the menu bar"
+                    "Show Debug Tab",
+                    isOn: $showDebugTab,
+                    description: "Show the Debug tab in settings with Lottie animation tests and debugging tools"
                 )
 
                 DSDivider()
@@ -55,26 +55,6 @@ struct AdvancedSettingsView: View {
                 }
             }
 
-            // Git Integration
-            DSSettingsSection("Git Integration") {
-                HStack(spacing: Spacing.small) {
-                    Text("Git Client App:")
-                        .font(Typography.body())
-                        .foregroundColor(ColorPalette.text)
-                    
-                    DSTextField("", text: $gitClientApp)
-                        .frame(width: 200)
-                    
-                    DSButton("Browse...", style: .secondary, size: .small) {
-                        selectGitClientApp()
-                    }
-                }
-                
-                Text("Path to your Git client application (e.g., Tower, SourceTree, GitKraken)")
-                    .font(Typography.caption1())
-                    .foregroundColor(ColorPalette.textSecondary)
-            }
-
             // Developer Actions
             DSSettingsSection("Developer Actions") {
                 HStack(spacing: Spacing.small) {
@@ -103,52 +83,40 @@ struct AdvancedSettingsView: View {
             // Danger Zone
             DSSettingsSection("Danger Zone") {
                 DSCard(style: .filled) {
-                    VStack(alignment: .leading, spacing: Spacing.small) {
-                        HStack {
-                            Image(systemName: "exclamationmark.triangle.fill")
-                                .foregroundColor(ColorPalette.warning)
-                            Text("Caution")
-                                .font(Typography.callout(.semibold))
-                                .foregroundColor(ColorPalette.warning)
-                        }
-
-                        Text("These actions cannot be undone. Please be careful.")
-                            .font(Typography.caption1())
-                            .foregroundColor(ColorPalette.textSecondary)
-
-                        VStack(spacing: Spacing.small) {
-                            DSButton("Reset All Settings to Default", style: .destructive) {
-                                showResetConfirmation = true
+                    HStack(spacing: Spacing.medium) {
+                        VStack(alignment: .leading, spacing: Spacing.small) {
+                            HStack {
+                                Image(systemName: "exclamationmark.triangle.fill")
+                                    .foregroundColor(ColorPalette.warning)
+                                Text("Caution")
+                                    .font(Typography.callout(.semibold))
+                                    .foregroundColor(ColorPalette.warning)
                             }
-                            .frame(maxWidth: .infinity)
 
-                            DSButton("Clear All Data", style: .destructive) {
-                                showClearDataConfirmation = true
-                            }
-                            .frame(maxWidth: .infinity)
+                            Text("This action will reset all settings and restart the app. This cannot be undone.")
+                                .font(Typography.caption1())
+                                .foregroundColor(ColorPalette.textSecondary)
                         }
-                        .padding(.top, Spacing.xSmall)
+                        
+                        Spacer()
+                        
+                        DSButton("Reset & Restart", style: .destructive) {
+                            showResetAndRestartConfirmation = true
+                        }
+                        .fixedSize()
                     }
                 }
             }
 
             Spacer()
         }
-        .alert("Reset All Settings?", isPresented: $showResetConfirmation) {
+        .alert("Reset & Restart CodeLooper?", isPresented: $showResetAndRestartConfirmation) {
             Button("Cancel", role: .cancel) {}
-            Button("Reset", role: .destructive) {
-                resetAllSettings()
+            Button("Reset & Restart", role: .destructive) {
+                resetAllDataAndRestart()
             }
         } message: {
-            Text("This will reset all CodeLooper settings to their default values.")
-        }
-        .alert("Clear All Data?", isPresented: $showClearDataConfirmation) {
-            Button("Cancel", role: .cancel) {}
-            Button("Clear", role: .destructive) {
-                clearAllData()
-            }
-        } message: {
-            Text("This will clear all CodeLooper data including settings and logs.")
+            Text("This will reset all CodeLooper settings and data to defaults, then restart the application. This action cannot be undone.")
         }
         .alert("Logs Cleared", isPresented: $showLogsClearedAlert) {
             Button("OK") {}
@@ -167,8 +135,7 @@ struct AdvancedSettingsView: View {
     @State private var enableDetailedLogging = false
     @State private var logToFile = false
 
-    @State private var showResetConfirmation = false
-    @State private var showClearDataConfirmation = false
+    @State private var showResetAndRestartConfirmation = false
     @State private var showLogsClearedAlert = false
     @State private var showMcpJsonNotFoundAlert = false
     @State private var mcpJsonNotFoundPath: String = ""
@@ -185,7 +152,7 @@ struct AdvancedSettingsView: View {
         showLogsClearedAlert = true
     }
 
-    private func resetAllSettings() {
+    private func resetAllDataAndRestart() {
         // Reset all Defaults keys
         Defaults.reset(
             .startAtLogin,
@@ -203,19 +170,70 @@ struct AdvancedSettingsView: View {
             .monitorSidebarActivity,
             .postInterventionObservationWindowSeconds,
             .stuckDetectionTimeoutSeconds,
-            .showDebugMenu
+            .showDebugMenu,
+            .gitClientApp,
+            .showDebugTab,
+            .useDynamicMenuBarIcon
         )
+        
+        // Clear logs
+        clearLogsFiles()
+        
+        // Post notification for any cleanup
         NotificationCenter.default.post(
             name: .menuBarVisibilityChanged,
             object: nil,
             userInfo: ["visible": Defaults[.showInMenuBar]]
         )
+        
+        // Restart the application
+        restartApplication()
     }
-
-    private func clearAllData() {
-        // Clear all app data
-        resetAllSettings()
-        clearLogs()
+    
+    private func clearLogsFiles() {
+        let logsPath = NSHomeDirectory() + "/Library/Logs/CodeLooper/"
+        let fileManager = FileManager.default
+        
+        do {
+            let contents = try fileManager.contentsOfDirectory(atPath: logsPath)
+            for file in contents {
+                let filePath = logsPath + file
+                try fileManager.removeItem(atPath: filePath)
+            }
+        } catch {
+            // Silently handle error - logs folder might not exist or be empty
+        }
+    }
+    
+    private func restartApplication() {
+        // Get the current application path
+        let appPath = Bundle.main.bundlePath
+        
+        // Create a script to restart the app after a brief delay
+        let script = """
+        #!/bin/bash
+        sleep 1
+        open "\(appPath)"
+        """
+        
+        // Write script to temp file
+        let tempFile = NSTemporaryDirectory() + "restart_codelooper.sh"
+        try? script.write(toFile: tempFile, atomically: true, encoding: .utf8)
+        
+        // Make script executable and run it
+        let chmod = Process()
+        chmod.launchPath = "/bin/chmod"
+        chmod.arguments = ["+x", tempFile]
+        chmod.launch()
+        chmod.waitUntilExit()
+        
+        let restart = Process()
+        restart.launchPath = "/bin/bash"
+        restart.arguments = [tempFile]
+        restart.launch()
+        
+        // Terminate current app
+        NSApplication.shared.terminate(nil)
     }
 
     private func viewMcpJson() {
@@ -228,21 +246,6 @@ struct AdvancedSettingsView: View {
         } else {
             showMcpJsonNotFoundAlert = true
             mcpJsonNotFoundPath = mcpJsonPath.path
-        }
-    }
-    
-    private func selectGitClientApp() {
-        let openPanel = NSOpenPanel()
-        openPanel.title = "Select Git Client Application"
-        openPanel.message = "Choose your preferred Git client application"
-        openPanel.allowsMultipleSelection = false
-        openPanel.canChooseDirectories = false
-        openPanel.canChooseFiles = true
-        openPanel.allowedContentTypes = [.application]
-        openPanel.directoryURL = URL(fileURLWithPath: "/Applications")
-        
-        if openPanel.runModal() == .OK, let url = openPanel.url {
-            gitClientApp = url.path
         }
     }
 }
