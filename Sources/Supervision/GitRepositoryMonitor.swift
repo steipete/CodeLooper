@@ -2,7 +2,6 @@ import Diagnostics
 import Foundation
 
 /// Monitors Git repositories and provides status information
-@MainActor
 public final class GitRepositoryMonitor {
     // MARK: Lifecycle
 
@@ -13,6 +12,7 @@ public final class GitRepositoryMonitor {
     /// Find Git repository for a given file path and return its status
     /// - Parameter filePath: Path to a file within a potential Git repository
     /// - Returns: GitRepository information if found, nil otherwise
+    @MainActor
     public func findRepository(for filePath: String) async -> GitRepository? {
         // Check cache first
         if let cached = getCachedRepository(for: filePath) {
@@ -36,6 +36,7 @@ public final class GitRepositoryMonitor {
     }
 
     /// Clear the repository cache
+    @MainActor
     public func clearCache() {
         repositoryCache.removeAll()
         cacheTimestamps.removeAll()
@@ -43,7 +44,7 @@ public final class GitRepositoryMonitor {
 
     // MARK: Private
 
-    private let logger = Logger(category: .supervision)
+    nonisolated private let logger = Logger(category: .supervision)
 
     /// Cache for repository information to avoid repeated lookups
     private var repositoryCache: [String: GitRepository] = [:]
@@ -56,6 +57,7 @@ public final class GitRepositoryMonitor {
 
     // MARK: - Private Methods
 
+    @MainActor
     private func getCachedRepository(for filePath: String) -> GitRepository? {
         guard let timestamp = cacheTimestamps[filePath],
               Date().timeIntervalSince(timestamp) < cacheTimeout,
@@ -66,6 +68,7 @@ public final class GitRepositoryMonitor {
         return cached
     }
 
+    @MainActor
     private func cacheRepository(_ repository: GitRepository, for filePath: String) {
         repositoryCache[filePath] = repository
         cacheTimestamps[filePath] = Date()
@@ -99,36 +102,39 @@ public final class GitRepositoryMonitor {
 
     /// Get repository status by running git status
     private func getRepositoryStatus(at repoPath: String) async -> GitRepository? {
-        let process = Process()
-        process.executableURL = URL(fileURLWithPath: "/usr/bin/git")
-        process.arguments = ["status", "--porcelain", "--branch"]
-        process.currentDirectoryURL = URL(fileURLWithPath: repoPath)
+        // Run git command in a detached task to avoid blocking main thread
+        return await Task.detached(priority: .userInitiated) {
+            let process = Process()
+            process.executableURL = URL(fileURLWithPath: "/usr/bin/git")
+            process.arguments = ["status", "--porcelain", "--branch"]
+            process.currentDirectoryURL = URL(fileURLWithPath: repoPath)
 
-        let outputPipe = Pipe()
-        process.standardOutput = outputPipe
-        process.standardError = Pipe() // Suppress error output
+            let outputPipe = Pipe()
+            process.standardOutput = outputPipe
+            process.standardError = Pipe() // Suppress error output
 
-        do {
-            try process.run()
-            process.waitUntilExit()
+            do {
+                try process.run()
+                process.waitUntilExit()
 
-            guard process.terminationStatus == 0 else {
-                logger.debug("Git status failed with exit code: \(process.terminationStatus)")
+                guard process.terminationStatus == 0 else {
+                    self.logger.debug("Git status failed with exit code: \(process.terminationStatus)")
+                    return nil
+                }
+
+                let outputData = outputPipe.fileHandleForReading.readDataToEndOfFile()
+                let output = String(data: outputData, encoding: .utf8) ?? ""
+
+                return self.parseGitStatus(output: output, repoPath: repoPath)
+            } catch {
+                self.logger.error("Failed to run git status: \(error.localizedDescription)")
                 return nil
             }
-
-            let outputData = outputPipe.fileHandleForReading.readDataToEndOfFile()
-            let output = String(data: outputData, encoding: .utf8) ?? ""
-
-            return parseGitStatus(output: output, repoPath: repoPath)
-        } catch {
-            logger.error("Failed to run git status: \(error.localizedDescription)")
-            return nil
-        }
+        }.value
     }
 
     /// Parse git status --porcelain output
-    private func parseGitStatus(output: String, repoPath: String) -> GitRepository {
+    nonisolated private func parseGitStatus(output: String, repoPath: String) -> GitRepository {
         let lines = output.split(separator: "\n")
         var currentBranch: String?
         var modifiedCount = 0
