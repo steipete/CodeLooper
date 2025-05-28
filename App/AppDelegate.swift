@@ -359,6 +359,9 @@ public class AppDelegate: NSObject, NSApplicationDelegate,
         }
         notificationObservers.append(axpectorObserver)
 
+        // Initialize WelcomeWindowCoordinator to ensure it's listening for notifications
+        _ = WelcomeWindowCoordinator.shared
+
         logger.info("Application startup completed successfully")
     }
 
@@ -385,6 +388,14 @@ public class AppDelegate: NSObject, NSApplicationDelegate,
             logger.info("Global monitoring is enabled, will start monitoring when Cursor instances are detected")
             // The monitoring loop will automatically start when monitored apps are detected
             // due to the subscription in CursorMonitor.setupMonitoringLoopSubscription()
+            
+            // Enable AI live watching for all windows if supervision is already enabled at startup
+            Task { @MainActor in
+                // Give the monitoring system a moment to detect existing windows
+                try? await Task.sleep(nanoseconds: 1_000_000_000) // 1 second
+                WindowAIDiagnosticsManager.shared.enableLiveWatchingForAllWindows()
+                self.logger.info("Enabled AI live watching for all existing windows at startup")
+            }
         } else {
             logger.info("Global monitoring is disabled at startup")
         }
@@ -398,10 +409,16 @@ public class AppDelegate: NSObject, NSApplicationDelegate,
                     // If enabled and we have monitored apps, the monitoring loop will start automatically
                     self?.logger
                         .info("Global monitoring enabled - monitoring will start when Cursor instances are detected")
+                    
+                    // Enable AI live watching for all existing windows when supervision is turned on
+                    WindowAIDiagnosticsManager.shared.enableLiveWatchingForAllWindows()
+                    self?.logger.info("Enabled AI live watching for all existing windows after supervision toggle")
                 } else {
                     // Stop monitoring if disabled
                     CursorMonitor.shared.stopMonitoringLoop()
-                    self?.logger.info("Global monitoring disabled - stopped monitoring loop")
+                    // Disable AI live watching for all windows when supervision is turned off
+                    WindowAIDiagnosticsManager.shared.disableLiveWatchingForAllWindows()
+                    self?.logger.info("Global monitoring disabled - stopped monitoring loop and disabled AI live watching")
                 }
             }
         }
