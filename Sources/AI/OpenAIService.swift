@@ -1,6 +1,7 @@
 import Foundation
 import OpenAI
 import AppKit
+import Diagnostics
 
 @MainActor
 final class OpenAIService: AIService {
@@ -52,34 +53,46 @@ final class OpenAIService: AIService {
                 model: request.model,
                 tokensUsed: response.usage?.totalTokens
             )
+        } catch let openAIError as APIError {
+            // Handle specific OpenAI APIErrors
+            switch openAIError.type {
+            case "invalid_request_error":
+                if openAIError.message.lowercased().contains("api key") {
+                    throw AIServiceError.apiKeyMissing
+                } else if openAIError.message.lowercased().contains("model not found") {
+                    throw AIServiceError.unsupportedModel // Or modelNotFound if we want to pass the name
+                }
+                throw AIServiceError.invalidResponse // Or a more specific one based on message
+            case "authentication_error", "permission_error":
+                throw AIServiceError.apiKeyMissing // Typically API key related
+            case "api_error", "internal_error":
+                throw AIServiceError.serviceUnavailable // General server-side issue
+            case "rate_limit_error":
+                throw AIServiceError.serviceUnavailable // Or a specific rate limit error if defined
+            case "insufficient_quota":
+                 throw AIServiceError.serviceUnavailable // Or a specific quota error
+            default:
+                // Fallback for other OpenAI APIErrors
+                logger.warning("Unhandled OpenAI APIError type: \(openAIError.type ?? "unknown"). Message: \(openAIError.message)")
+                throw AIServiceError.networkError(openAIError)
+            }
+        } catch let urlError as URLError {
+            // Handle URLErrors specifically for better network messages
+            throw AIServiceError.networkError(urlError) // AIServiceError.networkError has specific URLError handling
         } catch {
-            // Check for specific OpenAI errors
-            let errorMessage = error.localizedDescription
-            let errorString = String(describing: error)
-            
-            // Check for authentication errors
-            if errorMessage.contains("You didn't provide an API key") || 
-               errorMessage.contains("Authorization header") ||
-               errorMessage.contains("Bearer auth") {
-                throw AIServiceError.connectionFailed("API key not properly configured. Please check your OpenAI API key.")
+            // General catch-all, try to interpret based on message if possible
+            let errorMessage = error.localizedDescription.lowercased()
+            if errorMessage.contains("api key") || errorMessage.contains("unauthorized") || errorMessage.contains("bearer auth") {
+                throw AIServiceError.apiKeyMissing
             }
-            
-            // Check for other common issues
-            if errorMessage.lowercased().contains("unauthorized") || errorMessage.contains("401") || 
-               errorString.lowercased().contains("unauthorized") || errorString.contains("401") {
-                throw AIServiceError.connectionFailed("Invalid API key. Please check your OpenAI API key.")
+            if errorMessage.contains("rate_limit") || errorMessage.contains("rate limit") {
+                throw AIServiceError.serviceUnavailable // Rate limit
             }
-            if errorMessage.lowercased().contains("invalid") && errorMessage.lowercased().contains("key") {
-                throw AIServiceError.connectionFailed("Invalid API key format or key has been revoked")
+            if errorMessage.contains("insufficient_quota") {
+                throw AIServiceError.serviceUnavailable // Quota issue
             }
-            if errorMessage.contains("rate limit") || errorString.contains("rate_limit") {
-                throw AIServiceError.connectionFailed("Rate limit exceeded. Please try again later.")
-            }
-            if errorMessage.contains("insufficient_quota") || errorString.contains("insufficient_quota") {
-                throw AIServiceError.connectionFailed("OpenAI quota exceeded. Please check your billing.")
-            }
-            
-            throw AIServiceError.networkError(error)
+            logger.error("Unhandled error during OpenAI request: \(error)")
+            throw AIServiceError.networkError(error) // Fallback to generic network error
         }
     }
     
@@ -92,4 +105,6 @@ final class OpenAIService: AIService {
     func supportedModels() -> [AIModel] {
         [.gpt4o, .gpt4TurboVision, .gpt4oMini, .o1, .clipVitL14]
     }
+    
+    private let logger = Logger(category: .api)
 }

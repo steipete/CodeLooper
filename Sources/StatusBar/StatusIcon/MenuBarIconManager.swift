@@ -2,6 +2,8 @@ import AppKit
 import Diagnostics
 import Foundation
 import OSLog
+import Combine
+import Defaults
 
 @_exported import class Foundation.Timer
 
@@ -28,6 +30,15 @@ class MenuBarIconManager {
         else {
             logger.warning("Initializing with nil status item or button - will defer initialization")
             setupAppearanceObserver()
+            if statusItem?.button != nil {
+                setupDiagnosticsObserver()
+            } else {
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { [weak self] in
+                    if self?.statusItem?.button != nil {
+                        self?.setupDiagnosticsObserver()
+                    }
+                }
+            }
             return
         }
 
@@ -129,6 +140,8 @@ class MenuBarIconManager {
 
     private let logger = Logger(category: .statusBar)
     private var appearanceObserver: Any?
+    private var diagnosticsCancellable: AnyCancellable?
+    private var cancellables = Set<AnyCancellable>()
 
     // Current state of the icon
     private var currentState: StatusIconState = .idle
@@ -265,42 +278,27 @@ class MenuBarIconManager {
 
     /// Updates the status item button with the appropriate icon for the given state
     private func updateIcon(for state: StatusIconState) {
-        guard let statusItem,
-              let button = statusItem.button
-        else {
-            logger.warning("Status item or button is nil, can't update icon")
+        // Ensure we have a button to update
+        guard let button = statusItem?.button else {
+            logger.warning("Cannot update icon - button is nil (State: \(state.rawValue))")
             return
         }
 
-        // Ensure we're on the main thread
-        if !Thread.isMainThread {
-            DispatchQueue.main.async { [weak self] in
-                self?.updateIcon(for: state)
-            }
-            return
+        // Log the state change
+        logger.info("Updating menu bar icon to state: \(state.rawValue)")
+
+        // Load the icon image based on the state and current appearance
+        var iconImage: NSImage?
+
+        switch state {
+        case .aiStatus(let working, let notWorking, let unknown):
+            iconImage = createAIStatusImage(working: working, notWorking: notWorking, unknown: unknown)
+        default:
+            iconImage = loadStatusBarIcon(for: state, appearance: getCurrentAppearance())
         }
-
-        // Load the icon for the current state and appearance
-        let icon = getIconForCurrentState() ?? createDefaultIcon()
-
-        // Set template mode based on state
-        icon.isTemplate = state.useTemplateImage
-
-        // Ensure image size is correct and safe for menu bar
-        if icon.size != Constants.menuBarIconSize {
-            icon.size = Constants.menuBarIconSize
-        }
-
-        // Update the button image safely
-        button.image = icon
-
-        // Set tooltip based on state
+        
+        button.image = iconImage
         button.toolTip = state.tooltipText
-
-        // Set proper accessibility
-        button.image?.accessibilityDescription = "\(Constants.appName) \(state.description) icon"
-
-        logger.info("Updated icon to \(state.rawValue) state")
     }
 
     /// Get the appropriate icon for the current state and appearance
@@ -414,6 +412,106 @@ class MenuBarIconManager {
         image.isTemplate = currentState.useTemplateImage
         image.accessibilityDescription = Constants.appName
 
+        return image
+    }
+
+    private func setupDiagnosticsObserver() {
+        diagnosticsCancellable = WindowAIDiagnosticsManager.shared.$windowStates
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] windowStates in
+                guard let self = self else { return }
+                if !Defaults[.isGlobalMonitoringEnabled] {
+                    if self.currentState == .paused { return }
+                    let anyLiveWatchingConfigured = windowStates.values.contains { $0.isLiveWatchingEnabled }
+                    if anyLiveWatchingConfigured {
+                         self.setState(.paused)
+                    } else {
+                         self.setState(.idle)
+                    }
+                    return
+                }
+                
+                let workingCount = windowStates.values.filter { $0.isLiveWatchingEnabled && $0.lastAIAnalysisStatus == .working }.count
+                let notWorkingCount = windowStates.values.filter { $0.isLiveWatchingEnabled && ($0.lastAIAnalysisStatus == .notWorking || $0.lastAIAnalysisStatus == .error) }.count
+                let unknownCount = windowStates.values.filter { $0.isLiveWatchingEnabled && $0.lastAIAnalysisStatus == .unknown }.count
+                
+                let isAnyWindowLiveWatchedForAI = windowStates.values.contains { $0.isLiveWatchingEnabled && $0.lastAIAnalysisStatus != .off }
+                
+                if isAnyWindowLiveWatchedForAI || (workingCount > 0 || notWorkingCount > 0 || unknownCount > 0) {
+                    self.setState(.aiStatus(working: workingCount, notWorking: notWorkingCount, unknown: unknownCount))
+                } else if Defaults[.isGlobalMonitoringEnabled] {
+                    self.setState(.idle)
+                } else {
+                     self.setState(.paused)
+                }
+            }
+    }
+
+    /// Create an icon image representing AI status with counts.
+    /// - Parameters:
+    ///   - working: Number of windows in 'working' state.
+    ///   - notWorking: Number of windows in 'not working' state.
+    ///   - unknown: Number of windows in 'unknown' state.
+    /// - Returns: An NSImage representing the AI status.
+    private func createAIStatusImage(working: Int, notWorking: Int, unknown: Int) -> NSImage {
+        let W = Constants.menuBarIconSize.width
+        let H = Constants.menuBarIconSize.height
+        let image = NSImage(size: NSSize(width: W, height: H))
+
+        let paragraphStyle = NSMutableParagraphStyle()
+        paragraphStyle.alignment = .center
+        
+        let font = NSFont.systemFont(ofSize: H * 0.55, weight: .bold)
+
+        var textParts: [(text: String, color: NSColor)] = []
+
+        if working > 0 {
+            textParts.append(("🟢\(working)", .systemGreen))
+        }
+        if notWorking > 0 {
+            textParts.append(("🔴\(notWorking)", .systemRed))
+        }
+        // Only show unknown if there are no working or notWorking windows
+        if working == 0 && notWorking == 0 && unknown > 0 {
+            textParts.append(("🟡\(unknown)", .systemYellow))
+        }
+
+        if textParts.isEmpty {
+            // Fallback to a neutral/default icon if no specific states to show
+            if let templateIcon = NSImage.loadResourceImage(named: Constants.menuBarIconName) {
+                templateIcon.isTemplate = true
+                return templateIcon
+            }
+            image.lockFocus()
+            let circlePath = NSBezierPath(ovalIn: NSRect(x: W*0.35, y: H*0.35, width: W*0.3, height: H*0.3))
+            NSColor.systemGray.setFill()
+            circlePath.fill()
+            image.unlockFocus()
+            return image
+        }
+
+        let fullAttributedString = NSMutableAttributedString()
+        for (index, part) in textParts.enumerated() {
+            let attributes: [NSAttributedString.Key: Any] = [
+                .font: font,
+                .foregroundColor: part.color,
+                .paragraphStyle: paragraphStyle
+            ]
+            fullAttributedString.append(NSAttributedString(string: part.text, attributes: attributes))
+            if index < textParts.count - 1 {
+                fullAttributedString.append(NSAttributedString(string: " ", attributes: [.font: font]))
+            }
+        }
+        
+        image.lockFocus()
+        let textSize = fullAttributedString.size()
+        let textRect = NSRect(x: (W - textSize.width) / 2,
+                              y: (H - textSize.height) / 2,
+                              width: textSize.width,
+                              height: textSize.height)
+        fullAttributedString.draw(in: textRect)
+        image.unlockFocus()
+        
         return image
     }
 }

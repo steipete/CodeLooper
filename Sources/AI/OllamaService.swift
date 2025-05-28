@@ -1,6 +1,7 @@
 import Foundation
 import Ollama
 import AppKit
+import Diagnostics
 
 @MainActor
 final class OllamaService: AIService {
@@ -30,28 +31,23 @@ final class OllamaService: AIService {
                 model: request.model,
                 tokensUsed: nil
             )
-        } catch {
-            // Check if it's a URLError to provide more specific error messages
-            if let urlError = error as? URLError {
-                switch urlError.code {
-                case .cannotFindHost, .cannotConnectToHost:
-                    throw AIServiceError.connectionFailed("Cannot connect to Ollama at \(client.host). Make sure Ollama is running.")
-                case .notConnectedToInternet:
-                    throw AIServiceError.connectionFailed("No internet connection.")
-                case .timedOut:
-                    throw AIServiceError.connectionFailed("Connection timed out. Ollama may be slow or unresponsive.")
-                default:
-                    throw AIServiceError.networkError(error)
-                }
+        } catch let urlError as URLError {
+            // AIServiceError.networkError will provide specific messages for URLError codes
+            // For Ollama, .cannotFindHost or .cannotConnectToHost strongly implies Ollama isn't running or accessible
+            if urlError.code == .cannotFindHost || urlError.code == .cannotConnectToHost {
+                throw AIServiceError.ollamaNotRunning // More specific than generic connectionFailed
             }
-            
-            // Check if error message contains model not found
+            throw AIServiceError.networkError(urlError)
+        } catch {
+            // General catch-all
             let errorMessage = error.localizedDescription.lowercased()
-            if errorMessage.contains("model") && errorMessage.contains("not found") {
+            if errorMessage.contains("model") && (errorMessage.contains("not found") || errorMessage.contains("does not exist")) {
                 throw AIServiceError.modelNotFound(request.model.rawValue)
             }
-            
-            throw AIServiceError.networkError(error)
+            // Check for other common Ollama issues if any specific error types are known from the Ollama library
+            // For now, fallback to a generic network error or service unavailable
+            logger.error("Unhandled error during Ollama request: \(error)")
+            throw AIServiceError.serviceUnavailable // Could be various issues with Ollama server itself
         }
     }
     
@@ -87,4 +83,6 @@ final class OllamaService: AIService {
     func supportedModels() -> [AIModel] {
         [.llava, .bakllava, .llava13b, .llava34b]
     }
+    
+    private let logger = Logger(category: .api)
 }

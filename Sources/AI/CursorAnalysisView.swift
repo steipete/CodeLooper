@@ -13,6 +13,7 @@ public struct CursorAnalysisView: View {
         case errors = "Error Detection"
         case progress = "Progress Check"
         case code = "Code Understanding"
+        case working = "Working Detection"
         case custom = "Custom Prompt"
         
         var prompt: String {
@@ -25,6 +26,8 @@ public struct CursorAnalysisView: View {
                 return CursorScreenshotAnalyzer.AnalysisPrompts.progressCheck
             case .code:
                 return CursorScreenshotAnalyzer.AnalysisPrompts.codeUnderstanding
+            case .working:
+                return CursorScreenshotAnalyzer.AnalysisPrompts.working
             case .custom:
                 return ""
             }

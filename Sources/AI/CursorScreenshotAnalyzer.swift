@@ -1,8 +1,10 @@
 import Foundation
 import AppKit
 import Defaults
-import Security
+import Diagnostics
 @preconcurrency import ScreenCaptureKit
+import Vision
+import OpenAI
 
 @MainActor
 public final class CursorScreenshotAnalyzer: ObservableObject {
@@ -12,24 +14,81 @@ public final class CursorScreenshotAnalyzer: ObservableObject {
     
     private let aiManager: AIServiceManager
     private let imageScaleFactor: CGFloat = 0.5
+    private static let maxAnalysisRetries = 2
+    private static let retryDelaySeconds: TimeInterval = 2
     
     public init() {
         self.aiManager = AIServiceManager()
         configureAIManager()
     }
     
-    public func analyzeCursorWindow() async throws -> ImageAnalysisResponse {
+    public func analyzeSpecificWindow(_ window: SCWindow?, customPrompt: String? = nil) async throws -> ImageAnalysisResponse {
         isAnalyzing = true
         lastError = nil
-        
         defer { isAnalyzing = false }
-        
-        guard let screenshot = try await captureCursorWindow() else {
-            throw AIServiceError.invalidImage
+
+        var attempts = 0
+        var lastCaughtError: Error? = nil
+
+        while attempts <= CursorScreenshotAnalyzer.maxAnalysisRetries {
+            attempts += 1
+            do {
+                guard let screenshot = try await captureCursorWindow(targetSCWindow: window) else {
+                    throw AIServiceError.invalidImage
+                }
+
+                let model = Defaults[.aiModel]
+                let effectivePrompt = customPrompt ?? defaultAnalysisPrompt
+
+                let request = ImageAnalysisRequest(
+                    image: screenshot,
+                    prompt: effectivePrompt,
+                    model: model
+                )
+
+                let response = try await aiManager.analyzeImage(request)
+                lastAnalysis = response
+                return response // Success, exit loop
+            } catch let error as AIServiceError {
+                lastCaughtError = error
+                logger.warning("AI analysis attempt \(attempts) failed with error: \(error.localizedDescription)")
+                
+                // Decide if we should retry
+                switch error {
+                case .networkError, .serviceUnavailable, .invalidResponse: // Added .invalidResponse as potentially transient
+                    if attempts > CursorScreenshotAnalyzer.maxAnalysisRetries {
+                        logger.error("Max retries reached for AI analysis. Error: \(error.localizedDescription)")
+                        throw error // Rethrow after max retries
+                    }
+                    // Wait before retrying
+                    let delay = UInt64(CursorScreenshotAnalyzer.retryDelaySeconds * 1_000_000_000) // Nanoseconds
+                    logger.info("Retrying AI analysis in \(CursorScreenshotAnalyzer.retryDelaySeconds) seconds...")
+                    try? await Task.sleep(nanoseconds: delay)
+                    continue // Next attempt
+                default:
+                    throw error // Non-retryable AIServiceError, rethrow immediately
+                }
+            } catch {
+                // Catch any other non-AIServiceError
+                lastCaughtError = error
+                logger.error("AI analysis attempt \(attempts) failed with unexpected error: \(error.localizedDescription)")
+                throw error // Rethrow immediately, typically not transient
+            }
         }
-        
-        let model = Defaults[.aiModel]
-        let prompt = """
+        // Should not be reached if logic is correct, but as a fallback:
+        throw lastCaughtError ?? AIServiceError.serviceUnavailable // Fallback error
+    }
+    
+    public func analyzeCursorWindow() async throws -> ImageAnalysisResponse {
+        return try await analyzeSpecificWindow(nil)
+    }
+    
+    public func analyzeWithCustomPrompt(_ prompt: String) async throws -> ImageAnalysisResponse {
+        return try await analyzeSpecificWindow(nil, customPrompt: prompt)
+    }
+    
+    private var defaultAnalysisPrompt: String {
+        """
         Analyze this screenshot of a Cursor IDE window and provide a detailed description of:
         1. What code or file is currently being edited
         2. What the user appears to be working on
@@ -39,38 +98,6 @@ public final class CursorScreenshotAnalyzer: ObservableObject {
         
         Be specific and concise in your analysis.
         """
-        
-        let request = ImageAnalysisRequest(
-            image: screenshot,
-            prompt: prompt,
-            model: model
-        )
-        
-        let response = try await aiManager.analyzeImage(request)
-        lastAnalysis = response
-        return response
-    }
-    
-    public func analyzeWithCustomPrompt(_ prompt: String) async throws -> ImageAnalysisResponse {
-        isAnalyzing = true
-        lastError = nil
-        
-        defer { isAnalyzing = false }
-        
-        guard let screenshot = try await captureCursorWindow() else {
-            throw AIServiceError.invalidImage
-        }
-        
-        let model = Defaults[.aiModel]
-        let request = ImageAnalysisRequest(
-            image: screenshot,
-            prompt: prompt,
-            model: model
-        )
-        
-        let response = try await aiManager.analyzeImage(request)
-        lastAnalysis = response
-        return response
     }
     
     private func configureAIManager() {
@@ -93,60 +120,42 @@ public final class CursorScreenshotAnalyzer: ObservableObject {
     }
     
     private func loadAPIKeyFromKeychain() -> String {
-        let query: [String: Any] = [
-            kSecClass as String: kSecClassGenericPassword,
-            kSecAttrService as String: "CODELOOPER_OPENAI_API_KEY",
-            kSecAttrAccount as String: "api-key",
-            kSecReturnData as String: true
-        ]
-        
-        var result: AnyObject?
-        let status = SecItemCopyMatching(query as CFDictionary, &result)
-        
-        if status == errSecSuccess,
-           let data = result as? Data,
-           let apiKey = String(data: data, encoding: .utf8) {
-            return apiKey
-        }
-        
-        return ""
+        return APIKeyService.shared.loadOpenAIKey()
     }
     
-    private func captureCursorWindow() async throws -> NSImage? {
-        // Get shareable content
+    private func captureCursorWindow(targetSCWindow: SCWindow? = nil) async throws -> NSImage? {
         let content = try await SCShareableContent.excludingDesktopWindows(false, onScreenWindowsOnly: true)
         
-        // Find Cursor windows
-        let cursorWindows = content.windows.filter { window in
-            window.owningApplication?.bundleIdentifier == "com.todesktop.230313mzl4w4u92" ||
-            window.owningApplication?.applicationName == "Cursor"
+        var windowToCapture: SCWindow? = targetSCWindow
+
+        if windowToCapture == nil {
+            windowToCapture = content.windows.first { window in
+                window.owningApplication?.bundleIdentifier == "com.todesktop.230313mzl4w4u92" ||
+                window.owningApplication?.applicationName == "Cursor"
+            }
         }
-        
-        guard let targetWindow = cursorWindows.first else {
+
+        guard let finalWindowToCapture = windowToCapture else {
+            logger.info("No suitable Cursor window found for capture.")
             return nil
         }
         
-        // Calculate scaled dimensions
-        let scaledWidth = Int(targetWindow.frame.width * imageScaleFactor)
-        let scaledHeight = Int(targetWindow.frame.height * imageScaleFactor)
+        let scaledWidth = Int(finalWindowToCapture.frame.width * imageScaleFactor)
+        let scaledHeight = Int(finalWindowToCapture.frame.height * imageScaleFactor)
         
-        // Configure the screenshot to capture at scaled dimensions
         let configuration = SCStreamConfiguration()
         configuration.width = scaledWidth
         configuration.height = scaledHeight
-        configuration.scalesToFit = true // Ensure scaling is enabled
+        configuration.scalesToFit = true
         configuration.showsCursor = false
         
-        // Create content filter for single window
-        let filter = SCContentFilter(desktopIndependentWindow: targetWindow)
+        let filter = SCContentFilter(desktopIndependentWindow: finalWindowToCapture)
         
-        // Capture the image
         let image = try await SCScreenshotManager.captureImage(
             contentFilter: filter,
             configuration: configuration
         )
         
-        // Convert CGImage to NSImage using scaled dimensions
         let nsImage = NSImage(cgImage: image, size: NSSize(
             width: scaledWidth,
             height: scaledHeight
@@ -154,6 +163,8 @@ public final class CursorScreenshotAnalyzer: ObservableObject {
         
         return nsImage
     }
+    
+    private let logger = Logger(category: .api)
 }
 
 public extension CursorScreenshotAnalyzer {
@@ -176,5 +187,11 @@ public extension CursorScreenshotAnalyzer {
         Explain what the code in this Cursor IDE screenshot is doing.
         Focus on the main functionality and purpose.
         """
+        
+        public static let working = """
+        Analyze this screenshot of a software development environment. Is the user actively working on a task, or are they idle/paused? Respond with a single JSON object containing two keys: `status` (string: "working", "not_working", or "unknown") and `reason` (string: a brief explanation for the status, max 20 words).
+        """
+        
+        public static let codeEditing = "Is the user actively editing code in this screenshot? Answer yes or no."
     }
 }

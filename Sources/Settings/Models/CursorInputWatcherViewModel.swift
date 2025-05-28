@@ -72,7 +72,7 @@ class CursorInputWatcherViewModel: ObservableObject {
         var error: String?
     }
 
-    @Published var isWatchingEnabled: Bool = false {
+    @Default(.isJSHookMonitoringEnabled) var isWatchingEnabled {
         didSet {
             if isWatchingEnabled {
                 startWatching()
@@ -1151,3 +1151,8 @@ class CursorInputWatcherViewModel: ObservableObject {
 }
 
 // Removed placeholder GlobalAXLogger as Diagnostics is now imported.
+
+// Define the Defaults key
+extension Defaults.Keys {
+    static let isJSHookMonitoringEnabled = Key<Bool>("isJSHookMonitoringEnabled", default: false)
+}

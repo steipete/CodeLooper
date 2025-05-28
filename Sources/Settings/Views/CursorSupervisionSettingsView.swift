@@ -17,15 +17,16 @@ struct CursorSupervisionSettingsView: View {
     var maxConsecutiveRecoveryFailures
 
     @StateObject private var inputWatcherViewModel = CursorInputWatcherViewModel()
+    @StateObject private var diagnosticsManager = WindowAIDiagnosticsManager.shared
 
     var body: some View {
         VStack(alignment: .leading, spacing: Spacing.xLarge) {
             // Input Watcher Section
-            DSSettingsSection("Input Monitoring") {
+            DSSettingsSection("Input Monitoring & AI Diagnostics") {
                 DSToggle(
-                    "Enable Live Watching",
+                    "Enable Input Monitoring (JS Hooks)",
                     isOn: $inputWatcherViewModel.isWatchingEnabled,
-                    description: "Monitor and inject JavaScript hooks into Cursor windows"
+                    description: "Monitor and inject JavaScript hooks into Cursor windows for detailed activity status."
                 )
 
                 if !inputWatcherViewModel.statusMessage.isEmpty {
@@ -35,7 +36,7 @@ struct CursorSupervisionSettingsView: View {
                         .padding(.top, Spacing.xxSmall)
                 }
 
-                // Display Cursor Windows
+                // Display Cursor Windows from inputWatcherViewModel, enhance with diagnosticsManager data
                 if !inputWatcherViewModel.cursorWindows.isEmpty {
                     DSDivider()
                         .padding(.vertical, Spacing.small)
@@ -46,86 +47,93 @@ struct CursorSupervisionSettingsView: View {
                             .foregroundColor(ColorPalette.text)
 
                         ForEach(inputWatcherViewModel.cursorWindows) { window in
-                            HStack {
-                                Image(systemName: "window.ceiling")
-                                    .foregroundColor(ColorPalette.textSecondary)
-                                    .font(.system(size: 14))
-                                
-                                VStack(alignment: .leading) {
-                                    Text(window.windowTitle ?? "Untitled Window")
-                                        .font(.system(.body, design: .monospaced))
-                                        .lineLimit(1)
-                                    if let docPath = window.documentPath, !docPath.isEmpty {
-                                        Text(docPath)
-                                            .font(Typography.caption2())
-                                            .foregroundColor(ColorPalette.textSecondary)
+                            // Get the corresponding AI diagnostic state for this window
+                            let windowAIState = diagnosticsManager.windowStates[window.id]
+                            
+                            VStack(alignment: .leading, spacing: Spacing.xSmall) { // Wrap each window item in a VStack
+                                HStack {
+                                    Image(systemName: "window.ceiling")
+                                        .foregroundColor(ColorPalette.textSecondary)
+                                        .font(.system(size: 14))
+                                    
+                                    VStack(alignment: .leading) {
+                                        Text(window.windowTitle ?? "Untitled Window")
+                                            .font(.system(.body, design: .monospaced))
                                             .lineLimit(1)
-                                            .truncationMode(.middle)
-                                    }
-                                }
-                                
-                                Spacer()
-
-                                // JS Hook status indicator
-                                let heartbeatStatus = inputWatcherViewModel.getHeartbeatStatus(for: window.id)
-                                let hasActiveHook = heartbeatStatus?.isAlive == true || inputWatcherViewModel.getPort(for: window.id) != nil
-                                
-                                if hasActiveHook {
-                                    HStack(spacing: 4) {
-                                        Image(systemName: heartbeatStatus?.isAlive == true ? "checkmark.seal.fill" : "checkmark.seal")
-                                            .foregroundColor(heartbeatStatus?.isAlive == true ? ColorPalette.success : ColorPalette.warning)
-                                            .font(.system(size: 12))
-                                        if let port = inputWatcherViewModel.getPort(for: window.id) {
-                                            Text(":\(port)")
+                                        if let docPath = window.documentPath, !docPath.isEmpty {
+                                            Text(docPath)
                                                 .font(Typography.caption2())
                                                 .foregroundColor(ColorPalette.textSecondary)
-                                        }
-                                        
-                                        // Show heartbeat indicator
-                                        if heartbeatStatus?.isAlive == true {
-                                            Image(systemName: "heart.fill")
-                                                .foregroundColor(ColorPalette.success)
-                                                .font(.system(size: 10))
+                                                .lineLimit(1)
+                                                .truncationMode(.middle)
                                         }
                                     }
-                                    .help("JS Hook \(heartbeatStatus?.isAlive == true ? "active" : "installed") on port \(inputWatcherViewModel.getPort(for: window.id) ?? 0)")
+                                    Spacer()
+                                    jsHookStatusView(for: window) // Extracted JS Hook view
                                 }
+                                
+                                // AI Diagnostics Row
+                                HStack {
+                                    Spacer().frame(width: 20) // Indent AI controls
+                                    aiStatusIndicator(status: windowAIState?.lastAIAnalysisStatus ?? .off)
+                                    
+                                    Toggle("", isOn: Binding(
+                                        get: { windowAIState?.isLiveWatchingEnabled ?? false },
+                                        set: { _ in diagnosticsManager.toggleLiveWatching(for: window.id) }
+                                    ))
+                                    .labelsHidden()
+                                    .toggleStyle(SwitchToggleStyle(tint: ColorPalette.accent))
+                                    .scaleEffect(0.8)
+                                    
+                                    Text("Live AI Analysis")
+                                        .font(Typography.caption1())
+                                    
+                                    Spacer()
+                                }
+                                .disabled(!inputWatcherViewModel.isWatchingEnabled) // Disable AI if JS hooks off
 
-                                // Inject/Reinject button
-                                DSButton(
-                                    hasActiveHook ? "Reinject" : "Inject JS",
-                                    style: .secondary,
-                                    size: .small
-                                ) {
-                                    Task {
-                                        await inputWatcherViewModel.injectJSHook(into: window)
+                                if windowAIState?.isLiveWatchingEnabled ?? false {
+                                    if let analysisMessage = windowAIState?.lastAIAnalysisResponseMessage, !analysisMessage.isEmpty {
+                                        Text("    AI: \(analysisMessage)")
+                                            .font(Typography.caption2())
+                                            .foregroundColor(windowAIState?.lastAIAnalysisStatus == .error ? ColorPalette.error : ColorPalette.warning)
+                                            .padding(.leading, 20)
                                     }
-                                }
-                                .disabled(inputWatcherViewModel.isInjectingHook)
-
-                                if window.isPaused {
-                                    Image(systemName: "pause.circle.fill")
-                                        .foregroundColor(ColorPalette.warning)
-                                        .font(.system(size: 14))
+                                    if let timestamp = windowAIState?.lastAIAnalysisTimestamp {
+                                        Text("    Last check: \(timestamp, style: .time)")
+                                            .font(.caption2())
+                                            .foregroundColor(ColorPalette.textSecondary)
+                                            .padding(.leading, 20)
+                                    }
                                 }
                             }
-                            .padding(.horizontal, Spacing.small)
-                            .padding(.vertical, Spacing.xSmall)
+                            .padding(Spacing.small)
                             .background(ColorPalette.backgroundSecondary)
                             .cornerRadiusDS(Layout.CornerRadius.small)
                         }
                     }
                 }
                 
-                // AI Analysis Section
+                // Manual AI Analysis Section (CursorAnalysisView)
+                // This can remain as is for now, or be re-evaluated later.
                 if inputWatcherViewModel.isWatchingEnabled && !inputWatcherViewModel.cursorWindows.isEmpty {
                     DSDivider()
                         .padding(.vertical, Spacing.small)
-                    
-                    Text("AI Window Analysis")
+                    Text("Global AI Analysis Interval")
                         .font(Typography.callout(.semibold))
-                        .foregroundColor(ColorPalette.text)
+                    DSSlider(
+                        value: Defaults.binding(.aiGlobalAnalysisIntervalSeconds).map(Double.init, Int.init),
+                        in: 5...60, 
+                        step: 5,
+                        label: "Interval",
+                        showValue: true
+                    ) { "\(Int($0))s" }
+                    .padding(.top, Spacing.xxSmall)
                     
+                    DSDivider()
+                        .padding(.vertical, Spacing.small)
+                    Text("Manual AI Window Analysis")
+                        .font(Typography.callout(.semibold))
                     CursorAnalysisView()
                         .padding(.top, Spacing.small)
                 }
@@ -203,6 +211,70 @@ struct CursorSupervisionSettingsView: View {
             Spacer()
         }
     }
+    
+    // Extracted ViewBuilder for JS Hook Status
+    @ViewBuilder
+    private func jsHookStatusView(for window: MonitoredWindowInfo) -> some View {
+        let heartbeatStatus = inputWatcherViewModel.getHeartbeatStatus(for: window.id)
+        let hasActiveHook = heartbeatStatus?.isAlive == true || inputWatcherViewModel.getPort(for: window.id) != nil
+        
+        if hasActiveHook {
+            HStack(spacing: 4) {
+                Image(systemName: heartbeatStatus?.isAlive == true ? "checkmark.seal.fill" : "checkmark.seal")
+                    .foregroundColor(heartbeatStatus?.isAlive == true ? ColorPalette.success : ColorPalette.warning)
+                    .font(.system(size: 12))
+                if let port = inputWatcherViewModel.getPort(for: window.id) {
+                    Text(":\(port)")
+                        .font(Typography.caption2())
+                        .foregroundColor(ColorPalette.textSecondary)
+                }
+                if heartbeatStatus?.isAlive == true {
+                    Image(systemName: "heart.fill")
+                        .foregroundColor(ColorPalette.success)
+                        .font(.system(size: 10))
+                }
+            }
+            .help("JS Hook \(heartbeatStatus?.isAlive == true ? "active" : "installed") on port \(inputWatcherViewModel.getPort(for: window.id) ?? 0)")
+        }
+
+        DSButton(
+            hasActiveHook ? "Reinject" : "Inject JS",
+            style: .secondary,
+            size: .small
+        ) {
+            Task {
+                await inputWatcherViewModel.injectJSHook(into: window)
+            }
+        }
+        .disabled(inputWatcherViewModel.isInjectingHook)
+    }
+    
+    // Helper function to get color for status
+    private func colorForStatus(_ status: AIAnalysisStatus) -> Color {
+        switch status {
+        case .working: 
+            return ColorPalette.success
+        case .notWorking: 
+            return ColorPalette.error
+        case .pending: 
+            return ColorPalette.info
+        case .error: 
+            return ColorPalette.error
+        case .off: 
+            return ColorPalette.textTertiary
+        case .unknown:
+            return ColorPalette.warning
+        }
+    }
+    
+    // Extracted ViewBuilder for AI Status Indicator (similar to MainPopoverView)
+    @ViewBuilder
+    private func aiStatusIndicator(status: AIAnalysisStatus) -> some View {
+        Image(systemName: "circle.fill")
+            .font(.caption)
+            .foregroundColor(colorForStatus(status))
+            .help(status.displayName)
+    }
 }
 
 // MARK: - Preview
@@ -211,7 +283,7 @@ struct CursorSupervisionSettingsView: View {
     struct CursorSupervisionSettingsView_Previews: PreviewProvider {
         static var previews: some View {
             CursorSupervisionSettingsView()
-                .frame(width: 500, height: 600)
+                .frame(width: 550, height: 700)
                 .padding()
                 .background(ColorPalette.background)
                 .withDesignSystem()

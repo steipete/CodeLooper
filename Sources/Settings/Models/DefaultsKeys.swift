@@ -125,4 +125,5 @@ extension Defaults.Keys {
     static let aiProvider = Key<AIProvider>("aiProvider", default: .openAI)
     static let aiModel = Key<AIModel>("aiModel", default: .gpt4o)
     static let ollamaBaseURL = Key<String>("ollamaBaseURL", default: "http://localhost:11434")
+    static let aiGlobalAnalysisIntervalSeconds = Key<Int>("aiGlobalAnalysisIntervalSeconds", default: 10)
 }
