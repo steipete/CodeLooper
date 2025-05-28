@@ -75,8 +75,6 @@ struct SettingsContainerView: View {
             AdvancedSettingsView()
         case .debug:
             DebugSettingsView()
-        default:
-            EmptyView()
         }
     }
 }
