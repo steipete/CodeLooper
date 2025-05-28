@@ -84,6 +84,33 @@ private class DraggableView: NSView {
     }
 }
 
+/// A stack view that passes through all mouse events to its parent
+private class PassThroughStackView: NSStackView {
+    override func hitTest(_ point: NSPoint) -> NSView? {
+        // Return nil to make this view transparent to mouse events
+        return nil
+    }
+    
+    override var mouseDownCanMoveWindow: Bool {
+        return true
+    }
+}
+
+/// An image view that passes through all mouse events
+private class PassThroughImageView: NSImageView {
+    override func hitTest(_ point: NSPoint) -> NSView? {
+        return nil
+    }
+    
+    override var mouseDownCanMoveWindow: Bool {
+        return true
+    }
+    
+    override func acceptsFirstMouse(for event: NSEvent?) -> Bool {
+        return false
+    }
+}
+
 // MARK: - Toolbar Item Identifiers
 
 private extension NSToolbarItem.Identifier {
@@ -180,48 +207,57 @@ private class SettingsToolbarDelegate: NSObject, NSToolbarDelegate {
             containerView.translatesAutoresizingMaskIntoConstraints = false
             
             // App icon - load from Assets.xcassets
-            let iconView = NSImageView()
+            let iconView = PassThroughImageView()
             if let iconImage = NSImage(named: NSImage.Name("AppIcon")) {
                 iconView.image = iconImage
             } else {
                 // Fallback to application icon
                 iconView.image = NSApp.applicationIconImage
             }
-            iconView.translatesAutoresizingMaskIntoConstraints = false
             iconView.isEditable = false
+            iconView.imageScaling = .scaleProportionallyDown
+            iconView.unregisterDraggedTypes()
             
             // Title label
             let titleLabel = NSTextField(labelWithString: "CodeLooper")
             titleLabel.font = .systemFont(ofSize: 13, weight: .semibold)
             titleLabel.textColor = .labelColor
             titleLabel.alignment = .left
-            titleLabel.translatesAutoresizingMaskIntoConstraints = false
             titleLabel.isEditable = false
             titleLabel.isSelectable = false
             titleLabel.isBezeled = false
             titleLabel.drawsBackground = false
+            titleLabel.refusesFirstResponder = true
             
-            // Add subviews
-            containerView.addSubview(iconView)
-            containerView.addSubview(titleLabel)
+            // Create horizontal stack view using PassThroughStackView
+            let stackView = PassThroughStackView(views: [iconView, titleLabel])
+            stackView.orientation = .horizontal
+            stackView.alignment = .centerY
+            stackView.spacing = 8
+            stackView.distribution = .fill
+            stackView.translatesAutoresizingMaskIntoConstraints = false
+            
+            // Add stack view to container
+            containerView.addSubview(stackView)
             
             // Setup constraints
             NSLayoutConstraint.activate([
-                iconView.leadingAnchor.constraint(equalTo: containerView.leadingAnchor),
-                iconView.centerYAnchor.constraint(equalTo: containerView.centerYAnchor),
+                // Stack view fills container
+                stackView.leadingAnchor.constraint(equalTo: containerView.leadingAnchor),
+                stackView.trailingAnchor.constraint(equalTo: containerView.trailingAnchor),
+                stackView.centerYAnchor.constraint(equalTo: containerView.centerYAnchor),
+                
+                // Icon size constraints
                 iconView.widthAnchor.constraint(equalToConstant: 30),
                 iconView.heightAnchor.constraint(equalToConstant: 30),
                 
-                titleLabel.leadingAnchor.constraint(equalTo: iconView.trailingAnchor, constant: 8),
-                titleLabel.centerYAnchor.constraint(equalTo: containerView.centerYAnchor),
-                titleLabel.trailingAnchor.constraint(equalTo: containerView.trailingAnchor),
-                
+                // Container height
                 containerView.heightAnchor.constraint(equalToConstant: 32)
             ])
             
             titleItem.view = containerView
             titleItem.label = ""
-            titleItem.paletteLabel = "Window Title"
+            titleItem.paletteLabel = "CodeLooper Settings"
             // Make the toolbar item non-interactive
             titleItem.isEnabled = false
             titleItem.autovalidates = false
