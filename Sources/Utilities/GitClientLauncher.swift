@@ -48,16 +48,20 @@ public enum GitClientLauncher {
     // MARK: - Private Methods
     
     private static func launchTower(at appURL: URL, with repositoryPath: String) -> Bool {
-        // Tower supports opening repositories via URL scheme
-        let towerURLString = "gittower://openRepo?path=\(repositoryPath)"
+        // Launch Tower binary directly with the repository path as argument
+        let process = Process()
+        process.executableURL = appURL.appendingPathComponent("Contents/MacOS/Tower")
+        process.arguments = [repositoryPath]
         
-        if let towerURL = URL(string: towerURLString) {
-            logger.info("Launching Tower with URL: \(towerURLString)")
-            return NSWorkspace.shared.open(towerURL)
+        do {
+            logger.info("Launching Tower with repository: \(repositoryPath)")
+            try process.run()
+            return true
+        } catch {
+            logger.error("Failed to launch Tower: \(error.localizedDescription)")
+            // Fallback to opening with file
+            return openAppWithFile(appURL: appURL, filePath: repositoryPath)
         }
-        
-        // Fallback to opening with file
-        return openAppWithFile(appURL: appURL, filePath: repositoryPath)
     }
     
     private static func launchSourceTree(at appURL: URL, with repositoryPath: String) -> Bool {
