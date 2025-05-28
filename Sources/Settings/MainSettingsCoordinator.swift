@@ -47,24 +47,15 @@ public final class MainSettingsCoordinator: NSObject {
     public func showSettings() {
         logger.info("Showing settings window")
 
-        // First, check if a settings window already exists
-        let existingSettingsWindows = NSApp.windows.filter { window in
-            window.title.contains("Settings") || window.identifier?.rawValue == "settings"
-        }
-
-        if let existingWindow = existingSettingsWindows.first {
+        // Check if we already have a window
+        if let window = settingsWindow, window.isVisible {
             // If window exists, bring it to front
             logger.info("Settings window already exists, bringing to front")
-            existingWindow.makeKeyAndOrderFront(nil)
-            existingWindow.orderFrontRegardless()
-
-            // Close any duplicate windows
-            for window in existingSettingsWindows.dropFirst() {
-                logger.warning("Closing duplicate settings window")
-                window.close()
-            }
+            window.makeKeyAndOrderFront(nil)
+            window.orderFrontRegardless()
+            NSApp.activate(ignoringOtherApps: true)
         } else {
-            // Create new settings window using the WindowGroup
+            // Create new settings window
             logger.info("Creating new settings window")
             openNewSettingsWindow()
         }
@@ -73,15 +64,9 @@ public final class MainSettingsCoordinator: NSObject {
     /// Closes the settings window
     public func closeSettings() {
         logger.info("Closing settings window")
-
-        let settingsWindows = NSApp.windows.filter { window in
-            window.title.contains("Settings") || window.identifier?.rawValue == "settings"
-        }
-
-        for window in settingsWindows {
-            logger.info("Closing settings window: \(window.title)")
-            window.close()
-        }
+        
+        settingsWindow?.close()
+        settingsWindow = nil
     }
 
     // MARK: Private
@@ -90,13 +75,22 @@ public final class MainSettingsCoordinator: NSObject {
     private var cancellables = Set<AnyCancellable>()
     private let loginItemManager: LoginItemManager
     private let updaterViewModel: UpdaterViewModel
+    private var settingsWindow: NativeToolbarSettingsWindow?
 
     private func openNewSettingsWindow() {
-        // Try to open via URL scheme first
-        if let url = URL(string: "codelooper://settings") {
-            NSWorkspace.shared.open(url)
-            return
-        }
+        logger.info("Creating transparent settings window")
+        
+        // Create the window
+        settingsWindow = NativeToolbarSettingsWindow(
+            loginItemManager: loginItemManager,
+            updaterViewModel: updaterViewModel
+        )
+        
+        // Show the window
+        settingsWindow?.makeKeyAndOrderFront(nil)
+        
+        // Activate the app
+        NSApp.activate(ignoringOtherApps: true)
     }
 
     // MARK: - Private Methods

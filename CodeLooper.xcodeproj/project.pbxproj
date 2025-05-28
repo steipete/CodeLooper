@@ -181,6 +181,7 @@
 		EA5012D1FD36D8FF398A8577 /* CustomObservation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6C1EE04870CCBE096DCED567 /* CustomObservation.swift */; };
 		EB1A07B5BD013FEF94A72FF0 /* CodeLooper.sdef in Resources */ = {isa = PBXBuildFile; fileRef = 1E072564F6C7363162D5F526 /* CodeLooper.sdef */; };
 		EC007E2B27D262FA76FD5573 /* ClaudeCodeConfigView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9B648992B100A3B714E042F2 /* ClaudeCodeConfigView.swift */; };
+		ECD1849617FD75144BF4FC68 /* NativeToolbarSettingsWindow.swift in Sources */ = {isa = PBXBuildFile; fileRef = C462596FFBEB83B48578DAA0 /* NativeToolbarSettingsWindow.swift */; };
 		EED2BB62D40EF4F355D2D365 /* Documentation.docc in Sources */ = {isa = PBXBuildFile; fileRef = EFDC8F616B9D55B4C7B37C63 /* Documentation.docc */; };
 		EED8C5F1AE6695F07B6D2254 /* ScreenRecordingPermissionsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3D200C61136C47B55BBEE7DB /* ScreenRecordingPermissionsView.swift */; };
 		F19CC45E055866D75AE03FAE /* SwiftUIIntrospect in Frameworks */ = {isa = PBXBuildFile; productRef = 35EC1BE62E99DC3A9B3F78F2 /* SwiftUIIntrospect */; };
@@ -349,6 +350,7 @@
 		BD070CFB75E1BFD3B5067E54 /* LottieMenuBarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LottieMenuBarView.swift; sourceTree = "<group>"; };
 		C1564559C89E40097DBA20C3 /* PermissionsManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PermissionsManager.swift; sourceTree = "<group>"; };
 		C443B9F8B7E51031C8A9EE7D /* SettingsContainerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsContainerView.swift; sourceTree = "<group>"; };
+		C462596FFBEB83B48578DAA0 /* NativeToolbarSettingsWindow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NativeToolbarSettingsWindow.swift; sourceTree = "<group>"; };
 		C467BB1503BCC53AF2CAB88D /* SoundManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SoundManager.swift; sourceTree = "<group>"; };
 		C7710E697087D7A5E1C84526 /* DevConsoleDetector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DevConsoleDetector.swift; sourceTree = "<group>"; };
 		C8D7AC93DB5E0236FA5DBD35 /* QueryDataModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QueryDataModels.swift; sourceTree = "<group>"; };
@@ -539,6 +541,7 @@
 				32DC4B14985C4A4A5689DD75 /* ExternalMCPsSettingsView.swift */,
 				3C69CC949209A6B0F3D95D5C /* GeneralSettingsView.swift */,
 				AB5EF7A23F3B58EB51CBF50C /* MacAutomatorConfigView.swift */,
+				C462596FFBEB83B48578DAA0 /* NativeToolbarSettingsWindow.swift */,
 				C443B9F8B7E51031C8A9EE7D /* SettingsContainerView.swift */,
 				99EEFF4BEB03587B91DC3B8F /* SettingsPanesContainerView.swift */,
 				2A2EFD0769BAEA511922A2C3 /* StatsView.swift */,
@@ -1044,6 +1047,7 @@
 				816F86E3EFE8F9BB9F695EFF /* ExternalMCPsSettingsView.swift in Sources */,
 				D47685B3180D379449B090DF /* GeneralSettingsView.swift in Sources */,
 				7FB1DA236DAF99E5DAC30AA5 /* MacAutomatorConfigView.swift in Sources */,
+				ECD1849617FD75144BF4FC68 /* NativeToolbarSettingsWindow.swift in Sources */,
 				DBC8A75C1A9F4556C94AB64E /* SettingsContainerView.swift in Sources */,
 				1DB5FDCEBD999A62720CA066 /* SettingsPanesContainerView.swift in Sources */,
 				3BF2B3804B75479641439A06 /* StatsView.swift in Sources */,

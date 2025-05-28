@@ -64,52 +64,20 @@ struct SettingsContainerView: View {
         switch selectedTab {
         case .general:
             GeneralSettingsView(updaterViewModel: viewModel.updaterViewModel)
-                .transition(.asymmetric(
-                    insertion: AnyTransition.move(edge: .trailing).combined(with: .opacity),
-                    removal: AnyTransition.move(edge: .leading).combined(with: .opacity)
-                ))
         case .supervision:
             CursorSupervisionSettingsView()
-                .transition(.asymmetric(
-                    insertion: AnyTransition.move(edge: .trailing).combined(with: .opacity),
-                    removal: AnyTransition.move(edge: .leading).combined(with: .opacity)
-                ))
         case .ruleSets:
             CursorRuleSetsSettingsView()
-                .transition(.asymmetric(
-                    insertion: AnyTransition.move(edge: .trailing).combined(with: .opacity),
-                    removal: AnyTransition.move(edge: .leading).combined(with: .opacity)
-                ))
         case .externalMCPs:
             ExternalMCPsSettingsView()
-                .transition(.asymmetric(
-                    insertion: AnyTransition.move(edge: .trailing).combined(with: .opacity),
-                    removal: AnyTransition.move(edge: .leading).combined(with: .opacity)
-                ))
         case .ai:
             AISettingsView()
-                .transition(.asymmetric(
-                    insertion: AnyTransition.move(edge: .trailing).combined(with: .opacity),
-                    removal: AnyTransition.move(edge: .leading).combined(with: .opacity)
-                ))
         case .advanced:
             AdvancedSettingsView()
-                .transition(.asymmetric(
-                    insertion: AnyTransition.move(edge: .trailing).combined(with: .opacity),
-                    removal: AnyTransition.move(edge: .leading).combined(with: .opacity)
-                ))
         case .debug:
             DebugSettingsView()
-                .transition(.asymmetric(
-                    insertion: .move(edge: .trailing).combined(with: .opacity),
-                    removal: .move(edge: .leading).combined(with: .opacity)
-                ))
         case .about:
             AboutSettingsView()
-                .transition(.asymmetric(
-                    insertion: AnyTransition.move(edge: .trailing).combined(with: .opacity),
-                    removal: AnyTransition.move(edge: .leading).combined(with: .opacity)
-                ))
         default:
             EmptyView()
         }
@@ -153,9 +121,7 @@ private struct TitleBarView: View {
                         isSelected: selectedTab == tab.id,
                         isHovered: hoveredTab == tab.id
                     ) {
-                        withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
-                            selectedTab = tab.id
-                        }
+                        selectedTab = tab.id
                     }
                     .onHover { hovering in
                         hoveredTab = hovering ? tab.id : nil

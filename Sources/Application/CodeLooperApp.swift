@@ -44,11 +44,10 @@ struct CodeLooperApp: App {
         .menuBarExtraAccess(isPresented: $isMenuPresented) { _ in
         }
 
-        WindowGroup("CodeLooper Settings", id: "settings") {
+        WindowGroup("CodeLooper", id: "settings") {
             SettingsSceneView()
                 .environmentObject(sessionLogger)
         }
-        .windowStyle(.hiddenTitleBar)
         .windowResizability(.contentSize)
         .defaultSize(width: 640, height: 950)
         .commandsRemoved()
