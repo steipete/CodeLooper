@@ -212,7 +212,8 @@ public final class MainSettingsViewModel: ObservableObject {
                 mcpIdentifier: "claude-code",
                 nameForEntry: "Claude Code",
                 enabled: newValue,
-                defaultCommand: ["claude-code"]
+                defaultCommand: "npx",
+                defaultArgs: ["-y", "@steipete/claude-code-mcp@latest"]
             )
             refreshMCPStatusMessage(for: "claude-code")
         }
@@ -225,7 +226,8 @@ public final class MainSettingsViewModel: ObservableObject {
                 mcpIdentifier: "macos-automator",
                 nameForEntry: "macOS Automator",
                 enabled: newValue,
-                defaultCommand: ["macos-automator"]
+                defaultCommand: "npx",
+                defaultArgs: ["-y", "@steipete/macos-automator-mcp@latest"]
             )
             refreshMCPStatusMessage(for: "macos-automator")
         }
@@ -238,7 +240,8 @@ public final class MainSettingsViewModel: ObservableObject {
                 mcpIdentifier: "XcodeBuildMCP",
                 nameForEntry: "XcodeBuildMCP",
                 enabled: newValue,
-                defaultCommand: ["XcodeBuildMCP"]
+                defaultCommand: "mise",
+                defaultArgs: ["x", "npm:xcodebuildmcp@1.4.0", "--", "xcodebuildmcp"]
             )
             refreshMCPStatusMessage(for: "XcodeBuildMCP")
         }
