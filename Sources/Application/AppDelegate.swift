@@ -88,8 +88,7 @@ public class AppDelegate: NSObject, NSApplicationDelegate,
 
         // Setup main application components
         setupNotificationObservers()
-        // setupSupervision() // Commenting out for now - CursorMonitor.shared might handle its own start via Defaults
-        // observation
+        setupSupervision()
 
         // Restore window state or show welcome guide
         handleWindowRestorationAndFirstLaunch()
@@ -350,6 +349,39 @@ public class AppDelegate: NSObject, NSApplicationDelegate,
         }
     }
 
+    // MARK: - Supervision Setup
+
+    private func setupSupervision() {
+        logger.info("Setting up supervision")
+
+        // Check if global monitoring is enabled
+        if Defaults[.isGlobalMonitoringEnabled] {
+            logger.info("Global monitoring is enabled, will start monitoring when Cursor instances are detected")
+            // The monitoring loop will automatically start when monitored apps are detected
+            // due to the subscription in CursorMonitor.setupMonitoringLoopSubscription()
+        } else {
+            logger.info("Global monitoring is disabled at startup")
+        }
+
+        // Observe changes to the global monitoring setting
+        Defaults.observe(.isGlobalMonitoringEnabled) { [weak self] change in
+            self?.logger.info("Global monitoring preference changed to: \(change.newValue)")
+
+            Task { @MainActor in
+                if change.newValue {
+                    // If enabled and we have monitored apps, the monitoring loop will start automatically
+                    self?.logger
+                        .info("Global monitoring enabled - monitoring will start when Cursor instances are detected")
+                } else {
+                    // Stop monitoring if disabled
+                    CursorMonitor.shared.stopMonitoringLoop()
+                    self?.logger.info("Global monitoring disabled - stopped monitoring loop")
+                }
+            }
+        }
+        .tieToLifetime(of: self)
+    }
+
     // MARK: - Monitoring State Management
 
     // New method to toggle monitoring state
@@ -366,7 +398,8 @@ public class AppDelegate: NSObject, NSApplicationDelegate,
     // MARK: - Window Restoration
 
     private func handleWindowRestorationAndFirstLaunch() {
-        // ... existing code ...
+        logger.info("Handling window restoration and first launch")
+        // Window restoration logic will be implemented here as needed
     }
 
     private func startCursorAXObservation() {

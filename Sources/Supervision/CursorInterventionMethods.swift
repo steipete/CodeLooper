@@ -16,7 +16,7 @@ extension CursorMonitor {
     }
 
     /// Simulates pressing the Enter key
-    internal func pressEnterKey() async -> Bool {
+    func pressEnterKey() async -> Bool {
         let enterKeyCode: UInt16 = 36 // Enter key virtual key code
 
         // Create key down event
@@ -44,7 +44,7 @@ extension CursorMonitor {
 
     /// Updates instance display information
     @MainActor
-    internal func updateInstanceDisplayInfo(
+    func updateInstanceDisplayInfo(
         for pid: pid_t,
         newStatus: DisplayStatus,
         message _: String? = nil,

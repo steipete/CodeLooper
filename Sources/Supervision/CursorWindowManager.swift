@@ -7,7 +7,7 @@ import Foundation
 @MainActor
 extension CursorMonitor {
     /// Updates windows for a given app
-    internal func updateWindows(for appInfo: inout MonitoredAppInfo) async {
+    func updateWindows(for appInfo: inout MonitoredAppInfo) async {
         guard let appElement = applicationElement(forProcessID: appInfo.pid) else {
             logger.warning("Could not get application element for PID \(appInfo.pid) to fetch windows.")
             appInfo.windows = []
@@ -40,7 +40,7 @@ extension CursorMonitor {
             let windowId = "\(appInfo.pid)-window-\(title ?? "untitled")-\(index)"
 
             // Fetch the document path
-            var documentPath: String? = nil
+            var documentPath: String?
             if let docURLString: String = windowElement
                 .attribute(Attribute<String>(AXAttributeNames.kAXDocumentAttribute))
             {
@@ -77,7 +77,7 @@ extension CursorMonitor {
     }
 
     /// Processes all monitored apps to update their window information
-    internal func processMonitoredApps() async {
+    func processMonitoredApps() async {
         var newMonitoredApps = self.monitoredApps
         for i in newMonitoredApps.indices {
             await updateWindows(for: &newMonitoredApps[i])
@@ -86,7 +86,7 @@ extension CursorMonitor {
     }
 
     /// Gets primary displayable text from an AX element
-    internal func getPrimaryDisplayableText(axElement: AXElement?) -> String {
+    func getPrimaryDisplayableText(axElement: AXElement?) -> String {
         guard let element = axElement else { return "" }
         let attributeKeysInOrder: [String] = [
             kAXValueAttribute as String,
@@ -106,7 +106,7 @@ extension CursorMonitor {
     }
 
     /// Gets secondary displayable text from an AX element
-    internal func getSecondaryDisplayableText(axElement: AXElement?) -> String {
+    func getSecondaryDisplayableText(axElement: AXElement?) -> String {
         guard let element = axElement else { return "" }
         let attributeKeysInOrder: [String] = [
             kAXValueAttribute as String,

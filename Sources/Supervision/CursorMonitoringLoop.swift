@@ -20,15 +20,15 @@ extension CursorMonitor {
         monitoringTask = Task { @MainActor in
             logger.info("Monitoring task started successfully.")
 
-            // Use defaults to determine if global monitoring is enabled
-            let isGlobalEnabled = Defaults[.isGlobalMonitoringEnabled]
-            logger.info("Global monitoring enabled: \(isGlobalEnabled)")
-
             while self.isMonitoringActive, !Task.isCancelled {
+                // Check global monitoring setting on each cycle
+                let isGlobalEnabled = Defaults[.isGlobalMonitoringEnabled]
+
                 if isGlobalEnabled {
                     await self.performMonitoringCycle()
                 } else {
                     // When global monitoring is disabled, sleep longer to reduce overhead
+                    logger.debug("Global monitoring disabled, skipping monitoring cycle")
                     try? await Task.sleep(for: .seconds(10))
                 }
 
@@ -57,7 +57,7 @@ extension CursorMonitor {
     }
 
     /// Performs a single monitoring cycle
-    internal func performMonitoringCycle() async {
+    func performMonitoringCycle() async {
         guard !monitoredApps.isEmpty else {
             logger.info("No monitored apps, skipping monitoring cycle.")
             return
@@ -94,7 +94,7 @@ extension CursorMonitor {
     }
 
     /// Sets up subscription for monitoring loop management
-    internal func setupMonitoringLoopSubscription() {
+    func setupMonitoringLoopSubscription() {
         // Subscribe to own monitoredApps to manage the monitoring loop
         $monitoredApps
             .receive(on: DispatchQueue.main)
@@ -106,7 +106,7 @@ extension CursorMonitor {
     }
 
     /// Handles changes to the monitored apps list
-    internal func handleMonitoredAppsChange(_ apps: [MonitoredAppInfo]) {
+    func handleMonitoredAppsChange(_ apps: [MonitoredAppInfo]) {
         if !apps.isEmpty, !self.isMonitoringActive {
             self.logger.info("Monitored apps list became non-empty. Starting monitoring loop.")
             self.startMonitoringLoop()

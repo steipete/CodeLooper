@@ -15,14 +15,23 @@ final class AppleScriptInjector {
     // MARK: Internal
 
     func inject() throws {
-        Logger(category: .jshook).info("🎯 Starting AppleScript injection for \(applicationName)")
+        let logger = Logger(category: .jshook)
+        logger.info("🎯 Starting AppleScript injection for \(applicationName)")
+        logger.info("📍 Target window: \(targetWindowTitle ?? "front window")")
+        logger.info("🔌 Port: \(port)")
 
         let isConsoleOpen = JSHookDevConsoleDetector.isDevConsoleOpen(in: applicationName)
-        Logger(category: .jshook).debug("🔍 Dev console already open: \(isConsoleOpen)")
+        logger.debug("🔍 Dev console already open: \(isConsoleOpen)")
 
+        logger.info("📝 Generating JavaScript hook script...")
         let js = try CursorJSHookScript.generate(port: port)
-        let script = buildAppleScript(javascript: js, skipDevToolsToggle: isConsoleOpen)
+        logger.debug("📏 Generated JS script length: \(js.count) characters")
 
+        logger.info("🏗️ Building AppleScript wrapper...")
+        let script = buildAppleScript(javascript: js, skipDevToolsToggle: isConsoleOpen)
+        logger.debug("📏 AppleScript length: \(script.count) characters")
+
+        logger.info("🚀 Executing AppleScript injection...")
         try executeAppleScript(script)
     }
 
@@ -33,7 +42,9 @@ final class AppleScriptInjector {
     private let port: UInt16
 
     private func buildAppleScript(javascript js: String, skipDevToolsToggle: Bool) -> String {
+        let logger = Logger(category: .jshook)
         let windowTarget = targetWindowTitle != nil ? "window \"\(targetWindowTitle!)\"" : "front window"
+        logger.debug("🎯 AppleScript window target: \(windowTarget)")
 
         let devToolsToggleScript = if !skipDevToolsToggle {
             """
@@ -127,7 +138,9 @@ final class AppleScriptInjector {
             }
         }
 
-        Logger(category: .jshook).info("🍏 AppleScript executed successfully for \(applicationName).")
+        let logger = Logger(category: .jshook)
+        logger.info("🍏 AppleScript executed successfully for \(applicationName)")
+        logger.info("✅ JS injection completed - waiting for WebSocket connection...")
     }
 }
 

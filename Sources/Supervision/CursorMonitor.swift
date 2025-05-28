@@ -158,17 +158,18 @@ public class CursorMonitor: ObservableObject {
 
     var isMonitoringActive: Bool = false
 
+    let logger = Diagnostics.Logger(category: .supervision)
+    var monitoringTask: Task<Void, Error>?
+    let sessionLogger: SessionLogger
+    let locatorManager: LocatorManager
+    let instanceStateManager: CursorInstanceStateManager
+    var monitoringCycleCount: Int = 0
+    var cancellables = Set<AnyCancellable>()
+
     // MARK: Private
 
-    internal let logger = Diagnostics.Logger(category: .supervision)
     private var axApplicationObserver: AXApplicationObserver!
-    internal var monitoringTask: Task<Void, Error>?
-    internal let sessionLogger: SessionLogger
-    internal let locatorManager: LocatorManager
-    internal let instanceStateManager: CursorInstanceStateManager
-    internal var monitoringCycleCount: Int = 0
 
-    internal var cancellables = Set<AnyCancellable>()
     private var interventionEngine: CursorInterventionEngine!
     private var tickUseCases: [pid_t: ProcessMonitoringTickUseCase] = [:]
 

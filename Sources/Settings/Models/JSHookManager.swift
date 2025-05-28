@@ -17,12 +17,16 @@ class JSHookManager {
 
     func getOrAssignPort(for windowId: String) -> UInt16 {
         if let existingPort = windowPorts[windowId] {
+            logger.debug("🔄 Reusing existing port \(existingPort) for window \(windowId)")
             return existingPort
         }
 
         let assignedPort = nextPort
         windowPorts[windowId] = assignedPort
         nextPort += 1
+        
+        logger.info("🆕 Assigned new port \(assignedPort) to window \(windowId)")
+        logger.debug("🔢 Next available port will be: \(nextPort)")
 
         return assignedPort
     }
@@ -33,25 +37,40 @@ class JSHookManager {
 
     func installHook(for window: MonitoredWindowInfo) async throws {
         guard !hasHookForWindow(window.id) else {
-            logger.debug("Hook already exists for window \(window.id)")
+            logger.debug("🔄 Hook already exists for window \(window.id) - skipping installation")
             return
         }
 
         let port = getOrAssignPort(for: window.id)
-        logger.info("Installing CodeLooper hook on port \(port) for window \(window.windowTitle ?? "Unknown")")
+        let windowTitle = window.windowTitle ?? "Unknown"
+        
+        logger.info("🔨 Installing CodeLooper JS hook")
+        logger.info("🧾 Window: \(windowTitle)")
+        logger.info("🆔 Window ID: \(window.id)")
+        logger.info("🔌 Port: \(port)")
 
-        let hook = try await CursorJSHook(
-            applicationName: "Cursor",
-            port: port,
-            targetWindowTitle: window.windowTitle
-        )
+        do {
+            logger.info("🚀 Creating CursorJSHook instance...")
+            let hook = try await CursorJSHook(
+                applicationName: "Cursor",
+                port: port,
+                targetWindowTitle: window.windowTitle
+            )
 
-        jsHooks[window.id] = hook
-        hookedWindows.insert(window.id)
+            jsHooks[window.id] = hook
+            hookedWindows.insert(window.id)
+            
+            logger.info("💾 Saving port mappings...")
+            savePortMappings()
 
-        savePortMappings()
-
-        logger.info("JS Hook installed successfully for window \(window.windowTitle ?? "Unknown") on port \(port)")
+            logger.info("✅ JS Hook installed successfully!")
+            logger.info("🎉 Window '\(windowTitle)' is now hooked on port \(port)")
+            logger.info("📋 Total hooked windows: \(hookedWindows.count)")
+        } catch {
+            logger.error("❌ Failed to install JS hook: \(error)")
+            logger.error("🔍 Error details: \(error.localizedDescription)")
+            throw error
+        }
     }
 
     func probeForExistingHooks(windows: [MonitoredWindowInfo]) async {
@@ -154,14 +173,19 @@ class JSHookManager {
                     targetWindowTitle: window.windowTitle
                 )
 
+                logger.debug("🔍 Probing port \(port) for window \(window.windowTitle ?? "Unknown")...")
+                
                 if await probeHook.probeForExistingHook(timeout: 2.0) {
                     jsHooks[window.id] = probeHook
                     hookedWindows.insert(window.id)
                     windowPorts[window.id] = port
 
-                    logger.info("Found existing hook for window \(window.windowTitle ?? "Unknown") on port \(port)")
+                    logger.info("🎆 Found existing hook for window \(window.windowTitle ?? "Unknown") on port \(port)!")
+                    logger.info("🔗 Reconnected to existing JS hook")
                     savePortMappings()
                     break
+                } else {
+                    logger.debug("🔕 No hook found on port \(port)")
                 }
             } catch {
                 // Continue to next port

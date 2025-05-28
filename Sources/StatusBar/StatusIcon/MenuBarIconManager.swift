@@ -156,7 +156,7 @@ class MenuBarIconManager: ObservableObject {
 
     private func updateIconAttributedString(for state: StatusIconState) {
         let currentAppearance = getCurrentAppearance()
-        var newAttributedString: AttributedString = switch state {
+        let newAttributedString: AttributedString = switch state {
         case let .aiStatus(working, notWorking, unknown):
             if working == 0, notWorking == 0, unknown == 0, !Defaults[.isGlobalMonitoringEnabled] {
                 attributedString(for: .paused, appearance: currentAppearance)

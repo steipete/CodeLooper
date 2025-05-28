@@ -4,27 +4,27 @@ import Foundation
 
 /// Manages instance lifecycle operations for CursorMonitor
 @MainActor
-extension CursorMonitor {
+public extension CursorMonitor {
     /// Called when a new Cursor instance is launched
-    public func didLaunchInstance(pid: pid_t) {
+    func didLaunchInstance(pid: pid_t) {
         logger.info("Instance launched: PID \(pid)")
         sessionLogger.log(level: .info, message: "Instance launched: PID \(pid)")
     }
 
     /// Called when a Cursor instance terminates
-    public func didTerminateInstance(pid: pid_t) {
+    func didTerminateInstance(pid: pid_t) {
         logger.info("Instance terminated: PID \(pid)")
         sessionLogger.log(level: .info, message: "Instance terminated: PID \(pid)")
     }
 
     /// Refreshes the list of monitored instances
-    public func refreshMonitoredInstances() {
+    func refreshMonitoredInstances() {
         // Simplified implementation - actual refreshing handled by appLifecycleManager
         logger.info("Refreshing monitored instances")
     }
 
     /// Pauses monitoring for a specific instance
-    public func pauseMonitoring(for pid: pid_t) {
+    func pauseMonitoring(for pid: pid_t) {
         guard let index = monitoredApps.firstIndex(where: { $0.pid == pid }) else {
             logger.warning("Attempted to pause monitoring for unknown PID: \(pid)")
             return
@@ -34,7 +34,7 @@ extension CursorMonitor {
     }
 
     /// Resumes monitoring for a specific instance
-    public func resumeMonitoring(for pid: pid_t) {
+    func resumeMonitoring(for pid: pid_t) {
         guard let index = monitoredApps.firstIndex(where: { $0.pid == pid }) else {
             logger.warning("Attempted to resume monitoring for unknown PID: \(pid)")
             return
@@ -44,7 +44,7 @@ extension CursorMonitor {
     }
 
     /// Pauses monitoring for a specific window within an instance
-    public func pauseMonitoring(for windowId: String, in pid: pid_t) {
+    func pauseMonitoring(for windowId: String, in pid: pid_t) {
         guard let appIndex = monitoredApps.firstIndex(where: { $0.pid == pid }),
               let windowIndex = monitoredApps[appIndex].windows.firstIndex(where: { $0.id == windowId })
         else {
@@ -57,7 +57,7 @@ extension CursorMonitor {
     }
 
     /// Resumes monitoring for a specific window within an instance
-    public func resumeMonitoring(for windowId: String, in pid: pid_t) {
+    func resumeMonitoring(for windowId: String, in pid: pid_t) {
         guard let appIndex = monitoredApps.firstIndex(where: { $0.pid == pid }),
               let windowIndex = monitoredApps[appIndex].windows.firstIndex(where: { $0.id == windowId })
         else {
@@ -70,7 +70,7 @@ extension CursorMonitor {
     }
 
     /// Updates instance display information for UI
-    public func updateInstanceDisplayInfo(for _: pid_t, newStatus _: DisplayStatus, interventionCount _: Int) {
+    func updateInstanceDisplayInfo(for _: pid_t, newStatus _: DisplayStatus, interventionCount _: Int) {
         // This method is intentionally left minimal as it's called from UI context
         // The actual implementation would update the display info appropriately
     }

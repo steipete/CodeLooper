@@ -26,6 +26,9 @@ final class WebSocketManager {
     // MARK: - Public Methods
 
     func startListener() async throws {
+        let logger = Logger(category: .jshook)
+        logger.info("🌐 Starting WebSocket listener on port \(port)...")
+
         let params = NWParameters.tcp
         let wsOpt = NWProtocolWebSocket.Options()
         wsOpt.autoReplyPing = true
@@ -33,38 +36,53 @@ final class WebSocketManager {
 
         do {
             listener = try NWListener(using: params, on: port)
+            logger.debug("🔧 Created NWListener with WebSocket protocol")
         } catch {
-            Logger(category: .jshook).error("❌ Failed to create listener on port \(port): \(error)")
+            logger.error("❌ Failed to create listener on port \(port): \(error)")
             throw CursorJSHook.HookError.portInUse(port: port.rawValue)
         }
 
         listener?.newConnectionHandler = { [weak self] connection in
-            Logger(category: .jshook).info("🌀 Listener received new connection attempt.")
+            logger.info("🌀 Listener received new connection attempt from \(connection.endpoint)")
             Task { @MainActor in
                 self?.adoptConnection(connection)
             }
         }
 
+        logger.info("👂 Starting listener...")
         let startedSuccessfully = await startListenerAndWait()
         if !startedSuccessfully {
+            logger.error("🚫 Failed to start listener - port may be in use")
             throw CursorJSHook.HookError.portInUse(port: port.rawValue)
         }
 
-        Logger(category: .jshook).info("🌀 Listening on ws://127.0.0.1:\(port)")
+        logger.info("🌀 Listening on ws://127.0.0.1:\(port) - ready for connections")
     }
 
     func waitForHandshake(timeout: TimeInterval = 10) async throws {
-        Logger(category: .jshook).info("⏳ Waiting for renderer handshake...")
+        let logger = Logger(category: .jshook)
+        logger.info("⏳ Waiting for renderer handshake (timeout: \(timeout)s)...")
 
         let startTime = Date()
+        var checkCount = 0
+
         while Date().timeIntervalSince(startTime) < timeout {
             if handshakeCompleted {
-                Logger(category: .jshook).info("🤝 Renderer handshake complete.")
+                let elapsed = Date().timeIntervalSince(startTime)
+                logger.info("🤝 Renderer handshake complete after \(String(format: "%.2f", elapsed))s")
                 return
             }
+
+            checkCount += 1
+            if checkCount % 10 == 0 { // Log every second
+                let elapsed = Date().timeIntervalSince(startTime)
+                logger.debug("⏱️ Still waiting for handshake... (\(String(format: "%.1f", elapsed))s elapsed)")
+            }
+
             try await Task.sleep(for: .milliseconds(100))
         }
 
+        logger.error("❌ Handshake timeout after \(timeout) seconds - JS hook may have failed")
         throw CursorJSHook.HookError.connectionLost(
             underlyingError: NSError(
                 domain: "TimeoutError",
@@ -135,10 +153,12 @@ final class WebSocketManager {
     }
 
     private func adoptConnection(_ newConnection: NWConnection) {
+        let logger = Logger(category: .jshook)
         connection = newConnection
         handshakeCompleted = false
 
-        Logger(category: .jshook).info("🌀 WS Connection adopted.")
+        logger.info("🌀 WS Connection adopted from endpoint: \(newConnection.endpoint)")
+        logger.debug("🔍 Connection parameters: \(newConnection.parameters)")
 
         newConnection.stateUpdateHandler = { [weak self] state in
             Task { @MainActor in
@@ -146,6 +166,7 @@ final class WebSocketManager {
             }
         }
 
+        logger.info("🚀 Starting WebSocket connection...")
         newConnection.start(queue: .main)
     }
 
@@ -208,10 +229,13 @@ final class WebSocketManager {
     }
 
     private func processReceivedText(_ text: String) {
+        let logger = Logger(category: .jshook)
+
         // Handle handshake
         if text == "ready", !handshakeCompleted {
             handshakeCompleted = true
-            Logger(category: .jshook).info("🤝 Handshake 'ready' message received.")
+            logger.info("🤝 Handshake 'ready' message received - JS hook is now active!")
+            logger.info("✅ WebSocket connection fully established on port \(port)")
             return
         }
 
