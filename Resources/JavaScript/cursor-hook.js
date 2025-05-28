@@ -1,17 +1,31 @@
 // CodeLooper Cursor Hook
-// Version: 1.2.1
+// Version: 1.2.2
 // This script is injected into Cursor to enable communication with CodeLooper
 
 (function() {
     'use strict';
-    console.log('!!! CODE LOOPER HOOK SCRIPT STARTED !!!'); // Test log 1
     
-    const HOOK_VERSION = '1.2.1';
+    const HOOK_VERSION = '1.2.2';
     const HEARTBEAT_INTERVAL = 1000; // 1 second
+
+    // Helper function for logging that works in both Node.js and browser environments
+    function hookLog(msg) {
+        // 1. Send it over stdout so "outputCapture": "std" can pick it up
+        if (typeof process !== 'undefined' &&
+            process.stdout && process.stdout.write) {
+            process.stdout.write(msg + '\n');
+        }
+
+        // 2. Still call console.log for when you run the same snippet in a real browser
+        console.log(msg);
+
+        // 3. Return the string so the debug-REPL echoes it even if logs get swallowed
+        return msg;
+    }
     
     // Check if hook already exists and clean it up
     if (window.__codeLooperHook) {
-        console.log('🔄 CodeLooper: Cleaning up existing hook on port ' + window.__codeLooperPort);
+        hookLog('🔄 CodeLooper: Cleaning up existing hook on port ' + window.__codeLooperPort);
         try {
             if (window.__codeLooperHook.readyState === WebSocket.OPEN || 
                 window.__codeLooperHook.readyState === WebSocket.CONNECTING) {
@@ -22,7 +36,7 @@
                 window.__codeLooperHeartbeat = null;
             }
         } catch (e) {
-            console.log('🔄 CodeLooper: Error closing existing connection:', e);
+            hookLog('🔄 CodeLooper: Error closing existing connection: ' + e);
         }
         window.__codeLooperHook = null;
         window.__codeLooperPort = null;
@@ -62,10 +76,7 @@
             }, 5000);
             
             // Also show in console
-            console.log('%c✅ CodeLooper Hook Active!', 'color: #10b981; font-size: 16px; font-weight: bold;');
-            console.log('Port:', port);
-            console.log('Version:', HOOK_VERSION);
-            console.log('Ready to receive commands');
+            hookLog('✅ CodeLooper Hook Active! Port: ' + port + ', Version: ' + HOOK_VERSION + ', Ready to receive commands');
             
         } catch (e) {
             console.error('Failed to show notification:', e);
@@ -123,7 +134,7 @@
         // Find the composer bar
         const composerBar = document.querySelector('.composer-bar');
         if (!composerBar) {
-            console.log('🔍 CodeLooper: Composer bar not found, will retry...');
+            hookLog('🔍 CodeLooper: Composer bar not found, will retry...');
             // Retry after a delay if not found
             setTimeout(() => {
                 if (ws.readyState === WebSocket.OPEN) {
@@ -133,7 +144,7 @@
             return false;
         }
         
-        console.log('👁️ CodeLooper: Starting composer bar observation');
+        hookLog('👁️ CodeLooper: Starting composer bar observation');
         
         // Send initial state
         ws.send(JSON.stringify({
@@ -182,7 +193,7 @@
                 clearTimeout(composerObserver.timeout);
             }
             composerObserver = null;
-            console.log('🛑 CodeLooper: Stopped composer bar observation');
+            hookLog('🛑 CodeLooper: Stopped composer bar observation');
         }
     }
     
@@ -329,7 +340,7 @@
                         const links = el.querySelectorAll('a, span.markdown-link, [role="link"], [data-link]');
                         for (const link of links) {
                             if (link.textContent.trim() === 'resume the conversation') {
-                                console.log('🔄 CodeLooper: Clicking "resume the conversation" link');
+                                hookLog('🔄 CodeLooper: Clicking "resume the conversation" link');
                                 link.click();
                                 clicked = true;
                                 break;
@@ -401,13 +412,13 @@
     }
 
     function connect() {
-        console.log('🔄 CodeLooper: Attempting to connect to ' + url);
+        hookLog('🔄 CodeLooper: Attempting to connect to ' + url);
 
         try {
             const ws = new WebSocket(url);
 
             ws.onopen = () => {
-                console.log('🔄 CodeLooper: Connected to ' + url);
+                hookLog('🔄 CodeLooper: Connected to ' + url);
                 ws.send('ready');
                 reconnectAttempts = 0; // Reset on successful connection
                 
@@ -419,17 +430,17 @@
                 
                 // Auto-start composer observer after a short delay to ensure DOM is ready
                 setTimeout(() => {
-                    console.log('🚀 CodeLooper: Auto-starting composer observer...');
+                    hookLog('🚀 CodeLooper: Auto-starting composer observer...');
                     startComposerObserver(ws);
                 }, 1000); // 1 second delay to let the page settle
             };
 
             ws.onerror = (e) => {
-                console.log('🔄 CodeLooper: WebSocket error', e);
+                hookLog('🔄 CodeLooper: WebSocket error: ' + e);
             };
 
             ws.onclose = (e) => {
-                console.log('🔄 CodeLooper: WebSocket closed', e);
+                hookLog('🔄 CodeLooper: WebSocket closed: ' + e);
                 window.__codeLooperHook = null;
                 window.__codeLooperPort = null;
                 window.__codeLooperVersion = null;
@@ -446,11 +457,11 @@
                 // Auto-reconnect logic
                 if (reconnectAttempts < maxReconnectAttempts) {
                     reconnectAttempts++;
-                    console.log(`🔄 CodeLooper: Reconnecting in ${reconnectDelay/1000}s... ` +
-                        `(attempt ${reconnectAttempts}/${maxReconnectAttempts})`);
+                    hookLog('🔄 CodeLooper: Reconnecting in ' + (reconnectDelay/1000) + 's... ' +
+                        '(attempt ' + reconnectAttempts + '/' + maxReconnectAttempts + ')');
                     setTimeout(connect, reconnectDelay);
                 } else {
-                    console.log('🔄 CodeLooper: Max reconnection attempts reached. Hook disabled.');
+                    hookLog('🔄 CodeLooper: Max reconnection attempts reached. Hook disabled.');
                 }
             };
 
@@ -484,14 +495,13 @@
             window.__codeLooperVersion = HOOK_VERSION;
 
         } catch(err) {
-            console.error('🔄 CodeLooper: Failed to create WebSocket', err);
+            hookLog('🔄 CodeLooper: Failed to create WebSocket: ' + err);
             return 'CodeLooper hook failed: ' + err.message;
         }
     }
 
     // Start connection
-    console.log('!!! CODE LOOPER HOOK SCRIPT BEFORE CONNECT CALL !!!'); // Test log 2
     connect();
 
-    return 'CodeLooper hook v' + HOOK_VERSION + ' starting on port ' + port;
+    return hookLog('!!! CODE LOOPER HOOK SCRIPT STARTED !!! v' + HOOK_VERSION + ' on port ' + port);
 })();
