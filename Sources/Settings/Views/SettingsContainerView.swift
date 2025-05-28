@@ -8,31 +8,59 @@ struct SettingsContainerView: View {
     @EnvironmentObject var viewModel: MainSettingsViewModel
 
     var body: some View {
-        VStack(spacing: 0) {
-            // Header with app branding
-            HeaderView()
+        GeometryReader { geometry in
+            VStack(spacing: 0) {
+                // Header with app branding
+                HeaderView()
 
-            // Custom tab navigation
-            TabNavigationView(selectedTab: $selectedTab, tabs: tabs)
+                // Custom tab navigation
+                TabNavigationView(selectedTab: $selectedTab, tabs: tabs)
 
-            // Content area
-            ScrollView {
-                VStack(spacing: 0) {
-                    tabContent
-                        .padding(Spacing.xLarge)
+                // Content area with dynamic sizing
+                ScrollView {
+                    VStack(spacing: 0) {
+                        tabContent
+                            .padding(Spacing.xLarge)
+                            .background(
+                                GeometryReader { contentGeometry in
+                                    Color.clear
+                                        .preference(
+                                            key: ContentSizeKey.self,
+                                            value: contentGeometry.size
+                                        )
+                                }
+                            )
+                    }
                 }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .onPreferenceChange(ContentSizeKey.self) { contentSize in
+                updateWindowSize(contentSize: contentSize)
+            }
+            .onPreferenceChange(HeaderHeightKey.self) { height in
+                headerHeight = height
+            }
         }
-        .frame(minWidth: 720, idealWidth: 800, maxWidth: .infinity, 
-               minHeight: 400, idealHeight: 600, maxHeight: .infinity)
+        .frame(minWidth: 720, maxWidth: 1200, 
+               minHeight: 400, maxHeight: .infinity)
         .background(ColorPalette.background)
         .withDesignSystem()
+        .onAppear {
+            // Make the settings window resizable
+            if let window = NSApp.windows.first(where: { $0.title == "Settings" || $0.title == "CodeLooper Settings" }) {
+                window.styleMask.insert(.resizable)
+                window.minSize = NSSize(width: 720, height: 400)
+                window.maxSize = NSSize(width: 1200, height: 900)
+            }
+        }
     }
 
     // MARK: Private
 
     @State private var selectedTab: SettingsTab = .general
+    @State private var currentContentSize: CGSize = .zero
+    @State private var headerHeight: CGFloat = 0
+    @State private var tabBarHeight: CGFloat = 0
 
     // Tab definitions
     private let tabs: [(id: SettingsTab, title: String, icon: String)] = [
@@ -44,6 +72,44 @@ struct SettingsContainerView: View {
         (.advanced, "Advanced", "wrench.and.screwdriver"),
         (.about, "About", "info.circle"),
     ]
+    
+    private func updateWindowSize(contentSize: CGSize) {
+        guard contentSize.height > 0 else { return }
+        
+        // Calculate total window height needed
+        let actualHeaderHeight = self.headerHeight > 0 ? self.headerHeight : 96
+        let tabBarHeight: CGFloat = 60 // Approximate tab bar height
+        let padding: CGFloat = Spacing.xLarge * 2 // Top and bottom padding
+        
+        let totalHeight = actualHeaderHeight + tabBarHeight + contentSize.height + padding
+        
+        // Clamp the height to reasonable bounds
+        let targetHeight = min(max(totalHeight, 400), 900)
+        
+        // Only update if there's a significant change (avoid jitter)
+        let currentWindowHeight = NSApp.windows.first(where: { $0.title == "Settings" || $0.title == "CodeLooper Settings" })?.frame.height ?? 0
+        let heightDifference = abs(currentWindowHeight - targetHeight)
+        
+        if heightDifference > 10 {
+            // Update window size
+            if let window = NSApp.windows.first(where: { $0.title == "Settings" || $0.title == "CodeLooper Settings" }) {
+                let currentFrame = window.frame
+                let newHeight = targetHeight
+                
+                // Keep the window centered when resizing
+                let newFrame = NSRect(
+                    x: currentFrame.origin.x,
+                    y: currentFrame.origin.y + (currentFrame.height - newHeight),
+                    width: currentFrame.width,
+                    height: newHeight
+                )
+                
+                window.setFrame(newFrame, display: true, animate: true)
+            }
+        }
+        
+        currentContentSize = contentSize
+    }
 
     @ViewBuilder
     private var tabContent: some View {
@@ -122,6 +188,15 @@ private struct HeaderView: View {
         }
         .padding(Spacing.large)
         .background(ColorPalette.backgroundSecondary)
+        .background(
+            GeometryReader { geometry in
+                Color.clear
+                    .preference(
+                        key: HeaderHeightKey.self,
+                        value: geometry.size.height
+                    )
+            }
+        )
     }
 }
 
@@ -245,6 +320,24 @@ private struct TabButton: View {
 
     private var borderWidth: CGFloat {
         isSelected ? Layout.BorderWidth.medium : 0
+    }
+}
+
+// MARK: - PreferenceKey for Content Size
+
+private struct ContentSizeKey: PreferenceKey {
+    static let defaultValue: CGSize = .zero
+    
+    static func reduce(value: inout CGSize, nextValue: () -> CGSize) {
+        value = nextValue()
+    }
+}
+
+private struct HeaderHeightKey: PreferenceKey {
+    static let defaultValue: CGFloat = 0
+    
+    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
+        value = nextValue()
     }
 }
 
