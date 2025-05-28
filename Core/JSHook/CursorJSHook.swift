@@ -33,7 +33,15 @@ public final class CursorJSHook {
         try await webSocketManager.startListener()
 
         if !skipInjection {
+            let logger = Logger(category: .jshook)
+            logger.info("💉 Injecting JavaScript hook...")
             try injector.inject()
+            
+            logger.info("⏳ Waiting for JavaScript to start WebSocket client...")
+            // Give the browser time to parse and execute the injected JavaScript
+            try await Task.sleep(for: .seconds(2))
+            
+            logger.info("🤝 Waiting for handshake from browser...")
             try await webSocketManager.waitForHandshake()
         }
     }

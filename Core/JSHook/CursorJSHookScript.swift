@@ -39,10 +39,14 @@ public enum CursorJSHookScript {
         let logger = Logger(category: .jshook)
         logger.debug("🔧 Generating JS hook script for port \(port)")
         
-        let template = try loadTemplate()
-        let generated = template.replacingOccurrences(of: #""__CODELOOPER_PORT_PLACEHOLDER__""#, with: String(port))
+        // Get CodeLooper version from bundle
+        let codeLooperVersion = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "Unknown"
         
-        logger.info("✅ Generated JS hook script v\(version) for port \(port)")
+        let template = try loadTemplate()
+        let withPort = template.replacingOccurrences(of: #""__CODELOOPER_PORT_PLACEHOLDER__""#, with: String(port))
+        let generated = withPort.replacingOccurrences(of: #""__CODELOOPER_VERSION_PLACEHOLDER__""#, with: codeLooperVersion)
+        
+        logger.info("✅ Generated JS hook script v\(version) for port \(port) (CodeLooper v\(codeLooperVersion))")
         logger.debug("📊 Script stats: \(generated.count) chars, \(generated.components(separatedBy: .newlines).count) lines")
         
         return generated
@@ -107,7 +111,7 @@ public enum CursorJSHookScript {
             try {
                 // Create a toast notification in Cursor's UI
                 const notification = document.createElement('div');
-                notification.textContent = '✅ CodeLooper connected successfully!';
+                notification.textContent = '✅ CodeLooper v"__CODELOOPER_VERSION_PLACEHOLDER__" connected successfully!';
                 notification.style.cssText = 'position: fixed; top: 20px; right: 20px; background: #10b981; color: white; padding: 12px 24px; border-radius: 8px; font-weight: 500; z-index: 999999; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); animation: slideIn 0.3s ease-out; font-family: -apple-system, BlinkMacSystemFont, sans-serif; font-size: 14px;';
 
                 // Add animation

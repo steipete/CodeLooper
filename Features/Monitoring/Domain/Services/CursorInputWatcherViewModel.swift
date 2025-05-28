@@ -19,7 +19,7 @@ class CursorInputWatcherViewModel: ObservableObject {
         self.aiAnalyzer = AIWindowAnalyzer()
 
         queryManager.loadAndParseAllQueries()
-        jsHookManager.loadPortMappings()
+        // Port mappings are handled automatically by the new ConnectionManager
         setupWindowsSubscription()
         heartbeatMonitor.delegate = self
         heartbeatMonitor.setupHeartbeatListener()
@@ -61,7 +61,9 @@ class CursorInputWatcherViewModel: ObservableObject {
     @Published var windowInjectionStates: [String: InjectionState] = [:]
 
     var hookedWindows: Set<String> {
-        jsHookManager.hookedWindows
+        Set(cursorWindows.compactMap { window in
+            jsHookManager.isWindowHooked(window.id) ? window.id : nil
+        })
     }
 
     var isWatchingEnabled: Bool {
@@ -90,18 +92,12 @@ class CursorInputWatcherViewModel: ObservableObject {
         // Start with probing state
         windowInjectionStates[windowId] = .probing
 
-        // Try fast probing first
-        jsHookManager.addWindowForFastProbing(window)
-
-        // Give fast probe up to 3 seconds to work
-        for i in 0 ..< 30 {
-            if jsHookManager.isWindowHooked(windowId) {
-                logger.info("✅ Fast probe found existing hook for window: \(windowId)")
-                windowInjectionStates[windowId] = .hooked
-                updateWatcherStatus()
-                return
-            }
-            try? await Task.sleep(nanoseconds: 100_000_000) // 0.1 second
+        // Check if hook already exists (managed by connection manager)
+        if jsHookManager.isWindowHooked(windowId) {
+            logger.info("✅ Hook already exists for window: \(windowId)")
+            windowInjectionStates[windowId] = .hooked
+            updateWatcherStatus()
+            return
         }
 
         // Move to injection state
@@ -112,6 +108,11 @@ class CursorInputWatcherViewModel: ObservableObject {
             try await jsHookManager.installHook(for: window)
             logger.info("✅ Successfully injected hook for window: \(windowId)")
             windowInjectionStates[windowId] = .hooked
+            
+            // Force UI update by triggering objectWillChange
+            Task { @MainActor in
+                self.objectWillChange.send()
+            }
         } catch {
             logger.error("❌ Failed to inject hook for window \(windowId): \(error)")
             windowInjectionStates[windowId] = .failed(error.localizedDescription)
@@ -169,7 +170,7 @@ class CursorInputWatcherViewModel: ObservableObject {
 
     private let projectRoot: String
     private let queryManager: QueryManager
-    private let jsHookManager: JSHookService
+    let jsHookManager: JSHookService
     private let portManager: PortManager
     private let heartbeatMonitor: HeartbeatMonitor
     private let aiAnalyzer: AIWindowAnalyzer
@@ -260,8 +261,23 @@ class CursorInputWatcherViewModel: ObservableObject {
             if jsHookManager.isWindowHooked(window.id) {
                 let port = portManager.getPort(for: window.id) ?? 0
                 watchedInputs[0].lastValue = "✅ Hooked (Port: \(port))"
+                
+                // Update injection state to reflect current hook status
+                if case .hooked = windowInjectionStates[window.id] {
+                    // Already hooked, no change needed
+                } else {
+                    windowInjectionStates[window.id] = .hooked
+                }
+            } else {
+                // If hook is no longer present, reset injection state
+                if case .hooked = windowInjectionStates[window.id] {
+                    windowInjectionStates[window.id] = .idle
+                }
             }
         }
+        
+        // Trigger UI update
+        objectWillChange.send()
     }
 
     // Query-related methods
@@ -357,7 +373,7 @@ extension CursorInputWatcherViewModel: HeartbeatMonitorDelegate {
 
 // MARK: - Data Models
 
-enum InjectionState {
+enum InjectionState: Equatable {
     case idle
     case probing
     case injecting

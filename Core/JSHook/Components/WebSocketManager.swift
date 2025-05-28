@@ -43,7 +43,7 @@ final class WebSocketManager {
         }
 
         listener?.newConnectionHandler = { [weak self] connection in
-            logger.info("🌀 Listener received new connection attempt from \(connection.endpoint)")
+            logger.info("🌀 Browser connecting...")
             Task { @MainActor in
                 self?.adoptConnection(connection)
             }
@@ -61,33 +61,26 @@ final class WebSocketManager {
 
     func waitForHandshake(timeout: TimeInterval = 10) async throws {
         let logger = Logger(category: .jshook)
-        logger.info("⏳ Waiting for renderer handshake (timeout: \(timeout)s)...")
+        logger.info("⏳ Waiting for browser to connect...")
 
         let startTime = Date()
-        var checkCount = 0
 
         while Date().timeIntervalSince(startTime) < timeout {
             if handshakeCompleted {
                 let elapsed = Date().timeIntervalSince(startTime)
-                logger.info("🤝 Renderer handshake complete after \(String(format: "%.2f", elapsed))s")
+                logger.info("🤝 Connection established after \(String(format: "%.1f", elapsed))s")
                 return
             }
 
-            checkCount += 1
-            if checkCount % 10 == 0 { // Log every second
-                let elapsed = Date().timeIntervalSince(startTime)
-                logger.debug("⏱️ Still waiting for handshake... (\(String(format: "%.1f", elapsed))s elapsed)")
-            }
-
-            try await Task.sleep(for: .milliseconds(100))
+            try await Task.sleep(for: .milliseconds(200))
         }
 
-        logger.error("❌ Handshake timeout after \(timeout) seconds - JS hook may have failed")
+        logger.error("❌ Connection timeout after \(timeout)s")
         throw CursorJSHook.HookError.connectionLost(
             underlyingError: NSError(
                 domain: "TimeoutError",
                 code: -1001,
-                userInfo: [NSLocalizedDescriptionKey: "Handshake timeout after \(timeout) seconds"]
+                userInfo: [NSLocalizedDescriptionKey: "Connection timeout after \(timeout) seconds"]
             )
         )
     }
@@ -153,12 +146,8 @@ final class WebSocketManager {
     }
 
     private func adoptConnection(_ newConnection: NWConnection) {
-        let logger = Logger(category: .jshook)
         connection = newConnection
         handshakeCompleted = false
-
-        logger.info("🌀 WS Connection adopted from endpoint: \(newConnection.endpoint)")
-        logger.debug("🔍 Connection parameters: \(newConnection.parameters)")
 
         newConnection.stateUpdateHandler = { [weak self] state in
             Task { @MainActor in
@@ -166,7 +155,6 @@ final class WebSocketManager {
             }
         }
 
-        logger.info("🚀 Starting WebSocket connection...")
         newConnection.start(queue: .main)
     }
 
@@ -268,7 +256,8 @@ final class WebSocketManager {
         let location = json["location"] as? String ?? "unknown"
         let resumeNeeded = json["resumeNeeded"] as? Bool ?? false
 
-        Logger(category: .jshook).debug("💓 Heartbeat from v\(version) at \(location)")
+        // Only log heartbeat in debug mode to reduce noise
+        // Logger(category: .jshook).debug("💓 Heartbeat from v\(version) at \(location)")
 
         NotificationCenter.default.post(
             name: Notification.Name("CursorHeartbeat"),

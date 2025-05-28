@@ -36,6 +36,7 @@
 		26B64E284539F538EE6F60B8 /* Constants.swift in Sources */ = {isa = PBXBuildFile; fileRef = 839CD1B3A5FC8EC7D5B9541A /* Constants.swift */; };
 		26DEF8E209C4E833EE8C2048 /* OpenAI in Frameworks */ = {isa = PBXBuildFile; productRef = 0AA445C586C5EFF298BD5B0D /* OpenAI */; };
 		2755A41A7569026C8F18778A /* DocumentPathTracker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8934AB7C0DF5445978C46683 /* DocumentPathTracker.swift */; };
+		2846236863F6530B0010CE3F /* ConnectionManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22C58FA219DF3EFAA5C08573 /* ConnectionManager.swift */; };
 		2850357F96675166FD40C6D3 /* XcodeBuildConfigView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 044E767DB568D90A9D156B32 /* XcodeBuildConfigView.swift */; };
 		2B231ADF6F02176D061DA120 /* OpenAIProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 17FA2368F54DA4948C833482 /* OpenAIProvider.swift */; };
 		2E153716DF27FD15981D5417 /* APIKeyManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 02281B1D972E2A403443EB0A /* APIKeyManager.swift */; };
@@ -243,6 +244,7 @@
 		1F49DE8A739B205030BB746D /* FileLogger.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileLogger.swift; sourceTree = "<group>"; };
 		1F6416B2E14150C0B6234FC6 /* ContinuationGuard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContinuationGuard.swift; sourceTree = "<group>"; };
 		1FEE91A56A2C8C8196EB45AD /* DevConsoleDetector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DevConsoleDetector.swift; sourceTree = "<group>"; };
+		22C58FA219DF3EFAA5C08573 /* ConnectionManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConnectionManager.swift; sourceTree = "<group>"; };
 		2322F598135E442321A408B0 /* AISettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AISettingsView.swift; sourceTree = "<group>"; };
 		2473A7D70DC86DC1D222AF9F /* AXApplicationObserver.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AXApplicationObserver.swift; sourceTree = "<group>"; };
 		264CCA2C41913E6AFB7881E9 /* CursorWindowInfo.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CursorWindowInfo.swift; sourceTree = "<group>"; };
@@ -709,6 +711,7 @@
 			isa = PBXGroup;
 			children = (
 				71F673BFDC3FD775A6478E02 /* Components */,
+				22C58FA219DF3EFAA5C08573 /* ConnectionManager.swift */,
 				FEF7742FE90D148E65226252 /* CursorJSHook.swift */,
 				E25607BD9DA70B4FE5DB2D66 /* CursorJSHookScript.swift */,
 				886D71E2E880C28B1E13AD82 /* JSHookManager.swift */,
@@ -1197,6 +1200,7 @@
 				AEE59E343C16B2410F168E00 /* CommandHelpers.swift in Sources */,
 				E0F06CF20B35AC28FC793A05 /* JSHookDevConsoleDetector.swift in Sources */,
 				95974ECA21E82DA8D8466C06 /* WebSocketManager.swift in Sources */,
+				2846236863F6530B0010CE3F /* ConnectionManager.swift in Sources */,
 				1D18F155AB4E3A6CDA53BE8B /* CursorJSHook.swift in Sources */,
 				A7FBD6325FCDD4D1686CA634 /* CursorJSHookScript.swift in Sources */,
 				0EF18B6F770707BABFBF1CFD /* JSHookManager.swift in Sources */,

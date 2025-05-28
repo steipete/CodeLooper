@@ -54,9 +54,17 @@ struct ExternalMCPsSettingsView: View {
 
             Spacer()
         }
+        .onAppear {
+            Task {
+                await mcpVersionService.checkAllVersions()
+                updateMCPVersions()
+            }
+        }
     }
 
     // MARK: Private
+    
+    @StateObject private var mcpVersionService = MCPVersionService.shared
 
     @State private var installedMCPs: [MCPExtension] = [
         MCPExtension(
@@ -129,6 +137,32 @@ struct ExternalMCPsSettingsView: View {
             NSWorkspace.shared.open(url)
         }
     }
+    
+    private func updateMCPVersions() {
+        for (index, mcp) in installedMCPs.enumerated() {
+            if let extensionType = mapMCPToExtensionType(mcp) {
+                let latestVersion = mcpVersionService.getLatestVersion(for: extensionType)
+                installedMCPs[index].version = latestVersion.hasPrefix("v") ? String(latestVersion.dropFirst()) : latestVersion
+            }
+        }
+    }
+    
+    private func mapMCPToExtensionType(_ mcp: MCPExtension) -> MCPExtensionType? {
+        switch mcp.name {
+        case let name where name.contains("Peekaboo"):
+            return .peekaboo
+        case let name where name.contains("Terminator"):
+            return .terminator
+        case let name where name.contains("Claude Code"):
+            return .claudeCode
+        case let name where name.contains("Conduit"):
+            return .conduit
+        case let name where name.contains("Automator"):
+            return .automator
+        default:
+            return nil
+        }
+    }
 }
 
 // MARK: - MCP Card
@@ -141,6 +175,8 @@ private struct MCPCard: View {
     let onToggle: () -> Void
     let onConfigure: () -> Void
     let onRemove: () -> Void
+    
+    @StateObject private var mcpVersionService = MCPVersionService.shared
 
     var body: some View {
         Group {
@@ -162,6 +198,59 @@ private struct MCPCard: View {
     // MARK: Private
 
     @State private var isHovered = false
+    
+    @ViewBuilder
+    private var versionBadge: some View {
+        if mcpVersionService.isChecking {
+            HStack(spacing: 4) {
+                ProgressView()
+                    .scaleEffect(0.6)
+                Text("...")
+                    .font(Typography.caption2())
+            }
+            .frame(width: 60, alignment: .center)
+        } else {
+            let displayVersion = getDisplayVersion()
+            let hasUpdate = checkForUpdate()
+            
+            DSBadge("v\(displayVersion)", style: hasUpdate ? .warning : .default)
+                .frame(width: 60, alignment: .center)
+        }
+    }
+    
+    private func getDisplayVersion() -> String {
+        guard let extensionType = mapMCPToExtensionType(mcp) else {
+            return mcp.version
+        }
+        
+        let latestVersion = mcpVersionService.getLatestVersion(for: extensionType)
+        let cleanVersion = latestVersion.hasPrefix("v") ? String(latestVersion.dropFirst()) : latestVersion
+        return cleanVersion.isEmpty ? mcp.version : cleanVersion
+    }
+    
+    private func checkForUpdate() -> Bool {
+        guard let extensionType = mapMCPToExtensionType(mcp) else {
+            return false
+        }
+        return mcpVersionService.hasUpdate(for: extensionType)
+    }
+    
+    private func mapMCPToExtensionType(_ mcp: MCPExtension) -> MCPExtensionType? {
+        switch mcp.name {
+        case let name where name.contains("Peekaboo"):
+            return .peekaboo
+        case let name where name.contains("Terminator"):
+            return .terminator
+        case let name where name.contains("Claude Code"):
+            return .claudeCode
+        case let name where name.contains("Conduit"):
+            return .conduit
+        case let name where name.contains("Automator"):
+            return .automator
+        default:
+            return nil
+        }
+    }
 
     @ViewBuilder
     private var cardContent: some View {
@@ -188,8 +277,7 @@ private struct MCPCard: View {
                             DSBadge("Disabled", style: .warning)
                         }
 
-                        DSBadge("v\(mcp.version)", style: .default)
-                            .frame(width: 60, alignment: .center)
+                        versionBadge
                     }
 
                     Text(mcp.description)
