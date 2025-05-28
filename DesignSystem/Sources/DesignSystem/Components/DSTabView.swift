@@ -28,9 +28,7 @@ public struct DSTabView<Content: View>: View {
                         isSelected: selection == tab.id,
                         isHovered: hoveredTab == tab.id
                     ) {
-                        withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
-                            selection = tab.id
-                        }
+                        selection = tab.id
                     }
                     .onHover { hovering in
                         hoveredTab = hovering ? tab.id : nil
@@ -49,11 +47,10 @@ public struct DSTabView<Content: View>: View {
             
             DSDivider()
             
-            // Content area with animation
+            // Content area
             content()
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .background(ColorPalette.background)
-                .animation(.spring(response: 0.4, dampingFraction: 0.8), value: selection)
         }
     }
 }
