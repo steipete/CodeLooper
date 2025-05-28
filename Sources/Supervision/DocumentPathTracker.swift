@@ -25,6 +25,9 @@ final class DocumentPathTracker {
     
     /// Record that a document path was accessed
     public func recordDocumentAccess(_ documentPath: String) async {
+        // Check if this is a new document
+        let isNewDocument = !allDocumentPaths.contains(documentPath)
+        
         // Add to all paths
         allDocumentPaths.insert(documentPath)
         
@@ -32,14 +35,18 @@ final class DocumentPathTracker {
         if let repository = await gitRepositoryMonitor.findRepository(for: documentPath) {
             // Track this document under its repository
             var paths = repositoryDocumentPaths[repository.path] ?? Set<String>()
+            let isNewDocumentInRepo = !paths.contains(documentPath)
             paths.insert(documentPath)
             repositoryDocumentPaths[repository.path] = paths
             
             // Increment access count
             repositoryAccessCount[repository.path] = (repositoryAccessCount[repository.path] ?? 0) + 1
             
-            logger.debug("Recorded document access: \(documentPath) in repository: \(repository.path)")
-        } else {
+            // Only log when we first encounter this document in this repository
+            if isNewDocumentInRepo {
+                logger.debug("Recorded new document: \(documentPath) in repository: \(repository.path)")
+            }
+        } else if isNewDocument {
             logger.debug("Document path has no Git repository: \(documentPath)")
         }
     }
