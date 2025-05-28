@@ -171,9 +171,22 @@ public extension CursorScreenshotAnalyzer {
         Focus on the main functionality and purpose.
         """
         
-        public static let working = """
-        Analyze this screenshot of a software development environment. Is the user actively working on a task, or are they idle/paused? Respond with a single JSON object containing two keys: `status` (string: "working", "not_working", or "unknown") and `reason` (string: a brief explanation for the status, max 20 words).
-        """
+        public static let working = """You will receive a screenshot of a VS Code-like window that may include a chat sidebar.
+
+Your task is to determine if the AI is currently "Generating" content.
+
+1.  Scan the **entire image** carefully.
+2.  Look for the exact word **"Generating"** (case-insensitive). This word might be followed by ellipses (e.g., "Generating..."). It can appear anywhere in a chat or output section.
+3.  Based on your finding:
+    *   If "Generating" (or "Generating...") is present, respond with the following JSON object:
+        `{"status": "working", "reason": "AI is actively generating content."}`
+    *   If "Generating" (or "Generating...") is **not** present, respond with the following JSON object:
+        `{"status": "not_working", "reason": "AI is not currently generating content."}`
+4.  **Important Rules:**
+    *   Your entire response must be **only** the single JSON object specified above.
+    *   Ignore all other elements in the screenshot (code, other sidebars, buttons, icons, timestamps, etc.). Your focus is solely on the "Generating" status.
+    *   If you are uncertain whether "Generating" is present, default to "not_working". A false negative is preferred over a false positive.
+"""
         
         public static let codeEditing = "Is the user actively editing code in this screenshot? Answer yes or no."
     }
