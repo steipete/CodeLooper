@@ -154,8 +154,8 @@ struct MainPopoverView: View {
             
             // Simulate some JS Hook state for preview
             mockInputWatcher.cursorWindows = [windowInfo1, windowInfo2]
-            mockInputWatcher.jsHookManager.windowPorts[window1Id] = 9001
-            var hbStatus1 = CursorInputWatcherViewModel.HeartbeatStatus()
+            // Cannot directly access private jsHookManager in preview
+            var hbStatus1 = HeartbeatStatus()
             hbStatus1.isAlive = true
             mockInputWatcher.windowHeartbeatStatus[window1Id] = hbStatus1
 
