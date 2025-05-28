@@ -44,7 +44,10 @@ let project = Project(
             "ENABLE_STRICT_CONCURRENCY_CHECKS": "YES"
         ],
         configurations: [
-            .debug(name: "Debug", settings: ["OTHER_SWIFT_FLAGS": "$(inherited) -warn-concurrency -enable-actor-data-race-checks"]),
+            .debug(name: "Debug", settings: [
+                "OTHER_SWIFT_FLAGS": "$(inherited) -warn-concurrency -enable-actor-data-race-checks",
+                "ENABLE_HARDENED_RUNTIME": "YES"
+            ]),
             .release(name: "Release", settings: [:])
         ],
         defaultSettings: .recommended
@@ -66,7 +69,8 @@ let project = Project(
                     "SWIFT_VERSION": "6.0",
                     "MACOSX_DEPLOYMENT_TARGET": "14.0",
                     "OTHER_SWIFT_FLAGS": "-strict-concurrency=complete",
-                    "ENABLE_STRICT_CONCURRENCY_CHECKS": "YES"
+                    "ENABLE_STRICT_CONCURRENCY_CHECKS": "YES",
+                    "CLANG_ENABLE_MODULE_DEBUGGING": "YES"
                 ]
             )
         ),
@@ -116,7 +120,8 @@ let project = Project(
                     .debug(name: "Debug", settings: [
                         "CODE_SIGN_IDENTITY": "Apple Development",
                         "CODE_SIGN_STYLE": "Automatic",
-                        "DEVELOPMENT_TEAM": "Y5PE65HELJ" // Updated with your Team ID
+                        "DEVELOPMENT_TEAM": "Y5PE65HELJ", // Updated with your Team ID
+                        "ENABLE_HARDENED_RUNTIME": "YES"
                     ]),
                     .release(name: "Release", settings: [
                         // Release signing settings can be more specific if needed, e.g., Apple Distribution
