@@ -49,8 +49,6 @@ class HeartbeatMonitor {
     }
     
     private func checkAllHeartbeats() {
-        logger.debug("Checking heartbeats...")
-        
         // This is a simplified version - in a real implementation,
         // you would check actual heartbeat data from hooks
         
