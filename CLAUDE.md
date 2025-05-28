@@ -64,34 +64,48 @@ The project uses a hybrid build system:
 
 ### Key Architectural Components
 
-1. **Application Layer** (`Sources/Application/`)
-   - `AppDelegate.swift`: Legacy AppKit delegate for system integration
+The project follows a **feature-based architecture** with vertical slicing:
+
+1. **App Layer** (`App/`)
    - `CodeLooperApp.swift`: SwiftUI app entry point
-   - `WindowManager.swift`: Window lifecycle management
+   - `AppDelegate.swift`: Legacy AppKit delegate for system integration
+   - Application-level infrastructure and resources
    - Thread-safe with `@MainActor` isolation
 
-2. **Supervision System** (`Sources/Supervision/`)
-   - `CursorMonitor.swift`: Monitors Cursor IDE instances
-   - `CursorInterventionEngine.swift`: Handles intervention logic
-   - `GitRepositoryMonitor.swift`: Tracks git repository states
-   - `WindowAIDiagnosticsManager.swift`: AI-powered window analysis
-   - Uses heuristics to detect stuck states and error conditions
+2. **Features** (`Features/`) - Each feature is self-contained:
+   - **Monitoring** (`Features/Monitoring/`): Core monitoring functionality
+     - Domain: `CursorMonitorService`, instance models
+     - UI: Monitoring views and status displays
+     - Infrastructure: Window observers, lifecycle management
+   
+   - **Intervention** (`Features/Intervention/`): Automated recovery
+     - Domain: `InterventionEngine`, heuristics
+     - Strategies: Connection errors, stuck states, file conflicts
+     - Infrastructure: Intervention execution
+   
+   - **AIAnalysis** (`Features/AIAnalysis/`): AI-powered diagnostics
+     - Domain: Analysis services, screenshot analyzer
+     - Infrastructure: OpenAI/Ollama providers
+     - UI: Analysis configuration and results
+   
+   - **Settings** (`Features/Settings/`): User preferences
+     - Domain: Settings service, preference models
+     - UI: Settings tabs and coordinator
+     - Infrastructure: User defaults storage
+   
+   - Other features: StatusBar, GitTracking, MCPIntegration, Onboarding
 
-3. **AXorcist Integration** (`AXorcist/`)
-   - Accessibility framework for macOS UI automation
-   - JSON-based command interface via `axorc` CLI
-   - Synchronous, main-thread-only C-API (no async in AXorcist)
-   - Handles deep Electron accessibility tree traversal
+3. **Core** (`Core/`) - Shared functionality:
+   - **Accessibility**: AX framework integration, permissions
+   - **Diagnostics**: Logging system with categories
+   - **JSHook**: JavaScript injection for Cursor UI
+   - **Utilities**: Extensions, helpers, constants
 
-4. **Settings & UI** (`Sources/Settings/`, `Sources/Components/`)
-   - SwiftUI-based settings interface
-   - `@MainActor` isolated ViewModels
-   - Environment objects for state sharing
-
-5. **Diagnostics** (`Sources/Diagnostics/`)
-   - Structured logging with categories
-   - File-based and session logging
-   - Thread-safe logger implementations
+4. **External Packages** (`AXorcist/`, `AXpector/`, `DesignSystem/`)
+   - Local SPM packages for modularity
+   - AXorcist: Accessibility automation framework
+   - AXpector: Accessibility inspector
+   - DesignSystem: UI components and theming
 
 ### Concurrency Model
 
@@ -130,7 +144,10 @@ When working with Cursor (Electron app) accessibility:
 
 ### Adding New Features
 
-1. Place code in appropriate `Sources/` subdirectory
+1. Create a new directory under `Features/YourFeature/` with:
+   - `Domain/`: Business logic, models, services
+   - `UI/`: Views, ViewModels, coordinators
+   - `Infrastructure/`: External dependencies, implementations
 2. Follow existing MVVM patterns for UI
 3. Use `@MainActor` for UI-related code
 4. Add appropriate logging with `Logger(category:)`

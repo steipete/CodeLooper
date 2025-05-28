@@ -60,7 +60,7 @@ let project = Project(
             product: .staticFramework,
             bundleId: "me.steipete.codelooper.Diagnostics",
             deploymentTargets: .macOS("14.0"),
-            sources: ["Sources/Diagnostics/**"],
+            sources: ["Core/Diagnostics/**"],
             dependencies: [
                 .package(product: "Logging"),
                 .package(product: "AXorcist")
@@ -81,19 +81,21 @@ let project = Project(
             product: .app,
             bundleId: "me.steipete.codelooper",
             deploymentTargets: .macOS("14.0"),
-            infoPlist: .file(path: "CodeLooper/Info.plist"),
+            infoPlist: .file(path: "App/Info.plist"),
             sources: [
-                "Sources/**"
+                "App/**",
+                "Features/**",
+                "Core/**"
             ],
             resources: [
                 "Resources/CodeLooper.sdef",
                 "Resources/MainMenu.nib",
                 "Resources/JavaScript/**",
                 "Resources/chain_link_lottie.json",
-                "CodeLooper/Assets.xcassets",
+                "App/Resources/Assets.xcassets",
                 "CodeLooper/Base.lproj/**"
             ],
-            entitlements: .file(path: "CodeLooper/CodeLooper.entitlements"),
+            entitlements: .file(path: "App/Resources/Entitlements/CodeLooper.entitlements"),
             dependencies: [
                 .target(name: "Diagnostics"),
                 .package(product: "Defaults"),
@@ -113,7 +115,7 @@ let project = Project(
             ],
             settings: .settings(
                 base: [
-                    "INFOPLIST_FILE": "CodeLooper/Info.plist",
+                    "INFOPLIST_FILE": "App/Info.plist",
                     "PRODUCT_BUNDLE_IDENTIFIER": "me.steipete.codelooper",
                     "MARKETING_VERSION": "2025.5.2",
                     "CURRENT_PROJECT_VERSION": "2"

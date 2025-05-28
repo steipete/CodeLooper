@@ -605,6 +605,7 @@ private struct SettingsContentView: View {
         .background(Color(NSColor.windowBackgroundColor))
         .withDesignSystem()
         .environmentObject(viewModel)
+        .environmentObject(SessionLogger.shared)
         .onChange(of: showDebugTab) { _, newValue in
             if !newValue, currentTab == .debug {
                 currentTab = .general

@@ -107,7 +107,7 @@ else
 fi
 
 # Now fix the ResourceLoader class to properly handle the NSAppTransportSecurity typed values
-RESOURCE_LOADER_FILE="./Sources/Utilities/Resources/ResourceLoader.swift"
+RESOURCE_LOADER_FILE="./Core/Utilities/Helpers/ResourceLoader.swift"
 
 if [ -f "$RESOURCE_LOADER_FILE" ]; then
     echo "Processing $RESOURCE_LOADER_FILE..."
