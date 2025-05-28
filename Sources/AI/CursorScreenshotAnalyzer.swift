@@ -126,11 +126,15 @@ public final class CursorScreenshotAnalyzer: ObservableObject {
             return nil
         }
         
-        // Configure the screenshot to exclude shadows
+        // Calculate scaled dimensions
+        let scaledWidth = Int(targetWindow.frame.width * imageScaleFactor)
+        let scaledHeight = Int(targetWindow.frame.height * imageScaleFactor)
+        
+        // Configure the screenshot to capture at scaled dimensions
         let configuration = SCStreamConfiguration()
-        configuration.width = Int(targetWindow.frame.width)
-        configuration.height = Int(targetWindow.frame.height)
-        configuration.scalesToFit = false
+        configuration.width = scaledWidth
+        configuration.height = scaledHeight
+        configuration.scalesToFit = true // Ensure scaling is enabled
         configuration.showsCursor = false
         
         // Create content filter for single window
@@ -142,26 +146,13 @@ public final class CursorScreenshotAnalyzer: ObservableObject {
             configuration: configuration
         )
         
-        // Convert CGImage to NSImage
+        // Convert CGImage to NSImage using scaled dimensions
         let nsImage = NSImage(cgImage: image, size: NSSize(
-            width: targetWindow.frame.width,
-            height: targetWindow.frame.height
+            width: scaledWidth,
+            height: scaledHeight
         ))
         
-        // Resize the image using the configurable scale factor
-        let newWidth = nsImage.size.width * imageScaleFactor
-        let newHeight = nsImage.size.height * imageScaleFactor
-        let newSize = NSSize(width: newWidth, height: newHeight)
-        
-        let resizedImage = NSImage(size: newSize)
-        resizedImage.lockFocus()
-        nsImage.draw(in: NSRect(origin: .zero, size: newSize),
-                     from: NSRect(origin: .zero, size: nsImage.size),
-                     operation: .sourceOver,
-                     fraction: 1.0)
-        resizedImage.unlockFocus()
-        
-        return resizedImage
+        return nsImage
     }
 }
 
