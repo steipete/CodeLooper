@@ -172,10 +172,8 @@ class MenuBarIconManager: ObservableObject {
     }
 
     private func attributedString(for state: StatusIconState, appearance: NSAppearance.Name) -> AttributedString {
-        // Simple text representation for non-AI states for now
-        // This can be enhanced with SF Symbols or other icons as AttributedStrings
         var attributes = AttributeContainer()
-        attributes.font = .systemFont(ofSize: 12) // Example font
+        attributes.font = Font.system(size: 12)
         attributes.foregroundColor = appearance == .darkAqua ? .white : .black
 
         var iconString: String
