@@ -12,7 +12,7 @@ public final class CursorScreenshotAnalyzer: ObservableObject {
     @Published public var lastAnalysis: ImageAnalysisResponse?
     @Published public var lastError: Error?
     
-    private let imageScaleFactor: CGFloat = 0.5
+    private let imageScaleFactor: CGFloat = 1.0
     private static let maxAnalysisRetries = 2
     private static let retryDelaySeconds: TimeInterval = 2
     
