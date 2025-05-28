@@ -126,4 +126,7 @@ extension Defaults.Keys {
     static let aiModel = Key<AIModel>("aiModel", default: .gpt4o)
     static let ollamaBaseURL = Key<String>("ollamaBaseURL", default: "http://localhost:11434")
     static let aiGlobalAnalysisIntervalSeconds = Key<Int>("aiGlobalAnalysisIntervalSeconds", default: 10)
+    
+    // --- Git Client Settings ---
+    static let gitClientApp = Key<String>("gitClientApp", default: "/Applications/Tower.app")
 }

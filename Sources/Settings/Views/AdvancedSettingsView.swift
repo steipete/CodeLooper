@@ -6,8 +6,8 @@ import SwiftUI
 struct AdvancedSettingsView: View {
     // MARK: Internal
 
-    @Default(.showDebugMenu)
-    var showDebugMenu
+    @Default(.showDebugMenu) var showDebugMenu
+    @Default(.gitClientApp) var gitClientApp
 
     var body: some View {
         VStack(alignment: .leading, spacing: Spacing.xLarge) {
@@ -53,6 +53,26 @@ struct AdvancedSettingsView: View {
                     }
                     .padding(.top, Spacing.xxSmall)
                 }
+            }
+
+            // Git Integration
+            DSSettingsSection("Git Integration") {
+                HStack(spacing: Spacing.small) {
+                    Text("Git Client App:")
+                        .font(Typography.body())
+                        .foregroundColor(ColorPalette.text)
+                    
+                    DSTextField("", text: $gitClientApp)
+                        .frame(width: 200)
+                    
+                    DSButton("Browse...", style: .secondary, size: .small) {
+                        selectGitClientApp()
+                    }
+                }
+                
+                Text("Path to your Git client application (e.g., Tower, SourceTree, GitKraken)")
+                    .font(Typography.caption1())
+                    .foregroundColor(ColorPalette.textSecondary)
             }
 
             // Developer Actions
@@ -208,6 +228,21 @@ struct AdvancedSettingsView: View {
         } else {
             showMcpJsonNotFoundAlert = true
             mcpJsonNotFoundPath = mcpJsonPath.path
+        }
+    }
+    
+    private func selectGitClientApp() {
+        let openPanel = NSOpenPanel()
+        openPanel.title = "Select Git Client Application"
+        openPanel.message = "Choose your preferred Git client application"
+        openPanel.allowsMultipleSelection = false
+        openPanel.canChooseDirectories = false
+        openPanel.canChooseFiles = true
+        openPanel.allowedContentTypes = [.application]
+        openPanel.directoryURL = URL(fileURLWithPath: "/Applications")
+        
+        if openPanel.runModal() == .OK, let url = openPanel.url {
+            gitClientApp = url.path
         }
     }
 }
