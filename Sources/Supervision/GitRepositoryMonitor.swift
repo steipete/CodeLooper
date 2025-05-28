@@ -2,7 +2,7 @@ import Diagnostics
 import Foundation
 
 /// Monitors Git repositories and provides status information
-public final class GitRepositoryMonitor {
+public final class GitRepositoryMonitor: Sendable {
     // MARK: Lifecycle
 
     public init() {}
@@ -47,13 +47,13 @@ public final class GitRepositoryMonitor {
     nonisolated private let logger = Logger(category: .supervision)
 
     /// Cache for repository information to avoid repeated lookups
-    private var repositoryCache: [String: GitRepository] = [:]
+    @MainActor private var repositoryCache: [String: GitRepository] = [:]
 
     /// Cache timeout interval (5 seconds)
     private let cacheTimeout: TimeInterval = 5.0
 
     /// Timestamps for cached entries
-    private var cacheTimestamps: [String: Date] = [:]
+    @MainActor private var cacheTimestamps: [String: Date] = [:]
 
     // MARK: - Private Methods
 
@@ -75,7 +75,7 @@ public final class GitRepositoryMonitor {
     }
 
     /// Find the Git repository root starting from a given path
-    private func findGitRoot(from path: String) async -> String? {
+    nonisolated private func findGitRoot(from path: String) async -> String? {
         var currentPath = URL(fileURLWithPath: path)
 
         // If it's a file, start from its directory
@@ -101,7 +101,7 @@ public final class GitRepositoryMonitor {
     }
 
     /// Get repository status by running git status
-    private func getRepositoryStatus(at repoPath: String) async -> GitRepository? {
+    nonisolated private func getRepositoryStatus(at repoPath: String) async -> GitRepository? {
         // Run git command in a detached task to avoid blocking main thread
         return await Task.detached(priority: .userInitiated) {
             let process = Process()
@@ -118,23 +118,23 @@ public final class GitRepositoryMonitor {
                 process.waitUntilExit()
 
                 guard process.terminationStatus == 0 else {
-                    self.logger.debug("Git status failed with exit code: \(process.terminationStatus)")
+                    Logger(category: .supervision).debug("Git status failed with exit code: \(process.terminationStatus)")
                     return nil
                 }
 
                 let outputData = outputPipe.fileHandleForReading.readDataToEndOfFile()
                 let output = String(data: outputData, encoding: .utf8) ?? ""
 
-                return self.parseGitStatus(output: output, repoPath: repoPath)
+                return GitRepositoryMonitor.staticParseGitStatus(output: output, repoPath: repoPath)
             } catch {
-                self.logger.error("Failed to run git status: \(error.localizedDescription)")
+                Logger(category: .supervision).error("Failed to run git status: \(error.localizedDescription)")
                 return nil
             }
         }.value
     }
 
     /// Parse git status --porcelain output
-    nonisolated private func parseGitStatus(output: String, repoPath: String) -> GitRepository {
+    nonisolated private static func staticParseGitStatus(output: String, repoPath: String) -> GitRepository {
         let lines = output.split(separator: "\n")
         var currentBranch: String?
         var modifiedCount = 0
