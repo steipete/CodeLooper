@@ -1,5 +1,9 @@
 included:
-  - Sources
+  - App
+  - Features
+  - Core
+  - DesignSystem/Sources
+  - AXpector/Sources
 excluded:
   - .build
   - build
