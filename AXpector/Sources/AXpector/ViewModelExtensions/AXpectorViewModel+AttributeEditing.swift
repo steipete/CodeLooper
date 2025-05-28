@@ -1,6 +1,7 @@
-import SwiftUI // For @MainActor, @Published (though props are in main class)
-import AXorcist // For AXPropertyNode, AXAttributeNames, Element
 import AppKit // For pid_t, NSNumber
+import AXorcist // For AXPropertyNode, AXAttributeNames, Element
+import SwiftUI // For @MainActor, @Published (though props are in main class)
+
 // AXorcist import already includes logging utilities
 import Defaults // ADD for Defaults
 
@@ -9,7 +10,8 @@ func axConvertStringCriteriaToCriterionArray(_ stringCriteria: [String: String])
     var criteriaArray: [Criterion] = []
     for (key, value) in stringCriteria {
         // Basic determination of match type for Criterion. AXpector might need more sophisticated logic.
-        let matchType: JSONPathHintComponent.MatchType = (value.hasPrefix("(") && value.hasSuffix(")") && value.contains("|")) ? .regex : .exact
+        let matchType: JSONPathHintComponent
+            .MatchType = (value.hasPrefix("(") && value.hasSuffix(")") && value.contains("|")) ? .regex : .exact
         criteriaArray.append(Criterion(attribute: key, value: value, matchType: matchType))
     }
     return criteriaArray
@@ -27,7 +29,7 @@ func axConvertStringPathHintsToComponentArray(_ stringHints: [String]?) -> [JSON
         // If hintString is more complex like "title=My Window", this needs parsing.
         // For now, assume hintString is a value for an implied AXRole attribute for path components.
         // This is a common pattern for simple path hints but might not cover all AXpector cases.
-        
+
         // Basic parsing for "RoleName[index]" format, extracting RoleName
         var roleName = hintString
         if let range = hintString.range(of: "[") {
@@ -39,23 +41,32 @@ func axConvertStringPathHintsToComponentArray(_ stringHints: [String]?) -> [JSON
 }
 
 // MARK: - Attribute Editing Methods
+
 extension AXpectorViewModel {
     func prepareAttributeForEditing(node: AXPropertyNode?, attributeKey: String) {
-        guard let node = node else { return }
-        self.attributeUpdateStatusMessage = nil 
-        self.attributeIsCurrentlySettable = false 
+        guard let node else { return }
+        self.attributeUpdateStatusMessage = nil
+        self.attributeIsCurrentlySettable = false
 
         Task {
-            axInfoLog("Preparing attribute for editing: \(attributeKey) on \(node.displayName)", details: ["commandID": AnyCodable("prepareEdit_\(attributeKey)"), "appName": AnyCodable(String(node.pid))])
+            axInfoLog(
+                "Preparing attribute for editing: \(attributeKey) on \(node.displayName)",
+                details: [
+                    "commandID": AnyCodable("prepareEdit_\(attributeKey)"),
+                    "appName": AnyCodable(String(node.pid)),
+                ]
+            )
 
             let axElement = Element(node.axElementRef)
             let settable = axElement.isAttributeSettable(named: attributeKey) // Added named: label
-            self.attributeIsCurrentlySettable = settable 
+            self.attributeIsCurrentlySettable = settable
 
             if Defaults[.verboseLogging_axpector] {
                 let collectedLogs = axGetLogEntries()
                 for logEntry in collectedLogs {
-                    axDebugLog("AXorcist (IsSettable Prep) Log [L:\(logEntry.level.rawValue) T:\(logEntry.timestamp)]: \(logEntry.message) Details: \(logEntry.details ?? [:])")
+                    axDebugLog(
+                        "AXorcist (IsSettable Prep) Log [L:\(logEntry.level.rawValue) T:\(logEntry.timestamp)]: \(logEntry.message) Details: \(logEntry.details ?? [:])"
+                    )
                 }
                 axClearLogs()
             }
@@ -64,15 +75,16 @@ extension AXpectorViewModel {
                 let currentValue = node.attributes[attributeKey]?.value
                 var stringValue = ""
                 if let val = currentValue {
-                    if let str = val as? String { stringValue = str }
-                    else if let num = val as? NSNumber { stringValue = num.stringValue }
-                    // else if let boolVal = val as? Bool { stringValue = boolVal ? "true" : "false" } // Handle Bool explicitly if needed
-                    else if let anyCodable = val as? AnyCodable { stringValue = String(describing: anyCodable.value) }
-                    else { stringValue = String(describing: val) }
+                    if let str = val as? String { stringValue = str } else if let num = val as? NSNumber { stringValue = num.stringValue }
+                    // else if let boolVal = val as? Bool { stringValue = boolVal ? "true" : "false" } // Handle Bool
+                    // explicitly if needed
+                    else if let anyCodable = val as? AnyCodable { stringValue = String(describing: anyCodable.value) } else { stringValue = String(describing: val) }
                 }
                 self.editingAttributeKey = attributeKey
                 self.editingAttributeValueString = stringValue
-                axInfoLog("Preparing to edit attribute '\(attributeKey)' for node \(node.displayName) with current value: \(stringValue)")
+                axInfoLog(
+                    "Preparing to edit attribute '\(attributeKey)' for node \(node.displayName) with current value: \(stringValue)"
+                )
             } else {
                 self.attributeUpdateStatusMessage = "Attribute '\(attributeKey)' is not settable."
                 axWarningLog("Attribute '\(attributeKey)' on node \(node.displayName) is not settable.")
@@ -88,51 +100,76 @@ extension AXpectorViewModel {
     }
 
     func commitAttributeEdit(node: AXPropertyNode?, originalAttributeKey: String?) {
-        guard let node = node, let key = originalAttributeKey ?? editingAttributeKey else {
+        guard let node, let key = originalAttributeKey ?? editingAttributeKey else {
             attributeUpdateStatusMessage = "Error: Node or attribute key missing for commit."
             axWarningLog("Attempted to commit edit for node or key missing.")
             clearAttributeEditingState()
-            Task { try? await Task.sleep(for: .seconds(3)); if self.attributeUpdateStatusMessage?.contains("missing") == true {self.attributeUpdateStatusMessage = nil} }
+            Task {
+                try? await Task.sleep(for: .seconds(3)); if self.attributeUpdateStatusMessage?
+                    .contains("missing") == true { self.attributeUpdateStatusMessage = nil }
+            }
             return
         }
-        
+
         guard attributeIsCurrentlySettable else {
             attributeUpdateStatusMessage = "Error: Attribute '\(key)' is not settable or status unknown."
             axWarningLog("Attempted to commit edit for non-settable attribute '\(key)' on node \(node.displayName)")
             clearAttributeEditingState()
-            Task { try? await Task.sleep(for: .seconds(3)); if self.attributeUpdateStatusMessage?.contains(key) == true {self.attributeUpdateStatusMessage = nil} }
+            Task {
+                try? await Task.sleep(for: .seconds(3)); if self.attributeUpdateStatusMessage?
+                    .contains(key) == true { self.attributeUpdateStatusMessage = nil }
+            }
             return
         }
 
-        axInfoLog("Committing edit for attribute '\(key)' on node \(node.displayName) with new value: \(self.editingAttributeValueString)")
+        axInfoLog(
+            "Committing edit for attribute '\(key)' on node \(node.displayName) with new value: \(self.editingAttributeValueString)"
+        )
 
         Task {
             let appIdentifier = String(node.pid)
-            axInfoLog("Committing attribute edit: \(key) on \(node.displayName)", details: ["commandID": AnyCodable("commitEdit_\(key)"), "appName": AnyCodable(appIdentifier)])
-            
+            axInfoLog(
+                "Committing attribute edit: \(key) on \(node.displayName)",
+                details: ["commandID": AnyCodable("commitEdit_\(key)"), "appName": AnyCodable(appIdentifier)]
+            )
+
             var stringCriteria: [String: String] = [:]
-            if let role = node.attributes[AXAttributeNames.kAXRoleAttribute]?.value as? String { stringCriteria[AXAttributeNames.kAXRoleAttribute] = role }
-            if let title = node.attributes[AXAttributeNames.kAXTitleAttribute]?.value as? String { stringCriteria[AXAttributeNames.kAXTitleAttribute] = title }
-            if let identifier = node.attributes[AXAttributeNames.kAXIdentifierAttribute]?.value as? String { stringCriteria[AXAttributeNames.kAXIdentifierAttribute] = identifier }
-            if stringCriteria.isEmpty { stringCriteria[AXAttributeNames.kAXTitleAttribute] = node.displayName } // Fallback
+            if let role = node.attributes[AXAttributeNames.kAXRoleAttribute]?
+                .value as? String { stringCriteria[AXAttributeNames.kAXRoleAttribute] = role }
+            if let title = node.attributes[AXAttributeNames.kAXTitleAttribute]?
+                .value as? String { stringCriteria[AXAttributeNames.kAXTitleAttribute] = title }
+            if let identifier = node.attributes[AXAttributeNames.kAXIdentifierAttribute]?
+                .value as? String { stringCriteria[AXAttributeNames.kAXIdentifierAttribute] = identifier }
+            if stringCriteria
+                .isEmpty { stringCriteria[AXAttributeNames.kAXTitleAttribute] = node.displayName } // Fallback
 
             let criteriaForLocator = axConvertStringCriteriaToCriterionArray(stringCriteria)
             let pathHintsForLocator = axConvertStringPathHintsToComponentArray(node.fullPathArrayForLocator)
 
             let locator = Locator(criteria: criteriaForLocator, rootElementPathHint: pathHintsForLocator)
-            
-            let command = PerformActionCommand(appIdentifier: appIdentifier, locator: locator, action: key, value: AnyCodable(self.editingAttributeValueString), maxDepthForSearch: AXMiscConstants.defaultMaxDepthSearch)
+
+            let command = PerformActionCommand(
+                appIdentifier: appIdentifier,
+                locator: locator,
+                action: key,
+                value: AnyCodable(self.editingAttributeValueString),
+                maxDepthForSearch: AXMiscConstants.defaultMaxDepthSearch
+            )
             let response = axorcist.handlePerformAction(command: command)
-            
+
             if Defaults[.verboseLogging_axpector] {
                 let collectedLogs = axGetLogEntries()
                 for logEntry in collectedLogs {
-                    axDebugLog("AXorcist (SetAttribute) Log [L:\(logEntry.level.rawValue) T:\(logEntry.timestamp)]: \(logEntry.message) Details: \(logEntry.details ?? [:])")
+                    axDebugLog(
+                        "AXorcist (SetAttribute) Log [L:\(logEntry.level.rawValue) T:\(logEntry.timestamp)]: \(logEntry.message) Details: \(logEntry.details ?? [:])"
+                    )
                 }
                 axClearLogs()
             }
 
-            if response.error == nil, let responseData = response.payload?.value as? PerformResponse, responseData.success {
+            if response.error == nil, let responseData = response.payload?.value as? PerformResponse,
+               responseData.success
+            {
                 self.attributeUpdateStatusMessage = "Attribute '\(key)' updated successfully."
                 axInfoLog("Successfully updated attribute '\(key)' for node \(node.displayName)")
                 Task { await refreshSelectedNodeAttributes(node: node) }
@@ -142,7 +179,7 @@ extension AXpectorViewModel {
                 axErrorLog("Failed to update attribute '\(key)' for node \(node.displayName). Error: \(errorMessage)")
             }
             clearAttributeEditingState()
-            
+
             Task {
                 try? await Task.sleep(for: .seconds(4))
                 if self.attributeUpdateStatusMessage?.contains(key) == true { self.attributeUpdateStatusMessage = nil }
@@ -161,21 +198,30 @@ extension AXpectorViewModel {
         editingAttributeValueString = ""
         attributeIsCurrentlySettable = false
     }
-    
+
     private func refreshSelectedNodeAttributes(node: AXPropertyNode) async {
         axInfoLog("Refreshing attributes for node \(node.displayName)")
         let appIdentifier = String(node.pid)
-        axInfoLog("Refreshing attributes for node: \(node.displayName)", details: ["commandID": AnyCodable("refreshNodeAttrs_\(node.id.uuidString.prefix(8))"), "appName": AnyCodable(appIdentifier)])
+        axInfoLog(
+            "Refreshing attributes for node: \(node.displayName)",
+            details: [
+                "commandID": AnyCodable("refreshNodeAttrs_\(node.id.uuidString.prefix(8))"),
+                "appName": AnyCodable(appIdentifier),
+            ]
+        )
 
         var stringCriteria: [String: String] = [:]
-        if let role = node.attributes[AXAttributeNames.kAXRoleAttribute]?.value as? String { stringCriteria[AXAttributeNames.kAXRoleAttribute] = role }
-        if let title = node.attributes[AXAttributeNames.kAXTitleAttribute]?.value as? String { stringCriteria[AXAttributeNames.kAXTitleAttribute] = title }
-        if let identifier = node.attributes[AXAttributeNames.kAXIdentifierAttribute]?.value as? String { stringCriteria[AXAttributeNames.kAXIdentifierAttribute] = identifier }
+        if let role = node.attributes[AXAttributeNames.kAXRoleAttribute]?
+            .value as? String { stringCriteria[AXAttributeNames.kAXRoleAttribute] = role }
+        if let title = node.attributes[AXAttributeNames.kAXTitleAttribute]?
+            .value as? String { stringCriteria[AXAttributeNames.kAXTitleAttribute] = title }
+        if let identifier = node.attributes[AXAttributeNames.kAXIdentifierAttribute]?
+            .value as? String { stringCriteria[AXAttributeNames.kAXIdentifierAttribute] = identifier }
         if stringCriteria.isEmpty { stringCriteria[AXAttributeNames.kAXTitleAttribute] = node.displayName } // Fallback
-        
+
         let criteriaForLocator = axConvertStringCriteriaToCriterionArray(stringCriteria)
         let pathHintsForLocator = axConvertStringPathHintsToComponentArray(node.fullPathArrayForLocator)
-        
+
         let locator = Locator(criteria: criteriaForLocator, rootElementPathHint: pathHintsForLocator)
 
         let queryCommand = QueryCommand(
@@ -190,24 +236,31 @@ extension AXpectorViewModel {
         if Defaults[.verboseLogging_axpector] {
             let collectedLogs = axGetLogEntries()
             for logEntry in collectedLogs {
-                axDebugLog("AXorcist (RefreshNode) Log [L:\(logEntry.level.rawValue) T:\(logEntry.timestamp)]: \(logEntry.message) Details: \(logEntry.details ?? [:])")
+                axDebugLog(
+                    "AXorcist (RefreshNode) Log [L:\(logEntry.level.rawValue) T:\(logEntry.timestamp)]: \(logEntry.message) Details: \(logEntry.details ?? [:])"
+                )
             }
             axClearLogs()
         }
 
-        if response.error == nil, let axElementData = response.payload?.value as? AXElement { 
+        if response.error == nil, let axElementData = response.payload?.value as? AXElement {
             if let newAttrs = axElementData.attributes {
-                node.attributes = newAttrs 
+                node.attributes = newAttrs
                 node.role = newAttrs[AXAttributeNames.kAXRoleAttribute]?.value as? String ?? node.role
                 node.title = newAttrs[AXAttributeNames.kAXTitleAttribute]?.value as? String ?? node.title
-                node.descriptionText = newAttrs[AXAttributeNames.kAXDescriptionAttribute]?.value as? String ?? node.descriptionText
+                node.descriptionText = newAttrs[AXAttributeNames.kAXDescriptionAttribute]?.value as? String ?? node
+                    .descriptionText
                 node.value = newAttrs[AXAttributeNames.kAXValueAttribute]?.value as? String ?? node.value
                 axInfoLog("Refreshed attributes for node \(node.displayName).")
             } else {
-                axWarningLog("No attributes returned on refresh for node \(node.displayName). Node attributes not changed.")
+                axWarningLog(
+                    "No attributes returned on refresh for node \(node.displayName). Node attributes not changed."
+                )
             }
         } else {
-            axErrorLog("Failed to refresh attributes for node \(node.displayName): \(response.error?.message ?? "Unknown error")")
+            axErrorLog(
+                "Failed to refresh attributes for node \(node.displayName): \(response.error?.message ?? "Unknown error")"
+            )
         }
         axInfoLog("Finished refreshing attributes for node: \(node.displayName)")
     }
@@ -219,19 +272,27 @@ extension AXpectorViewModel {
         }
         if let cachedStatus = attributeSettableStatusCache[attributeKey] { return cachedStatus ? " (W)" : "" }
 
-        axInfoLog("Fetching settable status for attribute: \(attributeKey) on \(node.displayName)", details: ["commandID": AnyCodable("fetchSettableStatus_\(attributeKey)"), "appName": AnyCodable(String(node.pid))])
-        
+        axInfoLog(
+            "Fetching settable status for attribute: \(attributeKey) on \(node.displayName)",
+            details: [
+                "commandID": AnyCodable("fetchSettableStatus_\(attributeKey)"),
+                "appName": AnyCodable(String(node.pid)),
+            ]
+        )
+
         let axElement = Element(node.axElementRef)
         let settable = axElement.isAttributeSettable(named: attributeKey) // Added named: label
-        
+
         if Defaults[.verboseLogging_axpector] {
             let collectedLogs = axGetLogEntries()
             for logEntry in collectedLogs {
-                axDebugLog("AXorcist (IsSettable Display) Log [L:\(logEntry.level.rawValue) T:\(logEntry.timestamp)]: \(logEntry.message) Details: \(logEntry.details ?? [:])")
+                axDebugLog(
+                    "AXorcist (IsSettable Display) Log [L:\(logEntry.level.rawValue) T:\(logEntry.timestamp)]: \(logEntry.message) Details: \(logEntry.details ?? [:])"
+                )
             }
             axClearLogs()
         }
-        
+
         if node.id == cachedNodeIDForSettableStatus { attributeSettableStatusCache[attributeKey] = settable }
         axInfoLog("Finished fetching settable status for attribute: \(attributeKey) on \(node.displayName)")
         return settable ? " (W)" : ""
@@ -241,11 +302,13 @@ extension AXpectorViewModel {
     func navigateToElementInTree(axElementRef: AXUIElement, currentAppPID: pid_t) {
         axInfoLog("Attempting to navigate to element: \(axElementRef)")
         // First, ensure the main tree (accessibilityTree) is for the correct application.
-        // If selectedApplicationPID is different from currentAppPID, this navigation might be cross-app or context is wrong.
+        // If selectedApplicationPID is different from currentAppPID, this navigation might be cross-app or context is
+        // wrong.
         // This logic assumes we are navigating within the currently selected/focused app context.
         guard let appTreeRoot = self.accessibilityTree.first(where: { $0.pid == currentAppPID }) else {
             axWarningLog("Cannot navigate: No tree loaded for PID \(currentAppPID).")
-            // Optionally, inform the user or try to load the tree for currentAppPID if it differs from selectedApplicationPID.
+            // Optionally, inform the user or try to load the tree for currentAppPID if it differs from
+            // selectedApplicationPID.
             return
         }
 
@@ -257,7 +320,7 @@ extension AXpectorViewModel {
             } else if isHoverModeActive {
                 // If hover is active, navigating might be confusing. Consider behavior.
                 // For now, let selection take precedence.
-                self.temporarilySelectedNodeIDByHover = nil 
+                self.temporarilySelectedNodeIDByHover = nil
             }
             _ = expandParents(for: targetNode.id, in: self.accessibilityTree) // Ensure visibility in the main tree
             // Highlight for selection is handled by selectedNode.didSet calling updateHighlightForNode
@@ -268,20 +331,23 @@ extension AXpectorViewModel {
             self.actionStatusMessage = "Navigation target not found in current tree view."
             Task { try? await Task.sleep(for: .seconds(3)); self.actionStatusMessage = nil }
         }
-        // CFRelease(axElementRef) // Caller (AttributeRowView) should not pass ownership if it obtained a copy for this call.
-                                 // This method receives a ref, doesn't own it unless it copies it.
+        // CFRelease(axElementRef) // Caller (AttributeRowView) should not pass ownership if it obtained a copy for this
+        // call.
+        // This method receives a ref, doesn't own it unless it copies it.
     }
 
     @MainActor
-    func fetchAttributeUIDisplayInfo(for node: AXPropertyNode, attributeKey: String, attributeValue: AnyCodable?) -> AttributeDisplayInfo {
+    func fetchAttributeUIDisplayInfo(for node: AXPropertyNode, attributeKey: String,
+                                     attributeValue: AnyCodable?) -> AttributeDisplayInfo
+    {
         axDebugLog("AXpectorVM.fetchAttributeUIDisplayInfo for \(attributeKey) on node: \(node.id)")
-        
+
         let tempElement = Element(node.axElementRef)
         let isSettableStatus = tempElement.isAttributeSettable(named: attributeKey)
         let settableString = isSettableStatus ? " (W)" : ""
 
         var displayStr = "<Unable to display>"
-        var navRef: AXUIElement? = nil
+        var navRef: AXUIElement?
 
         if let val = attributeValue?.value {
             if let ref = tempElement.attribute(Attribute<AXUIElement>(attributeKey)) {
@@ -303,14 +369,14 @@ extension AXpectorViewModel {
         } else {
             displayStr = "<n/a>"
         }
-        
+
         let info = AttributeDisplayInfo(
             displayString: displayStr,
             isSettable: isSettableStatus,
             settableDisplayString: settableString,
             navigatableElementRef: navRef
         )
-        
+
         return info
     }
-} 
+}

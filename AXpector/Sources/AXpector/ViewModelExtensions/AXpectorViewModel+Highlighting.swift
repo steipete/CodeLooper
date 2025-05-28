@@ -1,30 +1,34 @@
-import SwiftUI // For Color, NSColor
 import AppKit // For AXUIElement, NSRect, NSScreen
+import SwiftUI // For Color, NSColor
+
 // import OSLog // For Logger // REMOVE OSLog
 import AXorcist // For GlobalAXLogger and ax...Log helpers
 
 // MARK: - Highlight Window Logic
+
 extension AXpectorViewModel {
-    internal func updateHighlightForNode(_ node: AXPropertyNode?, isHover: Bool = false, isFocusHighlight: Bool = false) {
+    func updateHighlightForNode(_ node: AXPropertyNode?, isHover: Bool = false, isFocusHighlight: Bool = false) {
         guard let targetNode = node else {
-            if (isHover && isHoverModeActive) || (isFocusHighlight && isFocusTrackingModeActive) || (!isHover && !isFocusHighlight) { 
-                 highlightWindowController.hideHighlight()
+            if (isHover && isHoverModeActive) || (isFocusHighlight && isFocusTrackingModeActive) ||
+                (!isHover && !isFocusHighlight)
+            {
+                highlightWindowController.hideHighlight()
             }
             return
         }
 
-        var highlightColor = NSColor.blue.withAlphaComponent(0.4) 
-        if isFocusTrackingModeActive && isFocusHighlight { 
-            highlightColor = NSColor.green.withAlphaComponent(0.4) 
-        } else if isHoverModeActive && isHover { 
-            highlightColor = NSColor.orange.withAlphaComponent(0.4) 
-        } else if selectedNode?.id == targetNode.id && !isHoverModeActive && !isFocusTrackingModeActive { 
+        var highlightColor = NSColor.blue.withAlphaComponent(0.4)
+        if isFocusTrackingModeActive, isFocusHighlight {
+            highlightColor = NSColor.green.withAlphaComponent(0.4)
+        } else if isHoverModeActive, isHover {
+            highlightColor = NSColor.orange.withAlphaComponent(0.4)
+        } else if selectedNode?.id == targetNode.id, !isHoverModeActive, !isFocusTrackingModeActive {
             // Use default blue
-        } else { 
-            if !isHoverModeActive && !isFocusTrackingModeActive { 
-                 highlightWindowController.hideHighlight()
+        } else {
+            if !isHoverModeActive, !isFocusTrackingModeActive {
+                highlightWindowController.hideHighlight()
             }
-            return 
+            return
         }
 
         Task {
@@ -37,7 +41,7 @@ extension AXpectorViewModel {
         }
     }
 
-    internal func getFrameForAXElement(_ elementRef: AXUIElement) async -> NSRect? {
+    func getFrameForAXElement(_ elementRef: AXUIElement) async -> NSRect? {
         var positionValue: CFTypeRef?
         var sizeValue: CFTypeRef?
 
@@ -49,7 +53,9 @@ extension AXpectorViewModel {
             return nil
         }
         guard CFGetTypeID(posValUnwrapped) == AXValueGetTypeID() else {
-            axDebugLog("Position value is not an AXValue based on CFGetTypeID. Actual TypeID: \(CFGetTypeID(posValUnwrapped))")
+            axDebugLog(
+                "Position value is not an AXValue based on CFGetTypeID. Actual TypeID: \(CFGetTypeID(posValUnwrapped))"
+            )
             return nil
         }
         let posAxValue = posValUnwrapped as! AXValue // Force cast after type check
@@ -64,7 +70,9 @@ extension AXpectorViewModel {
             return nil
         }
         guard CFGetTypeID(sizeValUnwrapped) == AXValueGetTypeID() else {
-            axDebugLog("Size value is not an AXValue based on CFGetTypeID. Actual TypeID: \(CFGetTypeID(sizeValUnwrapped))")
+            axDebugLog(
+                "Size value is not an AXValue based on CFGetTypeID. Actual TypeID: \(CFGetTypeID(sizeValUnwrapped))"
+            )
             return nil
         }
         let sizeAxValue = sizeValUnwrapped as! AXValue // Force cast after type check
@@ -79,18 +87,18 @@ extension AXpectorViewModel {
         AXValueGetValue(posAxValue, .cgPoint, &point)
         AXValueGetValue(sizeAxValue, .cgSize, &size)
 
-        guard size.width > 0 && size.height > 0 else {
+        guard size.width > 0, size.height > 0 else {
             axDebugLog("Element has zero or negative size: \(size)")
             return nil
         }
-        
+
         guard let mainScreen = NSScreen.main else {
             axErrorLog("Cannot get main screen for coordinate conversion.")
             return nil
         }
         let screenHeight = mainScreen.frame.height
         let convertedY = screenHeight - point.y - size.height
-        
+
         return NSRect(x: point.x, y: convertedY, width: size.width, height: size.height)
     }
-} 
+}
