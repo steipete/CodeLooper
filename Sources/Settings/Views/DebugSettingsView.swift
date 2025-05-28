@@ -380,54 +380,6 @@ private struct LottieTestAnimationView: View {
     }
 }
 
-// MARK: - Custom Chain Link Icon
-
-private struct CustomChainLinkIcon: View {
-    let size: CGFloat
-    
-    var body: some View {
-        ZStack {
-            // Custom chain link path
-            ChainLinkShape()
-                .stroke(Color.primary, style: StrokeStyle(lineWidth: max(2, size / 16), lineCap: .round, lineJoin: .round))
-                .frame(width: size * 0.6, height: size * 0.6)
-        }
-        .frame(width: size, height: size)
-    }
-}
-
-// MARK: - Chain Link Shape
-
-private struct ChainLinkShape: Shape {
-    func path(in rect: CGRect) -> Path {
-        var path = Path()
-        let width = rect.width
-        let height = rect.height
-        let linkWidth = width * 0.3
-        let linkHeight = height * 0.15
-        
-        // First link (left)
-        let link1Center = CGPoint(x: width * 0.3, y: height * 0.5)
-        path.addEllipse(in: CGRect(
-            x: link1Center.x - linkWidth/2,
-            y: link1Center.y - linkHeight/2,
-            width: linkWidth,
-            height: linkHeight
-        ))
-        
-        // Second link (right, rotated)
-        let link2Center = CGPoint(x: width * 0.7, y: height * 0.5)
-        let link2Rect = CGRect(
-            x: link2Center.x - linkHeight/2,
-            y: link2Center.y - linkWidth/2,
-            width: linkHeight,
-            height: linkWidth
-        )
-        path.addEllipse(in: link2Rect)
-        
-        return path
-    }
-}
 
 // MARK: - Simplified Chain Link Icon
 
