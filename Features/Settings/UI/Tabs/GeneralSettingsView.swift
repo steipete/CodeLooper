@@ -62,7 +62,7 @@ struct GeneralSettingsView: View {
                             Spacer()
 
                             KeyboardShortcuts.Recorder(for: .toggleMonitoring)
-                                .frame(width: 120, height: 32)
+                                .frame(width: 140, height: 32)
                                 .fixedSize()
                         }
 
@@ -87,7 +87,7 @@ struct GeneralSettingsView: View {
                             DSButton("Browse...", style: .secondary, size: .small) {
                                 selectGitClientApp()
                             }
-                            .frame(width: 120, height: 32)
+                            .frame(width: 140, height: 32)
                             .fixedSize()
                         }
 

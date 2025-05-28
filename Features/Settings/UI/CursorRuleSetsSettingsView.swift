@@ -132,12 +132,12 @@ private struct RuleCard: View {
 
                     HStack(spacing: Spacing.small) {
                         DSBadge(rule.trigger.displayName, style: .info)
-                            .frame(width: 120, alignment: .center)
+                            .frame(width: 140, alignment: .center)
                         Image(systemName: "arrow.right")
                             .font(.system(size: 10))
                             .foregroundColor(ColorPalette.textTertiary)
                         DSBadge(rule.action.displayName, style: .primary)
-                            .frame(width: 120, alignment: .center)
+                            .frame(width: 140, alignment: .center)
                     }
                 }
 
