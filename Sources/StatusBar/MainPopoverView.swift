@@ -2,10 +2,13 @@ import AppKit
 import Combine
 import Defaults
 import DesignSystem
+import Diagnostics
 import SwiftUI
 
 struct MainPopoverView: View {
     // MARK: Internal
+    
+    private static let logger = Logger(category: .statusBar)
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
@@ -92,6 +95,19 @@ struct MainPopoverView: View {
                         }
                         .listRowBackground(Color.clear)
                         .padding(.vertical, 4)
+                        .contentShape(Rectangle())
+                        .onTapGesture {
+                            logger.info("Tapped on window item: \(windowState.windowTitle ?? windowState.id). Attempting to raise.")
+                            if let axElement = windowState.windowAXElement {
+                                if axElement.performAction(.raise) {
+                                    logger.info("Successfully performed raise action for window: \(windowState.windowTitle ?? windowState.id)")
+                                } else {
+                                    logger.warning("Failed to perform raise action for window: \(windowState.windowTitle ?? windowState.id)")
+                                }
+                            } else {
+                                logger.warning("Cannot raise window: AXElement is nil for \(windowState.windowTitle ?? windowState.id)")
+                            }
+                        }
                     }
                     .listStyle(.plain)
                     .frame(minHeight: 100, maxHeight: 250) // Adjusted height
@@ -200,7 +216,7 @@ struct MainPopoverView: View {
             let window1Id = "\(appPID)-window-Doc1-0"
             let window2Id = "\(appPID)-window-Settings-1"
 
-            var windowInfo1 = MonitoredWindowInfo(id: window1Id, windowTitle: "Document 1.txt", documentPath: "/path/to/doc1.txt")
+            let windowInfo1 = MonitoredWindowInfo(id: window1Id, windowTitle: "Document 1.txt", documentPath: "/path/to/doc1.txt")
             var windowInfo2 = MonitoredWindowInfo(id: window2Id, windowTitle: "Project Settings", documentPath: "/path/to/proj/")
             windowInfo2.isLiveWatchingEnabled = true
             windowInfo2.lastAIAnalysisStatus = .working

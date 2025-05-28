@@ -78,6 +78,20 @@ struct CursorSupervisionSettingsView: View {
         .cornerRadiusDS(Layout.CornerRadius.small)
         .opacity(isGlobalMonitoringEnabled ? 1.0 : 0.5)
         .disabled(!isGlobalMonitoringEnabled)
+        .contentShape(Rectangle())
+        .onTapGesture {
+            let logger = Logger(category: .settings)
+            logger.info("Tapped on settings window item: \(window.windowTitle ?? window.id). Attempting to raise.")
+            if let axElement = window.windowAXElement {
+                if axElement.performAction(.raise) {
+                    logger.info("Successfully performed raise action for settings window: \(window.windowTitle ?? window.id)")
+                } else {
+                    logger.warning("Failed to perform raise action for settings window: \(window.windowTitle ?? window.id)")
+                }
+            } else {
+                logger.warning("Cannot raise settings window: AXElement is nil for \(window.windowTitle ?? window.id)")
+            }
+        }
     }
     
     @ViewBuilder
