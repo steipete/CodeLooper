@@ -1,13 +1,10 @@
-import SwiftUI
 import DesignSystem
+import SwiftUI
 
 // Example showcasing the CodeLooper Design System
 struct DesignSystemShowcase: View {
-    @State private var toggleValue = true
-    @State private var textFieldValue = ""
-    @State private var sliderValue = 5.0
-    @State private var selectedOption = "Option 1"
-    
+    // MARK: Internal
+
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: Spacing.xxLarge) {
@@ -20,7 +17,7 @@ struct DesignSystemShowcase: View {
                         .foregroundColor(ColorPalette.textSecondary)
                 }
                 .padding(.bottom, Spacing.large)
-                
+
                 // Colors Section
                 DSSettingsSection("Colors") {
                     HStack(spacing: Spacing.medium) {
@@ -31,7 +28,7 @@ struct DesignSystemShowcase: View {
                         ColorSwatch(color: ColorPalette.info, name: "Info")
                     }
                 }
-                
+
                 // Typography Section
                 DSSettingsSection("Typography") {
                     VStack(alignment: .leading, spacing: Spacing.small) {
@@ -43,50 +40,50 @@ struct DesignSystemShowcase: View {
                         Text("Caption").font(Typography.caption1())
                     }
                 }
-                
+
                 // Components Section
                 DSSettingsSection("Components") {
                     // Buttons
                     VStack(alignment: .leading, spacing: Spacing.medium) {
                         Text("Buttons").font(Typography.headline())
                         HStack(spacing: Spacing.small) {
-                            DSButton("Primary", style: .primary) { }
-                            DSButton("Secondary", style: .secondary) { }
-                            DSButton("Tertiary", style: .tertiary) { }
-                            DSButton("Destructive", style: .destructive) { }
+                            DSButton("Primary", style: .primary) {}
+                            DSButton("Secondary", style: .secondary) {}
+                            DSButton("Tertiary", style: .tertiary) {}
+                            DSButton("Destructive", style: .destructive) {}
                         }
                     }
-                    
+
                     DSDivider()
-                    
+
                     // Form Controls
                     VStack(alignment: .leading, spacing: Spacing.medium) {
                         Text("Form Controls").font(Typography.headline())
-                        
+
                         DSToggle("Enable Feature", isOn: $toggleValue)
-                        
+
                         DSTextField("Enter text", text: $textFieldValue)
-                        
+
                         DSSlider(
                             value: $sliderValue,
-                            in: 0...10,
+                            in: 0 ... 10,
                             label: "Slider",
                             showValue: true
                         )
-                        
+
                         DSPicker(
                             "Select Option",
                             selection: $selectedOption,
                             options: [
                                 ("Option 1", "Option 1"),
                                 ("Option 2", "Option 2"),
-                                ("Option 3", "Option 3")
+                                ("Option 3", "Option 3"),
                             ]
                         )
                     }
-                    
+
                     DSDivider()
-                    
+
                     // Badges
                     VStack(alignment: .leading, spacing: Spacing.medium) {
                         Text("Badges").font(Typography.headline())
@@ -99,7 +96,7 @@ struct DesignSystemShowcase: View {
                         }
                     }
                 }
-                
+
                 // Cards Section
                 DSSettingsSection("Cards") {
                     VStack(spacing: Spacing.medium) {
@@ -112,7 +109,7 @@ struct DesignSystemShowcase: View {
                                     .foregroundColor(ColorPalette.textSecondary)
                             }
                         }
-                        
+
                         DSCard(style: .outlined) {
                             VStack(alignment: .leading, spacing: Spacing.small) {
                                 Text("Outlined Card")
@@ -122,7 +119,7 @@ struct DesignSystemShowcase: View {
                                     .foregroundColor(ColorPalette.textSecondary)
                             }
                         }
-                        
+
                         DSCard(style: .filled) {
                             VStack(alignment: .leading, spacing: Spacing.small) {
                                 Text("Filled Card")
@@ -134,7 +131,7 @@ struct DesignSystemShowcase: View {
                         }
                     }
                 }
-                
+
                 // Spacing Section
                 DSSettingsSection("Spacing") {
                     VStack(alignment: .leading, spacing: Spacing.small) {
@@ -146,7 +143,7 @@ struct DesignSystemShowcase: View {
                             ("medium", Spacing.medium),
                             ("large", Spacing.large),
                             ("xLarge", Spacing.xLarge),
-                            ("xxLarge", Spacing.xxLarge)
+                            ("xxLarge", Spacing.xxLarge),
                         ], id: \.0) { name, spacing in
                             HStack {
                                 Text(name)
@@ -169,20 +166,27 @@ struct DesignSystemShowcase: View {
         .background(ColorPalette.background)
         .withDesignSystem()
     }
+
+    // MARK: Private
+
+    @State private var toggleValue = true
+    @State private var textFieldValue = ""
+    @State private var sliderValue = 5.0
+    @State private var selectedOption = "Option 1"
 }
 
 // Color Swatch Component
 private struct ColorSwatch: View {
     let color: Color
     let name: String
-    
+
     var body: some View {
         VStack(spacing: Spacing.xxSmall) {
             RoundedRectangle(cornerRadius: Layout.CornerRadius.medium)
                 .fill(color)
                 .frame(width: 60, height: 60)
                 .shadowStyle(Layout.Shadow.small)
-            
+
             Text(name)
                 .font(Typography.caption1())
                 .foregroundColor(ColorPalette.textSecondary)
@@ -192,9 +196,9 @@ private struct ColorSwatch: View {
 
 // Preview
 #if DEBUG
-struct DesignSystemShowcase_Previews: PreviewProvider {
-    static var previews: some View {
-        DesignSystemShowcase()
+    struct DesignSystemShowcase_Previews: PreviewProvider {
+        static var previews: some View {
+            DesignSystemShowcase()
+        }
     }
-}
 #endif

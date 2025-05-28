@@ -1,6 +1,6 @@
 import AppKit
-import Foundation
 import Diagnostics
+import Foundation
 
 enum JSHookDevConsoleDetector {
     static func isDevConsoleOpen(in applicationName: String, targetWindowTitle: String? = nil) -> Bool {

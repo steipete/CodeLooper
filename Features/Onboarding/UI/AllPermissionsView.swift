@@ -11,13 +11,12 @@ struct AllPermissionsView: View {
             PermissionRowView(
                 title: "Accessibility",
                 description: "Required to monitor and interact with Cursor",
-                hasPermission: permissionsManager.hasAccessibilityPermissions,
-                onGrantPermission: {
+                hasPermission: permissionsManager.hasAccessibilityPermissions
+            )                {
                     Task {
                         await permissionsManager.requestAccessibilityPermissions()
                     }
                 }
-            )
 
             DSDivider()
 

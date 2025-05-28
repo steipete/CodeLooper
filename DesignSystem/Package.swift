@@ -4,13 +4,13 @@ import PackageDescription
 let package = Package(
     name: "DesignSystem",
     platforms: [
-        .macOS(.v14)
+        .macOS(.v14),
     ],
     products: [
         .library(
             name: "DesignSystem",
             targets: ["DesignSystem"]
-        )
+        ),
     ],
     dependencies: [],
     targets: [
@@ -19,12 +19,12 @@ let package = Package(
             dependencies: [],
             swiftSettings: [
                 .swiftLanguageMode(.v6),
-                .enableExperimentalFeature("StrictConcurrency")
+                .enableExperimentalFeature("StrictConcurrency"),
             ]
         ),
         .testTarget(
             name: "DesignSystemTests",
             dependencies: ["DesignSystem"]
-        )
+        ),
     ]
 )

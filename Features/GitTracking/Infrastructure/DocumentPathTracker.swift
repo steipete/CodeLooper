@@ -70,7 +70,7 @@ final class DocumentPathTracker {
 
     /// Get statistics about tracked paths
     public func getStatistics() -> (totalPaths: Int, repositoryCount: Int, mostFrequent: String?) {
-        let mostFrequent = repositoryAccessCount.max(by: { $0.value < $1.value })?.key
+        let mostFrequent = repositoryAccessCount.max { $0.value < $1.value }?.key
         return (
             totalPaths: allDocumentPaths.count,
             repositoryCount: repositoryDocumentPaths.count,

@@ -1,10 +1,10 @@
-import Foundation
 import AppKit
 import Defaults
 import Diagnostics
+import Foundation
+import OpenAI
 @preconcurrency import ScreenCaptureKit
 import Vision
-import OpenAI
 
 @MainActor
 public final class CursorScreenshotAnalyzer: ObservableObject {
@@ -30,7 +30,7 @@ public final class CursorScreenshotAnalyzer: ObservableObject {
         defer { isAnalyzing = false }
 
         var attempts = 0
-        var lastCaughtError: Error? = nil
+        var lastCaughtError: Error?
 
         while attempts <= CursorScreenshotAnalyzer.maxAnalysisRetries {
             attempts += 1

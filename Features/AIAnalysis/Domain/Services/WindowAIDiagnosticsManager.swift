@@ -333,7 +333,7 @@ class WindowAIDiagnosticsManager: ObservableObject {
             return
         }
 
-        var targetSCWindow: SCWindow? = nil
+        var targetSCWindow: SCWindow?
 
         if let axWindowElement = windowInfo.windowAXElement {
             // Attempt to get CGWindowID from the AXElement

@@ -9,6 +9,6 @@ private func setupAccessibilityMonitoring() {
             logger.warning("Accessibility permissions are not granted. AXorcist functionality will be limited.")
         }
     }
-    
+
     // Set up a timer to re-check periodically, e.g., every 30 seconds
-} 
+}

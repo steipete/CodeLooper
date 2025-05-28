@@ -49,17 +49,17 @@ public struct MonitoredWindowInfo: Identifiable {
     // Window state properties
     public var isMinimized: Bool = false
     public var isHidden: Bool = false
-    public var screenNumber: Int? = nil
-    public var frame: CGRect? = nil
+    public var screenNumber: Int?
+    public var frame: CGRect?
 
     public var isLiveWatchingEnabled: Bool = false
     public var aiAnalysisIntervalSeconds: Int = 10
     public var lastAIAnalysisStatus: AIAnalysisStatus = .off
-    public var lastAIAnalysisTimestamp: Date? = nil
-    public var lastAIAnalysisResponseMessage: String? = nil
+    public var lastAIAnalysisTimestamp: Date?
+    public var lastAIAnalysisResponseMessage: String?
     
     // Git repository information
-    public var gitRepository: GitRepository? = nil
+    public var gitRepository: GitRepository?
 
     // Private helper to generate a more stable key for persisted settings
     private func getPersistentSettingsKeyPrefix() -> String {
