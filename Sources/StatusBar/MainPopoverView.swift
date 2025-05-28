@@ -148,6 +148,8 @@ struct MainPopoverView: View {
         .padding()
         .frame(width: 480)
         .fixedSize(horizontal: false, vertical: true)
+        .animation(.default, value: isGlobalMonitoringEnabled)
+        .animation(.default, value: diagnosticsManager.windowStates.count)
     }
 
     // MARK: Private
