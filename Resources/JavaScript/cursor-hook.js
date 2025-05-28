@@ -43,7 +43,7 @@
         window.__codeLooperVersion = null;
     }
 
-    const port = "__CODELOOPER_PORT_PLACEHOLDER__"; // Will be replaced by Swift
+    const port = __CODELOOPER_PORT_PLACEHOLDER__; // Will be replaced by Swift
     const url = 'ws://127.0.0.1:' + port;
     let reconnectAttempts = 0;
     const maxReconnectAttempts = 5;
@@ -54,7 +54,7 @@
         try {
             // Create a toast notification in Cursor's UI
             const notification = document.createElement('div');
-            notification.textContent = '✅ CodeLooper v"__CODELOOPER_VERSION_PLACEHOLDER__" connected successfully!';
+            notification.textContent = '✅ CodeLooper v__CODELOOPER_VERSION_PLACEHOLDER__ connected successfully!';
             notification.style.cssText = 'position: fixed; top: 20px; right: 20px; background: #10b981; color: white; padding: 12px 24px; border-radius: 8px; font-weight: 500; z-index: 999999; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); animation: slideIn 0.3s ease-out; font-family: -apple-system, BlinkMacSystemFont, sans-serif; font-size: 14px;';
             
             // Add animation
