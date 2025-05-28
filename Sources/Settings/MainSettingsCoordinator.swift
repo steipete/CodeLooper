@@ -71,34 +71,10 @@ public final class MainSettingsCoordinator: NSObject {
     }
     
     private func openNewSettingsWindow() {
-        // Use the environment's openWindow action if available (macOS 13+)
-        if #available(macOS 13.0, *) {
-            // Try to open via URL scheme first
-            if let url = URL(string: "codelooper://settings") {
-                NSWorkspace.shared.open(url)
-                return
-            }
-        }
-        
-        // Fallback: use cmd+, keyboard shortcut simulation
-        let event = NSEvent.keyEvent(
-            with: .keyDown,
-            location: NSPoint.zero,
-            modifierFlags: [.command],
-            timestamp: 0,
-            windowNumber: 0,
-            context: nil,
-            characters: ",",
-            charactersIgnoringModifiers: ",",
-            isARepeat: false,
-            keyCode: 43
-        )
-        
-        if let event = event {
-            NSApp.sendEvent(event)
-        } else {
-            // Final fallback
-            NSApp.sendAction(Selector(("showPreferencesWindow:")), to: nil, from: nil)
+        // Try to open via URL scheme first
+        if let url = URL(string: "codelooper://settings") {
+            NSWorkspace.shared.open(url)
+            return
         }
     }
 
