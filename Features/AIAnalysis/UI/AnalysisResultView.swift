@@ -1,18 +1,17 @@
 import Defaults
+import DesignSystem
 import SwiftUI
 
 public struct CursorAnalysisView: View {
     // MARK: Public
 
     public var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
+        VStack(alignment: .leading, spacing: Spacing.medium) {
             headerSection
 
-            Divider()
+            DSDivider()
 
             promptSection
-
-            actionSection
 
             if analyzer.isAnalyzing {
                 ProgressView("Analyzing Cursor window...")
@@ -30,8 +29,6 @@ public struct CursorAnalysisView: View {
 
             Spacer()
         }
-        .padding()
-        .frame(minWidth: 600, minHeight: 400)
     }
 
     // MARK: Private
@@ -72,64 +69,67 @@ public struct CursorAnalysisView: View {
     @Default(.aiModel) private var aiModel
 
     private var headerSection: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text("Cursor Window Analysis")
-                .font(.title2)
-                .fontWeight(.semibold)
+        HStack {
+            Image(systemName: "cpu")
+                .foregroundColor(ColorPalette.textSecondary)
+            Text("Provider: \(aiProvider.displayName)")
+                .font(Typography.caption1())
+                .foregroundColor(ColorPalette.textSecondary)
 
-            HStack {
-                Label("Provider: \(aiProvider.displayName)", systemImage: "cpu")
-                    .font(.caption)
-                    .foregroundColor(.secondary)
-
-                Label("Model: \(aiModel.displayName)", systemImage: "brain")
-                    .font(.caption)
-                    .foregroundColor(.secondary)
-            }
+            Image(systemName: "brain")
+                .foregroundColor(ColorPalette.textSecondary)
+            Text("Model: \(aiModel.displayName)")
+                .font(Typography.caption1())
+                .foregroundColor(ColorPalette.textSecondary)
         }
     }
 
     private var promptSection: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Picker("Analysis Type", selection: $selectedPromptType) {
-                ForEach(PromptType.allCases, id: \.self) { type in
-                    Text(type.rawValue).tag(type)
+        VStack(alignment: .leading, spacing: Spacing.medium) {
+            HStack {
+                Text("Analysis Type")
+                    .font(Typography.body(.medium))
+                    .foregroundColor(ColorPalette.text)
+                    .frame(width: 120, alignment: .leading)
+                
+                Picker("", selection: $selectedPromptType) {
+                    ForEach(PromptType.allCases, id: \.self) { type in
+                        Text(type.rawValue).tag(type)
+                    }
                 }
+                .pickerStyle(.menu)
+                .frame(maxWidth: .infinity)
+                
+                DSButton("Analyze Cursor Window", style: .primary) {
+                    Task {
+                        await analyzeWindow()
+                    }
+                }
+                .disabled(analyzer.isAnalyzing || (selectedPromptType == .custom && customPrompt.isEmpty))
+
+                DSButton("Clear", style: .secondary) {
+                    analyzer.lastAnalysis = nil
+                    analyzer.lastError = nil
+                }
+                .disabled(analyzer.lastAnalysis == nil && analyzer.lastError == nil)
             }
-            .pickerStyle(.menu)
 
             if selectedPromptType == .custom {
-                VStack(alignment: .leading, spacing: 4) {
+                HStack(alignment: .top) {
                     Text("Custom Prompt")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
+                        .font(Typography.body(.medium))
+                        .foregroundColor(ColorPalette.text)
+                        .frame(width: 120, alignment: .leading)
 
                     TextEditor(text: $customPrompt)
                         .font(.system(.body, design: .monospaced))
-                        .frame(minHeight: 80)
-                        .border(Color.gray.opacity(0.2))
+                        .frame(minHeight: 80, maxWidth: .infinity)
+                        .border(ColorPalette.border)
                 }
             }
         }
     }
 
-    private var actionSection: some View {
-        HStack {
-            Button("Analyze Cursor Window") {
-                Task {
-                    await analyzeWindow()
-                }
-            }
-            .buttonStyle(.borderedProminent)
-            .disabled(analyzer.isAnalyzing || (selectedPromptType == .custom && customPrompt.isEmpty))
-
-            Button("Clear") {
-                analyzer.lastAnalysis = nil
-                analyzer.lastError = nil
-            }
-            .disabled(analyzer.lastAnalysis == nil && analyzer.lastError == nil)
-        }
-    }
 
     private func errorView(_ error: Error) -> some View {
         VStack(alignment: .leading, spacing: 8) {

@@ -77,6 +77,11 @@ struct DebugSettingsView: View {
             // Debug Actions
             DSSettingsSection("Debug Actions") {
                 VStack(spacing: Spacing.medium) {
+                    DSButton("Open AXpector", style: .secondary) {
+                        NotificationCenter.default.post(name: .showAXpectorWindow, object: nil)
+                    }
+                    .frame(maxWidth: .infinity)
+
                     DSButton("Clear All UserDefaults", style: .destructive) {
                         clearUserDefaults()
                     }

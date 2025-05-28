@@ -58,21 +58,6 @@ struct AdvancedSettingsView: View {
                 }
             }
 
-            // Developer Actions
-            DSSettingsSection("Developer Actions") {
-                HStack(spacing: Spacing.small) {
-                    DSButton("View mcp.json", style: .secondary, size: .small) {
-                        viewMcpJson()
-                    }
-                    .frame(maxWidth: .infinity)
-
-                    DSButton("Open AXpector", style: .secondary, size: .small) {
-                        NotificationCenter.default.post(name: .showAXpectorWindow, object: nil)
-                    }
-                    .frame(maxWidth: .infinity)
-                }
-            }
-
             // Danger Zone
             DSSettingsSection("Danger Zone") {
                 DSCard(style: .filled) {
@@ -80,10 +65,10 @@ struct AdvancedSettingsView: View {
                         VStack(alignment: .leading, spacing: Spacing.small) {
                             HStack {
                                 Image(systemName: "exclamationmark.triangle.fill")
-                                    .foregroundColor(ColorPalette.warning)
+                                    .foregroundColor(.orange)
                                 Text("Caution")
                                     .font(Typography.callout(.semibold))
-                                    .foregroundColor(ColorPalette.warning)
+                                    .foregroundColor(.orange)
                             }
 
                             Text("This action will reset all settings and restart the app. This cannot be undone.")
@@ -119,11 +104,6 @@ struct AdvancedSettingsView: View {
         } message: {
             Text("All log files have been deleted.")
         }
-        .alert("File Not Found", isPresented: $showMcpJsonNotFoundAlert) {
-            Button("OK") {}
-        } message: {
-            Text("The file mcp.json was not found at \(mcpJsonNotFoundPath).")
-        }
     }
 
     // MARK: Private
@@ -133,8 +113,6 @@ struct AdvancedSettingsView: View {
 
     @State private var showResetAndRestartConfirmation = false
     @State private var showLogsClearedAlert = false
-    @State private var showMcpJsonNotFoundAlert = false
-    @State private var mcpJsonNotFoundPath: String = ""
 
     private func openLogsFolder() {
         let logsPath = NSHomeDirectory() + "/Library/Logs/CodeLooper/"
@@ -226,18 +204,6 @@ struct AdvancedSettingsView: View {
         NSApplication.shared.terminate(nil)
     }
 
-    private func viewMcpJson() {
-        let fileManager = FileManager.default
-        let cursorConfigDir = fileManager.homeDirectoryForCurrentUser.appendingPathComponent(".cursor")
-        let mcpJsonPath = cursorConfigDir.appendingPathComponent("mcp.json")
-
-        if fileManager.fileExists(atPath: mcpJsonPath.path) {
-            NSWorkspace.shared.open(mcpJsonPath)
-        } else {
-            showMcpJsonNotFoundAlert = true
-            mcpJsonNotFoundPath = mcpJsonPath.path
-        }
-    }
 }
 
 // MARK: - Preview

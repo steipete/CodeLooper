@@ -98,10 +98,25 @@ private struct WindowRow: View {
 
     @ViewBuilder
     private var windowStatus: some View {
-        if viewModel.hookedWindows.contains(window.id) {
-            HStack(spacing: 4) {
-                Image(systemName: "checkmark.seal.fill")
-                    .foregroundColor(.green)
+        let injectionState = viewModel.getInjectionState(for: window.id)
+        let isHooked = viewModel.hookedWindows.contains(window.id)
+        
+        if isHooked {
+            HStack(spacing: 6) {
+                // Green heart when hooked and has heartbeat
+                if let heartbeat = viewModel.getHeartbeatStatus(for: window.id), heartbeat.isAlive {
+                    Image(systemName: "heart.fill")
+                        .foregroundColor(.green)
+                        .help("Active connection with heartbeat")
+                } else if isHooked {
+                    Image(systemName: "checkmark.seal.fill")
+                        .foregroundColor(.green)
+                        .help("Hooked")
+                } else {
+                    Image(systemName: "heart")
+                        .foregroundColor(.orange)
+                        .help("Hooked but no heartbeat")
+                }
 
                 if let port = viewModel.getPort(for: window.id) {
                     Text("Port: \(port)")
@@ -110,18 +125,49 @@ private struct WindowRow: View {
                 }
 
                 if let heartbeat = viewModel.getHeartbeatStatus(for: window.id) {
-                    HeartbeatIndicator(status: heartbeat)
+                    Circle()
+                        .fill(heartbeat.isAlive ? .green : .red)
+                        .frame(width: 6, height: 6)
+                        .help(heartbeat.isAlive ? "Connected" : "Disconnected")
                 }
             }
         } else {
-            Button("Inject Hook") {
-                Task {
-                    await viewModel.injectJSHook(into: window)
+            HStack(spacing: 4) {
+                if injectionState.isWorking {
+                    // Show progress indicator
+                    ProgressView()
+                        .scaleEffect(0.6)
+                        .controlSize(.mini)
+                    
+                    Text(injectionState.displayText)
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                } else {
+                    Button(action: {
+                        Task {
+                            await viewModel.injectJSHook(into: window)
+                        }
+                    }) {
+                        switch injectionState {
+                        case .idle:
+                            Text("Inject Hook")
+                        case .failed:
+                            Text("Retry Hook")
+                        default:
+                            Text("Working...")
+                        }
+                    }
+                    .buttonStyle(.bordered)
+                    .controlSize(.small)
+                    .disabled(injectionState.isWorking)
+                    
+                    if case .failed(let error) = injectionState {
+                        Image(systemName: "exclamationmark.triangle.fill")
+                            .foregroundColor(.orange)
+                            .help("Error: \(error)")
+                    }
                 }
             }
-            .buttonStyle(.bordered)
-            .controlSize(.small)
-            .disabled(viewModel.isInjectingHook)
         }
     }
 }
@@ -160,12 +206,30 @@ private struct HeartbeatIndicator: View {
     // MARK: Internal
 
     let status: HeartbeatStatus
+    @State private var isPulsing = false
 
     var body: some View {
-        Circle()
-            .fill(color)
-            .frame(width: 8, height: 8)
-            .help(status.isAlive ? "Connected" : "Disconnected")
+        HStack(spacing: 3) {
+            // Animated heart for active connections
+            if status.isAlive {
+                Image(systemName: "heart.fill")
+                    .foregroundColor(.green)
+                    .scaleEffect(isPulsing ? 1.2 : 1.0)
+                    .animation(.easeInOut(duration: 0.8).repeatForever(autoreverses: true), value: isPulsing)
+                    .onAppear {
+                        isPulsing = true
+                    }
+            } else {
+                Image(systemName: "heart")
+                    .foregroundColor(status.resumeNeeded ? .orange : .red)
+            }
+            
+            // Status dot
+            Circle()
+                .fill(color)
+                .frame(width: 6, height: 6)
+        }
+        .help(helpText)
     }
 
     // MARK: Private
@@ -177,6 +241,16 @@ private struct HeartbeatIndicator: View {
             .green
         } else {
             .red
+        }
+    }
+    
+    private var helpText: String {
+        if status.isAlive {
+            "Connected - Last heartbeat: \(status.lastHeartbeat?.formatted(.dateTime.hour().minute().second()) ?? "Unknown")"
+        } else if status.resumeNeeded {
+            "Connection needs resume"
+        } else {
+            "Disconnected"
         }
     }
 }

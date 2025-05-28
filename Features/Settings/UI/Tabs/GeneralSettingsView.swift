@@ -62,7 +62,7 @@ struct GeneralSettingsView: View {
                             Spacer()
 
                             KeyboardShortcuts.Recorder(for: .toggleMonitoring)
-                                .fixedSize()
+                                .frame(width: 120, height: 32)
                         }
 
                         Text("Use standard symbols: ⌘ (Command), ⌥ (Option/Alt), ⇧ (Shift), ⌃ (Control)")
@@ -86,6 +86,7 @@ struct GeneralSettingsView: View {
                             DSButton("Browse...", style: .secondary, size: .small) {
                                 selectGitClientApp()
                             }
+                            .frame(width: 120, height: 32)
                         }
 
                         Text("Path to your Git client application (e.g., Tower, SourceTree, GitKraken)")
@@ -119,7 +120,6 @@ struct GeneralSettingsView: View {
                 }
                 .padding(.top, Spacing.large)
             }
-            .padding(Spacing.xLarge)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(ColorPalette.background)

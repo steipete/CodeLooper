@@ -4,8 +4,6 @@ import SwiftUI
 
 struct ExternalMCPsSettingsView: View {
     // MARK: Internal
-    
-    @Default(.autoReloadMCPsOnChanges) var autoReloadMCPsOnChanges
 
     var body: some View {
         VStack(alignment: .leading, spacing: Spacing.large) {
@@ -52,15 +50,6 @@ struct ExternalMCPsSettingsView: View {
                         openMCPConfigFolder()
                     }
                 }
-
-                DSDivider()
-
-                DSToggle(
-                    "Auto-reload MCPs on changes",
-                    isOn: $autoReloadMCPsOnChanges,
-                    description: "Automatically reload extensions when configuration changes",
-                    descriptionLineSpacing: 3
-                )
             }
 
             Spacer()
@@ -77,7 +66,7 @@ struct ExternalMCPsSettingsView: View {
             description: "Enables your IDE to make screenshots and ask questions about images",
             enabled: true,
             icon: "camera.viewfinder",
-            githubURL: "https://github.com/danhilton1/mcp-peekaboo"
+            githubURL: "https://github.com/steipete/Peekaboo"
         ),
         MCPExtension(
             id: UUID(),
@@ -86,7 +75,7 @@ struct ExternalMCPsSettingsView: View {
             description: "Manages a Terminal outside of the loop, so processes that might get stuck don't break the loop",
             enabled: true,
             icon: "terminal",
-            githubURL: "https://github.com/danhilton1/mcp-terminator"
+            githubURL: "https://github.com/steipete/Terminator"
         ),
         MCPExtension(
             id: UUID(),
@@ -95,7 +84,7 @@ struct ExternalMCPsSettingsView: View {
             description: "A buddy for your IDE that your agent can ask if he's stuck. Can do coding task and offer \"a pair of fresh eyes\" that often un-stucks the loop",
             enabled: true,
             icon: "brain",
-            githubURL: "https://github.com/claudehelper/claude-code-mcp"
+            githubURL: "https://github.com/steipete/claude-code-mcp"
         ),
         MCPExtension(
             id: UUID(),
@@ -104,7 +93,7 @@ struct ExternalMCPsSettingsView: View {
             description: "Advanced file manipulation for faster refactoring",
             enabled: true,
             icon: "doc.text.magnifyingglass",
-            githubURL: "https://github.com/jeremypress/mcp-conduit"
+            githubURL: "https://github.com/steipete/conduit-mcp"
         ),
         MCPExtension(
             id: UUID(),
@@ -113,7 +102,7 @@ struct ExternalMCPsSettingsView: View {
             description: "AppleScript for your IDE",
             enabled: true,
             icon: "applescript",
-            githubURL: "https://github.com/danhilton1/mcp-macos-automator"
+            githubURL: "https://github.com/steipete/macos-automator-mcp"
         ),
     ]
 
@@ -154,7 +143,25 @@ private struct MCPCard: View {
     let onRemove: () -> Void
 
     var body: some View {
-        DSCard(style: .outlined) {
+        Group {
+            if let githubURL = mcp.githubURL, let url = URL(string: githubURL) {
+                Link(destination: url) {
+                    cardContent
+                }
+                .buttonStyle(.plain)
+            } else {
+                cardContent
+            }
+        }
+        .onHover { hovering in
+            isHovered = hovering
+        }
+        .opacity(mcp.enabled ? 1.0 : 0.8)
+    }
+    
+    @ViewBuilder
+    private var cardContent: some View {
+        DSCard(style: .filled) {
             HStack(spacing: Spacing.medium) {
                 // Icon
                 Image(systemName: mcp.icon)
@@ -165,32 +172,26 @@ private struct MCPCard: View {
                     .cornerRadiusDS(Layout.CornerRadius.medium)
 
                 // Info
-                VStack(alignment: .leading, spacing: Spacing.xxxSmall) {
+                VStack(alignment: .leading, spacing: Spacing.small) {
                     HStack(spacing: Spacing.xSmall) {
-                        if let githubURL = mcp.githubURL, let url = URL(string: githubURL) {
-                            Link(destination: url) {
-                                Text(mcp.name)
-                                    .font(Typography.body(.medium))
-                                    .foregroundColor(ColorPalette.primary)
-                                    .underline()
-                            }
-                            .buttonStyle(.plain)
-                        } else {
-                            Text(mcp.name)
-                                .font(Typography.body(.medium))
-                                .foregroundColor(ColorPalette.text)
-                        }
+                        Text(mcp.name)
+                            .font(Typography.body(.medium))
+                            .foregroundColor(mcp.githubURL != nil ? ColorPalette.primary : ColorPalette.text)
 
-                        DSBadge("v\(mcp.version)", style: .default)
+                        Spacer()
 
                         if !mcp.enabled {
                             DSBadge("Disabled", style: .warning)
                         }
+
+                        DSBadge("v\(mcp.version)", style: .default)
+                            .frame(width: 60, alignment: .center)
                     }
 
                     Text(mcp.description)
                         .font(Typography.caption1())
                         .foregroundColor(ColorPalette.textSecondary)
+                        .lineSpacing(4)
                         .lineLimit(2)
                 }
 
@@ -198,31 +199,33 @@ private struct MCPCard: View {
 
                 // Actions
                 HStack(spacing: Spacing.small) {
-                    Toggle("", isOn: .constant(mcp.enabled))
-                        .toggleStyle(.switch)
-                        .controlSize(.small)
-                        .onTapGesture { onToggle() }
-
-                    if isHovered {
+                    // Reserved space for settings and delete buttons (shown on hover)
+                    HStack(spacing: Spacing.small) {
                         Button(action: onConfigure) {
                             Image(systemName: "gearshape")
                                 .foregroundColor(ColorPalette.textSecondary)
                         }
                         .buttonStyle(.plain)
+                        .opacity(isHovered ? 1.0 : 0.0)
+                        .frame(width: 20, height: 20)
 
                         Button(action: onRemove) {
                             Image(systemName: "trash")
                                 .foregroundColor(ColorPalette.error)
                         }
                         .buttonStyle(.plain)
+                        .opacity(isHovered ? 1.0 : 0.0)
+                        .frame(width: 20, height: 20)
                     }
+                    .frame(width: 48) // Fixed width to reserve space
+                    
+                    Toggle("", isOn: .constant(mcp.enabled))
+                        .toggleStyle(.switch)
+                        .controlSize(.small)
+                        .onTapGesture { onToggle() }
                 }
             }
         }
-        .onHover { hovering in
-            isHovered = hovering
-        }
-        .opacity(mcp.enabled ? 1.0 : 0.8)
     }
 
     // MARK: Private

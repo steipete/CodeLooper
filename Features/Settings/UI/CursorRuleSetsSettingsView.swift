@@ -38,7 +38,7 @@ struct CursorRuleSetsSettingsView: View {
                     .multilineTextAlignment(.center)
                 Spacer()
             }
-            .padding(.top, Spacing.medium)
+            .padding(.top, Spacing.small)
         }
         .alert("Feature Not Yet Implemented", isPresented: $showNotImplementedAlert) {
             Button("OK", role: .cancel) {}
@@ -114,7 +114,7 @@ private struct RuleCard: View {
     let onToggle: () -> Void
 
     var body: some View {
-        DSCard(style: isSelected ? .elevated : .outlined) {
+        DSCard(style: .filled) {
             HStack(spacing: Spacing.medium) {
                 // Status indicator
                 Circle()
@@ -134,10 +134,12 @@ private struct RuleCard: View {
 
                     HStack(spacing: Spacing.small) {
                         DSBadge(rule.trigger.displayName, style: .info)
+                            .frame(width: 120, alignment: .center)
                         Image(systemName: "arrow.right")
                             .font(.system(size: 10))
                             .foregroundColor(ColorPalette.textTertiary)
                         DSBadge(rule.action.displayName, style: .primary)
+                            .frame(width: 120, alignment: .center)
                     }
                 }
 
@@ -196,11 +198,11 @@ private struct RuleInfoPopover: View {
                     image
                         .resizable()
                         .aspectRatio(contentMode: .fit)
-                        .frame(maxWidth: 400, maxHeight: 300)
+                        .frame(maxWidth: 600, maxHeight: 450)
                         .cornerRadius(8)
                 } placeholder: {
                     ProgressView()
-                        .frame(width: 300, height: 200)
+                        .frame(width: 450, height: 300)
                 }
             }
             
@@ -210,7 +212,7 @@ private struct RuleInfoPopover: View {
                 .padding(.top, Spacing.small)
         }
         .padding(Spacing.large)
-        .frame(minWidth: 300, maxWidth: 450)
+        .frame(minWidth: 450, maxWidth: 675)
         .background(ColorPalette.background)
     }
 }

@@ -53,9 +53,11 @@ class CursorInputWatcherViewModel: ObservableObject {
     ]
     @Published var statusMessage: String = "Watcher is disabled."
     @Published var cursorWindows: [MonitoredWindowInfo] = []
-    @Published var isInjectingHook: Bool = false
     @Published var windowHeartbeatStatus: [String: HeartbeatStatus] = [:]
     @Published var windowAIAnalysis: [String: WindowAIStatus] = [:]
+    
+    // MARK: - Injection State
+    @Published var windowInjectionStates: [String: InjectionState] = [:]
 
     var hookedWindows: Set<String> {
         jsHookManager.hookedWindows
@@ -68,16 +70,60 @@ class CursorInputWatcherViewModel: ObservableObject {
     // MARK: - JS Hook Management
 
     func injectJSHook(into window: MonitoredWindowInfo) async {
-        guard !isInjectingHook else {
-            logger.warning("Already injecting hook, skipping")
+        let windowId = window.id
+        
+        // Check if already hooked
+        if jsHookManager.isWindowHooked(windowId) {
+            windowInjectionStates[windowId] = .hooked
+            return
+        }
+        
+        // Check if already working on this window
+        if windowInjectionStates[windowId]?.isWorking == true {
+            logger.warning("Already working on window \(windowId), skipping")
             return
         }
 
-        isInjectingHook = true
-        defer { isInjectingHook = false }
+        logger.info("🔨 Starting injection process for window: \(window.windowTitle ?? "Unknown")")
+        
+        // Start with probing state
+        windowInjectionStates[windowId] = .probing
+        
+        // Try fast probing first
+        jsHookManager.addWindowForFastProbing(window)
+        
+        // Give fast probe up to 3 seconds to work
+        for i in 0..<30 {
+            if jsHookManager.isWindowHooked(windowId) {
+                logger.info("✅ Fast probe found existing hook for window: \(windowId)")
+                windowInjectionStates[windowId] = .hooked
+                updateWatcherStatus()
+                return
+            }
+            try? await Task.sleep(nanoseconds: 100_000_000) // 0.1 second
+        }
 
-        await jsHookManager.injectHook(into: window, portManager: portManager)
+        // Move to injection state
+        windowInjectionStates[windowId] = .injecting
+        
+        // Perform actual injection
+        do {
+            try await jsHookManager.installHook(for: window)
+            logger.info("✅ Successfully injected hook for window: \(windowId)")
+            windowInjectionStates[windowId] = .hooked
+        } catch {
+            logger.error("❌ Failed to inject hook for window \(windowId): \(error)")
+            windowInjectionStates[windowId] = .failed(error.localizedDescription)
+        }
+        
         updateWatcherStatus()
+    }
+    
+    func getInjectionState(for windowId: String) -> InjectionState {
+        if jsHookManager.isWindowHooked(windowId) {
+            return .hooked
+        }
+        return windowInjectionStates[windowId] ?? .idle
     }
 
     func checkHookStatus(for window: MonitoredWindowInfo) -> Bool {
@@ -138,17 +184,37 @@ class CursorInputWatcherViewModel: ObservableObject {
             .sink { [weak self] apps in
                 guard let self else { return }
                 let allWindows = apps.flatMap(\.windows)
+                let previousWindowIds = Set(self.cursorWindows.map(\.id))
+                let currentWindowIds = Set(allWindows.map(\.id))
+                let newWindows = allWindows.filter { !previousWindowIds.contains($0.id) }
+                let removedWindowIds = previousWindowIds.subtracting(currentWindowIds)
+                
                 self.cursorWindows = allWindows
                 self.updateHookStatuses()
+                
+                // Clean up injection states for removed windows
+                for removedId in removedWindowIds {
+                    self.windowInjectionStates.removeValue(forKey: removedId)
+                }
 
-                Task {
-                    for window in allWindows where !self.jsHookManager.isWindowHooked(window.id) {
-                        if await self.jsHookManager.checkForExistingHook(in: window, portManager: self.portManager) {
-                            self.logger.info("Found existing hook for window: \(window.id)")
+                // Handle new windows with fast probing
+                for newWindow in newWindows {
+                    self.logger.info("📝 New window detected: '\(newWindow.windowTitle ?? "Unknown")' - starting fast probe")
+                    self.windowInjectionStates[newWindow.id] = .probing
+                    self.jsHookManager.handleNewWindow(newWindow)
+                    
+                    // Check probe results after a short delay
+                    Task {
+                        try? await Task.sleep(nanoseconds: 2_000_000_000) // 2 seconds
+                        if self.jsHookManager.isWindowHooked(newWindow.id) {
+                            self.windowInjectionStates[newWindow.id] = .hooked
+                        } else {
+                            self.windowInjectionStates[newWindow.id] = .idle
                         }
                     }
-                    self.updateWatcherStatus()
                 }
+
+                self.updateWatcherStatus()
             }
     }
 
@@ -288,6 +354,38 @@ extension CursorInputWatcherViewModel: HeartbeatMonitorDelegate {
 }
 
 // MARK: - Data Models
+
+enum InjectionState {
+    case idle
+    case probing
+    case injecting
+    case hooked
+    case failed(String)
+    
+    var displayText: String {
+        switch self {
+        case .idle:
+            "Ready"
+        case .probing:
+            "Probing..."
+        case .injecting:
+            "Injecting..."
+        case .hooked:
+            "Hooked"
+        case .failed(let error):
+            "Failed: \(error)"
+        }
+    }
+    
+    var isWorking: Bool {
+        switch self {
+        case .probing, .injecting:
+            true
+        default:
+            false
+        }
+    }
+}
 
 struct WatchedInputInfo: Identifiable {
     let id: String

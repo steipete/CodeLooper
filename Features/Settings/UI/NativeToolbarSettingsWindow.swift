@@ -18,7 +18,7 @@ final class NativeToolbarSettingsWindow: NSWindow {
         )
         
         super.init(
-            contentRect: NSRect(x: 0, y: 0, width: 800, height: 1000),
+            contentRect: NSRect(x: 0, y: 0, width: 720, height: 800),
             styleMask: [.closable, .miniaturizable, .resizable, .titled, .unifiedTitleAndToolbar, .fullSizeContentView],
             backing: .buffered,
             defer: false
@@ -37,9 +37,7 @@ final class NativeToolbarSettingsWindow: NSWindow {
         self.minSize = NSSize(width: 600, height: 400)
         
         // Try to reduce spacing with titlebar separator
-        if #available(macOS 11.0, *) {
-            self.titlebarSeparatorStyle = .none
-        }
+        self.titlebarSeparatorStyle = .none
         
         // Setup toolbar
         setupToolbar()
@@ -57,7 +55,6 @@ final class NativeToolbarSettingsWindow: NSWindow {
     private func setupToolbar() {
         let toolbar = NSToolbar(identifier: "SettingsToolbar")
         toolbar.displayMode = .iconOnly
-        toolbar.showsBaselineSeparator = false
         if #available(macOS 15.0, *) {
             toolbar.allowsDisplayModeCustomization = false
         }
@@ -481,6 +478,7 @@ private struct ToolbarTabButtonView: View {
     let selectedTab: CurrentValueSubject<SettingsTab, Never>
     @State private var isSelected = false
     @State private var isHovered = false
+    @State private var isWindowKey = true
     
     var body: some View {
         Button(action: {
@@ -505,13 +503,35 @@ private struct ToolbarTabButtonView: View {
                 RoundedRectangle(cornerRadius: 6)
                     .strokeBorder(borderColor, lineWidth: borderWidth)
             )
+            .overlay(
+                Rectangle()
+                    .fill(Color.clear)
+                    .contentShape(Rectangle())
+            )
         }
         .buttonStyle(.plain)
+        .opacity(isWindowKey ? 1.0 : 0.6)
         .onHover { hovering in
             isHovered = hovering
         }
         .onReceive(selectedTab) { newTab in
             isSelected = newTab == tab
+        }
+        .onReceive(NotificationCenter.default.publisher(for: NSWindow.didBecomeKeyNotification)) { notification in
+            if let window = notification.object as? NSWindow {
+                // Check if this is our settings window
+                if window.identifier == NSUserInterfaceItemIdentifier("settings") {
+                    isWindowKey = true
+                }
+            }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: NSWindow.didResignKeyNotification)) { notification in
+            if let window = notification.object as? NSWindow {
+                // Check if this is our settings window
+                if window.identifier == NSUserInterfaceItemIdentifier("settings") {
+                    isWindowKey = false
+                }
+            }
         }
     }
     
@@ -619,9 +639,7 @@ private struct SettingsContentView: View {
             currentTab = selectedTab.value
         }
         .onReceive(selectedTab) { newTab in
-            withAnimation(.easeInOut(duration: 0.175)) {
-                currentTab = newTab
-            }
+            currentTab = newTab
         }
     }
     

@@ -45,45 +45,59 @@ struct AISettingsView: View {
             // AI Provider Configuration
             DSSettingsSection("AI Provider") {
                 VStack(alignment: .leading, spacing: Spacing.medium) {
-                    Picker("AI Provider", selection: $aiProvider) {
-                        ForEach(AIProvider.allCases) { provider in
-                            Text(provider.displayName).tag(provider)
+                    HStack {
+                        Text("AI Provider")
+                            .font(Typography.body(.medium))
+                            .foregroundColor(ColorPalette.text)
+                            .frame(width: 120, alignment: .leading)
+                        
+                        Picker("", selection: $aiProvider) {
+                            ForEach(AIProvider.allCases) { provider in
+                                Text(provider.displayName).tag(provider)
+                            }
                         }
-                    }
-                    .pickerStyle(.segmented)
-                    .frame(maxWidth: .infinity)
-                    .onChange(of: aiProvider) { _, newValue in
-                        configureAIManager()
-                        // Ensure we select a model that's available for the new provider
-                        let newAvailableModels = AIModel.allCases.filter { $0.provider == newValue }
-                        if !newAvailableModels.contains(aiModel) {
-                            aiModel = newAvailableModels.first ?? .gpt4o
-                        }
-                        connectionTestResult = nil
-                        isAutoTesting = false
+                        .pickerStyle(.segmented)
+                        .frame(maxWidth: .infinity)
+                        .onChange(of: aiProvider) { _, newValue in
+                            configureAIManager()
+                            // Ensure we select a model that's available for the new provider
+                            let newAvailableModels = AIModel.allCases.filter { $0.provider == newValue }
+                            if !newAvailableModels.contains(aiModel) {
+                                aiModel = newAvailableModels.first ?? .gpt4o
+                            }
+                            connectionTestResult = nil
+                            isAutoTesting = false
 
-                        // Test the new provider automatically
-                        Task {
-                            try? await Task.sleep(nanoseconds: 200_000_000) // 0.2 seconds
+                            // Test the new provider automatically
+                            Task {
+                                try? await Task.sleep(nanoseconds: 200_000_000) // 0.2 seconds
 
-                            if (newValue == .openAI && !openAIAPIKey.isEmpty) ||
-                                (newValue == .ollama)
-                            {
-                                connectionTestResult = StatusMessage.checkingProvider(newValue.displayName)
-                                await testConnection()
+                                if (newValue == .openAI && !openAIAPIKey.isEmpty) ||
+                                    (newValue == .ollama)
+                                {
+                                    connectionTestResult = StatusMessage.checkingProvider(newValue.displayName)
+                                    await testConnection()
+                                }
                             }
                         }
                     }
 
                     DSDivider()
 
-                    Picker("Model", selection: $aiModel) {
-                        ForEach(availableModels) { model in
-                            Text(model.displayName).tag(model)
+                    HStack {
+                        Text("Model")
+                            .font(Typography.body(.medium))
+                            .foregroundColor(ColorPalette.text)
+                            .frame(width: 120, alignment: .leading)
+                        
+                        Picker("", selection: $aiModel) {
+                            ForEach(availableModels) { model in
+                                Text(model.displayName).tag(model)
+                            }
                         }
+                        .frame(maxWidth: .infinity)
+                        .disabled(availableModels.isEmpty)
                     }
-                    .frame(maxWidth: .infinity)
-                    .disabled(availableModels.isEmpty)
                 }
             }
 
@@ -102,7 +116,7 @@ struct AISettingsView: View {
                 .font(Typography.caption1())
                 .foregroundColor(ColorPalette.textSecondary)
                 .frame(maxWidth: .infinity, alignment: .center)
-                .padding(.vertical, Spacing.medium)
+                .padding(.top, Spacing.xxSmall)
 
             // Manual AI Window Analysis
             DSSettingsSection("Manual AI Window Analysis") {
@@ -152,21 +166,20 @@ struct AISettingsView: View {
                 Text("API Key")
                     .font(Typography.body(.medium))
                     .foregroundColor(ColorPalette.text)
-                
-                Spacer()
+                    .frame(width: 120, alignment: .leading)
                 
                 HStack {
                     if showAPIKey {
                         TextField("", text: $openAIAPIKey)
                             .textFieldStyle(.roundedBorder)
-                            .frame(maxWidth: 400)
+                            .frame(maxWidth: .infinity)
                             .onChange(of: openAIAPIKey) { _, newValue in
                                 handleAPIKeyChange(newValue)
                             }
                     } else {
                         SecureField("", text: $openAIAPIKey)
                             .textFieldStyle(.roundedBorder)
-                            .frame(maxWidth: 400)
+                            .frame(maxWidth: .infinity)
                             .onChange(of: openAIAPIKey) { _, newValue in
                                 handleAPIKeyChange(newValue)
                             }
@@ -202,38 +215,41 @@ struct AISettingsView: View {
 
     private var ollamaSettings: some View {
         VStack(alignment: .leading, spacing: Spacing.medium) {
-            VStack(alignment: .leading, spacing: Spacing.xSmall) {
+            HStack(alignment: .top) {
                 Text("Base URL")
                     .font(Typography.body(.medium))
                     .foregroundColor(ColorPalette.text)
+                    .frame(width: 120, alignment: .leading)
 
-                TextField("Base URL", text: $ollamaBaseURL)
-                    .textFieldStyle(.roundedBorder)
-                    .frame(maxWidth: .infinity)
-                    .onChange(of: ollamaBaseURL) { _, newValue in
-                        configureAIManager()
+                VStack(alignment: .leading, spacing: Spacing.xSmall) {
+                    TextField("Base URL", text: $ollamaBaseURL)
+                        .textFieldStyle(.roundedBorder)
+                        .frame(maxWidth: .infinity)
+                        .onChange(of: ollamaBaseURL) { _, newValue in
+                            configureAIManager()
 
-                        // Auto-test if URL looks valid
-                        let trimmed = newValue.trimmingCharacters(in: .whitespacesAndNewlines)
-                        if !trimmed.isEmpty {
-                            connectionTestResult = StatusMessage.validatingSoon
-                            isAutoTesting = true
-                            apiKeyDebouncer.call {
-                                Task { @MainActor in
-                                    self.connectionTestResult = StatusMessage.validatingOllama
-                                    await self.testConnection()
-                                    self.isAutoTesting = false
+                            // Auto-test if URL looks valid
+                            let trimmed = newValue.trimmingCharacters(in: .whitespacesAndNewlines)
+                            if !trimmed.isEmpty {
+                                connectionTestResult = StatusMessage.validatingSoon
+                                isAutoTesting = true
+                                apiKeyDebouncer.call {
+                                    Task { @MainActor in
+                                        self.connectionTestResult = StatusMessage.validatingOllama
+                                        await self.testConnection()
+                                        self.isAutoTesting = false
+                                    }
                                 }
+                            } else {
+                                connectionTestResult = nil
+                                isAutoTesting = false
                             }
-                        } else {
-                            connectionTestResult = nil
-                            isAutoTesting = false
                         }
-                    }
 
-                Text("Default: http://localhost:11434")
-                    .font(Typography.caption1())
-                    .foregroundColor(ColorPalette.textSecondary)
+                    Text("Default: http://localhost:11434")
+                        .font(Typography.caption1())
+                        .foregroundColor(ColorPalette.textSecondary)
+                }
             }
 
             if isAutoTesting || connectionTestResult != nil {

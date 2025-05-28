@@ -78,6 +78,11 @@ private struct TabButton: View {
             .background(backgroundColor)
             .cornerRadiusDS(Layout.CornerRadius.medium)
             .scaleEffect(isSelected ? 1.0 : (isHovered ? 0.98 : 1.0))
+            .overlay(
+                Rectangle()
+                    .fill(Color.clear)
+                    .contentShape(Rectangle())
+            )
         }
         .buttonStyle(.plain)
     }

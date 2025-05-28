@@ -199,8 +199,9 @@ private struct WindowRow: View {
             }
 
             if style == .settings {
+                let injectionState = inputWatcherViewModel.getInjectionState(for: windowState.id)
                 DSButton(
-                    hasActiveHook ? "Reinject" : "Inject JS",
+                    hasActiveHook ? "Reinject" : injectionState.isWorking ? injectionState.displayText : "Inject JS",
                     style: .secondary,
                     size: .small
                 ) {
@@ -208,7 +209,7 @@ private struct WindowRow: View {
                         await inputWatcherViewModel.injectJSHook(into: windowState)
                     }
                 }
-                .disabled(inputWatcherViewModel.isInjectingHook)
+                .disabled(injectionState.isWorking)
             }
         }
     }
