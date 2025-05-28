@@ -575,10 +575,30 @@ public class CursorMonitor: ObservableObject {
             // available.
             // For now, using index within the current fetch combined with PID as a temporary unique key if no title.
             let windowId = "\(appInfo.pid)-window-\(title ?? "untitled")-\(index)"
+
+            // Fetch the document path
+            var documentPath: String? = nil
+            // Use the public AXorcist.Element API to get the attribute value.
+            if let docURLString: String = windowElement.attribute(Attribute<String>(AXAttributeNames.kAXDocumentAttribute)) {
+                documentPath = docURLString
+                // Often kAXDocumentAttribute returns a file URL like "file:///path/to/document.txt"
+                // We convert this to a standard path.
+                if let url = URL(string: docURLString), url.isFileURL {
+                    documentPath = url.path
+                }
+            } else {
+                // If docURLString is nil, it means the attribute wasn't found or had no value.
+                // Log this if it's unexpected or for debugging purposes.
+                if monitoringCycleCount % 20 == 0 { // Log less frequently for this case
+                    logger.debug("Window element (Title: \(title ?? "N/A"), ID: \(windowId)) does not have kAXDocumentAttribute or it's nil.")
+                }
+            }
+
             newWindowInfos.append(MonitoredWindowInfo(
                 id: windowId,
                 windowTitle: title,
                 axElement: windowElement,
+                documentPath: documentPath,
                 isPaused: false
             )) // Pass AX element and default isPaused
         }

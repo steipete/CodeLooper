@@ -39,15 +39,17 @@ public struct MonitoredWindowInfo: Identifiable {
     public let id: String // Unique ID for the window (e.g., from AXUIElement or a generated UUID)
     public var windowTitle: String?
     public var windowAXElement: Element? // Changed from AXorcist.Element to Element
+    public var documentPath: String? // <<< ADDED
     public var isPaused: Bool = false // NEW: Pause state for this specific window
     // Add other window-specific properties as needed, e.g., specific status for this window
     // For simplicity, the main popover will display windows of the single monitored Cursor app.
 
-    public init(id: String, windowTitle: String?, axElement: Element? = nil, isPaused: Bool = false) { // Added
+    public init(id: String, windowTitle: String?, axElement: Element? = nil, documentPath: String? = nil, isPaused: Bool = false) { // Added
         // axElement and isPaused
         self.id = id
         self.windowTitle = windowTitle
         self.windowAXElement = axElement
+        self.documentPath = documentPath // <<< ADDED
         self.isPaused = isPaused
     }
 }

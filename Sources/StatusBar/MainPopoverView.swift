@@ -38,9 +38,18 @@ struct MainPopoverView: View {
                 } else {
                     List(cursorApp.windows) { window in
                         HStack {
-                            Text("    \(window.windowTitle ?? "Untitled Window")")
-                                .font(.system(.body, design: .monospaced))
-                                .foregroundColor(isGlobalMonitoringEnabled ? .primary : .secondary)
+                            VStack(alignment: .leading) {
+                                Text("    \(window.windowTitle ?? "Untitled Window")")
+                                    .font(.system(.body, design: .monospaced))
+                                    .foregroundColor(isGlobalMonitoringEnabled ? .primary : .secondary)
+                                if let docPath = window.documentPath, !docPath.isEmpty {
+                                    Text("      \(docPath)")
+                                        .font(.caption)
+                                        .foregroundColor(.gray)
+                                        .lineLimit(1)
+                                        .truncationMode(.middle)
+                                }
+                            }
                             Spacer()
                             Button {
                                 if window.isPaused {

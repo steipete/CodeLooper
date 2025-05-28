@@ -51,9 +51,18 @@ struct CursorSupervisionSettingsView: View {
                                     .foregroundColor(ColorPalette.textSecondary)
                                     .font(.system(size: 14))
                                 
-                                Text(window.windowTitle ?? "Untitled Window")
-                                    .font(.system(.body, design: .monospaced))
-                                    .lineLimit(1)
+                                VStack(alignment: .leading) {
+                                    Text(window.windowTitle ?? "Untitled Window")
+                                        .font(.system(.body, design: .monospaced))
+                                        .lineLimit(1)
+                                    if let docPath = window.documentPath, !docPath.isEmpty {
+                                        Text(docPath)
+                                            .font(Typography.caption2())
+                                            .foregroundColor(ColorPalette.textSecondary)
+                                            .lineLimit(1)
+                                            .truncationMode(.middle)
+                                    }
+                                }
                                 
                                 Spacer()
 
