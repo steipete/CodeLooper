@@ -939,9 +939,11 @@ class CursorInputWatcherViewModel: ObservableObject {
             object: nil,
             queue: nil
         ) { [weak self] notification in
+            // Capture userInfo outside the Task to avoid data race
+            let userInfo = notification.userInfo
             Task { @MainActor in
                 guard let self = self,
-                      let userInfo = notification.userInfo,
+                      let userInfo = userInfo,
                       let port = userInfo["port"] as? UInt16,
                       let location = userInfo["location"] as? String,
                       let version = userInfo["version"] as? String,

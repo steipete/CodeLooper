@@ -97,15 +97,15 @@ struct MainPopoverView: View {
                         .padding(.vertical, 4)
                         .contentShape(Rectangle())
                         .onTapGesture {
-                            logger.info("Tapped on window item: \(windowState.windowTitle ?? windowState.id). Attempting to raise.")
+                            Self.logger.info("Tapped on window item: \(windowState.windowTitle ?? windowState.id). Attempting to raise.")
                             if let axElement = windowState.windowAXElement {
                                 if axElement.performAction(.raise) {
-                                    logger.info("Successfully performed raise action for window: \(windowState.windowTitle ?? windowState.id)")
+                                    Self.logger.info("Successfully performed raise action for window: \(windowState.windowTitle ?? windowState.id)")
                                 } else {
-                                    logger.warning("Failed to perform raise action for window: \(windowState.windowTitle ?? windowState.id)")
+                                    Self.logger.warning("Failed to perform raise action for window: \(windowState.windowTitle ?? windowState.id)")
                                 }
                             } else {
-                                logger.warning("Cannot raise window: AXElement is nil for \(windowState.windowTitle ?? windowState.id)")
+                                Self.logger.warning("Cannot raise window: AXElement is nil for \(windowState.windowTitle ?? windowState.id)")
                             }
                         }
                     }

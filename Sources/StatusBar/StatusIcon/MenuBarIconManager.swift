@@ -1,9 +1,9 @@
 import AppKit
+import Combine
+import Defaults
 import Diagnostics
 import Foundation
 import OSLog
-import Combine
-import Defaults
 import SwiftUI
 
 @_exported import class Foundation.Timer
@@ -18,11 +18,12 @@ import SwiftUI
 /// with full support for different states, dark/light mode, and animations.
 @MainActor
 class MenuBarIconManager: ObservableObject {
-    // MARK: Lifecycle
+    // MARK: - Shared Instance
+    static let shared = MenuBarIconManager()
 
     // MARK: - Published Properties
-    @Published var currentIconAttributedString: AttributedString = AttributedString("...")
-    @Published var currentTooltip: String = Constants.appName
+    @Published var currentIconAttributedString = AttributedString("...")
+    @Published var currentTooltip: String = CodeLooper.Constants.appName
 
     // MARK: - Initialization
 
@@ -131,7 +132,7 @@ class MenuBarIconManager: ObservableObject {
                         if windowInfo.lastAIAnalysisStatus == .pending {
                             unknownCount += 1
                         }
-                        break // .error and .off don't contribute to active counts for icon display
+                        // .error and .off don't contribute to active counts for icon display
                     }
                 }
 
@@ -139,7 +140,8 @@ class MenuBarIconManager: ObservableObject {
                     self.setState(.idle) // No windows actively AI-watched, but monitoring is on
                 } else if workingCount > 0 || notWorkingCount > 0 || unknownCount > 0 {
                     self.setState(.aiStatus(working: workingCount, notWorking: notWorkingCount, unknown: unknownCount))
-                } else if Defaults[.isGlobalMonitoringEnabled] { // AI watching enabled, but no specific statuses yet (e.g. all off or error)
+                } else if Defaults[.isGlobalMonitoringEnabled] {
+                    // AI watching enabled, but no specific statuses yet (e.g. all off or error)
                      self.setState(.idle) // Or a more specific "no AI targets" state
                 } else {
                     self.setState(.paused) // Fallback if global monitoring is off
@@ -153,7 +155,7 @@ class MenuBarIconManager: ObservableObject {
         var newAttributedString: AttributedString
 
         switch state {
-        case .aiStatus(let working, let notWorking, let unknown):
+        case let .aiStatus(working, notWorking, unknown):
             if working == 0 && notWorking == 0 && unknown == 0 && !Defaults[.isGlobalMonitoringEnabled] {
                  newAttributedString = attributedString(for: .paused, appearance: currentAppearance)
             } else if working == 0 && notWorking == 0 && unknown == 0 && Defaults[.isGlobalMonitoringEnabled] {
@@ -173,7 +175,9 @@ class MenuBarIconManager: ObservableObject {
         // Simple text representation for non-AI states for now
         // This can be enhanced with SF Symbols or other icons as AttributedStrings
         var attributes = AttributeContainer()
-        attributes.font = .systemFont(ofSize: 12)
+        // Font assignment with Sendable workaround
+        let font = NSFont.systemFont(ofSize: 12)
+        attributes.font = font
         attributes.foregroundColor = appearance == .darkAqua ? .white : .black
 
         var iconString: String
@@ -187,6 +191,7 @@ class MenuBarIconManager: ObservableObject {
         return AttributedString(iconString, attributes: attributes)
     }
     
+    // swiftlint:disable empty_count
     private func createAIStatusAttributedString(working: Int, notWorking: Int, unknown: Int) -> AttributedString {
         var result = AttributedString()
         var hasContent = false
@@ -196,7 +201,7 @@ class MenuBarIconManager: ObservableObject {
             if hasContent {
                 result.append(AttributedString(" "))
             }
-            var part = AttributedString("\\(emoji)\\(count)")
+            let part = AttributedString("\(emoji)\(count)")
             result.append(part)
             hasContent = true
         }
@@ -219,12 +224,12 @@ class MenuBarIconManager: ObservableObject {
         }
         
         if !hasContent {
-            var idleIcon = AttributedString("○")
-            return idleIcon
+            return AttributedString()
         }
         
         return result
     }
+    // swiftlint:enable empty_count
 
     /// Sets up an observer to detect appearance changes (dark/light mode)
     private func setupAppearanceObserver() {
@@ -233,8 +238,11 @@ class MenuBarIconManager: ObservableObject {
             object: nil,
             queue: OperationQueue.main
         ) { [weak self] _ in
-            self?.logger.info("System appearance changed. Re-evaluating icon.")
-            self?.updateIconAttributedString(for: self?.currentState ?? .idle)
+            Task { @MainActor in
+                guard let self = self else { return }
+                self.logger.info("System appearance changed. Re-evaluating icon.")
+                self.updateIconAttributedString(for: self.currentState)
+            }
         }
     }
 
@@ -250,12 +258,4 @@ class MenuBarIconManager: ObservableObject {
     private func getCurrentAppearance() -> NSAppearance.Name {
         statusItem?.button?.effectiveAppearance.name ?? NSApp.effectiveAppearance.name
     }
-}
-
-// Ensure Constants.appName is available
-public enum Constants {
-    public static var appName: String {
-        Bundle.main.infoDictionary?["CFBundleName"] as? String ?? "CodeLooper"
-    }
-    // ... other constants
 }

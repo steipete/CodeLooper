@@ -265,24 +265,18 @@ struct AISettingsView: View {
         let providerName = AIServiceManager.shared.currentProvider.displayName
         let messagePrefix = isAutoTesting ? "" : "Testing \(providerName)... "
 
-        do {
-            if await AIServiceManager.shared.isServiceAvailable() {
-                var successMessage = ""
-                if AIServiceManager.shared.currentProvider == .ollama {
-                    let models = AIServiceManager.shared.supportedModels().map { $0.displayName }
-                    successMessage = messagePrefix + StatusMessage.ollamaConnected(models)
-                } else {
-                    successMessage = messagePrefix + StatusMessage.openAIConnected
-                }
-                connectionTestResult = successMessage
-                NotificationCenter.default.post(name: .AIServiceConfigured, object: nil) // Post notification
+        if await AIServiceManager.shared.isServiceAvailable() {
+            var successMessage = ""
+            if AIServiceManager.shared.currentProvider == .ollama {
+                let models = AIServiceManager.shared.supportedModels().map { $0.displayName }
+                successMessage = messagePrefix + StatusMessage.ollamaConnected(models)
             } else {
-                connectionTestResult = "✗ Connection failed for \(providerName). Check settings."
+                successMessage = messagePrefix + StatusMessage.openAIConnected
             }
-        } catch let error as AIServiceError {
-            connectionTestResult = "✗ \(error.localizedDescription)"
-        } catch {
-            connectionTestResult = "✗ An unexpected error occurred: \(error.localizedDescription)"
+            connectionTestResult = successMessage
+            NotificationCenter.default.post(name: .AIServiceConfigured, object: nil) // Post notification
+        } else {
+            connectionTestResult = "✗ Connection failed for \(providerName). Check settings."
         }
         isTestingConnection = false
         isAutoTesting = false

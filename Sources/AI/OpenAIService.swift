@@ -73,7 +73,7 @@ final class OpenAIService: AIService {
                  throw AIServiceError.serviceUnavailable // Or a specific quota error
             default:
                 // Fallback for other OpenAI APIErrors
-                logger.warning("Unhandled OpenAI APIError type: \(openAIError.type ?? "unknown"). Message: \(openAIError.message)")
+                logger.warning("Unhandled OpenAI APIError type: \(openAIError.type). Message: \(openAIError.message)")
                 throw AIServiceError.networkError(openAIError)
             }
         } catch let urlError as URLError {
