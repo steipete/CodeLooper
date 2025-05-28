@@ -17,7 +17,7 @@ struct CodeLooperApp: App {
         // Perform one-time setup for the logging system.
         Diagnostics.Logger.bootstrap(destination: .console, minLevel: .debug)
 
-        logger.info("CodeLooperApp initialized. ScenePhase: \(scenePhase)")
+        logger.info("CodeLooperApp initialized")
 
         // Check MCP extension versions on startup
         Task {
