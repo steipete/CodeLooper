@@ -168,6 +168,18 @@ public class AppDelegate: NSObject, NSApplicationDelegate,
         windowManager?.showAXpectorWindow()
     }
 
+    // MARK: - Menu Actions
+    
+    @IBAction func showAboutPanel(_ sender: Any?) {
+        logger.info("About menu item selected, showing custom About window")
+        windowManager?.showAboutWindow()
+    }
+    
+    @IBAction func orderFrontStandardAboutPanel(_ sender: Any?) {
+        logger.info("Standard About panel requested, redirecting to custom About window")
+        windowManager?.showAboutWindow()
+    }
+
     // MARK: - Update Handling (Sparkle)
 
     @IBAction func checkForUpdates(_ sender: Any?) {
