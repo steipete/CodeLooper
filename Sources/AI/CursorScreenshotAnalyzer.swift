@@ -11,6 +11,7 @@ public final class CursorScreenshotAnalyzer: ObservableObject {
     @Published public var lastError: Error?
     
     private let aiManager: AIServiceManager
+    private let imageScaleFactor: CGFloat = 0.5
     
     public init() {
         self.aiManager = AIServiceManager()
@@ -147,7 +148,20 @@ public final class CursorScreenshotAnalyzer: ObservableObject {
             height: targetWindow.frame.height
         ))
         
-        return nsImage
+        // Resize the image using the configurable scale factor
+        let newWidth = nsImage.size.width * imageScaleFactor
+        let newHeight = nsImage.size.height * imageScaleFactor
+        let newSize = NSSize(width: newWidth, height: newHeight)
+        
+        let resizedImage = NSImage(size: newSize)
+        resizedImage.lockFocus()
+        nsImage.draw(in: NSRect(origin: .zero, size: newSize),
+                     from: NSRect(origin: .zero, size: nsImage.size),
+                     operation: .sourceOver,
+                     fraction: 1.0)
+        resizedImage.unlockFocus()
+        
+        return resizedImage
     }
 }
 
