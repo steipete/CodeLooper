@@ -8,32 +8,9 @@ struct GeneralSettingsView: View {
     @EnvironmentObject var mainSettingsViewModel: MainSettingsViewModel
     @Default(.automaticallyCheckForUpdates)
     var automaticallyCheckForUpdates
-    @Default(.isGlobalMonitoringEnabled)
-    var isGlobalMonitoringEnabled
     @Default(.showInDock)
     var showInDock
-    @Default(.monitoringIntervalSeconds)
-    var monitoringIntervalSeconds
-    @Default(.maxInterventionsBeforePause)
-    var maxInterventionsBeforePause
-    @Default(.maxConnectionIssueRetries)
-    var maxConnectionIssueRetries
-    @Default(.maxConsecutiveRecoveryFailures)
-    var maxConsecutiveRecoveryFailures
-    @Default(.playSoundOnIntervention)
-    var playSoundOnIntervention
-    @Default(.sendNotificationOnPersistentError)
-    var sendNotificationOnPersistentError
-    @Default(.textForCursorStopsRecovery)
-    var textForCursorStopsRecovery
-    @Default(.monitorSidebarActivity)
-    var monitorSidebarActivity
-    @Default(.postInterventionObservationWindowSeconds)
-    var postInterventionObservationWindowSeconds
-    @Default(.stuckDetectionTimeoutSeconds)
-    var stuckDetectionTimeoutSeconds
-    @Default(.showDebugMenu)
-    var showDebugMenu
+    @Default(.gitClientApp) var gitClientApp
     @ObservedObject var updaterViewModel: UpdaterViewModel
 
     private var appVersion: String {
@@ -71,7 +48,7 @@ struct GeneralSettingsView: View {
                 DSSettingsSection("Keyboard Shortcuts") {
                     VStack(alignment: .leading, spacing: Spacing.small) {
                         HStack {
-                            VStack(alignment: .leading, spacing: Spacing.xxxSmall) {
+                            VStack(alignment: .leading, spacing: Spacing.xSmall) {
                                 Text("Toggle Monitoring")
                                     .font(Typography.body())
                                     .foregroundColor(ColorPalette.text)
@@ -93,59 +70,26 @@ struct GeneralSettingsView: View {
                     }
                 }
 
-                // Supervision Core Settings
-                DSSettingsSection("Monitoring") {
-                    DSToggle(
-                        "Enable Global Monitoring",
-                        isOn: $isGlobalMonitoringEnabled,
-                        description: "Monitor Cursor instances across all applications"
-                    )
-
-                    DSDivider()
-
-                    DSSlider(
-                        value: $monitoringIntervalSeconds,
-                        in: 0.5 ... 5.0,
-                        step: 0.5,
-                        label: "Monitoring Interval",
-                        showValue: true
-                    ) { String(format: "%.1fs", $0) }
-
-                    DSDivider()
-
-                    HStack {
-                        Text("Max Auto-Interventions Per Instance")
-                            .font(Typography.body())
-                        Spacer()
-                        Stepper(
-                            "\(maxInterventionsBeforePause)",
-                            value: $maxInterventionsBeforePause,
-                            in: 1 ... 25
-                        )
-                        .labelsHidden()
-                        .fixedSize()
-                    }
-
-                    DSDivider()
-
-                    DSToggle(
-                        "Play Sound on Intervention",
-                        isOn: $playSoundOnIntervention
-                    )
-
-                    DSDivider()
-
-                    VStack(alignment: .leading, spacing: Spacing.xSmall) {
-                        Text("Recovery Text")
-                            .font(Typography.body(.medium))
-                        Text("Text sent when CodeLooper nudges Cursor to recover")
-                            .textStyle(TextStyles.captionLarge)
-
-                        TextEditor(text: $textForCursorStopsRecovery)
-                            .font(Typography.monospaced(.small))
-                            .frame(height: 80)
-                            .cornerRadiusDS(Layout.CornerRadius.medium)
-                            .borderDS(ColorPalette.border)
+                // Git Integration
+                DSSettingsSection("Git Integration") {
+                    VStack(alignment: .leading, spacing: Spacing.small) {
+                        HStack(spacing: Spacing.small) {
+                            Text("Git Client App:")
+                                .font(Typography.body())
+                                .foregroundColor(ColorPalette.text)
+                                .frame(width: 120, alignment: .leading)
+                            
+                            DSTextField("", text: $gitClientApp)
+                                .frame(maxWidth: .infinity)
+                            
+                            DSButton("Browse...", style: .secondary, size: .small) {
+                                selectGitClientApp()
+                            }
+                        }
+                        
+                        Text("Path to your Git client application (e.g., Tower, SourceTree, GitKraken)")
+                            .font(Typography.caption1())
+                            .foregroundColor(ColorPalette.textSecondary)
                     }
                 }
 
@@ -179,6 +123,21 @@ struct GeneralSettingsView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(ColorPalette.background)
         .withDesignSystem()
+    }
+    
+    private func selectGitClientApp() {
+        let openPanel = NSOpenPanel()
+        openPanel.title = "Select Git Client Application"
+        openPanel.message = "Choose your preferred Git client application"
+        openPanel.allowsMultipleSelection = false
+        openPanel.canChooseDirectories = false
+        openPanel.canChooseFiles = true
+        openPanel.allowedContentTypes = [.application]
+        openPanel.directoryURL = URL(fileURLWithPath: "/Applications")
+        
+        if openPanel.runModal() == .OK, let url = openPanel.url {
+            gitClientApp = url.path
+        }
     }
 }
 

@@ -6,6 +6,7 @@ struct SettingsContainerView: View {
     // MARK: Internal
 
     @EnvironmentObject var viewModel: MainSettingsViewModel
+    @Default(.showDebugTab) private var showDebugTab
 
     var body: some View {
         GeometryReader { geometry in
@@ -15,101 +16,56 @@ struct SettingsContainerView: View {
 
                 // Custom tab navigation
                 TabNavigationView(selectedTab: $selectedTab, tabs: tabs)
+                    .onChange(of: showDebugTab) { oldValue, newValue in
+                        // If debug tab is disabled and currently selected, switch to general tab
+                        if !newValue && selectedTab == .debug {
+                            selectedTab = .general
+                        }
+                    }
 
                 // Content area with dynamic sizing
                 ScrollView {
                     VStack(spacing: 0) {
                         tabContent
                             .padding(Spacing.xLarge)
-                            .background(
-                                GeometryReader { contentGeometry in
-                                    Color.clear
-                                        .preference(
-                                            key: ContentSizeKey.self,
-                                            value: contentGeometry.size
-                                        )
-                                }
-                            )
                     }
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
-            }
-            .onPreferenceChange(ContentSizeKey.self) { contentSize in
-                updateWindowSize(contentSize: contentSize)
             }
             .onPreferenceChange(HeaderHeightKey.self) { height in
                 headerHeight = height
             }
         }
-        .frame(minWidth: 720, maxWidth: 1200, 
-               minHeight: 400, maxHeight: .infinity)
+        .frame(minWidth: 600, maxWidth: 880, 
+               minHeight: 800, maxHeight: .infinity)
         .background(ColorPalette.background)
         .withDesignSystem()
-        .onAppear {
-            // Make the settings window resizable
-            if let window = NSApp.windows.first(where: { $0.title == "Settings" || $0.title == "CodeLooper Settings" }) {
-                window.styleMask.insert(.resizable)
-                window.minSize = NSSize(width: 720, height: 400)
-                window.maxSize = NSSize(width: 1200, height: 900)
-            }
-        }
     }
 
     // MARK: Private
 
     @State private var selectedTab: SettingsTab = .general
-    @State private var currentContentSize: CGSize = .zero
     @State private var headerHeight: CGFloat = 0
-    @State private var tabBarHeight: CGFloat = 0
 
     // Tab definitions
-    private let tabs: [(id: SettingsTab, title: String, icon: String)] = [
-        (.general, "General", "gearshape"),
-        (.supervision, "Supervision", "eye"),
-        (.ruleSets, "Rules", "checklist"),
-        (.externalMCPs, "Extensions", "puzzlepiece.extension"),
-        (.ai, "AI", "brain"),
-        (.advanced, "Advanced", "wrench.and.screwdriver"),
-        (.about, "About", "info.circle"),
-    ]
-    
-    private func updateWindowSize(contentSize: CGSize) {
-        guard contentSize.height > 0 else { return }
+    private var tabs: [(id: SettingsTab, title: String, icon: String)] {
+        var baseTabs: [(id: SettingsTab, title: String, icon: String)] = [
+            (.general, "General", "gearshape"),
+            (.supervision, "Supervision", "eye"),
+            (.ruleSets, "Rules", "checklist"),
+            (.externalMCPs, "Extensions", "puzzlepiece.extension"),
+            (.ai, "AI", "brain"),
+            (.advanced, "Advanced", "wrench.and.screwdriver"),
+        ]
         
-        // Calculate total window height needed
-        let actualHeaderHeight = self.headerHeight > 0 ? self.headerHeight : 96
-        let tabBarHeight: CGFloat = 60 // Approximate tab bar height
-        let padding: CGFloat = Spacing.xLarge * 2 // Top and bottom padding
-        
-        let totalHeight = actualHeaderHeight + tabBarHeight + contentSize.height + padding
-        
-        // Clamp the height to reasonable bounds
-        let targetHeight = min(max(totalHeight, 400), 900)
-        
-        // Only update if there's a significant change (avoid jitter)
-        let currentWindowHeight = NSApp.windows.first(where: { $0.title == "Settings" || $0.title == "CodeLooper Settings" })?.frame.height ?? 0
-        let heightDifference = abs(currentWindowHeight - targetHeight)
-        
-        if heightDifference > 10 {
-            // Update window size
-            if let window = NSApp.windows.first(where: { $0.title == "Settings" || $0.title == "CodeLooper Settings" }) {
-                let currentFrame = window.frame
-                let newHeight = targetHeight
-                
-                // Keep the window centered when resizing
-                let newFrame = NSRect(
-                    x: currentFrame.origin.x,
-                    y: currentFrame.origin.y + (currentFrame.height - newHeight),
-                    width: currentFrame.width,
-                    height: newHeight
-                )
-                
-                window.setFrame(newFrame, display: true, animate: true)
-            }
+        if showDebugTab {
+            baseTabs.append((.debug, "Debug", "ladybug"))
         }
         
-        currentContentSize = contentSize
+        baseTabs.append((.about, "About", "info.circle"))
+        return baseTabs
     }
+    
 
     @ViewBuilder
     private var tabContent: some View {
@@ -117,44 +73,50 @@ struct SettingsContainerView: View {
         case .general:
             GeneralSettingsView(updaterViewModel: viewModel.updaterViewModel)
                 .transition(.asymmetric(
-                    insertion: .move(edge: .trailing).combined(with: .opacity),
-                    removal: .move(edge: .leading).combined(with: .opacity)
+                    insertion: AnyTransition.move(edge: .trailing).combined(with: .opacity),
+                    removal: AnyTransition.move(edge: .leading).combined(with: .opacity)
                 ))
         case .supervision:
             CursorSupervisionSettingsView()
                 .transition(.asymmetric(
-                    insertion: .move(edge: .trailing).combined(with: .opacity),
-                    removal: .move(edge: .leading).combined(with: .opacity)
+                    insertion: AnyTransition.move(edge: .trailing).combined(with: .opacity),
+                    removal: AnyTransition.move(edge: .leading).combined(with: .opacity)
                 ))
         case .ruleSets:
             CursorRuleSetsSettingsView()
                 .transition(.asymmetric(
-                    insertion: .move(edge: .trailing).combined(with: .opacity),
-                    removal: .move(edge: .leading).combined(with: .opacity)
+                    insertion: AnyTransition.move(edge: .trailing).combined(with: .opacity),
+                    removal: AnyTransition.move(edge: .leading).combined(with: .opacity)
                 ))
         case .externalMCPs:
             ExternalMCPsSettingsView()
                 .transition(.asymmetric(
-                    insertion: .move(edge: .trailing).combined(with: .opacity),
-                    removal: .move(edge: .leading).combined(with: .opacity)
+                    insertion: AnyTransition.move(edge: .trailing).combined(with: .opacity),
+                    removal: AnyTransition.move(edge: .leading).combined(with: .opacity)
                 ))
         case .ai:
             AISettingsView()
                 .transition(.asymmetric(
-                    insertion: .move(edge: .trailing).combined(with: .opacity),
-                    removal: .move(edge: .leading).combined(with: .opacity)
+                    insertion: AnyTransition.move(edge: .trailing).combined(with: .opacity),
+                    removal: AnyTransition.move(edge: .leading).combined(with: .opacity)
                 ))
         case .advanced:
             AdvancedSettingsView()
                 .transition(.asymmetric(
-                    insertion: .move(edge: .trailing).combined(with: .opacity),
-                    removal: .move(edge: .leading).combined(with: .opacity)
+                    insertion: AnyTransition.move(edge: .trailing).combined(with: .opacity),
+                    removal: AnyTransition.move(edge: .leading).combined(with: .opacity)
+                ))
+        case .debug:
+            AboutSettingsView()
+                .transition(.asymmetric(
+                    insertion: AnyTransition.move(edge: .trailing).combined(with: .opacity),
+                    removal: AnyTransition.move(edge: .leading).combined(with: .opacity)
                 ))
         case .about:
             AboutSettingsView()
                 .transition(.asymmetric(
-                    insertion: .move(edge: .trailing).combined(with: .opacity),
-                    removal: .move(edge: .leading).combined(with: .opacity)
+                    insertion: AnyTransition.move(edge: .trailing).combined(with: .opacity),
+                    removal: AnyTransition.move(edge: .leading).combined(with: .opacity)
                 ))
         default:
             EmptyView()
@@ -167,26 +129,33 @@ struct SettingsContainerView: View {
 private struct HeaderView: View {
     var body: some View {
         HStack(spacing: Spacing.medium) {
+            // Add leading space to account for window buttons (close, minimize, maximize)
+            // Standard macOS window buttons are about 68pt wide
+            Spacer()
+                .frame(width: 68)
+            
             if let appIcon = NSApplication.shared.applicationIconImage {
                 Image(nsImage: appIcon)
                     .resizable()
-                    .frame(width: 48, height: 48)
-                    .cornerRadiusDS(Layout.CornerRadius.large)
+                    .frame(width: 32, height: 32) // Smaller icon for unified header
+                    .cornerRadiusDS(Layout.CornerRadius.medium)
             }
 
             VStack(alignment: .leading, spacing: Spacing.xxxSmall) {
                 Text("CodeLooper Settings")
-                    .font(Typography.title2(.semibold))
+                    .font(Typography.title3(.semibold)) // Smaller font for unified header
                     .foregroundColor(ColorPalette.text)
 
                 Text("Configure your Cursor supervision preferences")
-                    .font(Typography.caption1())
+                    .font(Typography.caption2()) // Smaller caption
                     .foregroundColor(ColorPalette.textSecondary)
             }
 
             Spacer()
         }
-        .padding(Spacing.large)
+        .padding(.horizontal, Spacing.large)
+        .padding(.top, Spacing.small) // Reduced top padding to align with window buttons
+        .padding(.bottom, Spacing.medium)
         .background(ColorPalette.backgroundSecondary)
         .background(
             GeometryReader { geometry in
@@ -323,15 +292,6 @@ private struct TabButton: View {
     }
 }
 
-// MARK: - PreferenceKey for Content Size
-
-private struct ContentSizeKey: PreferenceKey {
-    static let defaultValue: CGSize = .zero
-    
-    static func reduce(value: inout CGSize, nextValue: () -> CGSize) {
-        value = nextValue()
-    }
-}
 
 private struct HeaderHeightKey: PreferenceKey {
     static let defaultValue: CGFloat = 0

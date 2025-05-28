@@ -87,7 +87,7 @@ struct MainPopoverView: View {
                     icon: Image(systemName: "gearshape.fill"),
                     style: .secondary
                 ) {
-                    NSApplication.shared.openSettings()
+                    MainSettingsCoordinator.shared.showSettings()
                 }
                 .help("Open Settings")
                 
