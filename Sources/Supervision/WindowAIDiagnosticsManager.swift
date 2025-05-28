@@ -14,6 +14,7 @@ class WindowAIDiagnosticsManager: ObservableObject {
 
     private var timers: [String: Timer] = [:]
     private let screenshotAnalyzer = CursorScreenshotAnalyzer()
+    private let gitRepositoryMonitor = GitRepositoryMonitor()
     private var cancellables = Set<AnyCancellable>()
     private let logger = Logger(category: .supervision)
     private var previousScreenshots: [String: Data] = [:] // Store previous screenshot data for comparison
@@ -87,6 +88,8 @@ class WindowAIDiagnosticsManager: ObservableObject {
                     currentWindowInfo.windowAXElement = window.windowAXElement
                     currentWindowInfo.documentPath = window.documentPath
                     currentWindowInfo.isPaused = window.isPaused // from CursorMonitor
+                    // Update window state properties (minimized, hidden, etc.)
+                    currentWindowInfo.updateWindowState()
                     // Persisted AI settings (isLiveWatchingEnabled, aiAnalysisIntervalSeconds) are loaded by MonitoredWindowInfo init.
                     // Runtime AI state (lastAIAnalysisStatus, etc.) from previousAIState should be kept.
                     currentWindowInfo.lastAIAnalysisStatus = previousAIState.lastAIAnalysisStatus
@@ -107,7 +110,30 @@ class WindowAIDiagnosticsManager: ObservableObject {
                 }
                 
                 newWindowStates[window.id] = currentWindowInfo
-                setupTimer(for: currentWindowInfo)
+                
+                // Only setup timer if this is a new window or if monitoring state changed
+                let existingWindow = windowStates[window.id]
+                let shouldSetupTimer = existingWindow == nil ||
+                    existingWindow?.isLiveWatchingEnabled != currentWindowInfo.isLiveWatchingEnabled
+                
+                if shouldSetupTimer {
+                    setupTimer(for: currentWindowInfo)
+                }
+                
+                // Fetch Git repository info for the window if it has a document path
+                if let documentPath = currentWindowInfo.documentPath {
+                    Task {
+                        if let gitRepo = await self.gitRepositoryMonitor.findRepository(for: documentPath) {
+                            DispatchQueue.main.async {
+                                if var updatedWindowInfo = self.windowStates[window.id] {
+                                    updatedWindowInfo.gitRepository = gitRepo
+                                    self.windowStates[window.id] = updatedWindowInfo
+                                    self.objectWillChange.send()
+                                }
+                            }
+                        }
+                    }
+                }
             }
         }
         
@@ -184,6 +210,25 @@ class WindowAIDiagnosticsManager: ObservableObject {
 
         logger.info("Checking for screenshot changes for window: \(windowInfo.windowTitle ?? windowId)")
         
+        // Skip screenshot capture for minimized or hidden windows
+        if windowInfo.isMinimized {
+            logger.info("Skipping AI analysis for minimized window: \(windowInfo.windowTitle ?? windowId)")
+            windowInfo.lastAIAnalysisStatus = .off
+            windowInfo.lastAIAnalysisResponseMessage = "Window is minimized"
+            windowStates[windowId] = windowInfo
+            objectWillChange.send()
+            return
+        }
+        
+        if windowInfo.isHidden {
+            logger.info("Skipping AI analysis for hidden window: \(windowInfo.windowTitle ?? windowId)")
+            windowInfo.lastAIAnalysisStatus = .off
+            windowInfo.lastAIAnalysisResponseMessage = "Window is hidden"
+            windowStates[windowId] = windowInfo
+            objectWillChange.send()
+            return
+        }
+        
         var targetSCWindow: SCWindow? = nil
 
         if let axWindowElement = windowInfo.windowAXElement {
@@ -241,6 +286,13 @@ class WindowAIDiagnosticsManager: ObservableObject {
             // Screenshot has changed or is new, store it and proceed with analysis
             previousScreenshots[windowId] = tiffData
             logger.info("Screenshot changes detected for window: \(windowInfo.windowTitle ?? windowId). Proceeding with AI analysis using 'working' prompt.")
+            
+            // Also update Git repository info when screenshot changes
+            if let documentPath = windowInfo.documentPath {
+                if let gitRepo = await gitRepositoryMonitor.findRepository(for: documentPath) {
+                    windowInfo.gitRepository = gitRepo
+                }
+            }
             
             windowInfo.lastAIAnalysisTimestamp = Date()
             windowInfo.lastAIAnalysisStatus = .pending
@@ -394,6 +446,36 @@ class WindowAIDiagnosticsManager: ObservableObject {
         
         windowStates[windowId] = windowInfo
         setupTimer(for: windowInfo) // Re-setup timer which will start/stop it
+        objectWillChange.send()
+    }
+    
+    func enableLiveWatchingForAllWindows() {
+        for windowId in windowStates.keys {
+            guard var windowInfo = windowStates[windowId] else { continue }
+            if !windowInfo.isLiveWatchingEnabled {
+                windowInfo.isLiveWatchingEnabled = true
+                windowInfo.saveAISettings()
+                windowInfo.lastAIAnalysisStatus = .pending
+                previousScreenshots.removeValue(forKey: windowId)
+                windowStates[windowId] = windowInfo
+                setupTimer(for: windowInfo)
+            }
+        }
+        objectWillChange.send()
+    }
+    
+    func disableLiveWatchingForAllWindows() {
+        for windowId in windowStates.keys {
+            guard var windowInfo = windowStates[windowId] else { continue }
+            if windowInfo.isLiveWatchingEnabled {
+                windowInfo.isLiveWatchingEnabled = false
+                windowInfo.saveAISettings()
+                windowInfo.lastAIAnalysisStatus = .off
+                previousScreenshots.removeValue(forKey: windowId)
+                windowStates[windowId] = windowInfo
+                setupTimer(for: windowInfo)
+            }
+        }
         objectWillChange.send()
     }
 
