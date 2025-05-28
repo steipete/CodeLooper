@@ -89,6 +89,7 @@ let project = Project(
                 "Resources/CodeLooper.sdef",
                 "Resources/MainMenu.nib",
                 "Resources/JavaScript/**",
+                "Resources/chain_link_lottie.json",
                 "CodeLooper/Assets.xcassets",
                 "CodeLooper/Base.lproj/**"
             ],
