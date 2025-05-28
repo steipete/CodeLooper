@@ -105,8 +105,12 @@ private struct WindowRow: View {
         .animation(.smooth(duration: 0.2), value: isHoveringCard)
         .onHover { hovering in
             isHoveringCard = hovering
+            if hovering {
+                NSCursor.pointingHand.push()
+            } else {
+                NSCursor.pop()
+            }
         }
-        
         .onTapGesture {
             raiseWindow()
         }
@@ -151,8 +155,12 @@ private struct WindowRow: View {
                         }
                         .onHover { isHovering in
                             isHoveringDocument = isHovering
+                            if isHovering {
+                                NSCursor.pointingHand.push()
+                            } else {
+                                NSCursor.pop()
+                            }
                         }
-                        
                         .help("Open in Finder")
                 }
             }
@@ -277,6 +285,11 @@ private struct WindowRow: View {
                             }
                             .onHover { isHovering in
                                 isHoveringFolderName = isHovering
+                                if isHovering {
+                                    NSCursor.pointingHand.push()
+                                } else {
+                                    NSCursor.pop()
+                                }
                             }
                             
                     }
