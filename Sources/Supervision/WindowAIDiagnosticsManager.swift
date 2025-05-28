@@ -16,6 +16,7 @@ class WindowAIDiagnosticsManager: ObservableObject {
     private let screenshotAnalyzer = CursorScreenshotAnalyzer()
     private var cancellables = Set<AnyCancellable>()
     private let logger = Logger(category: .supervision)
+    private var previousScreenshots: [String: Data] = [:] // Store previous screenshot data for comparison
 
     private init() { // Make init private for singleton
         logger.info("WindowAIDiagnosticsManager initialized")
@@ -115,6 +116,7 @@ class WindowAIDiagnosticsManager: ObservableObject {
         for windowID in windowsToRemove {
             timers[windowID]?.invalidate()
             timers.removeValue(forKey: windowID)
+            previousScreenshots.removeValue(forKey: windowID)
             // No need to remove from windowStates here, as newWindowStates will become self.windowStates
         }
         
@@ -180,12 +182,8 @@ class WindowAIDiagnosticsManager: ObservableObject {
             return
         }
 
-        logger.info("Performing AI analysis for window: \(windowInfo.windowTitle ?? windowId) using 'working' prompt.")
-        windowInfo.lastAIAnalysisTimestamp = Date()
-        windowInfo.lastAIAnalysisStatus = .pending
-        windowStates[windowId] = windowInfo
-        objectWillChange.send()
-
+        logger.info("Checking for screenshot changes for window: \(windowInfo.windowTitle ?? windowId)")
+        
         var targetSCWindow: SCWindow? = nil
 
         if let axWindowElement = windowInfo.windowAXElement {
@@ -212,11 +210,54 @@ class WindowAIDiagnosticsManager: ObservableObject {
             logger.warning("No AXElement available for window '\(windowInfo.windowTitle ?? windowId)' to get specific CGWindowID. Will attempt capture of first Cursor window.")
         }
 
+        // Capture screenshot first to check if it has changed
         do {
+            guard let screenshot = try await screenshotAnalyzer.captureCursorWindow(targetSCWindow: targetSCWindow) else {
+                logger.warning("No screenshot captured for window \(windowId)")
+                windowInfo.lastAIAnalysisStatus = .error
+                windowInfo.lastAIAnalysisResponseMessage = "Failed to capture screenshot"
+                windowStates[windowId] = windowInfo
+                objectWillChange.send()
+                return
+            }
+            
+            // Convert screenshot to data for comparison
+            guard let tiffData = screenshot.tiffRepresentation else {
+                logger.error("Failed to get TIFF representation for screenshot comparison")
+                windowInfo.lastAIAnalysisStatus = .error
+                windowInfo.lastAIAnalysisResponseMessage = "Failed to process screenshot"
+                windowStates[windowId] = windowInfo
+                objectWillChange.send()
+                return
+            }
+            
+            // Check if screenshot has changed
+            if let previousData = previousScreenshots[windowId], previousData == tiffData {
+                logger.info("No changes detected in screenshot for window \(windowId). Skipping AI analysis.")
+                // Keep the current status as is (don't change to pending or error)
+                return
+            }
+            
+            // Screenshot has changed or is new, store it and proceed with analysis
+            previousScreenshots[windowId] = tiffData
+            logger.info("Screenshot changes detected for window: \(windowInfo.windowTitle ?? windowId). Proceeding with AI analysis using 'working' prompt.")
+            
+            windowInfo.lastAIAnalysisTimestamp = Date()
+            windowInfo.lastAIAnalysisStatus = .pending
+            windowStates[windowId] = windowInfo
+            objectWillChange.send()
+            
             // Use the predefined prompt from CursorScreenshotAnalyzer
             let prompt = CursorScreenshotAnalyzer.AnalysisPrompts.working
             
-            let response = try await screenshotAnalyzer.analyzeSpecificWindow(targetSCWindow, customPrompt: prompt)
+            // Analyze using the already captured screenshot
+            let request = ImageAnalysisRequest(
+                image: screenshot,
+                prompt: prompt,
+                model: Defaults[.aiModel]
+            )
+            
+            let response = try await AIServiceManager.shared.analyzeImage(request)
             
             // Parse the JSON response
             _ = Data(response.text.utf8)
@@ -343,8 +384,12 @@ class WindowAIDiagnosticsManager: ObservableObject {
         
         if windowInfo.isLiveWatchingEnabled {
             windowInfo.lastAIAnalysisStatus = .pending // Set to pending to trigger analysis
+            // Clear previous screenshot to ensure fresh analysis when re-enabled
+            previousScreenshots.removeValue(forKey: windowId)
         } else {
             windowInfo.lastAIAnalysisStatus = .off
+            // Clear previous screenshot when disabled
+            previousScreenshots.removeValue(forKey: windowId)
         }
         
         windowStates[windowId] = windowInfo
@@ -358,5 +403,6 @@ class WindowAIDiagnosticsManager: ObservableObject {
         timers.removeAll()
         cancellables.forEach { $0.cancel() }
         cancellables.removeAll()
+        previousScreenshots.removeAll()
     }
 } 
