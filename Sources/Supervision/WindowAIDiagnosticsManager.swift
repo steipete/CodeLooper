@@ -11,15 +11,22 @@ class WindowAIDiagnosticsManager: ObservableObject {
     static let shared = WindowAIDiagnosticsManager() // <<< ADDED shared instance
 
     @Published var windowStates: [String: MonitoredWindowInfo] = [:] // Keyed by MonitoredWindowInfo.id
+    
+    /// Check if a document path exists on disk
+    public func documentPathExists(_ path: String) -> Bool {
+        return documentPathTracker.documentPathExists(path)
+    }
 
     private var timers: [String: Timer] = [:]
     private let screenshotAnalyzer = CursorScreenshotAnalyzer()
     private let gitRepositoryMonitor = GitRepositoryMonitor()
+    private let documentPathTracker: DocumentPathTracker
     private var cancellables = Set<AnyCancellable>()
     private let logger = Logger(category: .supervision)
     private var previousScreenshots: [String: Data] = [:] // Store previous screenshot data for comparison
 
     private init() { // Make init private for singleton
+        self.documentPathTracker = DocumentPathTracker(gitRepositoryMonitor: gitRepositoryMonitor)
         logger.info("WindowAIDiagnosticsManager initialized")
         // Observe CursorMonitor's apps
         CursorMonitor.shared.$monitoredApps
@@ -120,10 +127,27 @@ class WindowAIDiagnosticsManager: ObservableObject {
                     setupTimer(for: currentWindowInfo)
                 }
                 
-                // Fetch Git repository info for the window if it has a document path
+                // Track document path and fetch Git repository info
                 if let documentPath = currentWindowInfo.documentPath {
                     Task {
-                        if let gitRepo = await self.gitRepositoryMonitor.findRepository(for: documentPath) {
+                        // Record this document access
+                        await self.documentPathTracker.recordDocumentAccess(documentPath)
+                        
+                        // Get repository using heuristic (specific path or most frequent)
+                        if let gitRepo = await self.documentPathTracker.getRepositoryForDocument(documentPath) {
+                            DispatchQueue.main.async {
+                                if var updatedWindowInfo = self.windowStates[window.id] {
+                                    updatedWindowInfo.gitRepository = gitRepo
+                                    self.windowStates[window.id] = updatedWindowInfo
+                                    self.objectWillChange.send()
+                                }
+                            }
+                        }
+                    }
+                } else {
+                    // No document path, but try to get the most frequent repository
+                    Task {
+                        if let gitRepo = await self.documentPathTracker.getMostFrequentRepository() {
                             DispatchQueue.main.async {
                                 if var updatedWindowInfo = self.windowStates[window.id] {
                                     updatedWindowInfo.gitRepository = gitRepo
