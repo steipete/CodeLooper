@@ -25,6 +25,7 @@ public struct ColorPalette {
     public static let borderLight = Color(NSColor.separatorColor).opacity(0.5)
     
     // MARK: - Interactive States
+    public static let accent = Color.accentColor
     public static let hover = Color.accentColor.opacity(0.1)
     public static let pressed = Color.accentColor.opacity(0.2)
     public static let disabled = Color.gray.opacity(0.3)
