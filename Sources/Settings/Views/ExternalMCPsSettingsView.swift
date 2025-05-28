@@ -78,27 +78,43 @@ struct ExternalMCPsSettingsView: View {
     @State private var installedMCPs: [MCPExtension] = [
         MCPExtension(
             id: UUID(),
-            name: "Git MCP",
-            version: "1.2.0",
-            description: "Provides git operations directly in Cursor",
+            name: "👻 Peekaboo",
+            version: "1.0.0",
+            description: "Enables your IDE to make screenshots and ask questions about images",
             enabled: true,
-            icon: "git"
+            icon: "camera.viewfinder"
         ),
         MCPExtension(
             id: UUID(),
-            name: "Database MCP",
-            version: "0.9.1",
-            description: "Query and manage databases from Cursor",
+            name: "🤖 Terminator",
+            version: "1.0.0",
+            description: "Manages a Terminal outside of the loop, so processes that might get stuck don't break the loop",
             enabled: true,
-            icon: "database"
+            icon: "terminal"
         ),
         MCPExtension(
             id: UUID(),
-            name: "AWS MCP",
-            version: "2.0.0",
-            description: "Interact with AWS services",
-            enabled: false,
-            icon: "cloud"
+            name: "🧠 Claude Code",
+            version: "1.0.0",
+            description: "A buddy for your IDE that your agent can ask if he's stuck. Can do coding task and offer \"a pair of fresh eyes\" that often un-stucks the loop",
+            enabled: true,
+            icon: "brain"
+        ),
+        MCPExtension(
+            id: UUID(),
+            name: "🐱 Conduit",
+            version: "1.0.0",
+            description: "Advanced file manipulation for faster refactoring",
+            enabled: true,
+            icon: "doc.text.magnifyingglass"
+        ),
+        MCPExtension(
+            id: UUID(),
+            name: "🎯 Automator",
+            version: "1.0.0",
+            description: "AppleScript for your IDE",
+            enabled: true,
+            icon: "applescript"
         ),
     ]
 
