@@ -27,40 +27,8 @@ import SwiftUI
 /// }
 /// ```
 public struct DSButton: View {
-    /// The visual style of the button.
-    public enum Style {
-        /// Primary action button with high emphasis
-        case primary
-        /// Secondary action button with medium emphasis
-        case secondary
-        /// Tertiary action button with low emphasis
-        case tertiary
-        /// Destructive action button for dangerous operations
-        case destructive
-        /// Ghost button with minimal visual weight
-        case ghost
-    }
-    
-    /// The size of the button.
-    public enum Size {
-        /// Small button for compact layouts
-        case small
-        /// Medium button for standard use
-        case medium
-        /// Large button for prominent actions
-        case large
-    }
-    
-    private let title: String
-    private let icon: Image?
-    private let style: Style
-    private let size: Size
-    private let isFullWidth: Bool
-    private let action: () -> Void
-    
-    @State private var isHovered = false
-    @State private var isPressed = false
-    
+    // MARK: Lifecycle
+
     public init(
         _ title: String,
         icon: Image? = nil,
@@ -76,11 +44,37 @@ public struct DSButton: View {
         self.isFullWidth = isFullWidth
         self.action = action
     }
-    
+
+    // MARK: Public
+
+    /// The visual style of the button.
+    public enum Style {
+        /// Primary action button with high emphasis
+        case primary
+        /// Secondary action button with medium emphasis
+        case secondary
+        /// Tertiary action button with low emphasis
+        case tertiary
+        /// Destructive action button for dangerous operations
+        case destructive
+        /// Ghost button with minimal visual weight
+        case ghost
+    }
+
+    /// The size of the button.
+    public enum Size {
+        /// Small button for compact layouts
+        case small
+        /// Medium button for standard use
+        case medium
+        /// Large button for prominent actions
+        case large
+    }
+
     public var body: some View {
         Button(action: action) {
             HStack(spacing: iconSpacing) {
-                if let icon = icon {
+                if let icon {
                     icon
                         .resizable()
                         .scaledToFit()
@@ -112,103 +106,113 @@ public struct DSButton: View {
                 .onEnded { _ in isPressed = false }
         )
     }
-    
-    // MARK: - Computed Properties
-    
+
+    // MARK: Private
+
+    @State private var isHovered = false
+    @State private var isPressed = false
+
+    private let title: String
+    private let icon: Image?
+    private let style: Style
+    private let size: Size
+    private let isFullWidth: Bool
+    private let action: () -> Void
+
     private var horizontalPadding: CGFloat {
         switch size {
-        case .small: return Spacing.small
-        case .medium: return Spacing.medium
-        case .large: return Spacing.large
+        case .small: Spacing.small
+        case .medium: Spacing.medium
+        case .large: Spacing.large
         }
     }
-    
+
     private var verticalPadding: CGFloat {
         switch size {
-        case .small: return Spacing.xSmall  // Match DSTextField padding
-        case .medium: return Spacing.xSmall
-        case .large: return Spacing.small
+        case .small: Spacing.xSmall // Match DSTextField padding
+        case .medium: Spacing.xSmall
+        case .large: Spacing.small
         }
     }
-    
+
     private var font: Font {
         switch size {
-        case .small: return Typography.caption1(.medium)
-        case .medium: return Typography.callout(.medium)
-        case .large: return Typography.body(.medium)
+        case .small: Typography.caption1(.medium)
+        case .medium: Typography.callout(.medium)
+        case .large: Typography.body(.medium)
         }
     }
-    
+
     private var iconSize: CGFloat {
         switch size {
-        case .small: return Layout.Dimensions.iconSmall
-        case .medium: return 20
-        case .large: return Layout.Dimensions.iconMedium
+        case .small: Layout.Dimensions.iconSmall
+        case .medium: 20
+        case .large: Layout.Dimensions.iconMedium
         }
     }
-    
+
     private var iconSpacing: CGFloat {
         switch size {
-        case .small: return Spacing.xxSmall
-        case .medium: return Spacing.xSmall
-        case .large: return Spacing.small
+        case .small: Spacing.xxSmall
+        case .medium: Spacing.xSmall
+        case .large: Spacing.small
         }
     }
-    
+
     private var cornerRadius: CGFloat {
         switch style {
         case .primary, .secondary, .destructive:
-            return Layout.CornerRadius.medium
+            Layout.CornerRadius.medium
         case .tertiary, .ghost:
-            return Layout.CornerRadius.small
+            Layout.CornerRadius.small
         }
     }
-    
+
     private var backgroundColor: Color {
         switch style {
         case .primary:
-            return isHovered ? ColorPalette.primaryDark : ColorPalette.primary
+            isHovered ? ColorPalette.primaryDark : ColorPalette.primary
         case .secondary:
-            return isHovered ? ColorPalette.backgroundTertiary : ColorPalette.backgroundSecondary
+            isHovered ? ColorPalette.backgroundTertiary : ColorPalette.backgroundSecondary
         case .tertiary:
-            return isHovered ? ColorPalette.hover : Color.clear
+            isHovered ? ColorPalette.hover : Color.clear
         case .destructive:
-            return isHovered ? ColorPalette.error.opacity(0.9) : ColorPalette.error
+            isHovered ? ColorPalette.error.opacity(0.9) : ColorPalette.error
         case .ghost:
-            return Color.clear
+            Color.clear
         }
     }
-    
+
     private var foregroundColor: Color {
         switch style {
         case .primary, .destructive:
-            return .white
+            .white
         case .secondary:
-            return ColorPalette.text
+            ColorPalette.text
         case .tertiary, .ghost:
-            return ColorPalette.primary
+            ColorPalette.primary
         }
     }
-    
+
     private var borderColor: Color {
         switch style {
         case .primary, .destructive:
-            return Color.clear
+            Color.clear
         case .secondary:
-            return ColorPalette.border
+            ColorPalette.border
         case .tertiary:
-            return isHovered ? ColorPalette.primary.opacity(0.3) : Color.clear
+            isHovered ? ColorPalette.primary.opacity(0.3) : Color.clear
         case .ghost:
-            return Color.clear
+            Color.clear
         }
     }
-    
+
     private var borderWidth: CGFloat {
         switch style {
         case .secondary, .tertiary:
-            return Layout.BorderWidth.regular
+            Layout.BorderWidth.regular
         default:
-            return 0
+            0
         }
     }
 }

@@ -1,5 +1,5 @@
-import XCTest
 @testable import DesignSystem
+import XCTest
 
 final class DesignSystemTests: XCTestCase {
     func testSpacingValues() {
@@ -13,7 +13,7 @@ final class DesignSystemTests: XCTestCase {
         XCTAssertEqual(Spacing.xxLarge, 32)
         XCTAssertEqual(Spacing.xxxLarge, 40)
     }
-    
+
     func testTypographySizes() {
         XCTAssertEqual(Typography.Size.xxxSmall.rawValue, 10)
         XCTAssertEqual(Typography.Size.xxSmall.rawValue, 11)
@@ -26,20 +26,20 @@ final class DesignSystemTests: XCTestCase {
         XCTAssertEqual(Typography.Size.xxxLarge.rawValue, 28)
         XCTAssertEqual(Typography.Size.display.rawValue, 36)
     }
-    
+
     func testLayoutDimensions() {
         XCTAssertEqual(Layout.Dimensions.iconSmall, 16)
         XCTAssertEqual(Layout.Dimensions.iconMedium, 24)
         XCTAssertEqual(Layout.Dimensions.iconLarge, 32)
         XCTAssertEqual(Layout.Dimensions.iconXLarge, 48)
-        
+
         XCTAssertEqual(Layout.Dimensions.buttonHeightSmall, 28)
         XCTAssertEqual(Layout.Dimensions.buttonHeightMedium, 36)
         XCTAssertEqual(Layout.Dimensions.buttonHeightLarge, 44)
-        
+
         XCTAssertEqual(Layout.Dimensions.minTouchTarget, 44)
     }
-    
+
     func testCornerRadius() {
         XCTAssertEqual(Layout.CornerRadius.none, 0)
         XCTAssertEqual(Layout.CornerRadius.small, 4)

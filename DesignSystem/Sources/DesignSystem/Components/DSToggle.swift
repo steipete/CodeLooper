@@ -1,11 +1,8 @@
 import SwiftUI
 
 public struct DSToggle: View {
-    @Binding private var isOn: Bool
-    private let label: String
-    private let description: String?
-    private let descriptionLineSpacing: CGFloat?
-    
+    // MARK: Lifecycle
+
     public init(
         _ label: String,
         isOn: Binding<Bool>,
@@ -17,7 +14,9 @@ public struct DSToggle: View {
         self.description = description
         self.descriptionLineSpacing = descriptionLineSpacing
     }
-    
+
+    // MARK: Public
+
     public var body: some View {
         VStack(alignment: .leading, spacing: Spacing.xxxSmall) {
             HStack {
@@ -26,16 +25,16 @@ public struct DSToggle: View {
                         .font(Typography.body())
                         .foregroundColor(ColorPalette.text)
                 }
-                
+
                 Spacer()
-                
+
                 Toggle("", isOn: $isOn)
                     .toggleStyle(.switch)
                     .labelsHidden()
                     .fixedSize()
             }
-            
-            if let description = description {
+
+            if let description {
                 Text(description)
                     .font(Typography.caption1())
                     .foregroundColor(ColorPalette.textSecondary)
@@ -44,4 +43,12 @@ public struct DSToggle: View {
             }
         }
     }
+
+    // MARK: Private
+
+    @Binding private var isOn: Bool
+
+    private let label: String
+    private let description: String?
+    private let descriptionLineSpacing: CGFloat?
 }

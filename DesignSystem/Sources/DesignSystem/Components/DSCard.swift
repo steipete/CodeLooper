@@ -1,15 +1,8 @@
 import SwiftUI
 
 public struct DSCard<Content: View>: View {
-    public enum Style {
-        case elevated
-        case outlined
-        case filled
-    }
-    
-    private let style: Style
-    private let content: () -> Content
-    
+    // MARK: Lifecycle
+
     public init(
         style: Style = .elevated,
         @ViewBuilder content: @escaping () -> Content
@@ -17,7 +10,15 @@ public struct DSCard<Content: View>: View {
         self.style = style
         self.content = content
     }
-    
+
+    // MARK: Public
+
+    public enum Style {
+        case elevated
+        case outlined
+        case filled
+    }
+
     public var body: some View {
         content()
             .padding(Spacing.medium)
@@ -29,40 +30,45 @@ public struct DSCard<Content: View>: View {
             )
             .shadowStyle(shadowStyle)
     }
-    
+
+    // MARK: Private
+
+    private let style: Style
+    private let content: () -> Content
+
     private var backgroundColor: Color {
         switch style {
         case .elevated, .outlined:
-            return ColorPalette.background
+            ColorPalette.background
         case .filled:
-            return ColorPalette.backgroundSecondary
+            ColorPalette.backgroundSecondary
         }
     }
-    
+
     private var borderColor: Color {
         switch style {
         case .outlined:
-            return ColorPalette.border
+            ColorPalette.border
         case .elevated, .filled:
-            return Color.clear
+            Color.clear
         }
     }
-    
+
     private var borderWidth: CGFloat {
         switch style {
         case .outlined:
-            return Layout.BorderWidth.regular
+            Layout.BorderWidth.regular
         case .elevated, .filled:
-            return 0
+            0
         }
     }
-    
+
     private var shadowStyle: ShadowStyle {
         switch style {
         case .elevated:
-            return Layout.Shadow.medium
+            Layout.Shadow.medium
         case .outlined, .filled:
-            return Layout.Shadow.none
+            Layout.Shadow.none
         }
     }
 }

@@ -41,22 +41,26 @@ import SwiftUI
 /// }
 /// ```
 public struct DesignSystem {
+    // MARK: Lifecycle
+
+    private init() {}
+
+    // MARK: Public
+
     /// Access to the color palette and theming system.
     public static let colors = ColorPalette.self
-    
+
     /// Access to typography utilities and font definitions.
     public static let typography = Typography.self
-    
+
     /// Access to predefined text styles.
     public static let textStyles = TextStyles.self
-    
+
     /// Access to spacing constants and utilities.
     public static let spacing = Spacing.self
-    
+
     /// Access to layout utilities and constants.
     public static let layout = Layout.self
-    
-    private init() {}
 }
 
 // MARK: - Environment Setup
@@ -66,15 +70,21 @@ public struct DesignSystem {
 /// This modifier configures the color theme and handles system appearance changes
 /// automatically. Apply it to your root views to enable design system functionality.
 public struct DesignSystemViewModifier: ViewModifier {
-    @State private var colorTheme = ColorTheme()
-    
+    // MARK: Public
+
     public func body(content: Content) -> some View {
         content
             .environment(\.colorTheme, colorTheme)
-            .onReceive(NotificationCenter.default.publisher(for: NSApplication.didChangeOcclusionStateNotification)) { _ in
+            .onReceive(NotificationCenter.default
+                .publisher(for: NSApplication.didChangeOcclusionStateNotification))
+            { _ in
                 colorTheme.updateFromSystem()
             }
     }
+
+    // MARK: Private
+
+    @State private var colorTheme = ColorTheme()
 }
 
 public extension View {

@@ -1,16 +1,8 @@
 import SwiftUI
 
 public struct DSTextField: View {
-    @Binding private var text: String
-    private let placeholder: String
-    private let icon: Image?
-    private let helperText: String?
-    private let errorText: String?
-    private let showClearButton: Bool
-    
-    @State private var isFocused = false
-    @FocusState private var textFieldFocused: Bool
-    
+    // MARK: Lifecycle
+
     public init(
         _ placeholder: String,
         text: Binding<String>,
@@ -26,18 +18,20 @@ public struct DSTextField: View {
         self.errorText = errorText
         self.showClearButton = showClearButton
     }
-    
+
+    // MARK: Public
+
     public var body: some View {
         VStack(alignment: .leading, spacing: Spacing.xxSmall) {
             HStack(spacing: Spacing.xSmall) {
-                if let icon = icon {
+                if let icon {
                     icon
                         .resizable()
                         .scaledToFit()
                         .frame(width: Layout.Dimensions.iconSmall, height: Layout.Dimensions.iconSmall)
                         .foregroundColor(iconColor)
                 }
-                
+
                 TextField(placeholder, text: $text)
                     .textFieldStyle(.plain)
                     .font(Typography.body())
@@ -45,8 +39,8 @@ public struct DSTextField: View {
                     .onChange(of: textFieldFocused) { _, newValue in
                         isFocused = newValue
                     }
-                
-                if showClearButton && !text.isEmpty {
+
+                if showClearButton, !text.isEmpty {
                     Button(action: { text = "" }) {
                         Image(systemName: "xmark.circle.fill")
                             .foregroundColor(ColorPalette.textSecondary)
@@ -62,7 +56,7 @@ public struct DSTextField: View {
                 RoundedRectangle(cornerRadius: Layout.CornerRadius.medium)
                     .strokeBorder(borderColor, lineWidth: borderWidth)
             )
-            
+
             if let message = errorText ?? helperText {
                 Text(message)
                     .font(Typography.caption1())
@@ -71,21 +65,33 @@ public struct DSTextField: View {
             }
         }
     }
-    
+
+    // MARK: Private
+
+    @Binding private var text: String
+    @State private var isFocused = false
+    @FocusState private var textFieldFocused: Bool
+
+    private let placeholder: String
+    private let icon: Image?
+    private let helperText: String?
+    private let errorText: String?
+    private let showClearButton: Bool
+
     private var iconColor: Color {
         if errorText != nil {
             return ColorPalette.error
         }
         return isFocused ? ColorPalette.primary : ColorPalette.textSecondary
     }
-    
+
     private var borderColor: Color {
         if errorText != nil {
             return ColorPalette.error
         }
         return isFocused ? ColorPalette.primary : ColorPalette.border
     }
-    
+
     private var borderWidth: CGFloat {
         isFocused || errorText != nil ? Layout.BorderWidth.medium : Layout.BorderWidth.regular
     }

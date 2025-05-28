@@ -1,12 +1,8 @@
 import SwiftUI
 
 public struct DSTabView<Content: View>: View {
-    @Binding private var selection: String
-    private let tabs: [(id: String, title: String, icon: String)]
-    private let content: () -> Content
-    
-    @State private var hoveredTab: String?
-    
+    // MARK: Lifecycle
+
     public init(
         selection: Binding<String>,
         tabs: [(id: String, title: String, icon: String)],
@@ -16,7 +12,9 @@ public struct DSTabView<Content: View>: View {
         self.tabs = tabs
         self.content = content
     }
-    
+
+    // MARK: Public
+
     public var body: some View {
         VStack(spacing: 0) {
             // Custom tab bar
@@ -33,7 +31,7 @@ public struct DSTabView<Content: View>: View {
                     .onHover { hovering in
                         hoveredTab = hovering ? tab.id : nil
                     }
-                    
+
                     if tab.id != tabs.last?.id {
                         DSDivider(orientation: .vertical)
                             .frame(height: 20)
@@ -44,31 +42,41 @@ public struct DSTabView<Content: View>: View {
             .padding(.horizontal, Spacing.medium)
             .padding(.vertical, Spacing.small)
             .background(ColorPalette.backgroundSecondary)
-            
+
             DSDivider()
-            
+
             // Content area
             content()
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .background(ColorPalette.background)
         }
     }
+
+    // MARK: Private
+
+    @Binding private var selection: String
+    @State private var hoveredTab: String?
+
+    private let tabs: [(id: String, title: String, icon: String)]
+    private let content: () -> Content
 }
 
 private struct TabButton: View {
+    // MARK: Internal
+
     let title: String
     let icon: String
     let isSelected: Bool
     let isHovered: Bool
     let action: () -> Void
-    
+
     var body: some View {
         Button(action: action) {
             HStack(spacing: Spacing.xSmall) {
                 Image(systemName: icon)
                     .font(.system(size: 14, weight: .medium))
                     .foregroundColor(foregroundColor)
-                
+
                 Text(title)
                     .font(Typography.callout(.medium))
                     .foregroundColor(foregroundColor)
@@ -86,24 +94,26 @@ private struct TabButton: View {
         }
         .buttonStyle(.plain)
     }
-    
+
+    // MARK: Private
+
     private var foregroundColor: Color {
         if isSelected {
-            return ColorPalette.primary
+            ColorPalette.primary
         } else if isHovered {
-            return ColorPalette.text
+            ColorPalette.text
         } else {
-            return ColorPalette.textSecondary
+            ColorPalette.textSecondary
         }
     }
-    
+
     private var backgroundColor: Color {
         if isSelected {
-            return ColorPalette.primary.opacity(0.1)
+            ColorPalette.primary.opacity(0.1)
         } else if isHovered {
-            return ColorPalette.hover
+            ColorPalette.hover
         } else {
-            return Color.clear
+            Color.clear
         }
     }
 }

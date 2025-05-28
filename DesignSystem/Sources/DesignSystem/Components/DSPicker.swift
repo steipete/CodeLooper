@@ -1,10 +1,8 @@
 import SwiftUI
 
 public struct DSPicker<Value: Hashable>: View {
-    @Binding private var selection: Value
-    private let label: String
-    private let options: [(Value, String)]
-    
+    // MARK: Lifecycle
+
     public init(
         _ label: String,
         selection: Binding<Value>,
@@ -14,15 +12,17 @@ public struct DSPicker<Value: Hashable>: View {
         self._selection = selection
         self.options = options
     }
-    
+
+    // MARK: Public
+
     public var body: some View {
         HStack {
             Text(label)
                 .font(Typography.body())
                 .foregroundColor(ColorPalette.text)
-            
+
             Spacer()
-            
+
             Picker("", selection: $selection) {
                 ForEach(options, id: \.0) { value, label in
                     Text(label).tag(value)
@@ -33,6 +33,13 @@ public struct DSPicker<Value: Hashable>: View {
             .fixedSize()
         }
     }
+
+    // MARK: Private
+
+    @Binding private var selection: Value
+
+    private let label: String
+    private let options: [(Value, String)]
 }
 
 // Convenience initializer for enum types

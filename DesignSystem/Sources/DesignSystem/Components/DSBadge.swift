@@ -1,6 +1,20 @@
 import SwiftUI
 
 public struct DSBadge: View {
+    // MARK: Lifecycle
+
+    public init(_ text: String, style: Style = .default) {
+        self.text = text
+        self.style = style
+    }
+
+    public init(text: String, style: Style = .default) {
+        self.text = text
+        self.style = style
+    }
+
+    // MARK: Public
+
     public enum Style {
         case `default`
         case primary
@@ -9,20 +23,7 @@ public struct DSBadge: View {
         case error
         case info
     }
-    
-    private let text: String
-    private let style: Style
-    
-    public init(_ text: String, style: Style = .default) {
-        self.text = text
-        self.style = style
-    }
-    
-    public init(text: String, style: Style = .default) {
-        self.text = text
-        self.style = style
-    }
-    
+
     public var body: some View {
         Text(text)
             .font(Typography.caption1(.medium))
@@ -32,38 +33,43 @@ public struct DSBadge: View {
             .background(backgroundColor)
             .clipShape(RoundedRectangle(cornerRadius: Layout.CornerRadius.round))
     }
-    
+
+    // MARK: Private
+
+    private let text: String
+    private let style: Style
+
     private var backgroundColor: Color {
         switch style {
         case .default:
-            return ColorPalette.backgroundTertiary
+            ColorPalette.backgroundTertiary
         case .primary:
-            return ColorPalette.primary.opacity(0.15)
+            ColorPalette.primary.opacity(0.15)
         case .success:
-            return ColorPalette.success.opacity(0.15)
+            ColorPalette.success.opacity(0.15)
         case .warning:
-            return ColorPalette.warning.opacity(0.15)
+            ColorPalette.warning.opacity(0.15)
         case .error:
-            return ColorPalette.error.opacity(0.15)
+            ColorPalette.error.opacity(0.15)
         case .info:
-            return ColorPalette.info.opacity(0.15)
+            ColorPalette.info.opacity(0.15)
         }
     }
-    
+
     private var foregroundColor: Color {
         switch style {
         case .default:
-            return ColorPalette.textSecondary
+            ColorPalette.textSecondary
         case .primary:
-            return ColorPalette.primary
+            ColorPalette.primary
         case .success:
-            return ColorPalette.success
+            ColorPalette.success
         case .warning:
-            return ColorPalette.warning.opacity(0.9)
+            ColorPalette.warning.opacity(0.9)
         case .error:
-            return ColorPalette.error
+            ColorPalette.error
         case .info:
-            return ColorPalette.info
+            ColorPalette.info
         }
     }
 }

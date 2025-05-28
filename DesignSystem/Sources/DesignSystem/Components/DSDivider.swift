@@ -1,15 +1,8 @@
 import SwiftUI
 
 public struct DSDivider: View {
-    public enum Orientation {
-        case horizontal
-        case vertical
-    }
-    
-    private let orientation: Orientation
-    private let thickness: CGFloat
-    private let color: Color
-    
+    // MARK: Lifecycle
+
     public init(
         orientation: Orientation = .horizontal,
         thickness: CGFloat = Layout.BorderWidth.regular,
@@ -19,7 +12,14 @@ public struct DSDivider: View {
         self.thickness = thickness
         self.color = color
     }
-    
+
+    // MARK: Public
+
+    public enum Orientation {
+        case horizontal
+        case vertical
+    }
+
     public var body: some View {
         Rectangle()
             .fill(color)
@@ -28,4 +28,10 @@ public struct DSDivider: View {
                 height: orientation == .vertical ? nil : thickness
             )
     }
+
+    // MARK: Private
+
+    private let orientation: Orientation
+    private let thickness: CGFloat
+    private let color: Color
 }
