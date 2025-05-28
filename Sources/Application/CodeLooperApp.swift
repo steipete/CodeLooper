@@ -95,7 +95,7 @@ struct MenuBarIconView: View {
                 LottieMenuBarView()
             } else {
                 // Static PNG icon
-                CodeLooperAsset.menuBarTemplateIcon.swiftUIImage
+                Image("MenuBarTemplateIcon")
                     .renderingMode(.template)
                     .frame(width: 16, height: 16)
             }
