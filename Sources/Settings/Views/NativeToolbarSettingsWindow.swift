@@ -27,11 +27,16 @@ final class NativeToolbarSettingsWindow: NSWindow {
         // Configure window
         self.title = "CodeLooper"
         self.titlebarAppearsTransparent = false
-        self.titleVisibility = .visible
+        self.titleVisibility = .hidden // Hide the default title
         self.identifier = NSUserInterfaceItemIdentifier("settings")
         self.isReleasedWhenClosed = false
         // Use system background color that adapts to light/dark mode
         self.backgroundColor = .windowBackgroundColor
+        
+        // Try to reduce spacing with titlebar separator
+        if #available(macOS 11.0, *) {
+            self.titlebarSeparatorStyle = .none
+        }
         
         // Setup toolbar
         setupToolbar()
@@ -62,6 +67,28 @@ final class NativeToolbarSettingsWindow: NSWindow {
         self.toolbar = toolbar
         self.toolbarStyle = .unified
     }
+}
+
+// MARK: - Custom Views
+
+/// A view that allows window dragging from its area by being transparent to events
+private class DraggableView: NSView {
+    override var mouseDownCanMoveWindow: Bool {
+        return true
+    }
+    
+    override func hitTest(_ point: NSPoint) -> NSView? {
+        // Return nil to make this view transparent to mouse events
+        // This allows the window to handle the drag
+        return nil
+    }
+}
+
+// MARK: - Toolbar Item Identifiers
+
+private extension NSToolbarItem.Identifier {
+    static let smallSpace = NSToolbarItem.Identifier("smallSpace")
+    static let separator = NSToolbarItem.Identifier("separator")
 }
 
 // MARK: - Toolbar Delegate
@@ -127,7 +154,7 @@ private class SettingsToolbarDelegate: NSObject, NSToolbarDelegate {
     }
     
     func toolbarAllowedItemIdentifiers(_ toolbar: NSToolbar) -> [NSToolbarItem.Identifier] {
-        var identifiers: [NSToolbarItem.Identifier] = []
+        var identifiers: [NSToolbarItem.Identifier] = [NSToolbarItem.Identifier("windowTitle"), .flexibleSpace]
         identifiers += tabItems.map { NSToolbarItem.Identifier($0.rawValue) }
         identifiers.append(.flexibleSpace)
         return identifiers
@@ -135,12 +162,95 @@ private class SettingsToolbarDelegate: NSObject, NSToolbarDelegate {
     
     func toolbarDefaultItemIdentifiers(_ toolbar: NSToolbar) -> [NSToolbarItem.Identifier] {
         var identifiers: [NSToolbarItem.Identifier] = []
+        // Add a custom title item first
+        identifiers.append(NSToolbarItem.Identifier("windowTitle"))
+        identifiers.append(.flexibleSpace) // Push tabs to center
         identifiers += tabItems.map { NSToolbarItem.Identifier($0.rawValue) }
-        identifiers.append(.flexibleSpace)
+        identifiers.append(.flexibleSpace) // Balance the centering
         return identifiers
     }
     
     func toolbar(_ toolbar: NSToolbar, itemForItemIdentifier itemIdentifier: NSToolbarItem.Identifier, willBeInsertedIntoToolbar flag: Bool) -> NSToolbarItem? {
+        // Handle custom window title item
+        if itemIdentifier.rawValue == "windowTitle" {
+            let titleItem = NSToolbarItem(itemIdentifier: itemIdentifier)
+            
+            // Create a container view for icon and title
+            let containerView = DraggableView()
+            containerView.translatesAutoresizingMaskIntoConstraints = false
+            
+            // App icon - load from Assets.xcassets
+            let iconView = NSImageView()
+            if let iconImage = NSImage(named: NSImage.Name("AppIcon")) {
+                iconView.image = iconImage
+            } else {
+                // Fallback to application icon
+                iconView.image = NSApp.applicationIconImage
+            }
+            iconView.translatesAutoresizingMaskIntoConstraints = false
+            iconView.isEditable = false
+            
+            // Title label
+            let titleLabel = NSTextField(labelWithString: "CodeLooper")
+            titleLabel.font = .systemFont(ofSize: 13, weight: .semibold)
+            titleLabel.textColor = .labelColor
+            titleLabel.alignment = .left
+            titleLabel.translatesAutoresizingMaskIntoConstraints = false
+            titleLabel.isEditable = false
+            titleLabel.isSelectable = false
+            titleLabel.isBezeled = false
+            titleLabel.drawsBackground = false
+            
+            // Add subviews
+            containerView.addSubview(iconView)
+            containerView.addSubview(titleLabel)
+            
+            // Setup constraints
+            NSLayoutConstraint.activate([
+                iconView.leadingAnchor.constraint(equalTo: containerView.leadingAnchor),
+                iconView.centerYAnchor.constraint(equalTo: containerView.centerYAnchor),
+                iconView.widthAnchor.constraint(equalToConstant: 30),
+                iconView.heightAnchor.constraint(equalToConstant: 30),
+                
+                titleLabel.leadingAnchor.constraint(equalTo: iconView.trailingAnchor, constant: 8),
+                titleLabel.centerYAnchor.constraint(equalTo: containerView.centerYAnchor),
+                titleLabel.trailingAnchor.constraint(equalTo: containerView.trailingAnchor),
+                
+                containerView.heightAnchor.constraint(equalToConstant: 32)
+            ])
+            
+            titleItem.view = containerView
+            titleItem.label = ""
+            titleItem.paletteLabel = "Window Title"
+            // Make the toolbar item non-interactive
+            titleItem.isEnabled = false
+            titleItem.autovalidates = false
+            return titleItem
+        }
+        
+        // Handle small space item
+        if itemIdentifier == .smallSpace {
+            let spaceItem = NSToolbarItem(itemIdentifier: itemIdentifier)
+            let spacerView = NSView()
+            spacerView.translatesAutoresizingMaskIntoConstraints = false
+            spacerView.widthAnchor.constraint(equalToConstant: 10).isActive = true
+            spaceItem.view = spacerView
+            return spaceItem
+        }
+        
+        // Handle separator item
+        if itemIdentifier == .separator {
+            let separatorItem = NSToolbarItem(itemIdentifier: itemIdentifier)
+            let separatorView = NSView()
+            separatorView.translatesAutoresizingMaskIntoConstraints = false
+            separatorView.wantsLayer = true
+            separatorView.layer?.backgroundColor = NSColor.separatorColor.cgColor
+            separatorView.widthAnchor.constraint(equalToConstant: 1).isActive = true
+            separatorView.heightAnchor.constraint(equalToConstant: 20).isActive = true
+            separatorItem.view = separatorView
+            return separatorItem
+        }
+        
         guard let tab = SettingsTab(rawValue: itemIdentifier.rawValue) else {
             return nil
         }
