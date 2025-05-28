@@ -40,12 +40,10 @@ struct CursorRuleSetsSettingsView: View {
             }
             .padding(.top, Spacing.small)
         }
-        .alert("Feature Not Yet Implemented", isPresented: $showNotImplementedAlert) {
+        .alert("Coming Soon", isPresented: $showNotImplementedAlert) {
             Button("OK", role: .cancel) {}
         } message: {
-            Text(
-                "The '\(attemptedRuleName)' rule is not yet implemented. Currently, only the 'Stop after 25 loops' rule is functional."
-            )
+            Text("This feature is coming soon.")
         }
     }
 

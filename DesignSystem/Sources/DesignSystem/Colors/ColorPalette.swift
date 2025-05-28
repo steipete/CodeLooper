@@ -18,7 +18,7 @@ public struct ColorPalette {
     public static let textTertiary = Color.secondary.opacity(0.6)
     
     public static let background = Color(NSColor.windowBackgroundColor)
-    public static let backgroundSecondary = Color(NSColor.controlBackgroundColor)
+    public static let backgroundSecondary = Color(NSColor.controlBackgroundColor).opacity(0.6)
     public static let backgroundTertiary = Color(NSColor.underPageBackgroundColor)
     
     public static let border = Color(NSColor.separatorColor)

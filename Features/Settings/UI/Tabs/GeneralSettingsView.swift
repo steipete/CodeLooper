@@ -63,6 +63,7 @@ struct GeneralSettingsView: View {
 
                             KeyboardShortcuts.Recorder(for: .toggleMonitoring)
                                 .frame(width: 120, height: 32)
+                                .fixedSize()
                         }
 
                         Text("Use standard symbols: ⌘ (Command), ⌥ (Option/Alt), ⇧ (Shift), ⌃ (Control)")
@@ -87,6 +88,7 @@ struct GeneralSettingsView: View {
                                 selectGitClientApp()
                             }
                             .frame(width: 120, height: 32)
+                            .fixedSize()
                         }
 
                         Text("Path to your Git client application (e.g., Tower, SourceTree, GitKraken)")

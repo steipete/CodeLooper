@@ -82,19 +82,16 @@ struct DebugSettingsView: View {
                     }
                     .frame(maxWidth: .infinity)
 
-                    DSButton("Clear All UserDefaults", style: .destructive) {
-                        clearUserDefaults()
-                    }
-                    .frame(maxWidth: .infinity)
-
                     DSButton("Trigger Test Notification", style: .secondary) {
                         triggerTestNotification()
                     }
                     .frame(maxWidth: .infinity)
 
-                    DSButton("Print Window Hierarchy", style: .secondary) {
-                        printWindowHierarchy()
+                    Button("Clear All UserDefaults") {
+                        clearUserDefaults()
                     }
+                    .buttonStyle(.borderedProminent)
+                    .tint(.red)
                     .frame(maxWidth: .infinity)
                 }
             }
@@ -134,13 +131,6 @@ struct DebugSettingsView: View {
     private func triggerTestNotification() {
         NotificationCenter.default.post(name: .init("DebugTestNotification"), object: nil)
         print("DEBUG: Triggered test notification")
-    }
-
-    private func printWindowHierarchy() {
-        print("DEBUG: Current window hierarchy:")
-        for (index, window) in NSApp.windows.enumerated() {
-            print("  \(index): \(window.title) - \(window.className) - Visible: \(window.isVisible)")
-        }
     }
 }
 

@@ -123,7 +123,7 @@ public struct CursorAnalysisView: View {
 
                     TextEditor(text: $customPrompt)
                         .font(.system(.body, design: .monospaced))
-                        .frame(minHeight: 80, maxWidth: .infinity)
+                        .frame(maxWidth: .infinity, minHeight: 80)
                         .border(ColorPalette.border)
                 }
             }
