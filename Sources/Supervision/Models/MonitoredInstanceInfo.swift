@@ -45,12 +45,21 @@ public struct MonitoredWindowInfo: Identifiable {
     public var windowAXElement: Element?
     public var documentPath: String?
     public var isPaused: Bool = false
+    
+    // Window state properties
+    public var isMinimized: Bool = false
+    public var isHidden: Bool = false
+    public var screenNumber: Int? = nil
+    public var frame: CGRect? = nil
 
     public var isLiveWatchingEnabled: Bool = false
     public var aiAnalysisIntervalSeconds: Int = 10
     public var lastAIAnalysisStatus: AIAnalysisStatus = .off
     public var lastAIAnalysisTimestamp: Date? = nil
     public var lastAIAnalysisResponseMessage: String? = nil
+    
+    // Git repository information
+    public var gitRepository: GitRepository? = nil
 
     // Private helper to generate a more stable key for persisted settings
     private func getPersistentSettingsKeyPrefix() -> String {
@@ -71,7 +80,9 @@ public struct MonitoredWindowInfo: Identifiable {
         } else {
             // For windows without a document path, fall back to using the runtime ID.
             // This retains the original level of stability (or instability) for these windows.
-            return "windowsettings_id\(self.id)"
+            // Remove any dots from the id to comply with Defaults key requirements
+            let sanitizedId = self.id.replacingOccurrences(of: ".", with: "_")
+            return "windowsettings_id\(sanitizedId)"
         }
     }
 
@@ -81,6 +92,14 @@ public struct MonitoredWindowInfo: Identifiable {
         self.windowAXElement = axElement
         self.documentPath = documentPath
         self.isPaused = isPaused
+        
+        // Initialize window state properties from the AX element if available
+        if let element = axElement {
+            self.isMinimized = element.isMinimized() ?? false
+            self.isHidden = element.isWindowHidden() ?? false
+            self.screenNumber = element.windowScreenNumber()
+            self.frame = element.frame()
+        }
 
         let settingsKeyPrefix = getPersistentSettingsKeyPrefix()
         let liveWatchingKey = Defaults.Key<Bool>("\(settingsKeyPrefix)_live_watching", default: false)
@@ -103,6 +122,38 @@ public struct MonitoredWindowInfo: Identifiable {
         
         Defaults[liveWatchingKey] = self.isLiveWatchingEnabled
         Defaults[aiIntervalKey] = self.aiAnalysisIntervalSeconds
+    }
+    
+    // MARK: - Window State Utilities
+    
+    /// Updates the window state properties from the current AX element
+    public mutating func updateWindowState() {
+        guard let element = windowAXElement else { return }
+        
+        self.isMinimized = element.isMinimized() ?? false
+        self.isHidden = element.isWindowHidden() ?? false
+        self.screenNumber = element.windowScreenNumber()
+        self.frame = element.frame()
+    }
+    
+    /// Checks if the window is visible (not minimized, not hidden, and has a screen)
+    public var isVisible: Bool {
+        return !isMinimized && !isHidden && screenNumber != nil
+    }
+    
+    /// Gets a human-readable description of the window's screen location
+    public var screenDescription: String {
+        if isMinimized {
+            return "Minimized"
+        } else if isHidden {
+            return "Hidden"  
+        } else if let screen = screenNumber, screen < NSScreen.screens.count {
+            // Get the actual screen name
+            let screenName = NSScreen.screens[screen].localizedName
+            return screenName
+        } else {
+            return "Off-screen"
+        }
     }
 }
 
