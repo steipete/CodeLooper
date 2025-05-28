@@ -47,6 +47,7 @@ public enum StatusIconState: Sendable, Hashable {
         case .paused: return "paused"
         case .aiStatus: return "aiStatus"
         case .authenticated: return "authenticated"
+        case .unauthenticated: return "unauthenticated"
         }
     }
 

@@ -161,13 +161,25 @@ public protocol AIService {
 
 @MainActor
 public final class AIServiceManager: ObservableObject {
-    @Published public private(set) var currentProvider: AIProvider = .openAI
+    public static let shared = AIServiceManager()
+
+    @Published public private(set) var currentProvider: AIProvider = Defaults[.aiProvider]
     @Published public private(set) var isAvailable = false
     
     private var openAIService: OpenAIService?
     private var ollamaService: OllamaService?
     
-    public init() {}
+    private init() {
+        configureWithCurrentDefaults()
+    }
+    
+    public func configureWithCurrentDefaults() {
+        let provider = Defaults[.aiProvider]
+        let apiKey = APIKeyService.shared.loadOpenAIKey()
+        let ollamaURL = URL(string: Defaults[.ollamaBaseURL])
+        
+        self.configure(provider: provider, apiKey: apiKey, baseURL: ollamaURL)
+    }
     
     public func configure(provider: AIProvider, apiKey: String? = nil, baseURL: URL? = nil) {
         currentProvider = provider

@@ -77,29 +77,19 @@ struct CodeLooperApp: App {
 }
 
 struct MenuBarIconView: View {
-    @EnvironmentObject var cursorMonitor: CursorMonitor
-    @EnvironmentObject var appIconStateController: AppIconStateController
-
-    @Default(.isGlobalMonitoringEnabled) private var isGlobalMonitoringEnabled
-    @State private var monitoredAppCount: Int = 0
+    @StateObject private var menuBarIconManager = MenuBarIconManager.shared // Use shared instance
 
     var body: some View {
-        HStack(spacing: 2) {
-            Image("MenuBarTemplateIcon")
-                .renderingMode(.template)
-                .foregroundColor(isGlobalMonitoringEnabled ?
-                    Color(appIconStateController.currentTintColor ?? NSColor.controlAccentColor) : .gray.opacity(0.7))
-
-            if monitoredAppCount > 0 {
-                Text(" \(monitoredAppCount)")
-                    .font(.system(size: 12))
-                    .foregroundColor(isGlobalMonitoringEnabled ? .primary : .secondary)
-            }
-        }
+        // Display the AttributedString from the manager
+        Text(menuBarIconManager.currentIconAttributedString)
+            .font(.system(size: 12, weight: .medium)) // Apply a consistent font for the AttributedString
+            // .foregroundColor(...) // Color can be part of AttributedString or set here if needed for overrides
         .contentShape(Rectangle())
-        .onReceive(cursorMonitor.$monitoredApps) { apps in
-            self.monitoredAppCount = apps.count
-        }
+        // Tooltip is handled by MenuBarIconManager via statusItem?.button.toolTip
+        // If MenuBarExtra needs its own tooltip modifier, it can be added to MenuBarExtra itself.
+        // .onReceive(cursorMonitor.$monitoredApps) { apps in // Manager handles this logic
+        //    self.monitoredAppCount = apps.count
+        // }
     }
 }
 

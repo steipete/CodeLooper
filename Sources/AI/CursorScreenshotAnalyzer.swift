@@ -12,14 +12,16 @@ public final class CursorScreenshotAnalyzer: ObservableObject {
     @Published public var lastAnalysis: ImageAnalysisResponse?
     @Published public var lastError: Error?
     
-    private let aiManager: AIServiceManager
     private let imageScaleFactor: CGFloat = 0.5
     private static let maxAnalysisRetries = 2
     private static let retryDelaySeconds: TimeInterval = 2
     
     public init() {
-        self.aiManager = AIServiceManager()
-        configureAIManager()
+        // AIServiceManager.shared will be used directly. It should be configured elsewhere (e.g., AppDelegate or when settings change)
+        // We still might need to trigger its initial configuration if not done by app launch.
+        // For now, assume AIServiceManager.shared is configured by the time this is used.
+        // Or, ensure initial configuration is called: AIServiceManager.shared.configureWithCurrentDefaults()
+        // This should ideally happen once at app startup, and then upon settings changes.
     }
     
     public func analyzeSpecificWindow(_ window: SCWindow?, customPrompt: String? = nil) async throws -> ImageAnalysisResponse {
@@ -46,7 +48,7 @@ public final class CursorScreenshotAnalyzer: ObservableObject {
                     model: model
                 )
 
-                let response = try await aiManager.analyzeImage(request)
+                let response = try await AIServiceManager.shared.analyzeImage(request)
                 lastAnalysis = response
                 return response // Success, exit loop
             } catch let error as AIServiceError {
@@ -100,30 +102,11 @@ public final class CursorScreenshotAnalyzer: ObservableObject {
         """
     }
     
-    private func configureAIManager() {
-        let provider = Defaults[.aiProvider]
-        
-        switch provider {
-        case .openAI:
-            let apiKey = loadAPIKeyFromKeychain()
-            if !apiKey.isEmpty {
-                aiManager.configure(provider: .openAI, apiKey: apiKey)
-            }
-        case .ollama:
-            let baseURLString = Defaults[.ollamaBaseURL]
-            if let url = URL(string: baseURLString) {
-                aiManager.configure(provider: .ollama, baseURL: url)
-            } else {
-                aiManager.configure(provider: .ollama)
-            }
-        }
-    }
-    
     private func loadAPIKeyFromKeychain() -> String {
         return APIKeyService.shared.loadOpenAIKey()
     }
     
-    private func captureCursorWindow(targetSCWindow: SCWindow? = nil) async throws -> NSImage? {
+    public func captureCursorWindow(targetSCWindow: SCWindow? = nil) async throws -> NSImage? {
         let content = try await SCShareableContent.excludingDesktopWindows(false, onScreenWindowsOnly: true)
         
         var windowToCapture: SCWindow? = targetSCWindow

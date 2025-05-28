@@ -2,6 +2,11 @@ import SwiftUI
 import Defaults
 import DesignSystem
 
+// Define a Notification name for AI Service configuration changes
+extension Notification.Name {
+    static let AIServiceConfigured = Notification.Name("AIServiceConfiguredNotification")
+}
+
 struct AISettingsView: View {
     // MARK: - Status Messages
     private enum StatusMessage {
@@ -26,7 +31,6 @@ struct AISettingsView: View {
     @State private var isTestingConnection = false
     @State private var connectionTestResult: String?
     @State private var isAutoTesting = false
-    @StateObject private var aiManager = AIServiceManager()
     
     private let apiKeyDebouncer = Debouncer(delay: 2.0)
     
@@ -228,20 +232,20 @@ struct AISettingsView: View {
     }
     
     private func configureAIManager() {
-        switch aiProvider {
+        // Now configures the shared instance
+        AIServiceManager.shared.configureWithCurrentDefaults()
+        
+        // Log based on the shared manager's state or passed parameters if preferred
+        let currentProvider = AIServiceManager.shared.currentProvider
+        switch currentProvider {
         case .openAI:
             if !openAIAPIKey.isEmpty {
-                aiManager.configure(provider: .openAI, apiKey: openAIAPIKey)
                 print("🔑 Configured OpenAI with API key (length: \(openAIAPIKey.count))")
             } else {
                 print("⚠️ OpenAI API key is empty, not configuring")
             }
         case .ollama:
-            if let url = URL(string: ollamaBaseURL) {
-                aiManager.configure(provider: .ollama, baseURL: url)
-            } else {
-                aiManager.configure(provider: .ollama)
-            }
+            print("🦙 Configured Ollama with URL: \(Defaults[.ollamaBaseURL])")
         }
     }
     
@@ -249,64 +253,39 @@ struct AISettingsView: View {
         isTestingConnection = true
         connectionTestResult = nil
         
+        // Re-configure the shared manager right before testing to ensure it has the latest credentials from the UI fields
+        // This is important because `configureAIManager` might be called on `onChange` of provider, 
+        // but not necessarily after every keystroke in API key or URL fields.
+        let currentProvider = Defaults[.aiProvider]
+        let currentAPIKey = (currentProvider == .openAI) ? openAIAPIKey : nil
+        let currentOllamaURL = (currentProvider == .ollama) ? URL(string: ollamaBaseURL) : nil
+        
+        AIServiceManager.shared.configure(provider: currentProvider, apiKey: currentAPIKey, baseURL: currentOllamaURL)
+
+        let providerName = AIServiceManager.shared.currentProvider.displayName
+        let messagePrefix = isAutoTesting ? "" : "Testing \(providerName)... "
+
         do {
-            switch aiProvider {
-            case .ollama:
-                // For Ollama, check service and models separately
-                let baseURL = URL(string: ollamaBaseURL) ?? URL(string: "http://localhost:11434")!
-                let ollamaService = OllamaService(baseURL: baseURL)
-                
-                let (serviceRunning, visionModels) = try await ollamaService.checkServiceAndModels()
-                
-                if !serviceRunning {
-                    throw AIServiceError.ollamaNotRunning
+            if await AIServiceManager.shared.isServiceAvailable() {
+                var successMessage = ""
+                if AIServiceManager.shared.currentProvider == .ollama {
+                    let models = AIServiceManager.shared.supportedModels().map { $0.displayName }
+                    successMessage = messagePrefix + StatusMessage.ollamaConnected(models)
+                } else {
+                    successMessage = messagePrefix + StatusMessage.openAIConnected
                 }
-                
-                if visionModels.isEmpty {
-                    throw AIServiceError.noVisionModelsInstalled
-                }
-                
-                // Try to analyze with the selected model
-                let testImage = createTestImage()
-                let request = ImageAnalysisRequest(
-                    image: testImage,
-                    prompt: "Describe this image in one word",
-                    model: aiModel
-                )
-                
-                _ = try await aiManager.analyzeImage(request)
-                connectionTestResult = StatusMessage.ollamaConnected(visionModels)
-                
-            case .openAI:
-                // For OpenAI, ensure we have an API key
-                if openAIAPIKey.isEmpty {
-                    throw AIServiceError.apiKeyMissing
-                }
-                
-                // Reconfigure to ensure API key is set
-                aiManager.configure(provider: .openAI, apiKey: openAIAPIKey)
-                
-                let testImage = createTestImage()
-                let request = ImageAnalysisRequest(
-                    image: testImage,
-                    prompt: "Describe this image in one word",
-                    model: aiModel
-                )
-                
-                _ = try await aiManager.analyzeImage(request)
-                connectionTestResult = StatusMessage.openAIConnected
+                connectionTestResult = successMessage
+                NotificationCenter.default.post(name: .AIServiceConfigured, object: nil) // Post notification
+            } else {
+                connectionTestResult = "✗ Connection failed for \(providerName). Check settings."
             }
         } catch let error as AIServiceError {
-            var message = "✗ \(error.localizedDescription)"
-            if let recovery = error.recoverySuggestion {
-                message += "\n💡 \(recovery)"
-            }
-            connectionTestResult = message
+            connectionTestResult = "✗ \(error.localizedDescription)"
         } catch {
-            connectionTestResult = "✗ Connection failed: \(error.localizedDescription)"
+            connectionTestResult = "✗ An unexpected error occurred: \(error.localizedDescription)"
         }
-        
         isTestingConnection = false
+        isAutoTesting = false
     }
     
     private func storeAPIKeyInKeychain(_ apiKey: String, service: String) {

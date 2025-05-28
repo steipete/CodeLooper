@@ -1,6 +1,7 @@
 import AppKit
 import Combine
 import Defaults
+import DesignSystem
 import SwiftUI
 
 struct MainPopoverView: View {
@@ -83,15 +84,7 @@ struct MainPopoverView: View {
                                 .frame(maxWidth: 140)
                                 
                                 if diagnosticsManager.windowStates[windowState.id]?.isLiveWatchingEnabled ?? false {
-                                    Stepper("Interval: \(diagnosticsManager.windowStates[windowState.id]?.aiAnalysisIntervalSeconds ?? 10)s",
-                                            value: Binding(
-                                                get: { diagnosticsManager.windowStates[windowState.id]?.aiAnalysisIntervalSeconds ?? 10 },
-                                                set: { newInterval in diagnosticsManager.setAnalysisInterval(for: windowState.id, interval: newInterval) }
-                                            ),
-                                            in: 5...60, step: 5)
-                                        .font(.caption)
-                                        .disabled(!isGlobalMonitoringEnabled)
-                                        .scaleEffect(0.9)
+                                    // REMOVED Stepper for interval
                                 }
                             }
                             .padding(.leading, 20)
@@ -140,9 +133,9 @@ struct MainPopoverView: View {
 
     // MARK: Private
 
-    @StateObject private var cursorMonitor = CursorMonitor.shared
-    @StateObject private var diagnosticsManager = WindowAIDiagnosticsManager.shared
-    @StateObject private var inputWatcherViewModel = CursorInputWatcherViewModel()
+    @ObservedObject private var cursorMonitor = CursorMonitor.shared
+    @ObservedObject private var diagnosticsManager = WindowAIDiagnosticsManager.shared
+    @ObservedObject private var inputWatcherViewModel = CursorInputWatcherViewModel()
     @Default(.isGlobalMonitoringEnabled) private var isGlobalMonitoringEnabled
 
     private func aiStatusColor(_ status: AIAnalysisStatus) -> Color {

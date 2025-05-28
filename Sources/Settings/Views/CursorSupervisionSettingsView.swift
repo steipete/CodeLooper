@@ -15,104 +15,127 @@ struct CursorSupervisionSettingsView: View {
     var maxConnectionIssueRetries
     @Default(.maxConsecutiveRecoveryFailures)
     var maxConsecutiveRecoveryFailures
+    @Default(.aiGlobalAnalysisIntervalSeconds)
+    var aiGlobalAnalysisIntervalSeconds
+    @Default(.isGlobalMonitoringEnabled)
+    var isGlobalMonitoringEnabled
 
     @StateObject private var inputWatcherViewModel = CursorInputWatcherViewModel()
     @StateObject private var diagnosticsManager = WindowAIDiagnosticsManager.shared
+
+    @ViewBuilder
+    private var cursorWindowsView: some View {
+        if !inputWatcherViewModel.cursorWindows.isEmpty {
+            DSDivider()
+                .padding(.vertical, Spacing.small)
+
+            VStack(alignment: .leading, spacing: Spacing.small) {
+                Text("Active Cursor Windows")
+                    .font(Typography.callout(.semibold))
+                    .foregroundColor(ColorPalette.text)
+
+                ForEach(inputWatcherViewModel.cursorWindows) { window in
+                    windowItemView(window: window)
+                }
+            }
+        }
+    }
+    
+    @ViewBuilder
+    private func windowItemView(window: MonitoredWindowInfo) -> some View {
+        let windowAIState = diagnosticsManager.windowStates[window.id]
+        
+        VStack(alignment: .leading, spacing: Spacing.xSmall) {
+            HStack {
+                Image(systemName: "window.ceiling")
+                    .foregroundColor(ColorPalette.textSecondary)
+                    .font(.system(size: 14))
+                
+                VStack(alignment: .leading) {
+                    Text(window.windowTitle ?? "Untitled Window")
+                        .font(.system(.body, design: .monospaced))
+                        .lineLimit(1)
+                    if let docPath = window.documentPath, !docPath.isEmpty {
+                        Text(docPath)
+                            .font(Typography.caption2())
+                            .foregroundColor(ColorPalette.textSecondary)
+                            .lineLimit(1)
+                            .truncationMode(.middle)
+                    }
+                }
+                Spacer()
+                jsHookStatusView(for: window)
+            }
+            
+            aiDiagnosticsRow(windowAIState: windowAIState, window: window)
+            
+            if windowAIState?.isLiveWatchingEnabled ?? false {
+                aiAnalysisDetails(windowAIState: windowAIState)
+            }
+        }
+        .padding(Spacing.small)
+        .background(ColorPalette.backgroundSecondary)
+        .cornerRadiusDS(Layout.CornerRadius.small)
+        .opacity(isGlobalMonitoringEnabled ? 1.0 : 0.5)
+        .disabled(!isGlobalMonitoringEnabled)
+    }
+    
+    @ViewBuilder
+    private func aiDiagnosticsRow(windowAIState: MonitoredWindowInfo?, window: MonitoredWindowInfo) -> some View {
+        HStack {
+            Spacer().frame(width: 20)
+            aiStatusIndicator(status: windowAIState?.lastAIAnalysisStatus ?? .off)
+            
+            Toggle("", isOn: Binding(
+                get: { windowAIState?.isLiveWatchingEnabled ?? false },
+                set: { _ in diagnosticsManager.toggleLiveWatching(for: window.id) }
+            ))
+            .labelsHidden()
+            .toggleStyle(SwitchToggleStyle(tint: ColorPalette.primary))
+            .scaleEffect(0.8)
+            
+            Text("Live AI Analysis")
+                .font(Typography.caption1())
+            
+            Spacer()
+        }
+        .disabled(!isGlobalMonitoringEnabled || !inputWatcherViewModel.isWatchingEnabled)
+    }
+    
+    @ViewBuilder
+    private func aiAnalysisDetails(windowAIState: MonitoredWindowInfo?) -> some View {
+        if let analysisMessage = windowAIState?.lastAIAnalysisResponseMessage, !analysisMessage.isEmpty {
+            Text("    AI: \(analysisMessage)")
+                .font(Typography.caption2())
+                .foregroundColor(windowAIState?.lastAIAnalysisStatus == .error ? ColorPalette.error : ColorPalette.warning)
+                .padding(.leading, 20)
+        }
+        if let timestamp = windowAIState?.lastAIAnalysisTimestamp {
+            Text("    Last check: \(timestamp, style: .time)")
+                .font(.caption2)
+                .foregroundColor(ColorPalette.textSecondary)
+                .padding(.leading, 20)
+        }
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: Spacing.xLarge) {
             // Input Watcher Section
             DSSettingsSection("Input Monitoring & AI Diagnostics") {
                 DSToggle(
-                    "Enable Input Monitoring (JS Hooks)",
-                    isOn: $inputWatcherViewModel.isWatchingEnabled,
-                    description: "Monitor and inject JavaScript hooks into Cursor windows for detailed activity status."
+                    "Enable Cursor Supervision",
+                    isOn: $isGlobalMonitoringEnabled,
+                    description: "Master switch to enable/disable all CodeLooper supervision features for Cursor, including JS hooks and AI diagnostics."
                 )
 
-                if !inputWatcherViewModel.statusMessage.isEmpty {
+                if !inputWatcherViewModel.statusMessage.isEmpty && isGlobalMonitoringEnabled {
                     Text(inputWatcherViewModel.statusMessage)
                         .font(Typography.caption1())
                         .foregroundColor(ColorPalette.textSecondary)
                         .padding(.top, Spacing.xxSmall)
                 }
 
-                // Display Cursor Windows from inputWatcherViewModel, enhance with diagnosticsManager data
-                if !inputWatcherViewModel.cursorWindows.isEmpty {
-                    DSDivider()
-                        .padding(.vertical, Spacing.small)
-
-                    VStack(alignment: .leading, spacing: Spacing.small) {
-                        Text("Active Cursor Windows")
-                            .font(Typography.callout(.semibold))
-                            .foregroundColor(ColorPalette.text)
-
-                        ForEach(inputWatcherViewModel.cursorWindows) { window in
-                            // Get the corresponding AI diagnostic state for this window
-                            let windowAIState = diagnosticsManager.windowStates[window.id]
-                            
-                            VStack(alignment: .leading, spacing: Spacing.xSmall) { // Wrap each window item in a VStack
-                                HStack {
-                                    Image(systemName: "window.ceiling")
-                                        .foregroundColor(ColorPalette.textSecondary)
-                                        .font(.system(size: 14))
-                                    
-                                    VStack(alignment: .leading) {
-                                        Text(window.windowTitle ?? "Untitled Window")
-                                            .font(.system(.body, design: .monospaced))
-                                            .lineLimit(1)
-                                        if let docPath = window.documentPath, !docPath.isEmpty {
-                                            Text(docPath)
-                                                .font(Typography.caption2())
-                                                .foregroundColor(ColorPalette.textSecondary)
-                                                .lineLimit(1)
-                                                .truncationMode(.middle)
-                                        }
-                                    }
-                                    Spacer()
-                                    jsHookStatusView(for: window) // Extracted JS Hook view
-                                }
-                                
-                                // AI Diagnostics Row
-                                HStack {
-                                    Spacer().frame(width: 20) // Indent AI controls
-                                    aiStatusIndicator(status: windowAIState?.lastAIAnalysisStatus ?? .off)
-                                    
-                                    Toggle("", isOn: Binding(
-                                        get: { windowAIState?.isLiveWatchingEnabled ?? false },
-                                        set: { _ in diagnosticsManager.toggleLiveWatching(for: window.id) }
-                                    ))
-                                    .labelsHidden()
-                                    .toggleStyle(SwitchToggleStyle(tint: ColorPalette.accent))
-                                    .scaleEffect(0.8)
-                                    
-                                    Text("Live AI Analysis")
-                                        .font(Typography.caption1())
-                                    
-                                    Spacer()
-                                }
-                                .disabled(!inputWatcherViewModel.isWatchingEnabled) // Disable AI if JS hooks off
-
-                                if windowAIState?.isLiveWatchingEnabled ?? false {
-                                    if let analysisMessage = windowAIState?.lastAIAnalysisResponseMessage, !analysisMessage.isEmpty {
-                                        Text("    AI: \(analysisMessage)")
-                                            .font(Typography.caption2())
-                                            .foregroundColor(windowAIState?.lastAIAnalysisStatus == .error ? ColorPalette.error : ColorPalette.warning)
-                                            .padding(.leading, 20)
-                                    }
-                                    if let timestamp = windowAIState?.lastAIAnalysisTimestamp {
-                                        Text("    Last check: \(timestamp, style: .time)")
-                                            .font(.caption2())
-                                            .foregroundColor(ColorPalette.textSecondary)
-                                            .padding(.leading, 20)
-                                    }
-                                }
-                            }
-                            .padding(Spacing.small)
-                            .background(ColorPalette.backgroundSecondary)
-                            .cornerRadiusDS(Layout.CornerRadius.small)
-                        }
-                    }
-                }
+                cursorWindowsView
                 
                 // Manual AI Analysis Section (CursorAnalysisView)
                 // This can remain as is for now, or be re-evaluated later.
@@ -122,7 +145,10 @@ struct CursorSupervisionSettingsView: View {
                     Text("Global AI Analysis Interval")
                         .font(Typography.callout(.semibold))
                     DSSlider(
-                        value: Defaults.binding(.aiGlobalAnalysisIntervalSeconds).map(Double.init, Int.init),
+                        value: Binding(
+                            get: { Double(aiGlobalAnalysisIntervalSeconds) },
+                            set: { aiGlobalAnalysisIntervalSeconds = Int($0) }
+                        ),
                         in: 5...60, 
                         step: 5,
                         label: "Interval",

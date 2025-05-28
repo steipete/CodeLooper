@@ -248,7 +248,7 @@ public class AppDelegate: NSObject, NSApplicationDelegate,
         loginItemManager = LoginItemManager.shared
 
         _ = self.locatorManager
-        logger.info("LocatorManager accessed.")
+        _ = MenuBarIconManager.shared // Ensure shared instance is initialized
 
         // Disabled until this is setup.
         // sparkleUpdaterManager = SparkleUpdaterManager()

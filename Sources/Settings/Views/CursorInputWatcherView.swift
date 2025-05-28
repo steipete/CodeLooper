@@ -1,4 +1,5 @@
 import SwiftUI
+import Defaults
 
 struct CursorInputWatcherView: View {
     // MARK: Internal
@@ -9,7 +10,12 @@ struct CursorInputWatcherView: View {
                 .font(.title)
                 .padding(.bottom)
 
-            Toggle("Enable Live Watching", isOn: $viewModel.isWatchingEnabled)
+            Toggle("Enable Live Watching", isOn: Binding(
+                get: { viewModel.isWatchingEnabled },
+                set: { newValue in 
+                    Defaults[.isGlobalMonitoringEnabled] = newValue
+                }
+            ))
                 .padding(.bottom)
 
             Text(viewModel.statusMessage)

@@ -84,25 +84,25 @@ public struct MonitoredWindowInfo: Identifiable {
 
         let settingsKeyPrefix = getPersistentSettingsKeyPrefix()
         let liveWatchingKey = Defaults.Key<Bool>("\(settingsKeyPrefix)_live_watching", default: false)
+        let aiIntervalKey = Defaults.Key<Int>("\(settingsKeyPrefix)_ai_interval", default: 10)
+        
         self.isLiveWatchingEnabled = Defaults[liveWatchingKey]
+        self.aiAnalysisIntervalSeconds = Defaults[aiIntervalKey]
 
         if self.isLiveWatchingEnabled {
             self.lastAIAnalysisStatus = .pending
         } else {
             self.lastAIAnalysisStatus = .off
         }
-
-        let intervalKey = Defaults.Key<Int>("\(settingsKeyPrefix)_ai_interval", default: 10)
-        self.aiAnalysisIntervalSeconds = Defaults[intervalKey]
     }
 
     public func saveAISettings() {
         let settingsKeyPrefix = getPersistentSettingsKeyPrefix()
         let liveWatchingKey = Defaults.Key<Bool>("\(settingsKeyPrefix)_live_watching", default: false)
+        let aiIntervalKey = Defaults.Key<Int>("\(settingsKeyPrefix)_ai_interval", default: 10)
+        
         Defaults[liveWatchingKey] = self.isLiveWatchingEnabled
-
-        let intervalKey = Defaults.Key<Int>("\(settingsKeyPrefix)_ai_interval", default: 10)
-        Defaults[intervalKey] = self.aiAnalysisIntervalSeconds
+        Defaults[aiIntervalKey] = self.aiAnalysisIntervalSeconds
     }
 }
 

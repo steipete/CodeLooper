@@ -6,6 +6,7 @@ import AXorcist // Import AXorcist module
 import Defaults
 import Diagnostics
 @preconcurrency import Foundation
+@preconcurrency import ScreenCaptureKit
 import Security
 import SwiftUI
 
@@ -31,6 +32,24 @@ class CursorInputWatcherViewModel: ObservableObject {
 
         // Port probing for pre-existing windows now happens automatically
         // when windows are first detected in setupWindowsSubscription()
+
+        // Observe Defaults[.isGlobalMonitoringEnabled] to start/stop JS hooks
+        Defaults.publisher(.isGlobalMonitoringEnabled)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] change in
+                guard let self = self else { return }
+                if change.newValue {
+                    self.logger.info("Global monitoring enabled.")
+                } else {
+                    self.logger.info("Global monitoring disabled. Stopping all JS Hooks.")
+                    // TODO: Add method to stop all hooks in JSHookManager
+                }
+            }
+            .store(in: &cancellables)
+        
+        // Initial check - Do not initialize hooks automatically
+
+        // TODO: Add status updates from JSHookManager when available
     }
 
     deinit {
@@ -72,14 +91,8 @@ class CursorInputWatcherViewModel: ObservableObject {
         var error: String?
     }
 
-    @Default(.isJSHookMonitoringEnabled) var isWatchingEnabled {
-        didSet {
-            if isWatchingEnabled {
-                startWatching()
-            } else {
-                stopWatching()
-            }
-        }
+    var isWatchingEnabled: Bool {
+        Defaults[.isGlobalMonitoringEnabled]
     }
 
     // MARK: - JS Hook Management
@@ -197,7 +210,7 @@ class CursorInputWatcherViewModel: ObservableObject {
     // MARK: - Managers
 
     private let queryManager: QueryManager
-    private let jsHookManager: JSHookManager
+    internal let jsHookManager: JSHookManager
 
     private var timerSubscription: AnyCancellable?
     private let axorcist = AXorcist() // AXorcist instance
@@ -205,6 +218,9 @@ class CursorInputWatcherViewModel: ObservableObject {
     private let cursorMonitor = CursorMonitor.shared
     private var windowsSubscription: AnyCancellable?
     private var heartbeatListenerTask: Task<Void, Never>?
+
+    private var cancellables = Set<AnyCancellable>()
+    private let logger = Logger(category: .supervision)
 
     private func checkForExistingHook(in window: MonitoredWindowInfo) async -> Bool {
         // Try to probe using the existing port for this window
@@ -431,7 +447,6 @@ class CursorInputWatcherViewModel: ObservableObject {
     private func startWatching() {
         guard !watchedInputs.isEmpty else {
             statusMessage = "No inputs configured to watch."
-            isWatchingEnabled = false
             return
         }
         statusMessage = "Watcher enabled. Starting..."
@@ -443,7 +458,7 @@ class CursorInputWatcherViewModel: ObservableObject {
 
         // Setup timer
         timerSubscription = Timer.publish(every: 3, on: .main, in: .common).autoconnect().sink { [weak self] _ in
-            guard let self, self.isWatchingEnabled else { return }
+            guard let self else { return }
             for i in self.watchedInputs.indices {
                 self.queryInputText(forInputIndex: i)
             }
@@ -1001,7 +1016,7 @@ class CursorInputWatcherViewModel: ObservableObject {
         
         do {
             // Take screenshot
-            guard let screenshot = captureWindowScreenshot(window: window) else {
+            guard let screenshot = await captureWindowScreenshot(window: window) else {
                 throw NSError(domain: "Screenshot", code: -1, userInfo: [NSLocalizedDescriptionKey: "Failed to capture screenshot"])
             }
             
@@ -1039,30 +1054,32 @@ class CursorInputWatcherViewModel: ObservableObject {
     }
     
     @MainActor
-    private func captureWindowScreenshot(window: MonitoredWindowInfo) -> NSImage? {
-        guard let axElement = window.windowAXElement else { return nil }
+    private func captureWindowScreenshot(window: MonitoredWindowInfo) async -> NSImage? {
+        // Use the existing CursorScreenshotAnalyzer which has proper ScreenCaptureKit implementation
+        let analyzer = CursorScreenshotAnalyzer()
         
-        // Get window bounds
-        guard let position = axElement.position(),
-              let size = axElement.size() else { return nil }
+        // Find the SCWindow that corresponds to this MonitoredWindowInfo
+        var targetSCWindow: SCWindow? = nil
         
-        let windowRect = CGRect(
-            x: CGFloat(position.x),
-            y: CGFloat(position.y),
-            width: CGFloat(size.width),
-            height: CGFloat(size.height)
-        )
+        if let axElement = window.windowAXElement,
+           let windowNumberID = axElement.attribute(Attribute<NSNumber>("AXWindowNumber")) {
+            let cgWindowID = CGWindowID(windowNumberID.uint32Value)
+            
+            do {
+                let content = try await SCShareableContent.excludingDesktopWindows(false, onScreenWindowsOnly: true)
+                targetSCWindow = content.windows.first { $0.windowID == cgWindowID }
+            } catch {
+                logger.error("Failed to get SCShareableContent: \(error)")
+            }
+        }
         
-        // Capture the window area
-        // Use .optionOnScreenAboveWindow to capture everything in the rect
-        guard let screenshot = CGWindowListCreateImage(
-            windowRect,
-            .optionOnScreenAboveWindow,
-            CGWindowID(0), // 0 means capture all windows
-            .bestResolution
-        ) else { return nil }
-        
-        return NSImage(cgImage: screenshot, size: windowRect.size)
+        // Use the analyzer's capture method (it will fallback to first Cursor window if targetSCWindow is nil)
+        do {
+            return try await analyzer.captureCursorWindow(targetSCWindow: targetSCWindow)
+        } catch {
+            logger.error("Failed to capture window screenshot: \(error)")
+            return nil
+        }
     }
     
     private func analyzeScreenshotWithAI(screenshotPath: String) async -> String {
@@ -1073,7 +1090,7 @@ class CursorInputWatcherViewModel: ObservableObject {
             }
             
             // Initialize AI manager
-            let aiManager = AIServiceManager()
+            let aiManager = AIServiceManager.shared
             
             // Configure AI service based on defaults
             let provider = Defaults[.aiProvider]
@@ -1083,13 +1100,13 @@ class CursorInputWatcherViewModel: ObservableObject {
                 if apiKey.isEmpty {
                     return "❌ OpenAI API key not configured. Please set it in Settings > AI"
                 }
-                aiManager.configure(provider: .openAI, apiKey: apiKey)
+                aiManager.configure(provider: AIProvider.openAI, apiKey: apiKey)
             case .ollama:
                 let baseURLString = Defaults[.ollamaBaseURL]
                 if let url = URL(string: baseURLString) {
-                    aiManager.configure(provider: .ollama, baseURL: url)
+                    aiManager.configure(provider: AIProvider.ollama, baseURL: url)
                 } else {
-                    aiManager.configure(provider: .ollama)
+                    aiManager.configure(provider: AIProvider.ollama)
                 }
             }
             
@@ -1147,6 +1164,13 @@ class CursorInputWatcherViewModel: ObservableObject {
         }
         
         return ""
+    }
+
+    private func initializeJSHooksForAllKnownWindows() async {
+        // This method should no longer automatically inject hooks.
+        // Hook injection is now an explicit user action via the "Inject JS" button.
+        // Probing for existing hooks is handled by the injectJSHook method itself.
+        logger.info("initializeJSHooksForAllKnownWindows called, but automatic injection is disabled. User must manually inject hooks.")
     }
 }
 
