@@ -60,30 +60,28 @@ struct AdvancedSettingsView: View {
 
             // Danger Zone
             DSSettingsSection("Danger Zone") {
-                DSCard(style: .filled) {
-                    HStack(spacing: Spacing.medium) {
-                        VStack(alignment: .leading, spacing: Spacing.small) {
-                            HStack {
-                                Image(systemName: "exclamationmark.triangle.fill")
-                                    .foregroundColor(.orange)
-                                Text("Caution")
-                                    .font(Typography.callout(.semibold))
-                                    .foregroundColor(.orange)
-                            }
-
-                            Text("This action will reset all settings and restart the app. This cannot be undone.")
-                                .font(Typography.caption1())
-                                .foregroundColor(ColorPalette.textSecondary)
-                                .lineSpacing(3)
+                HStack(spacing: Spacing.medium) {
+                    VStack(alignment: .leading, spacing: Spacing.small) {
+                        HStack {
+                            Image(systemName: "exclamationmark.triangle.fill")
+                                .foregroundColor(.orange)
+                            Text("Caution")
+                                .font(Typography.callout(.semibold))
+                                .foregroundColor(.orange)
                         }
 
-                        Spacer()
-
-                        DSButton("Reset & Restart", style: .destructive) {
-                            showResetAndRestartConfirmation = true
-                        }
-                        .fixedSize()
+                        Text("This action will reset all settings and restart the app. This cannot be undone.")
+                            .font(Typography.caption1())
+                            .foregroundColor(ColorPalette.textSecondary)
+                            .lineSpacing(3)
                     }
+
+                    Spacer()
+
+                    DSButton("Reset & Restart", style: .destructive) {
+                        showResetAndRestartConfirmation = true
+                    }
+                    .fixedSize()
                 }
             }
 

@@ -100,11 +100,13 @@ public struct CursorAnalysisView: View {
                 .pickerStyle(.menu)
                 .frame(maxWidth: .infinity)
                 
-                DSButton("Analyze Cursor Window", style: .primary) {
+                Button("Analyze Cursor Window") {
                     Task {
                         await analyzeWindow()
                     }
                 }
+                .buttonStyle(.borderedProminent)
+                .tint(.blue)
                 .disabled(analyzer.isAnalyzing || (selectedPromptType == .custom && customPrompt.isEmpty))
 
                 DSButton("Clear", style: .secondary) {

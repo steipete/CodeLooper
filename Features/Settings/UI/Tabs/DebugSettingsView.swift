@@ -80,19 +80,17 @@ struct DebugSettingsView: View {
                     DSButton("Open AXpector", style: .secondary) {
                         NotificationCenter.default.post(name: .showAXpectorWindow, object: nil)
                     }
-                    .frame(maxWidth: .infinity)
+                    .frame(maxWidth: .infinity, minHeight: 44)
 
                     DSButton("Trigger Test Notification", style: .secondary) {
                         triggerTestNotification()
                     }
-                    .frame(maxWidth: .infinity)
+                    .frame(maxWidth: .infinity, minHeight: 44)
 
-                    Button("Clear All UserDefaults") {
+                    DSButton("Clear All UserDefaults", style: .destructive) {
                         clearUserDefaults()
                     }
-                    .buttonStyle(.borderedProminent)
-                    .tint(.red)
-                    .frame(maxWidth: .infinity)
+                    .frame(maxWidth: .infinity, minHeight: 44)
                 }
             }
 

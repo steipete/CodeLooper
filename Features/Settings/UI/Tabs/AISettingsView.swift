@@ -120,18 +120,17 @@ struct AISettingsView: View {
 
             // Manual AI Window Analysis
             DSSettingsSection("Manual AI Window Analysis") {
-                CursorAnalysisView()
-            }
-
-            // AI Usage Information
-            DSSettingsSection("About AI Image Analysis") {
-                Text(
-                    "The AI service will be used to analyze screenshots of Cursor windows and provide insights about what the application is currently doing."
-                )
-                .font(Typography.caption1())
-                .foregroundColor(ColorPalette.textSecondary)
-                .lineSpacing(4)
-                .frame(maxWidth: .infinity, alignment: .leading)
+                VStack(alignment: .leading, spacing: Spacing.medium) {
+                    Text(
+                        "The AI service will be used to analyze screenshots of Cursor windows and provide insights about what the application is currently doing."
+                    )
+                    .font(Typography.caption1())
+                    .foregroundColor(ColorPalette.textSecondary)
+                    .lineSpacing(4)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    
+                    CursorAnalysisView()
+                }
             }
 
             Spacer()
