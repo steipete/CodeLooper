@@ -90,7 +90,8 @@ class JSHookService {
     private let logger = Logger(category: .supervision)
     
     private func checkConsoleForHooks(_ element: Element) async -> String? {
-        // TODO: Implement JavaScript execution via AXorcist
+        _ = element // Will be used when JavaScript execution is implemented
+        // TODO: Implement JavaScript execution via AXorcist using element
         // Script to check for existing hooks:
         // (function() {
         //     if (window.cursorHook) {
@@ -108,20 +109,8 @@ class JSHookService {
     }
     
     private func probePort(_ port: UInt16, for window: MonitoredWindowInfo, portManager: PortManager) async -> Bool {
-        do {
-            _ = try await CursorJSHook(port: port)
-            // TODO: Implement test connection method
-            let isConnected = false
-            if isConnected {
-                hookedWindows.insert(window.id)
-                portManager.assignPort(port, to: window.id)
-                logger.info("Connected to hook on port \(port) for window \(window.id)")
-                return true
-            }
-        } catch {
-            logger.debug("Port \(port) probe failed: \(error)")
-        }
-        
+        // TODO: Implement test connection method
+        // For now, skip port probing
         return false
     }
     
@@ -132,16 +121,10 @@ class JSHookService {
         }
         
         let port = portManager.getOrAssignPort(for: window.id)
-        do {
-            _ = try await CursorJSHook(port: port)
-            // TODO: Implement install in browser method
-            // For now, just mark as hooked
-            hookedWindows.insert(window.id)
-            logger.info("Successfully installed hook on port \(port) for window \(window.id)")
-        } catch {
-            logger.error("Failed to install hook: \(error)")
-            handleHookInstallationError(error, for: window)
-        }
+        // TODO: Implement install in browser method
+        // For now, just mark as hooked
+        hookedWindows.insert(window.id)
+        logger.info("Successfully installed hook on port \(port) for window \(window.id)")
     }
     
     private func handleHookInstallationError(_ error: Error, for window: MonitoredWindowInfo) {
