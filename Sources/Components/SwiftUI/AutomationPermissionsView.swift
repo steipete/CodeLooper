@@ -116,6 +116,17 @@ class AutomationPermissionsViewModel: ObservableObject {
     }
 
     private func checkAutomationPermission() -> Bool {
+        // NSAppleScript must be executed on the main thread
+        if Thread.isMainThread {
+            return performAutomationCheck()
+        } else {
+            return DispatchQueue.main.sync {
+                performAutomationCheck()
+            }
+        }
+    }
+    
+    private func performAutomationCheck() -> Bool {
         // Check if we have automation permission for System Events
         let systemEventsScript = NSAppleScript(source: """
             tell application "System Events"
