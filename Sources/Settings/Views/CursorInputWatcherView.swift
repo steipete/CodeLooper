@@ -2,199 +2,178 @@ import SwiftUI
 import Defaults
 
 struct CursorInputWatcherView: View {
-    // MARK: Internal
-
+    @StateObject private var viewModel = CursorInputWatcherViewModel()
+    
     var body: some View {
-        VStack(alignment: .leading) {
+        VStack(alignment: .leading, spacing: 16) {
+            headerSection
+            windowsSection
+            inputsSection
+        }
+        .padding()
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+    }
+    
+    // MARK: - View Components
+    
+    private var headerSection: some View {
+        VStack(alignment: .leading, spacing: 8) {
             Text("Cursor Input Watcher")
                 .font(.title)
-                .padding(.bottom)
-
+            
             Toggle("Enable Live Watching", isOn: Binding(
                 get: { viewModel.isWatchingEnabled },
                 set: { newValue in 
                     Defaults[.isGlobalMonitoringEnabled] = newValue
                 }
             ))
-                .padding(.bottom)
-
+            
             Text(viewModel.statusMessage)
                 .font(.caption)
-                .padding(.bottom)
-
-            // Display Cursor Windows
+                .foregroundColor(.secondary)
+        }
+    }
+    
+    private var windowsSection: some View {
+        Group {
             if !viewModel.cursorWindows.isEmpty {
                 VStack(alignment: .leading, spacing: 8) {
                     Text("Cursor Windows")
                         .font(.headline)
-                        .padding(.bottom, 4)
-
-                    ForEach(viewModel.cursorWindows) { window in
-                        HStack {
-                            Image(systemName: "window.ceiling")
-                                .foregroundColor(.secondary)
-                            Text(window.windowTitle ?? "Untitled Window")
-                                .font(.system(.body, design: .monospaced))
-                            Spacer()
-
-                            // JS Hook status indicator
-                            if viewModel.hookedWindows.contains(window.id) {
-                                HStack(spacing: 4) {
-                                    // Hook status icon
-                                    Image(systemName: "checkmark.seal.fill")
-                                        .foregroundColor(.green)
-                                    
-                                    // Port number
-                                    if let port = viewModel.getPort(for: window.id) {
-                                        Text(":\(port)")
-                                            .font(.caption2)
-                                            .foregroundColor(.secondary)
-                                    }
-                                    
-                                    // Heartbeat indicator
-                                    if let heartbeat = viewModel.getHeartbeatStatus(for: window.id) {
-                                        if heartbeat.isAlive {
-                                            Image(systemName: "heart.fill")
-                                                .foregroundColor(heartbeat.resumeNeeded ? .orange : .green)
-                                                .font(.caption2)
-                                                .animation(.easeInOut(duration: 0.5).repeatForever(autoreverses: true), value: heartbeat.isAlive)
-                                                .help(heartbeat.resumeNeeded ? "Resume needed" : "Heartbeat active")
-                                        } else {
-                                            Image(systemName: "heart.slash")
-                                                .foregroundColor(.gray)
-                                                .font(.caption2)
-                                                .help("No heartbeat")
-                                        }
-                                    }
-                                }
-                                .help("JS Hook installed on port \(viewModel.getPort(for: window.id) ?? 0)")
-                            }
-
-                            // Inject/Reinject button
-                            Button(viewModel.hookedWindows.contains(window.id) ? "Reinject" : "Inject JS") {
-                                Task {
-                                    await viewModel.injectJSHook(into: window)
-                                }
-                            }
-                            .font(.caption)
-                            .buttonStyle(.bordered)
-                            .disabled(viewModel.isInjectingHook)
-
-                            if window.isPaused {
-                                Image(systemName: "pause.circle.fill")
-                                    .foregroundColor(.yellow)
-                            }
-                        }
-                        .padding(.horizontal, 8)
-                        .padding(.vertical, 4)
-                        .background(Color.secondary.opacity(0.1))
-                        .cornerRadius(4)
-                        
-                        // AI Status button - only show if window is hooked
-                        if viewModel.hookedWindows.contains(window.id) {
-                            HStack {
-                                Spacer()
-                                Button(action: {
-                                    Task {
-                                        await viewModel.analyzeWindowWithAI(window: window)
-                                    }
-                                }) {
-                                    HStack(spacing: 4) {
-                                        Text("🧠")
-                                        Text("AI Status")
-                                            .font(.caption)
-                                    }
-                                }
-                                .buttonStyle(.bordered)
-                                .disabled(viewModel.getAIAnalysisStatus(for: window.id)?.isAnalyzing ?? false)
-                                
-                                Spacer()
-                            }
-                            .padding(.top, 4)
-                            
-                            // Show AI analysis result
-                            if let aiStatus = viewModel.getAIAnalysisStatus(for: window.id) {
-                                VStack(alignment: .leading, spacing: 4) {
-                                    if aiStatus.isAnalyzing {
-                                        HStack {
-                                            ProgressView()
-                                                .scaleEffect(0.7)
-                                            Text("Analyzing window...")
-                                                .font(.caption)
-                                                .foregroundColor(.secondary)
-                                        }
-                                        .padding(.horizontal, 8)
-                                    } else if let status = aiStatus.status {
-                                        Text(status)
-                                            .font(.caption)
-                                            .foregroundColor(.primary)
-                                            .padding(.horizontal, 8)
-                                            .padding(.vertical, 2)
-                                            .background(Color.secondary.opacity(0.1))
-                                            .cornerRadius(4)
-                                    } else if let error = aiStatus.error {
-                                        Text("Error: \(error)")
-                                            .font(.caption)
-                                            .foregroundColor(.red)
-                                            .padding(.horizontal, 8)
-                                    }
-                                    
-                                    if let lastAnalysis = aiStatus.lastAnalysis {
-                                        Text("Last checked: \(lastAnalysis, style: .relative)")
-                                            .font(.caption2)
-                                            .foregroundColor(.secondary)
-                                            .padding(.horizontal, 8)
-                                    }
-                                }
-                                .padding(.top, 2)
-                            }
-                        }
+                    
+                    ForEach(viewModel.cursorWindows, id: \.id) { window in
+                        WindowRow(window: window, viewModel: viewModel)
                     }
                 }
-                .padding(.bottom)
-
-                Divider()
-                    .padding(.bottom)
             }
-
-            if viewModel.isWatchingEnabled, viewModel.watchedInputs.isEmpty {
-                Text("No inputs are currently being watched. Configure in ViewModel.")
-                    .foregroundColor(.orange)
-            }
-
-            List {
-                ForEach(viewModel.watchedInputs) { inputInfo in
-                    VStack(alignment: .leading) {
-                        Text(inputInfo.name)
-                            .font(.headline)
-                        Text("Last Text: \(inputInfo.lastKnownText)")
-                            .font(.body)
-                            .lineLimit(3)
-                        if let error = inputInfo.lastError {
-                            Text("Error: \(error)")
-                                .font(.caption)
-                                .foregroundColor(.red)
-                                .lineLimit(2)
-                        }
-                    }
-                    .padding(.vertical, 4)
-                }
-            }
-            .listStyle(PlainListStyle())
-
-            Spacer()
         }
-        .padding()
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
     }
-
-    // MARK: Private
-
-    @StateObject private var viewModel = CursorInputWatcherViewModel()
+    
+    private var inputsSection: some View {
+        Group {
+            if !viewModel.watchedInputs.isEmpty {
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("Monitored Inputs")
+                        .font(.headline)
+                    
+                    ForEach(viewModel.watchedInputs) { input in
+                        InputRow(input: input)
+                    }
+                }
+            }
+        }
+    }
 }
+
+// MARK: - Window Row
+
+private struct WindowRow: View {
+    let window: MonitoredWindowInfo
+    let viewModel: CursorInputWatcherViewModel
+    
+    var body: some View {
+        HStack {
+            Image(systemName: "window.ceiling")
+                .foregroundColor(.secondary)
+            
+            Text(window.windowTitle ?? "Untitled Window")
+                .font(.system(.body, design: .monospaced))
+            
+            Spacer()
+            
+            windowStatus
+        }
+        .padding(8)
+        .background(Color.gray.opacity(0.1))
+        .cornerRadius(6)
+    }
+    
+    @ViewBuilder
+    private var windowStatus: some View {
+        if viewModel.hookedWindows.contains(window.id) {
+            HStack(spacing: 4) {
+                Image(systemName: "checkmark.seal.fill")
+                    .foregroundColor(.green)
+                
+                if let port = viewModel.getPort(for: window.id) {
+                    Text("Port: \(port)")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                }
+                
+                if let heartbeat = viewModel.getHeartbeatStatus(for: window.id) {
+                    HeartbeatIndicator(status: heartbeat)
+                }
+            }
+        } else {
+            Button("Inject Hook") {
+                Task {
+                    await viewModel.injectJSHook(into: window)
+                }
+            }
+            .buttonStyle(.bordered)
+            .controlSize(.small)
+            .disabled(viewModel.isInjectingHook)
+        }
+    }
+}
+
+// MARK: - Input Row
+
+private struct InputRow: View {
+    let input: WatchedInputInfo
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text(input.name)
+                .font(.system(.body, design: .rounded))
+            
+            HStack {
+                Text(input.lastValue)
+                    .font(.system(.caption, design: .monospaced))
+                    .foregroundColor(.secondary)
+                
+                Spacer()
+                
+                Text(input.lastUpdate, style: .time)
+                    .font(.caption2)
+                    .foregroundColor(.secondary)
+            }
+        }
+        .padding(8)
+        .background(Color.blue.opacity(0.05))
+        .cornerRadius(6)
+    }
+}
+
+// MARK: - Heartbeat Indicator
+
+private struct HeartbeatIndicator: View {
+    let status: HeartbeatStatus
+    
+    private var color: Color {
+        if status.resumeNeeded {
+            return .orange
+        } else if status.isAlive {
+            return .green
+        } else {
+            return .red
+        }
+    }
+    
+    var body: some View {
+        Circle()
+            .fill(color)
+            .frame(width: 8, height: 8)
+            .help(status.isAlive ? "Connected" : "Disconnected")
+    }
+}
+
+// MARK: - Preview
 
 struct CursorInputWatcherView_Previews: PreviewProvider {
     static var previews: some View {
         CursorInputWatcherView()
+            .frame(width: 600, height: 400)
     }
 }

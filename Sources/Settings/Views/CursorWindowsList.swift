@@ -58,10 +58,13 @@ private struct WindowRow: View {
     let style: CursorWindowsList.Style
     let isGlobalMonitoringEnabled: Bool
     @ObservedObject var inputWatcherViewModel: CursorInputWatcherViewModel
+    @ObservedObject private var diagnosticsManager = WindowAIDiagnosticsManager.shared
     
     @State private var isHoveringFolderIcon = false
     @State private var isHoveringFolderName = false
     @State private var isHoveringDocument = false
+    @State private var isHoveringCard = false
+    @State private var isHoveringGitStatus = false
     
     private static let logger = Logger(category: .ui)
     
@@ -89,9 +92,21 @@ private struct WindowRow: View {
                 }
             }
         }
-        .opacity(isGlobalMonitoringEnabled ? 1.0 : 0.6)
+        .opacity(isGlobalMonitoringEnabled ? (isHoveringCard ? 1.0 : 0.95) : 0.6)
         .disabled(!isGlobalMonitoringEnabled)
         .contentShape(Rectangle())
+        .scaleEffect(isHoveringCard ? 1.01 : 1.0)
+        .shadow(
+            color: isHoveringCard ? Color.black.opacity(0.15) : Color.black.opacity(0.08),
+            radius: isHoveringCard ? 8 : 4,
+            x: 0,
+            y: isHoveringCard ? 3 : 2
+        )
+        .animation(.smooth(duration: 0.2), value: isHoveringCard)
+        .onHover { hovering in
+            isHoveringCard = hovering
+        }
+        
         .onTapGesture {
             raiseWindow()
         }
@@ -113,32 +128,33 @@ private struct WindowRow: View {
                 .lineLimit(1)
             
             if let docPath = windowState.documentPath, !docPath.isEmpty {
+                let pathExists = diagnosticsManager.documentPathExists(docPath)
+                
                 HStack(spacing: Spacing.xxSmall) {
                     Image(systemName: "doc.text")
                         .font(.caption2)
-                        .foregroundColor(isHoveringDocument ? ColorPalette.accent : ColorPalette.textSecondary)
+                        .foregroundColor(pathExists && isHoveringDocument ? ColorPalette.accent : ColorPalette.textSecondary)
                     
                     Text(docPath)
                         .font(Typography.caption2())
-                        .foregroundColor(isHoveringDocument ? ColorPalette.accent : ColorPalette.textSecondary)
-                        .underline(isHoveringDocument, color: ColorPalette.accent)
+                        .foregroundColor(pathExists && isHoveringDocument ? ColorPalette.accent : ColorPalette.textSecondary)
+                        .underline(pathExists && isHoveringDocument, color: ColorPalette.accent)
                         .lineLimit(1)
                         .truncationMode(.middle)
                 }
-                .scaleEffect(isHoveringDocument ? 1.02 : 1.0)
+                .scaleEffect(pathExists && isHoveringDocument ? 1.02 : 1.0)
                 .animation(.easeInOut(duration: 0.15), value: isHoveringDocument)
-                .onTapGesture {
-                    openDocumentInFinder(path: docPath)
+                .if(pathExists) { view in
+                    view
+                        .onTapGesture {
+                            openDocumentInFinder(path: docPath)
+                        }
+                        .onHover { isHovering in
+                            isHoveringDocument = isHovering
+                        }
+                        
+                        .help("Open in Finder")
                 }
-                .onHover { isHovering in
-                    isHoveringDocument = isHovering
-                    if isHovering {
-                        NSCursor.pointingHand.push()
-                    } else {
-                        NSCursor.pop()
-                    }
-                }
-                .help("Open in Finder")
             }
             
             // Screen location with state (always show)
@@ -228,41 +244,41 @@ private struct WindowRow: View {
     
     @ViewBuilder
     private func gitRepositoryInfo(_ gitRepo: GitRepository) -> some View {
+        let repoPathExists = diagnosticsManager.documentPathExists(gitRepo.path)
+        
         HStack(spacing: Spacing.xxSmall) {
             Image(systemName: style == .popover ? "folder" : "folder.badge.gearshape")
                 .font(.caption)
-                .foregroundColor(isHoveringFolderIcon ? ColorPalette.accent : ColorPalette.textSecondary)
-                .scaleEffect(isHoveringFolderIcon ? 1.1 : 1.0)
+                .foregroundColor(repoPathExists && isHoveringFolderIcon ? ColorPalette.accent : ColorPalette.textSecondary)
+                .scaleEffect(repoPathExists && isHoveringFolderIcon ? 1.1 : 1.0)
                 .animation(.easeInOut(duration: 0.15), value: isHoveringFolderIcon)
-                .onTapGesture {
-                    openInFinder(path: gitRepo.path)
-                }
-                .onHover { isHovering in
-                    isHoveringFolderIcon = isHovering
-                    if isHovering {
-                        NSCursor.pointingHand.push()
-                    } else {
-                        NSCursor.pop()
-                    }
+                .if(repoPathExists) { view in
+                    view
+                        .onTapGesture {
+                            openInFinder(path: gitRepo.path)
+                        }
+                        .onHover { isHovering in
+                            isHoveringFolderIcon = isHovering
+                        }
+                        
                 }
             
             if style == .settings {
                 Text(URL(fileURLWithPath: gitRepo.path).lastPathComponent)
                     .font(Typography.caption2())
-                    .foregroundColor(isHoveringFolderName ? ColorPalette.accent : ColorPalette.textSecondary)
-                    .underline(isHoveringFolderName, color: ColorPalette.accent)
-                    .scaleEffect(isHoveringFolderName ? 1.02 : 1.0)
+                    .foregroundColor(repoPathExists && isHoveringFolderName ? ColorPalette.accent : ColorPalette.textSecondary)
+                    .underline(repoPathExists && isHoveringFolderName, color: ColorPalette.accent)
+                    .scaleEffect(repoPathExists && isHoveringFolderName ? 1.02 : 1.0)
                     .animation(.easeInOut(duration: 0.15), value: isHoveringFolderName)
-                    .onTapGesture {
-                        openInFinder(path: gitRepo.path)
-                    }
-                    .onHover { isHovering in
-                        isHoveringFolderName = isHovering
-                        if isHovering {
-                            NSCursor.pointingHand.push()
-                        } else {
-                            NSCursor.pop()
-                        }
+                    .if(repoPathExists) { view in
+                        view
+                            .onTapGesture {
+                                openInFinder(path: gitRepo.path)
+                            }
+                            .onHover { isHovering in
+                                isHoveringFolderName = isHovering
+                            }
+                            
                     }
             }
             
@@ -291,15 +307,27 @@ private struct WindowRow: View {
                 Text("•")
                     .foregroundColor(ColorPalette.textTertiary)
                 
-                Text("\(gitRepo.totalChangedFiles) changed")
-                    .font(Typography.caption2())
-                    .foregroundColor(ColorPalette.warning)
-                
-                if style == .settings && gitRepo.dirtyFileCount > 0 && gitRepo.untrackedFileCount > 0 {
-                    Text("(\(gitRepo.dirtyFileCount)M, \(gitRepo.untrackedFileCount)U)")
+                HStack(spacing: 2) {
+                    Text("\(gitRepo.totalChangedFiles) changed")
                         .font(Typography.caption2())
-                        .foregroundColor(ColorPalette.textSecondary)
+                        .foregroundColor(isHoveringGitStatus ? ColorPalette.accent : ColorPalette.warning)
+                        .underline(isHoveringGitStatus, color: ColorPalette.accent)
+                    
+                    if style == .settings && gitRepo.dirtyFileCount > 0 && gitRepo.untrackedFileCount > 0 {
+                        Text("(\(gitRepo.dirtyFileCount)M, \(gitRepo.untrackedFileCount)U)")
+                            .font(Typography.caption2())
+                            .foregroundColor(isHoveringGitStatus ? ColorPalette.accent : ColorPalette.textSecondary)
+                    }
                 }
+                .scaleEffect(isHoveringGitStatus ? 1.02 : 1.0)
+                .animation(.easeInOut(duration: 0.15), value: isHoveringGitStatus)
+                .onTapGesture {
+                    openInGitClient(path: gitRepo.path)
+                }
+                .onHover { isHovering in
+                    isHoveringGitStatus = isHovering
+                }
+                .help("Open in Git client")
             } else if style == .popover {
                 Text("• clean")
                     .font(Typography.caption2())
@@ -349,6 +377,13 @@ private struct WindowRow: View {
         Self.logger.info("Opening document in Finder: \(path)")
         // For documents, we want to select the file itself in Finder
         NSWorkspace.shared.activateFileViewerSelecting([URL(fileURLWithPath: path)])
+    }
+    
+    private func openInGitClient(path: String) {
+        Self.logger.info("Opening repository in Git client: \(path)")
+        if !GitClientLauncher.launchGitClient(for: path) {
+            Self.logger.error("Failed to open Git client for repository: \(path)")
+        }
     }
 }
 
