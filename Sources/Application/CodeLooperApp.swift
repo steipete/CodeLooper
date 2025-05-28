@@ -99,16 +99,18 @@ struct MenuBarIconView: View {
                     .renderingMode(.template)
                     .frame(width: 16, height: 16)
             }
-            
+
             // Display the status text from the manager
             Text(menuBarIconManager.currentIconAttributedString)
-                .font(.system(size: 12, weight: .medium)) 
+                .font(.system(size: 12, weight: .medium))
         }
         .contentShape(Rectangle())
     }
 }
 
 struct SettingsSceneView: View {
+    // MARK: Internal
+
     var body: some View {
         SettingsContainerView()
             .environmentObject(mainSettingsViewModel)
@@ -120,17 +122,19 @@ struct SettingsSceneView: View {
             }
     }
 
+    // MARK: Private
+
     @StateObject private var mainSettingsViewModel = MainSettingsViewModel(
         loginItemManager: LoginItemManager.shared,
         updaterViewModel: UpdaterViewModel(sparkleUpdaterManager: nil)
     )
-    
+
     private func ensureSingleSettingsWindow() {
         // Close any duplicate settings windows
         let settingsWindows = NSApp.windows.filter { window in
             window.title.contains("Settings") || window.identifier?.rawValue == "settings"
         }
-        
+
         // Keep only the first one, close the rest
         for window in settingsWindows.dropFirst() {
             print("Closing duplicate settings window: \(window.title)")

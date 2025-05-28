@@ -58,7 +58,9 @@ struct CursorRuleSetsSettingsView: View {
         .alert("Feature Not Yet Implemented", isPresented: $showNotImplementedAlert) {
             Button("OK", role: .cancel) {}
         } message: {
-            Text("The '\(attemptedRuleName)' rule is not yet implemented. Currently, only the 'Stop after 25 loops' rule is functional.")
+            Text(
+                "The '\(attemptedRuleName)' rule is not yet implemented. Currently, only the 'Stop after 25 loops' rule is functional."
+            )
         }
     }
 
@@ -107,7 +109,7 @@ struct CursorRuleSetsSettingsView: View {
     private func toggleRule(_ rule: InterventionRule) {
         if let index = rules.firstIndex(where: { $0.id == rule.id }) {
             // Check if trying to enable an unimplemented rule
-            if !rules[index].enabled && rule.name != "Stop after 25 loops" {
+            if !rules[index].enabled, rule.name != "Stop after 25 loops" {
                 attemptedRuleName = rule.name
                 showNotImplementedAlert = true
                 return

@@ -1,17 +1,19 @@
+import Defaults
 import Foundation
 import SwiftUI
-import Defaults
 
 public enum AIProvider: String, CaseIterable, Identifiable, Codable, Defaults.Serializable {
     case openAI = "OpenAI"
     case ollama = "Ollama"
-    
+
+    // MARK: Public
+
     public var id: String { self.rawValue }
-    
+
     public var displayName: String {
         switch self {
-        case .openAI: return "OpenAI"
-        case .ollama: return "Ollama (Local)"
+        case .openAI: "OpenAI"
+        case .ollama: "Ollama (Local)"
         }
     }
 }
@@ -21,65 +23,75 @@ public enum AIModel: String, CaseIterable, Identifiable, Codable, Defaults.Seria
     case gpt4o = "gpt-4o"
     case gpt4TurboVision = "gpt-4-turbo-2024-04-09"
     case gpt4oMini = "gpt-4o-mini"
-    case o1 = "o1"
+    case o1
     case clipVitL14 = "image-embedding-ada-002"
-    
+
     // Ollama Models
-    case llava = "llava"
-    case bakllava = "bakllava"
+    case llava
+    case bakllava
     case llava13b = "llava:13b"
     case llava34b = "llava:34b"
-    
+
+    // MARK: Public
+
     public var id: String { self.rawValue }
-    
+
     public var displayName: String {
         switch self {
         // OpenAI Models
-        case .gpt4o: return "GPT-4o (Flagship)"
-        case .gpt4TurboVision: return "GPT-4 Turbo with Vision"
-        case .gpt4oMini: return "GPT-4o-mini"
-        case .o1: return "o1"
-        case .clipVitL14: return "CLIP ViT-L/14 embeddings"
+        case .gpt4o: "GPT-4o (Flagship)"
+        case .gpt4TurboVision: "GPT-4 Turbo with Vision"
+        case .gpt4oMini: "GPT-4o-mini"
+        case .o1: "o1"
+        case .clipVitL14: "CLIP ViT-L/14 embeddings"
         // Ollama Models
-        case .llava: return "LLaVA"
-        case .bakllava: return "BakLLaVA"
-        case .llava13b: return "LLaVA 13B"
-        case .llava34b: return "LLaVA 34B"
+        case .llava: "LLaVA"
+        case .bakllava: "BakLLaVA"
+        case .llava13b: "LLaVA 13B"
+        case .llava34b: "LLaVA 34B"
         }
     }
-    
+
     public var provider: AIProvider {
         switch self {
         case .gpt4o, .gpt4TurboVision, .gpt4oMini, .o1, .clipVitL14:
-            return .openAI
+            .openAI
         case .llava, .bakllava, .llava13b, .llava34b:
-            return .ollama
+            .ollama
         }
     }
 }
 
 public struct ImageAnalysisRequest {
-    public let image: NSImage
-    public let prompt: String
-    public let model: AIModel
-    
+    // MARK: Lifecycle
+
     public init(image: NSImage, prompt: String, model: AIModel) {
         self.image = image
         self.prompt = prompt
         self.model = model
     }
+
+    // MARK: Public
+
+    public let image: NSImage
+    public let prompt: String
+    public let model: AIModel
 }
 
 public struct ImageAnalysisResponse {
-    public let text: String
-    public let model: AIModel
-    public let tokensUsed: Int?
-    
+    // MARK: Lifecycle
+
     public init(text: String, model: AIModel, tokensUsed: Int? = nil) {
         self.text = text
         self.model = model
         self.tokensUsed = tokensUsed
     }
+
+    // MARK: Public
+
+    public let text: String
+    public let model: AIModel
+    public let tokensUsed: Int?
 }
 
 public enum AIServiceError: Error, LocalizedError {
@@ -93,14 +105,16 @@ public enum AIServiceError: Error, LocalizedError {
     case modelNotFound(String)
     case ollamaNotRunning
     case noVisionModelsInstalled
-    
+
+    // MARK: Public
+
     public var errorDescription: String? {
         switch self {
         case .apiKeyMissing:
             return "API key is missing. Please configure it in settings."
         case .invalidImage:
             return "Invalid image provided."
-        case .networkError(let error):
+        case let .networkError(error):
             if let urlError = error as? URLError {
                 switch urlError.code {
                 case .notConnectedToInternet:
@@ -120,9 +134,9 @@ public enum AIServiceError: Error, LocalizedError {
             return "The selected model is not supported."
         case .serviceUnavailable:
             return "AI service is currently unavailable."
-        case .connectionFailed(let details):
+        case let .connectionFailed(details):
             return "Connection failed: \(details)"
-        case .modelNotFound(let model):
+        case let .modelNotFound(model):
             return "Model '\(model)' not found. Please ensure it's installed in Ollama."
         case .ollamaNotRunning:
             return "Ollama is not running. Please start Ollama to use local AI models."
@@ -130,23 +144,23 @@ public enum AIServiceError: Error, LocalizedError {
             return "No vision models are installed in Ollama. Please install a vision model to analyze images."
         }
     }
-    
+
     public var recoverySuggestion: String? {
         switch self {
         case .apiKeyMissing:
-            return "Go to Settings > AI to configure your API key."
+            "Go to Settings > AI to configure your API key."
         case .networkError:
-            return "Check your internet connection and firewall settings."
+            "Check your internet connection and firewall settings."
         case .serviceUnavailable, .connectionFailed:
-            return "For Ollama: Make sure Ollama is running (ollama serve). For OpenAI: Check your API key and internet connection."
-        case .modelNotFound(let model):
-            return "Run 'ollama pull \(model)' in Terminal to download the model."
+            "For Ollama: Make sure Ollama is running (ollama serve). For OpenAI: Check your API key and internet connection."
+        case let .modelNotFound(model):
+            "Run 'ollama pull \(model)' in Terminal to download the model."
         case .ollamaNotRunning:
-            return "Run 'ollama serve' in Terminal or start the Ollama app."
+            "Run 'ollama serve' in Terminal or start the Ollama app."
         case .noVisionModelsInstalled:
-            return "Run 'ollama pull llava' or 'ollama pull bakllava' to install a vision model."
+            "Run 'ollama pull llava' or 'ollama pull bakllava' to install a vision model."
         default:
-            return nil
+            nil
         }
     }
 }
@@ -161,52 +175,53 @@ public protocol AIService {
 
 @MainActor
 public final class AIServiceManager: ObservableObject {
+    // MARK: Lifecycle
+
+    private init() {
+        configureWithCurrentDefaults()
+    }
+
+    // MARK: Public
+
     public static let shared = AIServiceManager()
 
     @Published public private(set) var currentProvider: AIProvider = Defaults[.aiProvider]
     @Published public private(set) var isAvailable = false
-    
-    private var openAIService: OpenAIService?
-    private var ollamaService: OllamaService?
-    
-    private init() {
-        configureWithCurrentDefaults()
-    }
-    
+
     public func configureWithCurrentDefaults() {
         let provider = Defaults[.aiProvider]
         let apiKey = APIKeyService.shared.loadOpenAIKey()
         let ollamaURL = URL(string: Defaults[.ollamaBaseURL])
-        
+
         self.configure(provider: provider, apiKey: apiKey, baseURL: ollamaURL)
     }
-    
+
     public func configure(provider: AIProvider, apiKey: String? = nil, baseURL: URL? = nil) {
         currentProvider = provider
-        
+
         switch provider {
         case .openAI:
-            if let apiKey = apiKey {
+            if let apiKey {
                 openAIService = OpenAIService(apiKey: apiKey)
             }
         case .ollama:
-            if let baseURL = baseURL {
+            if let baseURL {
                 ollamaService = OllamaService(baseURL: baseURL)
             } else {
                 ollamaService = OllamaService()
             }
         }
-        
+
         Task {
             await checkAvailability()
         }
     }
-    
+
     public func analyzeImage(_ request: ImageAnalysisRequest) async throws -> ImageAnalysisResponse {
         let service = try getCurrentService()
         return try await service.analyzeImage(request)
     }
-    
+
     public func supportedModels() -> [AIModel] {
         do {
             let service = try getCurrentService()
@@ -215,7 +230,7 @@ public final class AIServiceManager: ObservableObject {
             return []
         }
     }
-    
+
     public func isServiceAvailable() async -> Bool {
         do {
             let service = try getCurrentService()
@@ -224,7 +239,12 @@ public final class AIServiceManager: ObservableObject {
             return false
         }
     }
-    
+
+    // MARK: Private
+
+    private var openAIService: OpenAIService?
+    private var ollamaService: OllamaService?
+
     private func getCurrentService() throws -> AIService {
         switch currentProvider {
         case .openAI:
@@ -239,7 +259,7 @@ public final class AIServiceManager: ObservableObject {
             return service
         }
     }
-    
+
     private func checkAvailability() async {
         do {
             let service = try getCurrentService()

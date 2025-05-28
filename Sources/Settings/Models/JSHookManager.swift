@@ -88,13 +88,13 @@ class JSHookManager {
         // This will return an error due to Trusted Types, but maintains backward compatibility
         return try await hook.runJS(script)
     }
-    
+
     /// Send a command to a specific window's hook
     func sendCommand(_ command: [String: Any], to windowId: String) async throws -> String {
         guard let hook = jsHooks[windowId] else {
             throw JSHookError.noHookForWindow(windowId)
         }
-        
+
         return try await hook.sendCommand(command)
     }
 

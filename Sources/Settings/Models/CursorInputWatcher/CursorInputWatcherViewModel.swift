@@ -28,7 +28,7 @@ class CursorInputWatcherViewModel: ObservableObject {
         Defaults.publisher(.isGlobalMonitoringEnabled)
             .receive(on: DispatchQueue.main)
             .sink { [weak self] change in
-                guard let self = self else { return }
+                guard let self else { return }
                 if change.newValue {
                     self.logger.info("Global monitoring enabled.")
                 } else {
@@ -72,10 +72,10 @@ class CursorInputWatcherViewModel: ObservableObject {
             logger.warning("Already injecting hook, skipping")
             return
         }
-        
+
         isInjectingHook = true
         defer { isInjectingHook = false }
-        
+
         await jsHookManager.injectHook(into: window, portManager: portManager)
         updateWatcherStatus()
     }
@@ -92,7 +92,7 @@ class CursorInputWatcherViewModel: ObservableObject {
 
     func queryInputText(forInputIndex index: Int) {
         guard index < watchedInputs.count else { return }
-        
+
         Task {
             let inputInfo = watchedInputs[index]
             guard let queryData = validateAndGetQueryData(for: inputInfo, at: index) else { return }
@@ -127,7 +127,7 @@ class CursorInputWatcherViewModel: ObservableObject {
     private let heartbeatMonitor: HeartbeatMonitor
     private let aiAnalyzer: AIWindowAnalyzer
     private let logger = Logger(category: .supervision)
-    
+
     private var timerSubscription: AnyCancellable?
     private var windowsSubscription: AnyCancellable?
     private var cancellables = Set<AnyCancellable>()
@@ -136,11 +136,11 @@ class CursorInputWatcherViewModel: ObservableObject {
         windowsSubscription = CursorMonitor.shared.$monitoredApps
             .receive(on: DispatchQueue.main)
             .sink { [weak self] apps in
-                guard let self = self else { return }
-                let allWindows = apps.flatMap { $0.windows }
+                guard let self else { return }
+                let allWindows = apps.flatMap(\.windows)
                 self.cursorWindows = allWindows
                 self.updateHookStatuses()
-                
+
                 Task {
                     for window in allWindows where !self.jsHookManager.isWindowHooked(window.id) {
                         if await self.jsHookManager.checkForExistingHook(in: window, portManager: self.portManager) {
@@ -154,13 +154,13 @@ class CursorInputWatcherViewModel: ObservableObject {
 
     private func startWatching() {
         guard timerSubscription == nil else { return }
-        
+
         logger.info("Starting input watcher")
         statusMessage = "Watching for input changes..."
-        
+
         queryInputText(forInputIndex: 0)
         queryInputText(forInputIndex: 1)
-        
+
         timerSubscription = Timer.publish(every: 1.0, on: .main, in: .common)
             .autoconnect()
             .receive(on: DispatchQueue.main)
@@ -197,10 +197,10 @@ class CursorInputWatcherViewModel: ObservableObject {
     }
 
     // Query-related methods
-    private func validateAndGetQueryData(for inputInfo: WatchedInputInfo, at index: Int) -> QueryData? {
+    private func validateAndGetQueryData(for inputInfo: WatchedInputInfo, at _: Int) -> QueryData? {
         // For now, return a stub query data
         // TODO: Implement proper query loading from JSON files
-        return QueryData(
+        QueryData(
             name: inputInfo.queryFile,
             command: "query",
             params: QueryParams(includeAttributes: nil, excludeAttributes: nil, maxDepth: nil),
@@ -213,7 +213,7 @@ class CursorInputWatcherViewModel: ObservableObject {
             watchedInputs[index].lastValue = "No Cursor windows found"
             return
         }
-        
+
         // Use first window for query - TODO: Implement proper window selection
         // TODO: Implement actual query execution
         let response = HandlerResponse.success(data: nil)
@@ -262,7 +262,7 @@ class CursorInputWatcherViewModel: ObservableObject {
         return texts
     }
 
-    private func handleQueryError(_ errorMsg: String, inputInfo: WatchedInputInfo, queryFile: String, index: Int) {
+    private func handleQueryError(_ errorMsg: String, inputInfo _: WatchedInputInfo, queryFile: String, index: Int) {
         logger.error("Query '\(queryFile)' error: \(errorMsg)")
         watchedInputs[index].lastValue = "Error: \(errorMsg)"
     }
@@ -276,7 +276,11 @@ class CursorInputWatcherViewModel: ObservableObject {
 // MARK: - HeartbeatMonitorDelegate
 
 extension CursorInputWatcherViewModel: HeartbeatMonitorDelegate {
-    nonisolated func heartbeatMonitor(_ monitor: HeartbeatMonitor, didUpdateStatus status: HeartbeatStatus, for windowId: String) {
+    nonisolated func heartbeatMonitor(
+        _: HeartbeatMonitor,
+        didUpdateStatus status: HeartbeatStatus,
+        for windowId: String
+    ) {
         Task { @MainActor in
             windowHeartbeatStatus[windowId] = status
         }
@@ -290,16 +294,16 @@ struct WatchedInputInfo: Identifiable {
     let name: String
     let queryFile: String
     var lastValue: String = "Not found"
-    var lastUpdate: Date = Date()
-    
+    var lastUpdate: Date = .init()
+
     var emptyValue: String {
         switch id {
         case "main-ai-slash-input":
-            return "Empty"
+            "Empty"
         case "sidebar-text-area":
-            return "No content"
+            "No content"
         default:
-            return "—"
+            "—"
         }
     }
 }

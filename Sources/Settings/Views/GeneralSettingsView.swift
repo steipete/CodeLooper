@@ -78,15 +78,15 @@ struct GeneralSettingsView: View {
                                 .font(Typography.body())
                                 .foregroundColor(ColorPalette.text)
                                 .frame(width: 120, alignment: .leading)
-                            
+
                             DSTextField("", text: $gitClientApp)
                                 .frame(maxWidth: .infinity)
-                            
+
                             DSButton("Browse...", style: .secondary, size: .small) {
                                 selectGitClientApp()
                             }
                         }
-                        
+
                         Text("Path to your Git client application (e.g., Tower, SourceTree, GitKraken)")
                             .font(Typography.caption1())
                             .foregroundColor(ColorPalette.textSecondary)
@@ -108,7 +108,6 @@ struct GeneralSettingsView: View {
                     .disabled(updaterViewModel.isUpdateInProgress)
                 }
 
-
                 // Version info
                 HStack {
                     Spacer()
@@ -124,7 +123,7 @@ struct GeneralSettingsView: View {
         .background(ColorPalette.background)
         .withDesignSystem()
     }
-    
+
     private func selectGitClientApp() {
         let openPanel = NSOpenPanel()
         openPanel.title = "Select Git Client Application"
@@ -134,7 +133,7 @@ struct GeneralSettingsView: View {
         openPanel.canChooseFiles = true
         openPanel.allowedContentTypes = [.application]
         openPanel.directoryURL = URL(fileURLWithPath: "/Applications")
-        
+
         if openPanel.runModal() == .OK, let url = openPanel.url {
             gitClientApp = url.path
         }

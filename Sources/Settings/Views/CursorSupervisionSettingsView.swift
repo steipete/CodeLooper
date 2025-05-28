@@ -5,6 +5,8 @@ import Diagnostics
 import SwiftUI
 
 struct CursorSupervisionSettingsView: View {
+    // MARK: Internal
+
     @Default(.monitorSidebarActivity)
     var monitorSidebarActivity
     @Default(.postInterventionObservationWindowSeconds)
@@ -22,20 +24,6 @@ struct CursorSupervisionSettingsView: View {
     @Default(.isGlobalMonitoringEnabled)
     var isGlobalMonitoringEnabled
 
-    @StateObject private var inputWatcherViewModel = CursorInputWatcherViewModel()
-    @StateObject private var diagnosticsManager = WindowAIDiagnosticsManager.shared
-
-    @ViewBuilder
-    private var cursorWindowsView: some View {
-        if !inputWatcherViewModel.cursorWindows.isEmpty {
-            DSDivider()
-                .padding(.vertical, Spacing.small)
-
-            CursorWindowsList(style: .settings)
-        }
-    }
-    
-
     var body: some View {
         VStack(alignment: .leading, spacing: Spacing.xLarge) {
             // Input Watcher Section
@@ -45,7 +33,7 @@ struct CursorSupervisionSettingsView: View {
                     isOn: $isGlobalMonitoringEnabled,
                     description: "Master switch to enable/disable all CodeLooper supervision features for Cursor, including JS hooks and AI diagnostics."
                 )
-                .onChange(of: isGlobalMonitoringEnabled) { oldValue, newValue in
+                .onChange(of: isGlobalMonitoringEnabled) { _, newValue in
                     if newValue {
                         diagnosticsManager.enableLiveWatchingForAllWindows()
                     } else {
@@ -53,7 +41,7 @@ struct CursorSupervisionSettingsView: View {
                     }
                 }
 
-                if !inputWatcherViewModel.statusMessage.isEmpty && isGlobalMonitoringEnabled {
+                if !inputWatcherViewModel.statusMessage.isEmpty, isGlobalMonitoringEnabled {
                     Text(inputWatcherViewModel.statusMessage)
                         .font(Typography.caption1())
                         .foregroundColor(ColorPalette.textSecondary)
@@ -61,9 +49,9 @@ struct CursorSupervisionSettingsView: View {
                 }
 
                 cursorWindowsView
-                
+
                 // Global AI Analysis Interval
-                if inputWatcherViewModel.isWatchingEnabled && !inputWatcherViewModel.cursorWindows.isEmpty {
+                if inputWatcherViewModel.isWatchingEnabled, !inputWatcherViewModel.cursorWindows.isEmpty {
                     DSDivider()
                         .padding(.vertical, Spacing.small)
                     Text("Global AI Analysis Interval")
@@ -73,12 +61,12 @@ struct CursorSupervisionSettingsView: View {
                             get: { Double(aiGlobalAnalysisIntervalSeconds) },
                             set: { aiGlobalAnalysisIntervalSeconds = Int($0) }
                         ),
-                        in: 5...60, 
+                        in: 5 ... 60,
                         step: 5,
                         label: "Interval",
                         showValue: true
                     ) { "\(Int($0))s" }
-                    .padding(.top, Spacing.xxSmall)
+                        .padding(.top, Spacing.xxSmall)
                 }
             }
             // Detection Settings
@@ -150,11 +138,24 @@ struct CursorSupervisionSettingsView: View {
                 )
             }
 
-
             Spacer()
         }
     }
-    
+
+    // MARK: Private
+
+    @StateObject private var inputWatcherViewModel = CursorInputWatcherViewModel()
+    @StateObject private var diagnosticsManager = WindowAIDiagnosticsManager.shared
+
+    @ViewBuilder
+    private var cursorWindowsView: some View {
+        if !inputWatcherViewModel.cursorWindows.isEmpty {
+            DSDivider()
+                .padding(.vertical, Spacing.small)
+
+            CursorWindowsList(style: .settings)
+        }
+    }
 }
 
 // MARK: - Preview

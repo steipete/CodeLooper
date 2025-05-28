@@ -1,34 +1,40 @@
-import Foundation
 import AppKit
 import Diagnostics
+import Foundation
 
 @MainActor
 final class AppleScriptInjector {
-    private let applicationName: String
-    private let targetWindowTitle: String?
-    private let port: UInt16
-    
+    // MARK: Lifecycle
+
     init(applicationName: String, targetWindowTitle: String?, port: UInt16) {
         self.applicationName = applicationName
         self.targetWindowTitle = targetWindowTitle
         self.port = port
     }
-    
+
+    // MARK: Internal
+
     func inject() throws {
         Logger(category: .jshook).info("🎯 Starting AppleScript injection for \(applicationName)")
-        
+
         let isConsoleOpen = JSHookDevConsoleDetector.isDevConsoleOpen(in: applicationName)
         Logger(category: .jshook).debug("🔍 Dev console already open: \(isConsoleOpen)")
-        
+
         let js = try CursorJSHookScript.generate(port: port)
         let script = buildAppleScript(javascript: js, skipDevToolsToggle: isConsoleOpen)
-        
+
         try executeAppleScript(script)
     }
-    
+
+    // MARK: Private
+
+    private let applicationName: String
+    private let targetWindowTitle: String?
+    private let port: UInt16
+
     private func buildAppleScript(javascript js: String, skipDevToolsToggle: Bool) -> String {
         let windowTarget = targetWindowTitle != nil ? "window \"\(targetWindowTitle!)\"" : "front window"
-        
+
         let devToolsToggleScript = if !skipDevToolsToggle {
             """
                 # Use menu bar to open developer tools
@@ -42,7 +48,7 @@ final class AppleScriptInjector {
                 delay 0.5
             """
         }
-        
+
         return """
         tell application "\(applicationName)"
             activate
@@ -60,17 +66,17 @@ final class AppleScriptInjector {
                 delay 0.5
 
                 \(devToolsToggleScript)
-                
+
                 # Focus on the console tab (if not already selected)
                 # Click in the console input area at the bottom
                 # Use escape key to ensure we're in the console
                 key code 53 # Escape
                 delay 0.2
-                
+
                 # Clear any existing content in console
                 keystroke "l" using {command down} # Cmd+L clears console
                 delay 0.5
-                
+
                 # Now type/paste the JavaScript
                 set the clipboard to \(js.appleScriptLiteral)
                 delay 0.3
@@ -84,20 +90,20 @@ final class AppleScriptInjector {
         end tell
         """
     }
-    
+
     private func executeAppleScript(_ script: String) throws {
         let appleScript = NSAppleScript(source: script)
         var errorDict: NSDictionary?
         let result = appleScript?.executeAndReturnError(&errorDict)
-        
+
         if result == nil || errorDict != nil {
             if let error = errorDict {
                 let errorMessage = error[NSAppleScript.errorMessage] as? String ?? "Unknown AppleScript error"
                 let errorNumber = error[NSAppleScript.errorNumber] as? Int ?? -1
-                
+
                 Logger(category: .jshook)
                     .error("🍎 AppleScript injection failed: \(errorMessage) (Code: \(errorNumber))")
-                
+
                 // Check for specific error codes
                 switch errorNumber {
                 case -1743:
@@ -109,7 +115,7 @@ final class AppleScriptInjector {
                 default:
                     break
                 }
-                
+
                 let nsError = NSError(
                     domain: "AppleScriptError",
                     code: errorNumber,
@@ -120,7 +126,7 @@ final class AppleScriptInjector {
                 throw CursorJSHook.HookError.injectionFailed(nil)
             }
         }
-        
+
         Logger(category: .jshook).info("🍏 AppleScript executed successfully for \(applicationName).")
     }
 }

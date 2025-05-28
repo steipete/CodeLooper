@@ -267,9 +267,9 @@ public final class MainSettingsViewModel: ObservableObject {
 
         logger.info("Refreshed all MCP status messages.")
         logger.info("""
-            Claude: \(self.claudeCodeStatusMessage), Automator: \(self.macOSAutomatorStatusMessage), \
-            Xcode: \(self.xcodeBuildStatusMessage)
-            """)
+        Claude: \(self.claudeCodeStatusMessage), Automator: \(self.macOSAutomatorStatusMessage), \
+        Xcode: \(self.xcodeBuildStatusMessage)
+        """)
     }
 
     func refreshMCPStatusMessage(for _: String) {

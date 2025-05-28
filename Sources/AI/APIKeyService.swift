@@ -4,65 +4,70 @@ import KeychainAccess
 /// Service for securely storing and retrieving API keys from the macOS Keychain
 @MainActor
 public final class APIKeyService {
+    // MARK: Lifecycle
+
+    // MARK: - Initialization
+
+    private init() {}
+
+    // MARK: Public
+
     // MARK: - Types
-    
+
     public enum KeychainError: Error, LocalizedError {
         case saveFailed(Error)
         case loadFailed(Error)
         case deleteFailed(Error)
         case invalidData
-        
+
+        // MARK: Public
+
         public var errorDescription: String? {
             switch self {
-            case .saveFailed(let error):
-                return "Failed to save API key to keychain. Error: \(error.localizedDescription)"
-            case .loadFailed(let error):
-                return "Failed to load API key from keychain. Error: \(error.localizedDescription)"
-            case .deleteFailed(let error):
-                return "Failed to delete API key from keychain. Error: \(error.localizedDescription)"
+            case let .saveFailed(error):
+                "Failed to save API key to keychain. Error: \(error.localizedDescription)"
+            case let .loadFailed(error):
+                "Failed to load API key from keychain. Error: \(error.localizedDescription)"
+            case let .deleteFailed(error):
+                "Failed to delete API key from keychain. Error: \(error.localizedDescription)"
             case .invalidData:
-                return "Invalid data format in keychain"
+                "Invalid data format in keychain"
             }
         }
     }
-    
+
     public enum APIKeyType {
         case openAI
         case anthropic
         case custom(service: String, account: String)
-        
+
+        // MARK: Internal
+
         var service: String {
             switch self {
             case .openAI:
-                return "CODELOOPER_OPENAI_API_KEY"
+                "CODELOOPER_OPENAI_API_KEY"
             case .anthropic:
-                return "CODELOOPER_ANTHROPIC_API_KEY"
-            case .custom(let service, _):
-                return service
+                "CODELOOPER_ANTHROPIC_API_KEY"
+            case let .custom(service, _):
+                service
             }
         }
-        
+
         var account: String {
             switch self {
             case .openAI, .anthropic:
-                return "api-key"
-            case .custom(_, let account):
-                return account
+                "api-key"
+            case let .custom(_, account):
+                account
             }
         }
     }
-    
-    // MARK: - Properties
-    
+
     public static let shared = APIKeyService()
-    private let keychain = Keychain(service: "com.codelooper.api-keys")
-    
-    // MARK: - Initialization
-    
-    private init() {}
-    
+
     // MARK: - Public Methods
-    
+
     /// Save an API key to the keychain
     /// - Parameters:
     ///   - apiKey: The API key to save
@@ -77,7 +82,7 @@ public final class APIKeyService {
             throw KeychainError.saveFailed(error)
         }
     }
-    
+
     /// Load an API key from the keychain
     /// - Parameter type: The type of API key to load
     /// - Returns: The API key if found, nil otherwise
@@ -94,7 +99,7 @@ public final class APIKeyService {
             throw KeychainError.loadFailed(error)
         }
     }
-    
+
     /// Delete an API key from the keychain
     /// - Parameter type: The type of API key to delete
     /// - Throws: KeychainError if the delete operation fails
@@ -110,7 +115,7 @@ public final class APIKeyService {
             throw KeychainError.deleteFailed(error)
         }
     }
-    
+
     /// Check if an API key exists in the keychain
     /// - Parameter type: The type of API key to check
     /// - Returns: true if the key exists, false otherwise
@@ -121,7 +126,7 @@ public final class APIKeyService {
             return false
         }
     }
-    
+
     /// Validate an API key format
     /// - Parameters:
     ///   - apiKey: The API key to validate
@@ -131,17 +136,21 @@ public final class APIKeyService {
         switch type {
         case .openAI:
             // OpenAI keys start with "sk-" and are typically 48+ characters
-            return apiKey.hasPrefix("sk-") && apiKey.count >= 48
-            
+            apiKey.hasPrefix("sk-") && apiKey.count >= 48
+
         case .anthropic:
-            // Anthropic keys start with "sk-ant-" 
-            return apiKey.hasPrefix("sk-ant-") && apiKey.count >= 40
-            
+            // Anthropic keys start with "sk-ant-"
+            apiKey.hasPrefix("sk-ant-") && apiKey.count >= 40
+
         case .custom:
             // For custom keys, just check if not empty
-            return !apiKey.isEmpty
+            !apiKey.isEmpty
         }
     }
+
+    // MARK: Private
+
+    private let keychain = Keychain(service: "com.codelooper.api-keys")
 }
 
 // MARK: - Convenience Extensions
@@ -151,12 +160,12 @@ public extension APIKeyService {
     func loadOpenAIKey() -> String {
         (try? loadAPIKey(for: .openAI)) ?? ""
     }
-    
+
     /// Load Anthropic API key with a simpler interface
     func loadAnthropicKey() -> String {
         (try? loadAPIKey(for: .anthropic)) ?? ""
     }
-    
+
     /// Save OpenAI API key with error handling
     @discardableResult
     func saveOpenAIKey(_ apiKey: String) -> Bool {
@@ -168,7 +177,7 @@ public extension APIKeyService {
             return false
         }
     }
-    
+
     /// Save Anthropic API key with error handling
     @discardableResult
     func saveAnthropicKey(_ apiKey: String) -> Bool {

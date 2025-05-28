@@ -1,10 +1,10 @@
-import SwiftUI
 import DesignSystem
+import SwiftUI
 
 /// A comprehensive view that displays all permission statuses
 struct AllPermissionsView: View {
     // MARK: Internal
-    
+
     var body: some View {
         VStack(alignment: .leading, spacing: Spacing.medium) {
             // Accessibility Permission
@@ -18,9 +18,9 @@ struct AllPermissionsView: View {
                     }
                 }
             )
-            
+
             DSDivider()
-            
+
             // Automation Permission
             PermissionRowView(
                 title: "Automation",
@@ -28,9 +28,9 @@ struct AllPermissionsView: View {
                 hasPermission: permissionsManager.hasAutomationPermissions,
                 onGrantPermission: permissionsManager.openAutomationSettings
             )
-            
+
             DSDivider()
-            
+
             // Screen Recording Permission
             PermissionRowView(
                 title: "Screen Recording",
@@ -40,9 +40,9 @@ struct AllPermissionsView: View {
             )
         }
     }
-    
+
     // MARK: Private
-    
+
     @StateObject private var permissionsManager = PermissionsManager.shared
 }
 
@@ -53,27 +53,27 @@ private struct PermissionRowView: View {
     let description: String
     let hasPermission: Bool
     let onGrantPermission: () -> Void
-    
+
     var body: some View {
         HStack(alignment: .center, spacing: Spacing.medium) {
             // Status icon
             Image(systemName: hasPermission ? "checkmark.circle.fill" : "exclamationmark.triangle.fill")
                 .foregroundColor(hasPermission ? ColorPalette.success : ColorPalette.warning)
                 .font(.system(size: 20))
-            
+
             // Text content
             VStack(alignment: .leading, spacing: Spacing.xxxSmall) {
                 Text(title)
                     .font(Typography.body(.medium))
                     .foregroundColor(ColorPalette.text)
-                
+
                 Text(description)
                     .font(Typography.caption1())
                     .foregroundColor(ColorPalette.textSecondary)
             }
-            
+
             Spacer()
-            
+
             // Status or grant button
             if hasPermission {
                 Text("Granted")
@@ -96,13 +96,13 @@ private struct PermissionRowView: View {
 // MARK: - Preview
 
 #if DEBUG
-struct AllPermissionsView_Previews: PreviewProvider {
-    static var previews: some View {
-        AllPermissionsView()
-            .padding()
-            .frame(width: 500)
-            .background(ColorPalette.background)
-            .withDesignSystem()
+    struct AllPermissionsView_Previews: PreviewProvider {
+        static var previews: some View {
+            AllPermissionsView()
+                .padding()
+                .frame(width: 500)
+                .background(ColorPalette.background)
+                .withDesignSystem()
+        }
     }
-}
 #endif

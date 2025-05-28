@@ -1,5 +1,5 @@
-import Foundation
 import AppKit
+import Foundation
 
 enum JSHookDevConsoleDetector {
     static func isDevConsoleOpen(in applicationName: String) -> Bool {
@@ -18,7 +18,7 @@ enum JSHookDevConsoleDetector {
         end tell
         return false
         """
-        
+
         let appleScript = NSAppleScript(source: script)
         let result = appleScript?.executeAndReturnError(nil)
         return result?.booleanValue ?? false

@@ -1,6 +1,6 @@
-import SwiftUI
 import Defaults
 import DesignSystem
+import SwiftUI
 
 // Define a Notification name for AI Service configuration changes
 extension Notification.Name {
@@ -9,31 +9,37 @@ extension Notification.Name {
 
 struct AISettingsView: View {
     // MARK: - Status Messages
+
     private enum StatusMessage {
         static let keepTyping = "🔑 Keep typing..."
         static let validatingSoon = "⏳ Validating soon..."
         static let validatingAPIKey = "🔄 Validating API key..."
         static let validatingOllama = "🔄 Testing Ollama connection..."
         static let checkingConnection = "⏳ Checking connection..."
-        static let checkingProvider: @Sendable (String) -> String = { (provider: String) in "⏳ Checking \(provider) connection..." }
+        static let checkingProvider: @Sendable (String) -> String = { (provider: String) in
+            "⏳ Checking \(provider) connection..."
+        }
+
         static let invalidAPIKeyFormat = "⚠️ API key should start with 'sk-' and be at least 48 characters"
         static let invalidURLFormat = "⚠️ Invalid URL format"
         static let openAIConnected = "✓ OpenAI connected successfully"
-        static let ollamaConnected: @Sendable ([String]) -> String = { (models: [String]) in "✓ Ollama connected - Models available: \(models.joined(separator: ", "))" }
+        static let ollamaConnected: @Sendable ([String]) -> String = { (models: [String]) in
+            "✓ Ollama connected - Models available: \(models.joined(separator: ", "))"
+        }
     }
-    
+
     @Default(.aiProvider) private var aiProvider
     @Default(.aiModel) private var aiModel
     @Default(.ollamaBaseURL) private var ollamaBaseURL
-    
+
     @State private var showAPIKey = false
     @State private var openAIAPIKey = ""
     @State private var isTestingConnection = false
     @State private var connectionTestResult: String?
     @State private var isAutoTesting = false
-    
+
     private let apiKeyDebouncer = Debouncer(delay: 2.0)
-    
+
     var body: some View {
         VStack(alignment: .leading, spacing: Spacing.xLarge) {
             // AI Provider Configuration
@@ -51,21 +57,22 @@ struct AISettingsView: View {
                         aiModel = availableModels.first ?? .gpt4o
                         connectionTestResult = nil
                         isAutoTesting = false
-                        
+
                         // Test the new provider automatically
                         Task {
                             try? await Task.sleep(nanoseconds: 200_000_000) // 0.2 seconds
-                            
+
                             if (newValue == .openAI && !openAIAPIKey.isEmpty) ||
-                               (newValue == .ollama) {
+                                (newValue == .ollama)
+                            {
                                 connectionTestResult = StatusMessage.checkingProvider(newValue.displayName)
                                 await testConnection()
                             }
                         }
                     }
-                    
+
                     DSDivider()
-                    
+
                     Picker("Model", selection: $aiModel) {
                         ForEach(availableModels) { model in
                             Text(model.displayName).tag(model)
@@ -75,7 +82,7 @@ struct AISettingsView: View {
                     .disabled(availableModels.isEmpty)
                 }
             }
-            
+
             // Provider-specific Settings
             DSSettingsSection("Configuration") {
                 switch aiProvider {
@@ -85,25 +92,27 @@ struct AISettingsView: View {
                     ollamaSettings
                 }
             }
-            
+
             // Connection Test
             DSSettingsSection("Connection") {
                 connectionTestSection
             }
-            
+
             // Manual AI Window Analysis
             DSSettingsSection("Manual AI Window Analysis") {
                 CursorAnalysisView()
             }
-            
+
             // AI Usage Information
             DSSettingsSection("About AI Image Analysis") {
-                Text("The AI service will be used to analyze screenshots of Cursor windows and provide insights about what the application is currently doing.")
-                    .font(Typography.caption1())
-                    .foregroundColor(ColorPalette.textSecondary)
-                    .frame(maxWidth: .infinity, alignment: .leading)
+                Text(
+                    "The AI service will be used to analyze screenshots of Cursor windows and provide insights about what the application is currently doing."
+                )
+                .font(Typography.caption1())
+                .foregroundColor(ColorPalette.textSecondary)
+                .frame(maxWidth: .infinity, alignment: .leading)
             }
-            
+
             Spacer()
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -111,31 +120,32 @@ struct AISettingsView: View {
         .withDesignSystem()
         .onAppear {
             openAIAPIKey = loadAPIKeyFromKeychain(service: "CODELOOPER_OPENAI_API_KEY")
-            
+
             // Configure AI manager after loading API key
             Task { @MainActor in
                 configureAIManager()
-                
+
                 // Small delay to let UI settle
                 try? await Task.sleep(nanoseconds: 500_000_000) // 0.5 seconds
-                
+
                 // Only test if we have credentials
                 if (aiProvider == .openAI && !openAIAPIKey.isEmpty) ||
-                   (aiProvider == .ollama) {
+                    (aiProvider == .ollama)
+                {
                     connectionTestResult = StatusMessage.checkingConnection
                     await testConnection()
                 }
             }
         }
     }
-    
+
     private var openAISettings: some View {
         VStack(alignment: .leading, spacing: Spacing.medium) {
             VStack(alignment: .leading, spacing: Spacing.xSmall) {
                 Text("API Key")
                     .font(Typography.body(.medium))
                     .foregroundColor(ColorPalette.text)
-                
+
                 HStack {
                     if showAPIKey {
                         TextField("API Key", text: $openAIAPIKey)
@@ -152,14 +162,14 @@ struct AISettingsView: View {
                                 handleAPIKeyChange(newValue)
                             }
                     }
-                    
+
                     Button(action: { showAPIKey.toggle() }) {
                         Image(systemName: showAPIKey ? "eye.slash" : "eye")
                     }
                     .buttonStyle(.borderless)
                 }
             }
-            
+
             if isAutoTesting || connectionTestResult != nil {
                 HStack {
                     if isAutoTesting {
@@ -168,31 +178,32 @@ struct AISettingsView: View {
                     }
                     Text(connectionTestResult ?? "")
                         .font(Typography.caption1())
-                        .foregroundColor(connectionTestResult?.contains("✓") == true ? ColorPalette.success : 
-                                       connectionTestResult?.contains("✗") == true ? ColorPalette.error : ColorPalette.textSecondary)
+                        .foregroundColor(connectionTestResult?.contains("✓") == true ? ColorPalette.success :
+                            connectionTestResult?.contains("✗") == true ? ColorPalette.error : ColorPalette
+                            .textSecondary)
                 }
                 .padding(.top, Spacing.xxSmall)
             }
-            
+
             Link("Get your API key from OpenAI", destination: URL(string: "https://platform.openai.com/api-keys")!)
                 .font(Typography.caption1())
                 .foregroundColor(ColorPalette.primary)
         }
     }
-    
+
     private var ollamaSettings: some View {
         VStack(alignment: .leading, spacing: Spacing.medium) {
             VStack(alignment: .leading, spacing: Spacing.xSmall) {
                 Text("Base URL")
                     .font(Typography.body(.medium))
                     .foregroundColor(ColorPalette.text)
-                
+
                 TextField("Base URL", text: $ollamaBaseURL)
                     .textFieldStyle(.roundedBorder)
                     .frame(maxWidth: .infinity)
                     .onChange(of: ollamaBaseURL) { _, newValue in
                         configureAIManager()
-                        
+
                         // Auto-test if URL looks valid
                         let trimmed = newValue.trimmingCharacters(in: .whitespacesAndNewlines)
                         if !trimmed.isEmpty {
@@ -210,12 +221,12 @@ struct AISettingsView: View {
                             isAutoTesting = false
                         }
                     }
-                
+
                 Text("Default: http://localhost:11434")
                     .font(Typography.caption1())
                     .foregroundColor(ColorPalette.textSecondary)
             }
-            
+
             if isAutoTesting || connectionTestResult != nil {
                 HStack {
                     if isAutoTesting {
@@ -224,18 +235,19 @@ struct AISettingsView: View {
                     }
                     Text(connectionTestResult ?? "")
                         .font(Typography.caption1())
-                        .foregroundColor(connectionTestResult?.contains("✓") == true ? ColorPalette.success : 
-                                       connectionTestResult?.contains("✗") == true ? ColorPalette.error : ColorPalette.textSecondary)
+                        .foregroundColor(connectionTestResult?.contains("✓") == true ? ColorPalette.success :
+                            connectionTestResult?.contains("✗") == true ? ColorPalette.error : ColorPalette
+                            .textSecondary)
                 }
                 .padding(.top, Spacing.xxSmall)
             }
-            
+
             Link("Install Ollama", destination: URL(string: "https://ollama.ai")!)
                 .font(Typography.caption1())
                 .foregroundColor(ColorPalette.primary)
         }
     }
-    
+
     private var connectionTestSection: some View {
         VStack(alignment: .leading, spacing: Spacing.small) {
             HStack {
@@ -246,31 +258,31 @@ struct AISettingsView: View {
                     }
                 }
                 .disabled(isTestingConnection || isAutoTesting || (aiProvider == .openAI && openAIAPIKey.isEmpty))
-                
-                if isTestingConnection && !isAutoTesting {
+
+                if isTestingConnection, !isAutoTesting {
                     ProgressView()
                         .scaleEffect(0.5)
                 }
-                
+
                 Spacer()
             }
             .frame(maxWidth: .infinity)
-            
+
             Text("Connection will be automatically tested when you enter valid credentials")
                 .font(Typography.caption1())
                 .foregroundColor(ColorPalette.textSecondary)
                 .frame(maxWidth: .infinity, alignment: .leading)
         }
     }
-    
+
     private var availableModels: [AIModel] {
         AIModel.allCases.filter { $0.provider == aiProvider }
     }
-    
+
     private func configureAIManager() {
         // Now configures the shared instance
         AIServiceManager.shared.configureWithCurrentDefaults()
-        
+
         // Log based on the shared manager's state or passed parameters if preferred
         let currentProvider = AIServiceManager.shared.currentProvider
         switch currentProvider {
@@ -284,18 +296,19 @@ struct AISettingsView: View {
             print("🦙 Configured Ollama with URL: \(Defaults[.ollamaBaseURL])")
         }
     }
-    
+
     private func testConnection() async {
         isTestingConnection = true
         connectionTestResult = nil
-        
-        // Re-configure the shared manager right before testing to ensure it has the latest credentials from the UI fields
-        // This is important because `configureAIManager` might be called on `onChange` of provider, 
+
+        // Re-configure the shared manager right before testing to ensure it has the latest credentials from the UI
+        // fields
+        // This is important because `configureAIManager` might be called on `onChange` of provider,
         // but not necessarily after every keystroke in API key or URL fields.
         let currentProvider = Defaults[.aiProvider]
         let currentAPIKey = (currentProvider == .openAI) ? openAIAPIKey : nil
         let currentOllamaURL = (currentProvider == .ollama) ? URL(string: ollamaBaseURL) : nil
-        
+
         AIServiceManager.shared.configure(provider: currentProvider, apiKey: currentAPIKey, baseURL: currentOllamaURL)
 
         let providerName = AIServiceManager.shared.currentProvider.displayName
@@ -304,7 +317,7 @@ struct AISettingsView: View {
         if await AIServiceManager.shared.isServiceAvailable() {
             var successMessage = ""
             if AIServiceManager.shared.currentProvider == .ollama {
-                let models = AIServiceManager.shared.supportedModels().map { $0.displayName }
+                let models = AIServiceManager.shared.supportedModels().map(\.displayName)
                 successMessage = messagePrefix + StatusMessage.ollamaConnected(models)
             } else {
                 successMessage = messagePrefix + StatusMessage.openAIConnected
@@ -317,14 +330,14 @@ struct AISettingsView: View {
         isTestingConnection = false
         isAutoTesting = false
     }
-    
+
     private func storeAPIKeyInKeychain(_ apiKey: String, service: String) {
         // Map the service string to APIKeyType
         if service == "CODELOOPER_OPENAI_API_KEY" {
             _ = APIKeyService.shared.saveOpenAIKey(apiKey)
         }
     }
-    
+
     private func loadAPIKeyFromKeychain(service: String) -> String {
         // Map the service string to APIKeyType
         if service == "CODELOOPER_OPENAI_API_KEY" {
@@ -332,14 +345,14 @@ struct AISettingsView: View {
         }
         return ""
     }
-    
+
     private func deleteAPIKeyFromKeychain(service: String) {
         // Map the service string to APIKeyType
         if service == "CODELOOPER_OPENAI_API_KEY" {
             try? APIKeyService.shared.deleteAPIKey(for: .openAI)
         }
     }
-    
+
     private func handleAPIKeyChange(_ newValue: String) {
         // Store/delete from keychain
         if !newValue.isEmpty {
@@ -351,7 +364,7 @@ struct AISettingsView: View {
             return
         }
         configureAIManager()
-        
+
         // Show immediate feedback
         if newValue.count < 10 {
             connectionTestResult = StatusMessage.keepTyping
@@ -371,13 +384,13 @@ struct AISettingsView: View {
             isAutoTesting = false
         }
     }
-    
+
     private func isValidAPIKeyFormat(_ apiKey: String) -> Bool {
         let trimmed = apiKey.trimmingCharacters(in: .whitespacesAndNewlines)
         // OpenAI API keys should start with 'sk-' and be at least 48 characters
         return trimmed.hasPrefix("sk-") && trimmed.count >= 48
     }
-    
+
     private func createTestImage() -> NSImage {
         let image = NSImage(size: NSSize(width: 100, height: 100))
         image.lockFocus()

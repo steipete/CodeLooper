@@ -18,21 +18,16 @@ import SwiftUI
 /// with full support for different states, dark/light mode, and animations.
 @MainActor
 class MenuBarIconManager: ObservableObject {
-    // MARK: - Shared Instance
-    static let shared = MenuBarIconManager()
-
-    // MARK: - Published Properties
-    @Published var currentIconAttributedString = AttributedString("...")
-    @Published var currentTooltip: String = CodeLooper.Constants.appName
+    // MARK: Lifecycle
 
     // MARK: - Initialization
 
     init(statusItem: NSStatusItem? = nil) {
         self.statusItem = statusItem
         logger.info("MenuBarIconManager initialized.")
-        
+
         // If a statusItem is provided, configure animator (might be useful for other things)
-        if let statusItem = statusItem {
+        if let statusItem {
             iconAnimator = IconAnimator(statusItem: statusItem)
         }
 
@@ -55,6 +50,15 @@ class MenuBarIconManager: ObservableObject {
 
     // MARK: Internal
 
+    // MARK: - Shared Instance
+
+    static let shared = MenuBarIconManager()
+
+    // MARK: - Published Properties
+
+    @Published var currentIconAttributedString = AttributedString("...")
+    @Published var currentTooltip: String = CodeLooper.Constants.appName
+
     weak var statusItem: NSStatusItem?
 
     // MARK: - Public Methods
@@ -65,7 +69,7 @@ class MenuBarIconManager: ObservableObject {
         currentState = state
         currentTooltip = state.tooltipText
         updateIconAttributedString(for: state)
-        
+
         // Animation logic can be re-evaluated if needed for SwiftUI
         iconAnimator?.stopAnimating()
         if state == .syncing {
@@ -104,7 +108,7 @@ class MenuBarIconManager: ObservableObject {
         diagnosticsManager.$windowStates
             .receive(on: DispatchQueue.main)
             .sink { [weak self] windowStates in
-                guard let self = self else { return }
+                guard let self else { return }
 
                 if !Defaults[.isGlobalMonitoringEnabled] {
                     self.setState(.paused)
@@ -142,7 +146,7 @@ class MenuBarIconManager: ObservableObject {
                     self.setState(.aiStatus(working: workingCount, notWorking: notWorkingCount, unknown: unknownCount))
                 } else if Defaults[.isGlobalMonitoringEnabled] {
                     // AI watching enabled, but no specific statuses yet (e.g. all off or error)
-                     self.setState(.idle) // Or a more specific "no AI targets" state
+                    self.setState(.idle) // Or a more specific "no AI targets" state
                 } else {
                     self.setState(.paused) // Fallback if global monitoring is off
                 }
@@ -152,21 +156,19 @@ class MenuBarIconManager: ObservableObject {
 
     private func updateIconAttributedString(for state: StatusIconState) {
         let currentAppearance = getCurrentAppearance()
-        var newAttributedString: AttributedString
-
-        switch state {
+        var newAttributedString: AttributedString = switch state {
         case let .aiStatus(working, notWorking, unknown):
-            if working == 0 && notWorking == 0 && unknown == 0 && !Defaults[.isGlobalMonitoringEnabled] {
-                 newAttributedString = attributedString(for: .paused, appearance: currentAppearance)
-            } else if working == 0 && notWorking == 0 && unknown == 0 && Defaults[.isGlobalMonitoringEnabled] {
-                 newAttributedString = attributedString(for: .idle, appearance: currentAppearance)
+            if working == 0, notWorking == 0, unknown == 0, !Defaults[.isGlobalMonitoringEnabled] {
+                attributedString(for: .paused, appearance: currentAppearance)
+            } else if working == 0, notWorking == 0, unknown == 0, Defaults[.isGlobalMonitoringEnabled] {
+                attributedString(for: .idle, appearance: currentAppearance)
             } else {
-                newAttributedString = createAIStatusAttributedString(working: working, notWorking: notWorking, unknown: unknown)
+                createAIStatusAttributedString(working: working, notWorking: notWorking, unknown: unknown)
             }
         default:
-            newAttributedString = attributedString(for: state, appearance: currentAppearance)
+            attributedString(for: state, appearance: currentAppearance)
         }
-        
+
         self.currentIconAttributedString = newAttributedString
         statusItem?.button?.toolTip = state.tooltipText
     }
@@ -187,13 +189,13 @@ class MenuBarIconManager: ObservableObject {
         }
         return AttributedString(iconString, attributes: attributes)
     }
-    
+
     // swiftlint:disable empty_count
     private func createAIStatusAttributedString(working: Int, notWorking: Int, unknown: Int) -> AttributedString {
         var result = AttributedString()
         var hasContent = false
 
-        func appendStatus(emoji: String, count: Int, color: Color) {
+        func appendStatus(emoji: String, count: Int, color _: Color) {
             guard count > 0 else { return }
             if hasContent {
                 result.append(AttributedString(" "))
@@ -207,25 +209,26 @@ class MenuBarIconManager: ObservableObject {
         let workingColor: Color = .green
         let notWorkingColor: Color = .red
         let unknownColor: Color = .yellow
-        
+
         if working > 0 {
             appendStatus(emoji: "🟢", count: working, color: workingColor)
         }
         if notWorking > 0 {
             appendStatus(emoji: "🔴", count: notWorking, color: notWorkingColor)
         }
-        if unknown > 0 && !hasContent {
+        if unknown > 0, !hasContent {
             appendStatus(emoji: "🟡", count: unknown, color: unknownColor)
-        } else if unknown > 0 && Defaults[.debugModeEnabled] {
-             appendStatus(emoji: "🟡", count: unknown, color: unknownColor)
+        } else if unknown > 0, Defaults[.debugModeEnabled] {
+            appendStatus(emoji: "🟡", count: unknown, color: unknownColor)
         }
-        
+
         if !hasContent {
             return AttributedString()
         }
-        
+
         return result
     }
+
     // swiftlint:enable empty_count
 
     /// Sets up an observer to detect appearance changes (dark/light mode)
@@ -236,7 +239,7 @@ class MenuBarIconManager: ObservableObject {
             queue: OperationQueue.main
         ) { [weak self] _ in
             Task { @MainActor in
-                guard let self = self else { return }
+                guard let self else { return }
                 self.logger.info("System appearance changed. Re-evaluating icon.")
                 self.updateIconAttributedString(for: self.currentState)
             }

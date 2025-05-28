@@ -1,29 +1,14 @@
-import Foundation
+import AXorcist
 import Combine
-import SwiftUI // For ObservableObject
 import Defaults
 import Diagnostics
-import AXorcist
+import Foundation
 @preconcurrency import ScreenCaptureKit
+import SwiftUI // For ObservableObject
 
 @MainActor
 class WindowAIDiagnosticsManager: ObservableObject {
-    static let shared = WindowAIDiagnosticsManager() // <<< ADDED shared instance
-
-    @Published var windowStates: [String: MonitoredWindowInfo] = [:] // Keyed by MonitoredWindowInfo.id
-    
-    /// Check if a document path exists on disk
-    public func documentPathExists(_ path: String) -> Bool {
-        return documentPathTracker.documentPathExists(path)
-    }
-
-    private var timers: [String: Timer] = [:]
-    private let screenshotAnalyzer = CursorScreenshotAnalyzer()
-    private let gitRepositoryMonitor = GitRepositoryMonitor()
-    private let documentPathTracker: DocumentPathTracker
-    private var cancellables = Set<AnyCancellable>()
-    private let logger = Logger(category: .supervision)
-    private var previousScreenshots: [String: Data] = [:] // Store previous screenshot data for comparison
+    // MARK: Lifecycle
 
     private init() { // Make init private for singleton
         self.documentPathTracker = DocumentPathTracker(gitRepositoryMonitor: gitRepositoryMonitor)
@@ -35,7 +20,7 @@ class WindowAIDiagnosticsManager: ObservableObject {
                 self?.updateMonitoredWindows(apps)
             }
             .store(in: &cancellables)
-        
+
         // Add observer for AI service configuration changes
         NotificationCenter.default.addObserver(
             self,
@@ -45,6 +30,88 @@ class WindowAIDiagnosticsManager: ObservableObject {
         )
     }
 
+    // MARK: Public
+
+    /// Check if a document path exists on disk
+    public func documentPathExists(_ path: String) -> Bool {
+        documentPathTracker.documentPathExists(path)
+    }
+
+    // MARK: Internal
+
+    static let shared = WindowAIDiagnosticsManager() // <<< ADDED shared instance
+
+    @Published var windowStates: [String: MonitoredWindowInfo] = [:] // Keyed by MonitoredWindowInfo.id
+
+    func toggleLiveWatching(for windowId: String) {
+        guard var windowInfo = windowStates[windowId] else { return }
+        windowInfo.isLiveWatchingEnabled.toggle()
+        windowInfo.saveAISettings() // Persist change
+
+        if windowInfo.isLiveWatchingEnabled {
+            windowInfo.lastAIAnalysisStatus = .pending // Set to pending to trigger analysis
+            // Clear previous screenshot to ensure fresh analysis when re-enabled
+            previousScreenshots.removeValue(forKey: windowId)
+        } else {
+            windowInfo.lastAIAnalysisStatus = .off
+            // Clear previous screenshot when disabled
+            previousScreenshots.removeValue(forKey: windowId)
+        }
+
+        windowStates[windowId] = windowInfo
+        setupTimer(for: windowInfo) // Re-setup timer which will start/stop it
+        objectWillChange.send()
+    }
+
+    func enableLiveWatchingForAllWindows() {
+        for windowId in windowStates.keys {
+            guard var windowInfo = windowStates[windowId] else { continue }
+            if !windowInfo.isLiveWatchingEnabled {
+                windowInfo.isLiveWatchingEnabled = true
+                windowInfo.saveAISettings()
+                windowInfo.lastAIAnalysisStatus = .pending
+                previousScreenshots.removeValue(forKey: windowId)
+                windowStates[windowId] = windowInfo
+                setupTimer(for: windowInfo)
+            }
+        }
+        objectWillChange.send()
+    }
+
+    func disableLiveWatchingForAllWindows() {
+        for windowId in windowStates.keys {
+            guard var windowInfo = windowStates[windowId] else { continue }
+            if windowInfo.isLiveWatchingEnabled {
+                windowInfo.isLiveWatchingEnabled = false
+                windowInfo.saveAISettings()
+                windowInfo.lastAIAnalysisStatus = .off
+                previousScreenshots.removeValue(forKey: windowId)
+                windowStates[windowId] = windowInfo
+                setupTimer(for: windowInfo)
+            }
+        }
+        objectWillChange.send()
+    }
+
+    // Cleanup method that must be called from MainActor context
+    func cleanup() {
+        timers.values.forEach { $0.invalidate() }
+        timers.removeAll()
+        cancellables.forEach { $0.cancel() }
+        cancellables.removeAll()
+        previousScreenshots.removeAll()
+    }
+
+    // MARK: Private
+
+    private var timers: [String: Timer] = [:]
+    private let screenshotAnalyzer = CursorScreenshotAnalyzer()
+    private let gitRepositoryMonitor = GitRepositoryMonitor()
+    private let documentPathTracker: DocumentPathTracker
+    private var cancellables = Set<AnyCancellable>()
+    private let logger = Logger(category: .supervision)
+    private var previousScreenshots: [String: Data] = [:] // Store previous screenshot data for comparison
+
     // Notification handler
     @objc private func handleAIServiceConfigured() {
         logger.info("Received AIServiceConfigured notification. Re-checking windows with API key errors.")
@@ -53,14 +120,18 @@ class WindowAIDiagnosticsManager: ObservableObject {
                 for (id, windowInfo) in windowStates where windowInfo.isLiveWatchingEnabled {
                     if windowInfo.lastAIAnalysisStatus == .error,
                        let message = windowInfo.lastAIAnalysisResponseMessage,
-                       message.lowercased().contains("api key") || message.lowercased().contains("configure it in settings") {
-                        
-                        logger.info("Window \(id) previously had API key error. Resetting to pending and re-triggering analysis.")
+                       message.lowercased().contains("api key") || message.lowercased()
+                       .contains("configure it in settings")
+                    {
+                        logger
+                            .info(
+                                "Window \(id) previously had API key error. Resetting to pending and re-triggering analysis."
+                            )
                         var mutableWindowInfo = windowInfo // Create mutable copy
                         mutableWindowInfo.lastAIAnalysisStatus = .pending
                         mutableWindowInfo.lastAIAnalysisResponseMessage = "Retrying after API key update..."
                         windowStates[id] = mutableWindowInfo
-                        
+
                         // Invalidate existing timer and schedule immediate analysis
                         timers[id]?.invalidate()
                         Task { await performAIAnalysis(for: id) } // Trigger immediately
@@ -79,10 +150,10 @@ class WindowAIDiagnosticsManager: ObservableObject {
         for app in apps {
             for window in app.windows { // window is a MonitoredWindowInfo, already initialized with Defaults
                 activeWindowIDs.insert(window.id)
-                
+
                 // Get existing state or use the new window info (which has loaded its persisted settings)
                 var currentWindowInfo = self.windowStates[window.id] ?? window
-                
+
                 // The MonitoredWindowInfo 'window' from CursorMonitor already loaded its persisted settings.
                 // If we have an existing currentWindowInfo in self.windowStates, we should ensure its
                 // core properties (title, axElement, documentPath) are updated from the fresh 'window' object,
@@ -97,7 +168,8 @@ class WindowAIDiagnosticsManager: ObservableObject {
                     currentWindowInfo.isPaused = window.isPaused // from CursorMonitor
                     // Update window state properties (minimized, hidden, etc.)
                     currentWindowInfo.updateWindowState()
-                    // Persisted AI settings (isLiveWatchingEnabled, aiAnalysisIntervalSeconds) are loaded by MonitoredWindowInfo init.
+                    // Persisted AI settings (isLiveWatchingEnabled, aiAnalysisIntervalSeconds) are loaded by
+                    // MonitoredWindowInfo init.
                     // Runtime AI state (lastAIAnalysisStatus, etc.) from previousAIState should be kept.
                     currentWindowInfo.lastAIAnalysisStatus = previousAIState.lastAIAnalysisStatus
                     currentWindowInfo.lastAIAnalysisTimestamp = previousAIState.lastAIAnalysisTimestamp
@@ -111,28 +183,28 @@ class WindowAIDiagnosticsManager: ObservableObject {
 
                 // Adjust initial status if live watching is enabled but current status is .off
                 if currentWindowInfo.isLiveWatchingEnabled && currentWindowInfo.lastAIAnalysisStatus == .off {
-                     currentWindowInfo.lastAIAnalysisStatus = .pending
+                    currentWindowInfo.lastAIAnalysisStatus = .pending
                 } else if !currentWindowInfo.isLiveWatchingEnabled {
                     currentWindowInfo.lastAIAnalysisStatus = .off
                 }
-                
+
                 newWindowStates[window.id] = currentWindowInfo
-                
+
                 // Only setup timer if this is a new window or if monitoring state changed
                 let existingWindow = windowStates[window.id]
                 let shouldSetupTimer = existingWindow == nil ||
                     existingWindow?.isLiveWatchingEnabled != currentWindowInfo.isLiveWatchingEnabled
-                
+
                 if shouldSetupTimer {
                     setupTimer(for: currentWindowInfo)
                 }
-                
+
                 // Track document path and fetch Git repository info
                 if let documentPath = currentWindowInfo.documentPath {
                     Task {
                         // Record this document access
                         await self.documentPathTracker.recordDocumentAccess(documentPath)
-                        
+
                         // Get repository using heuristic (specific path or most frequent)
                         if let gitRepo = await self.documentPathTracker.getRepositoryForDocument(documentPath) {
                             DispatchQueue.main.async {
@@ -160,7 +232,7 @@ class WindowAIDiagnosticsManager: ObservableObject {
                 }
             }
         }
-        
+
         // Remove states and timers for windows that no longer exist
         let windowsToRemove = Set(self.windowStates.keys).subtracting(activeWindowIDs)
         for windowID in windowsToRemove {
@@ -169,7 +241,7 @@ class WindowAIDiagnosticsManager: ObservableObject {
             previousScreenshots.removeValue(forKey: windowID)
             // No need to remove from windowStates here, as newWindowStates will become self.windowStates
         }
-        
+
         // Update the window states
         self.windowStates = newWindowStates
         objectWillChange.send()
@@ -179,29 +251,37 @@ class WindowAIDiagnosticsManager: ObservableObject {
         timers[windowInfo.id]?.invalidate() // Invalidate existing timer
         let globalInterval = TimeInterval(Defaults[.aiGlobalAnalysisIntervalSeconds])
 
-        if windowInfo.isLiveWatchingEnabled && Defaults[.isGlobalMonitoringEnabled] {
-            logger.info("Setting up AI analysis timer for window: \(windowInfo.windowTitle ?? windowInfo.id) with global interval \(globalInterval)s")
-            timers[windowInfo.id] = Timer.scheduledTimer(withTimeInterval: globalInterval, repeats: true) { [weak self] _ in
-                Task { @MainActor in
-                    guard let self = self, 
-                          Defaults[.isGlobalMonitoringEnabled],
-                          var currentInfo = self.windowStates[windowInfo.id], 
-                          currentInfo.isLiveWatchingEnabled else {
-                        self?.timers[windowInfo.id]?.invalidate()
-                        return
+        if windowInfo.isLiveWatchingEnabled, Defaults[.isGlobalMonitoringEnabled] {
+            logger
+                .info(
+                    "Setting up AI analysis timer for window: \(windowInfo.windowTitle ?? windowInfo.id) with global interval \(globalInterval)s"
+                )
+            timers[windowInfo.id] = Timer
+                .scheduledTimer(withTimeInterval: globalInterval, repeats: true) { [weak self] _ in
+                    Task { @MainActor in
+                        guard let self,
+                              Defaults[.isGlobalMonitoringEnabled],
+                              var currentInfo = self.windowStates[windowInfo.id],
+                              currentInfo.isLiveWatchingEnabled
+                        else {
+                            self?.timers[windowInfo.id]?.invalidate()
+                            return
+                        }
+                        // Update status to pending before analysis
+                        currentInfo.lastAIAnalysisStatus = .pending
+                        currentInfo.lastAIAnalysisTimestamp = Date()
+                        self.windowStates[windowInfo.id] = currentInfo
+                        self.objectWillChange.send()
+
+                        await self.performAIAnalysis(for: windowInfo.id)
                     }
-                    // Update status to pending before analysis
-                    currentInfo.lastAIAnalysisStatus = .pending
-                    currentInfo.lastAIAnalysisTimestamp = Date()
-                    self.windowStates[windowInfo.id] = currentInfo
-                    self.objectWillChange.send()
-                    
-                    await self.performAIAnalysis(for: windowInfo.id)
                 }
-            }
             // Perform initial analysis immediately if status is pending and no recent analysis
-            if windowInfo.lastAIAnalysisStatus == .pending && (windowInfo.lastAIAnalysisTimestamp == nil || windowInfo.lastAIAnalysisTimestamp!.addingTimeInterval(globalInterval * 2) < Date()) {
-                 Task {
+            if windowInfo.lastAIAnalysisStatus == .pending,
+               windowInfo.lastAIAnalysisTimestamp == nil || windowInfo.lastAIAnalysisTimestamp!
+               .addingTimeInterval(globalInterval * 2) < Date()
+            {
+                Task {
                     await self.performAIAnalysis(for: windowInfo.id)
                 }
             }
@@ -226,14 +306,14 @@ class WindowAIDiagnosticsManager: ObservableObject {
             }
             return
         }
-        
+
         guard var windowInfo = windowStates[windowId], windowInfo.isLiveWatchingEnabled else {
             logger.info("AI Analysis skipped for window \(windowId): Live watching disabled or window not found.")
             return
         }
 
         logger.info("Checking for screenshot changes for window: \(windowInfo.windowTitle ?? windowId)")
-        
+
         // Skip screenshot capture for minimized or hidden windows
         if windowInfo.isMinimized {
             logger.info("Skipping AI analysis for minimized window: \(windowInfo.windowTitle ?? windowId)")
@@ -243,7 +323,7 @@ class WindowAIDiagnosticsManager: ObservableObject {
             objectWillChange.send()
             return
         }
-        
+
         if windowInfo.isHidden {
             logger.info("Skipping AI analysis for hidden window: \(windowInfo.windowTitle ?? windowId)")
             windowInfo.lastAIAnalysisStatus = .off
@@ -252,7 +332,7 @@ class WindowAIDiagnosticsManager: ObservableObject {
             objectWillChange.send()
             return
         }
-        
+
         var targetSCWindow: SCWindow? = nil
 
         if let axWindowElement = windowInfo.windowAXElement {
@@ -260,28 +340,47 @@ class WindowAIDiagnosticsManager: ObservableObject {
             // kAXWindowIDAttribute is of type CFNumberRef, which bridges to NSNumber, then UInt32 for CGWindowID
             if let windowNumberID = axWindowElement.attribute(Attribute<NSNumber>("AXWindowNumber")) {
                 let cgWindowID = CGWindowID(windowNumberID.uint32Value)
-                logger.debug("Attempting to find SCWindow with CGWindowID: \(cgWindowID) for AXElement: \(axWindowElement.briefDescription())")
+                logger
+                    .debug(
+                        "Attempting to find SCWindow with CGWindowID: \(cgWindowID) for AXElement: \(axWindowElement.briefDescription())"
+                    )
                 do {
                     let content = try await SCShareableContent.excludingDesktopWindows(false, onScreenWindowsOnly: true)
                     targetSCWindow = content.windows.first { $0.windowID == cgWindowID }
                     if targetSCWindow == nil {
-                        logger.warning("Could not find SCWindow matching CGWindowID \(cgWindowID) for window '\(windowInfo.windowTitle ?? windowId)'. Will attempt capture of first Cursor window.")
+                        logger
+                            .warning(
+                                "Could not find SCWindow matching CGWindowID \(cgWindowID) for window '\(windowInfo.windowTitle ?? windowId)'. Will attempt capture of first Cursor window."
+                            )
                     } else {
-                        logger.info("Successfully found SCWindow with ID \(cgWindowID) for targeted analysis of window '\(windowInfo.windowTitle ?? windowId)'.")
+                        logger
+                            .info(
+                                "Successfully found SCWindow with ID \(cgWindowID) for targeted analysis of window '\(windowInfo.windowTitle ?? windowId)'."
+                            )
                     }
                 } catch {
-                    logger.error("Failed to get SCShareableContent for targeted window analysis: \(error.localizedDescription)")
+                    logger
+                        .error(
+                            "Failed to get SCShareableContent for targeted window analysis: \(error.localizedDescription)"
+                        )
                 }
             } else {
-                logger.warning("Could not retrieve kAXWindowIDAttribute for window '\(windowInfo.windowTitle ?? windowId)'. Will attempt capture of first Cursor window.")
+                logger
+                    .warning(
+                        "Could not retrieve kAXWindowIDAttribute for window '\(windowInfo.windowTitle ?? windowId)'. Will attempt capture of first Cursor window."
+                    )
             }
         } else {
-            logger.warning("No AXElement available for window '\(windowInfo.windowTitle ?? windowId)' to get specific CGWindowID. Will attempt capture of first Cursor window.")
+            logger
+                .warning(
+                    "No AXElement available for window '\(windowInfo.windowTitle ?? windowId)' to get specific CGWindowID. Will attempt capture of first Cursor window."
+                )
         }
 
         // Capture screenshot first to check if it has changed
         do {
-            guard let screenshot = try await screenshotAnalyzer.captureCursorWindow(targetSCWindow: targetSCWindow) else {
+            guard let screenshot = try await screenshotAnalyzer.captureCursorWindow(targetSCWindow: targetSCWindow)
+            else {
                 logger.warning("No screenshot captured for window \(windowId)")
                 windowInfo.lastAIAnalysisStatus = .error
                 windowInfo.lastAIAnalysisResponseMessage = "Failed to capture screenshot"
@@ -289,7 +388,7 @@ class WindowAIDiagnosticsManager: ObservableObject {
                 objectWillChange.send()
                 return
             }
-            
+
             // Convert screenshot to data for comparison
             guard let tiffData = screenshot.tiffRepresentation else {
                 logger.error("Failed to get TIFF representation for screenshot comparison")
@@ -299,69 +398,78 @@ class WindowAIDiagnosticsManager: ObservableObject {
                 objectWillChange.send()
                 return
             }
-            
+
             // Check if screenshot has changed
             if let previousData = previousScreenshots[windowId], previousData == tiffData {
                 logger.info("No changes detected in screenshot for window \(windowId). Skipping AI analysis.")
                 // Keep the current status as is (don't change to pending or error)
                 return
             }
-            
+
             // Screenshot has changed or is new, store it and proceed with analysis
             previousScreenshots[windowId] = tiffData
-            logger.info("Screenshot changes detected for window: \(windowInfo.windowTitle ?? windowId). Proceeding with AI analysis using 'working' prompt.")
-            
+            logger
+                .info(
+                    "Screenshot changes detected for window: \(windowInfo.windowTitle ?? windowId). Proceeding with AI analysis using 'working' prompt."
+                )
+
             // Also update Git repository info when screenshot changes
             if let documentPath = windowInfo.documentPath {
                 if let gitRepo = await gitRepositoryMonitor.findRepository(for: documentPath) {
                     windowInfo.gitRepository = gitRepo
                 }
             }
-            
+
             windowInfo.lastAIAnalysisTimestamp = Date()
             windowInfo.lastAIAnalysisStatus = .pending
             windowStates[windowId] = windowInfo
             objectWillChange.send()
-            
+
             // Use the predefined prompt from CursorScreenshotAnalyzer
             let prompt = CursorScreenshotAnalyzer.AnalysisPrompts.working
-            
+
             // Analyze using the already captured screenshot
             let request = ImageAnalysisRequest(
                 image: screenshot,
                 prompt: prompt,
                 model: Defaults[.aiModel]
             )
-            
+
             let response = try await AIServiceManager.shared.analyzeImage(request)
-            
+
             // Parse the JSON response
             _ = Data(response.text.utf8)
             let decoder = JSONDecoder()
-            
+
             struct AIResponse: Codable {
                 let status: String
                 let reason: String?
             }
-            
+
             logger.debug("Attempting to parse AI response for window \(windowId). Raw text: '\(response.text)'")
-            
+
             // Attempt to extract JSON from the response text
             guard let jsonData = extractJsonData(from: response.text) else {
-                logger.error("Could not extract valid JSON from AI response for window \(windowId). Raw response still: '\(response.text)'")
+                logger
+                    .error(
+                        "Could not extract valid JSON from AI response for window \(windowId). Raw response still: '\(response.text)'"
+                    )
                 windowInfo.lastAIAnalysisStatus = .error
                 windowInfo.lastAIAnalysisResponseMessage = "AI response invalid JSON format (extraction failed)."
                 windowStates[windowId] = windowInfo
                 objectWillChange.send()
                 return
             }
-            
+
             do {
                 let aiResult = try decoder.decode(AIResponse.self, from: jsonData)
                 let statusString = aiResult.status.lowercased()
-                
-                logger.info("Successfully parsed AI JSON response for window \(windowId). Status: '\(statusString)', Reason: '\(aiResult.reason ?? "N/A")'")
-                
+
+                logger
+                    .info(
+                        "Successfully parsed AI JSON response for window \(windowId). Status: '\(statusString)', Reason: '\(aiResult.reason ?? "N/A")'"
+                    )
+
                 switch statusString {
                 case "working":
                     windowInfo.lastAIAnalysisStatus = .working
@@ -370,13 +478,19 @@ class WindowAIDiagnosticsManager: ObservableObject {
                 case "unknown":
                     windowInfo.lastAIAnalysisStatus = .unknown
                 default:
-                    logger.warning("Unexpected AI analysis status value in JSON response for window \(windowId): '\(statusString)'. Expected 'working', 'not_working', or 'unknown'.")
+                    logger
+                        .warning(
+                            "Unexpected AI analysis status value in JSON response for window \(windowId): '\(statusString)'. Expected 'working', 'not_working', or 'unknown'."
+                        )
                     windowInfo.lastAIAnalysisStatus = .error
                 }
                 windowInfo.lastAIAnalysisResponseMessage = aiResult.reason ?? "No reason provided."
 
             } catch {
-                logger.error("Failed to decode extracted AI JSON for window \(windowId): \(error.localizedDescription). Extracted data (string): '\(String(data: jsonData, encoding: .utf8) ?? "Invalid UTF-8 Data")'. Original raw response: '\(response.text)'")
+                logger
+                    .error(
+                        "Failed to decode extracted AI JSON for window \(windowId): \(error.localizedDescription). Extracted data (string): '\(String(data: jsonData, encoding: .utf8) ?? "Invalid UTF-8 Data")'. Original raw response: '\(response.text)'"
+                    )
                 windowInfo.lastAIAnalysisStatus = .error
                 windowInfo.lastAIAnalysisResponseMessage = "AI response JSON parsing error (after extraction)."
             }
@@ -392,9 +506,10 @@ class WindowAIDiagnosticsManager: ObservableObject {
         } catch {
             logger.error("AI analysis failed for window \(windowId) with general error: \(error.localizedDescription)")
             windowInfo.lastAIAnalysisStatus = .error
-            windowInfo.lastAIAnalysisResponseMessage = error.localizedDescription // General error, no specific recovery suggestion format
+            windowInfo.lastAIAnalysisResponseMessage = error
+                .localizedDescription // General error, no specific recovery suggestion format
         }
-        
+
         windowStates[windowId] = windowInfo
         objectWillChange.send()
     }
@@ -407,108 +522,65 @@ class WindowAIDiagnosticsManager: ObservableObject {
         // NSRegularExpression.Options.dotMatchesLineSeparators will make '.' match newlines.
         let patterns = [
             "```json\\s*(.*?)\\s*```", // Explicit json block, allows optional whitespace around content
-            "```\\s*(.*?)\\s*```"      // Generic code block, allows optional whitespace around content
+            "```\\s*(.*?)\\s*```", // Generic code block, allows optional whitespace around content
         ]
 
         for patternString in patterns {
             do {
                 let regex = try NSRegularExpression(pattern: patternString, options: .dotMatchesLineSeparators)
-                let nsRange = NSRange(text.startIndex..<text.endIndex, in: text)
-                
+                let nsRange = NSRange(text.startIndex ..< text.endIndex, in: text)
+
                 if let match = regex.firstMatch(in: text, options: [], range: nsRange) {
                     if match.numberOfRanges > 1 { // Ensure there's a capture group (group 0 is whole match)
                         let jsonContentRange = match.range(at: 1) // Capture group 1 is the desired content
                         if let swiftRange = Range(jsonContentRange, in: text) {
                             let jsonString = String(text[swiftRange]).trimmingCharacters(in: .whitespacesAndNewlines)
-                            logger.debug("Extracted potential JSON content using pattern '\(patternString)': '\(jsonString)'")
-                            
+                            logger
+                                .debug(
+                                    "Extracted potential JSON content using pattern '\(patternString)': '\(jsonString)'"
+                                )
+
                             // Basic validation for JSON object or array
-                            if (jsonString.hasPrefix("{") && jsonString.hasSuffix("}")) || (jsonString.hasPrefix("[") && jsonString.hasSuffix("]")) {
+                            if (jsonString.hasPrefix("{") && jsonString.hasSuffix("}")) ||
+                                (jsonString.hasPrefix("[") && jsonString.hasSuffix("]"))
+                            {
                                 if let data = jsonString.data(using: String.Encoding.utf8) {
-                                    logger.info("Successfully extracted and validated JSON data using pattern '\(patternString)'.")
+                                    logger
+                                        .info(
+                                            "Successfully extracted and validated JSON data using pattern '\(patternString)'."
+                                        )
                                     return data
                                 }
                             } else {
-                                logger.warning("Content extracted with pattern '\(patternString)' ('\(jsonString)') does not appear to be valid JSON (prefix/suffix check failed).")
+                                logger
+                                    .warning(
+                                        "Content extracted with pattern '\(patternString)' ('\(jsonString)') does not appear to be valid JSON (prefix/suffix check failed)."
+                                    )
                             }
                         }
                     }
                 }
             } catch {
-                logger.error("Failed to initialize NSRegularExpression with pattern '\(patternString)': \(error.localizedDescription)")
+                logger
+                    .error(
+                        "Failed to initialize NSRegularExpression with pattern '\(patternString)': \(error.localizedDescription)"
+                    )
             }
         }
 
         // Fallback: If not in a code block, try to parse the whole string directly after trimming.
         let trimmedText = text.trimmingCharacters(in: .whitespacesAndNewlines)
-        if (trimmedText.hasPrefix("{") && trimmedText.hasSuffix("}")) || (trimmedText.hasPrefix("[") && trimmedText.hasSuffix("]")) {
+        if (trimmedText.hasPrefix("{") && trimmedText.hasSuffix("}")) ||
+            (trimmedText.hasPrefix("[") && trimmedText.hasSuffix("]"))
+        {
             logger.debug("No code block matched. Trying trimmed full text as JSON: '\(trimmedText)'")
             if let data = trimmedText.data(using: String.Encoding.utf8) {
                 logger.info("Successfully validated trimmed full text as JSON.")
                 return data
             }
         }
-        
+
         logger.warning("No extractable JSON found in text after trying all patterns and direct parsing: '\(text)'")
         return nil
     }
-
-    func toggleLiveWatching(for windowId: String) {
-        guard var windowInfo = windowStates[windowId] else { return }
-        windowInfo.isLiveWatchingEnabled.toggle()
-        windowInfo.saveAISettings() // Persist change
-        
-        if windowInfo.isLiveWatchingEnabled {
-            windowInfo.lastAIAnalysisStatus = .pending // Set to pending to trigger analysis
-            // Clear previous screenshot to ensure fresh analysis when re-enabled
-            previousScreenshots.removeValue(forKey: windowId)
-        } else {
-            windowInfo.lastAIAnalysisStatus = .off
-            // Clear previous screenshot when disabled
-            previousScreenshots.removeValue(forKey: windowId)
-        }
-        
-        windowStates[windowId] = windowInfo
-        setupTimer(for: windowInfo) // Re-setup timer which will start/stop it
-        objectWillChange.send()
-    }
-    
-    func enableLiveWatchingForAllWindows() {
-        for windowId in windowStates.keys {
-            guard var windowInfo = windowStates[windowId] else { continue }
-            if !windowInfo.isLiveWatchingEnabled {
-                windowInfo.isLiveWatchingEnabled = true
-                windowInfo.saveAISettings()
-                windowInfo.lastAIAnalysisStatus = .pending
-                previousScreenshots.removeValue(forKey: windowId)
-                windowStates[windowId] = windowInfo
-                setupTimer(for: windowInfo)
-            }
-        }
-        objectWillChange.send()
-    }
-    
-    func disableLiveWatchingForAllWindows() {
-        for windowId in windowStates.keys {
-            guard var windowInfo = windowStates[windowId] else { continue }
-            if windowInfo.isLiveWatchingEnabled {
-                windowInfo.isLiveWatchingEnabled = false
-                windowInfo.saveAISettings()
-                windowInfo.lastAIAnalysisStatus = .off
-                previousScreenshots.removeValue(forKey: windowId)
-                windowStates[windowId] = windowInfo
-                setupTimer(for: windowInfo)
-            }
-        }
-        objectWillChange.send()
-    }
-
-    // Cleanup method that must be called from MainActor context
-    func cleanup() {
-        timers.values.forEach { $0.invalidate() }
-        timers.removeAll()
-        cancellables.forEach { $0.cancel() }
-        cancellables.removeAll()
-        previousScreenshots.removeAll()
-    }
-} 
+}

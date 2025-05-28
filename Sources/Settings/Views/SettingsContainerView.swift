@@ -9,13 +9,13 @@ struct SettingsContainerView: View {
     @Default(.showDebugTab) private var showDebugTab
 
     var body: some View {
-        GeometryReader { geometry in
+        GeometryReader { _ in
             VStack(spacing: 0) {
                 // Title bar area with integrated header and tabs
                 TitleBarView(selectedTab: $selectedTab, tabs: tabs)
-                    .onChange(of: showDebugTab) { oldValue, newValue in
+                    .onChange(of: showDebugTab) { _, newValue in
                         // If debug tab is disabled and currently selected, switch to general tab
-                        if !newValue && selectedTab == .debug {
+                        if !newValue, selectedTab == .debug {
                             selectedTab = .general
                         }
                     }
@@ -30,7 +30,7 @@ struct SettingsContainerView: View {
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
         }
-        .frame(minWidth: 600, maxWidth: 880, 
+        .frame(minWidth: 600, maxWidth: 880,
                minHeight: 400, maxHeight: 1200)
         .background(ColorPalette.background)
         .withDesignSystem()
@@ -50,15 +50,14 @@ struct SettingsContainerView: View {
             (.ai, "AI", "brain"),
             (.advanced, "Advanced", "wrench.and.screwdriver"),
         ]
-        
+
         if showDebugTab {
             baseTabs.append((.debug, "Debug", "ladybug"))
         }
-        
+
         baseTabs.append((.about, "About", "info.circle"))
         return baseTabs
     }
-    
 
     @ViewBuilder
     private var tabContent: some View {
@@ -120,9 +119,11 @@ struct SettingsContainerView: View {
 // MARK: - Title Bar View
 
 private struct TitleBarView: View {
+    // MARK: Internal
+
     @Binding var selectedTab: SettingsTab
+
     let tabs: [(id: SettingsTab, title: String, icon: String)]
-    @State private var hoveredTab: SettingsTab?
 
     var body: some View {
         HStack(spacing: 0) {
@@ -135,14 +136,14 @@ private struct TitleBarView: View {
                         .frame(width: 40, height: 40)
                         .cornerRadiusDS(Layout.CornerRadius.small)
                 }
-                
+
                 Text("CodeLooper")
                     .font(Typography.body(.semibold))
                     .foregroundColor(ColorPalette.text)
             }
-            
+
             Spacer()
-            
+
             // Tabs in the center
             HStack(spacing: Spacing.small) {
                 ForEach(tabs, id: \.id) { tab in
@@ -161,7 +162,7 @@ private struct TitleBarView: View {
                     }
                 }
             }
-            
+
             Spacer()
         }
         .padding(.horizontal, Spacing.medium)
@@ -182,9 +183,15 @@ private struct TitleBarView: View {
                 }
         )
     }
+
+    // MARK: Private
+
+    @State private var hoveredTab: SettingsTab?
 }
 
 private struct TitleBarTabButton: View {
+    // MARK: Internal
+
     let title: String
     let icon: String
     let isSelected: Bool
@@ -216,6 +223,8 @@ private struct TitleBarTabButton: View {
         .buttonStyle(.plain)
         .focusable(false)
     }
+
+    // MARK: Private
 
     private var iconColor: Color {
         if isSelected {
@@ -258,10 +267,7 @@ private struct TitleBarTabButton: View {
     private var borderWidth: CGFloat {
         isSelected ? Layout.BorderWidth.thin : 0
     }
-
 }
-
-
 
 // MARK: - Preview
 

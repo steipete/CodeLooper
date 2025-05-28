@@ -8,8 +8,6 @@ import SwiftUI
 
 struct MainPopoverView: View {
     // MARK: Internal
-    
-    private static let logger = Logger(category: .statusBar)
 
     var body: some View {
         VStack(alignment: .leading, spacing: Spacing.medium) {
@@ -26,7 +24,7 @@ struct MainPopoverView: View {
                 "Enable Cursor Supervision",
                 isOn: $isGlobalMonitoringEnabled
             )
-            .onChange(of: isGlobalMonitoringEnabled) { oldValue, newValue in
+            .onChange(of: isGlobalMonitoringEnabled) { _, newValue in
                 if newValue {
                     diagnosticsManager.enableLiveWatchingForAllWindows()
                 } else {
@@ -47,7 +45,6 @@ struct MainPopoverView: View {
                             .font(Typography.body(.medium))
                             .foregroundColor(isGlobalMonitoringEnabled ? ColorPalette.text : ColorPalette.textSecondary)
                     }
-
                 }
 
                 // Windows list
@@ -59,8 +56,9 @@ struct MainPopoverView: View {
                     HStack {
                         Image(systemName: isGlobalMonitoringEnabled ? "exclamationmark.circle" : "pause.circle")
                             .font(.title3)
-                            .foregroundColor(isGlobalMonitoringEnabled ? ColorPalette.warning : ColorPalette.textSecondary)
-                        
+                            .foregroundColor(isGlobalMonitoringEnabled ? ColorPalette.warning : ColorPalette
+                                .textSecondary)
+
                         Text(isGlobalMonitoringEnabled ? "No Cursor app detected." : "Cursor supervision is paused.")
                             .font(Typography.body())
                             .foregroundColor(ColorPalette.textSecondary)
@@ -69,7 +67,7 @@ struct MainPopoverView: View {
             }
 
             DSDivider()
-            
+
             // Session stats
             HStack {
                 Image(systemName: "chart.bar.xaxis")
@@ -90,9 +88,9 @@ struct MainPopoverView: View {
                     MainSettingsCoordinator.shared.showSettings()
                 }
                 .help("Open Settings")
-                
+
                 Spacer()
-                
+
                 DSButton(
                     "Quit",
                     style: .tertiary
@@ -112,8 +110,11 @@ struct MainPopoverView: View {
 
     // MARK: Private
 
+    private static let logger = Logger(category: .statusBar)
+
     @ObservedObject private var cursorMonitor = CursorMonitor.shared
     @ObservedObject private var diagnosticsManager = WindowAIDiagnosticsManager.shared
+
     @Default(.isGlobalMonitoringEnabled) private var isGlobalMonitoringEnabled
 }
 
@@ -126,12 +127,20 @@ struct MainPopoverView: View {
             let mockDiagnostics = WindowAIDiagnosticsManager.shared
             let mockInputWatcher = CursorInputWatcherViewModel()
             let appPID = pid_t(12345)
-            
+
             let window1Id = "\(appPID)-window-Doc1-0"
             let window2Id = "\(appPID)-window-Settings-1"
 
-            let windowInfo1 = MonitoredWindowInfo(id: window1Id, windowTitle: "Document 1.txt", documentPath: "/path/to/doc1.txt")
-            var windowInfo2 = MonitoredWindowInfo(id: window2Id, windowTitle: "Project Settings", documentPath: "/path/to/proj/")
+            let windowInfo1 = MonitoredWindowInfo(
+                id: window1Id,
+                windowTitle: "Document 1.txt",
+                documentPath: "/path/to/doc1.txt"
+            )
+            var windowInfo2 = MonitoredWindowInfo(
+                id: window2Id,
+                windowTitle: "Project Settings",
+                documentPath: "/path/to/proj/"
+            )
             windowInfo2.isLiveWatchingEnabled = true
             windowInfo2.lastAIAnalysisStatus = .working
             windowInfo2.aiAnalysisIntervalSeconds = 15
@@ -149,9 +158,9 @@ struct MainPopoverView: View {
 
             mockDiagnostics.windowStates = [
                 windowInfo1.id: windowInfo1,
-                windowInfo2.id: windowInfo2
+                windowInfo2.id: windowInfo2,
             ]
-            
+
             // Simulate some JS Hook state for preview
             mockInputWatcher.cursorWindows = [windowInfo1, windowInfo2]
             // Cannot directly access private jsHookManager in preview

@@ -1,39 +1,13 @@
+import Diagnostics
 import Foundation
 import Network
-import Diagnostics
 
 @MainActor
 public final class CursorJSHook {
-    // MARK: - Types
-    
-    public enum HookError: Error {
-        case notConnected
-        case injectionFailed(Error?)
-        case connectionLost(underlyingError: Error)
-        case cancelled
-        case portInUse(port: UInt16)
-    }
-    
-    // MARK: - Properties
-    
-    private let applicationName: String
-    private let targetWindowTitle: String?
-    private let port: UInt16
-    private let webSocketManager: WebSocketManager
-    private let injector: AppleScriptInjector
-    
-    /// Returns true if the WebSocket connection is active and the handshake is complete
-    public var isHooked: Bool {
-        webSocketManager.isConnected
-    }
-    
-    /// Get the port number for this hook
-    public var portNumber: UInt16 {
-        port
-    }
-    
+    // MARK: Lifecycle
+
     // MARK: - Initialization
-    
+
     /// Spin up the hook (starts listener, injects JS, waits for the renderer)
     /// - Parameters:
     ///   - applicationName: The name of the application to target (e.g., "Cursor")
@@ -55,33 +29,55 @@ public final class CursorJSHook {
             targetWindowTitle: targetWindowTitle,
             port: port
         )
-        
+
         try await webSocketManager.startListener()
-        
+
         if !skipInjection {
             try injector.inject()
             try await webSocketManager.waitForHandshake()
         }
     }
-    
+
+    // MARK: Public
+
+    // MARK: - Types
+
+    public enum HookError: Error {
+        case notConnected
+        case injectionFailed(Error?)
+        case connectionLost(underlyingError: Error)
+        case cancelled
+        case portInUse(port: UInt16)
+    }
+
+    /// Returns true if the WebSocket connection is active and the handshake is complete
+    public var isHooked: Bool {
+        webSocketManager.isConnected
+    }
+
+    /// Get the port number for this hook
+    public var portNumber: UInt16 {
+        port
+    }
+
     // MARK: - Public Methods
-    
+
     /// Probe for an existing hook by waiting for a connection
     /// - Parameter timeout: How long to wait for a connection (in seconds)
     /// - Returns: True if a hook connected within the timeout
     public func probeForExistingHook(timeout: TimeInterval = 2.0) async -> Bool {
         let startTime = Date()
-        
+
         while Date().timeIntervalSince(startTime) < timeout {
             if isHooked {
                 return true
             }
             try? await Task.sleep(nanoseconds: 20_000_000) // 0.02 second
         }
-        
+
         return false
     }
-    
+
     /// Send a command to the JS hook and get the JSON-encoded result
     /// - Parameter command: A dictionary representing the command to send
     /// - Returns: The JSON-encoded result from the browser
@@ -90,11 +86,19 @@ public final class CursorJSHook {
         let jsonString = String(data: jsonData, encoding: .utf8) ?? "{}"
         return try await webSocketManager.send(jsonString)
     }
-    
+
     /// Legacy method - attempts to run raw JS code (will fail with Trusted Types)
     @available(*, deprecated, message: "Use sendCommand or specific helper methods instead")
     public func runJS(_ source: String) async throws -> String {
         let command = ["type": "rawCode", "code": source]
         return try await sendCommand(command)
     }
+
+    // MARK: Private
+
+    private let applicationName: String
+    private let targetWindowTitle: String?
+    private let port: UInt16
+    private let webSocketManager: WebSocketManager
+    private let injector: AppleScriptInjector
 }

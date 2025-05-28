@@ -7,22 +7,22 @@ import Foundation
 @MainActor
 public final class PermissionsManager: ObservableObject {
     // MARK: Lifecycle
-    
+
     public init() {
         checkAllPermissions()
         startMonitoring()
     }
-    
+
     deinit {
         monitoringTask?.cancel()
     }
-    
+
     // MARK: Public
-    
+
     @Published public private(set) var hasAccessibilityPermissions: Bool = false
     @Published public private(set) var hasAutomationPermissions: Bool = false
     @Published public private(set) var hasScreenRecordingPermissions: Bool = false
-    
+
     /// Request accessibility permissions
     public func requestAccessibilityPermissions() async {
         logger.info("Requesting accessibility permissions")
@@ -30,7 +30,7 @@ public final class PermissionsManager: ObservableObject {
         self.hasAccessibilityPermissions = granted
         logger.info("Accessibility permissions request result: \(granted)")
     }
-    
+
     /// Open System Settings for automation permissions
     public func openAutomationSettings() {
         logger.info("Opening System Settings for automation permissions")
@@ -38,7 +38,7 @@ public final class PermissionsManager: ObservableObject {
             NSWorkspace.shared.open(url)
         }
     }
-    
+
     /// Open System Settings for screen recording permissions
     public func openScreenRecordingSettings() {
         logger.info("Opening System Settings for screen recording permissions")
@@ -46,42 +46,48 @@ public final class PermissionsManager: ObservableObject {
             NSWorkspace.shared.open(url)
         }
     }
-    
+
     /// Manually refresh all permissions
     public func refreshPermissions() async {
         hasAccessibilityPermissions = AXPermissionHelpers.hasAccessibilityPermissions()
         hasAutomationPermissions = await checkAutomationPermission()
         hasScreenRecordingPermissions = await checkScreenRecordingPermission()
-        
-        logger.info("Permission status - Accessibility: \(hasAccessibilityPermissions), Automation: \(hasAutomationPermissions), Screen Recording: \(hasScreenRecordingPermissions)")
+
+        logger
+            .info(
+                "Permission status - Accessibility: \(hasAccessibilityPermissions), Automation: \(hasAutomationPermissions), Screen Recording: \(hasScreenRecordingPermissions)"
+            )
     }
-    
+
     // MARK: Private
-    
+
     private var monitoringTask: Task<Void, Never>?
     private let logger = Logger(category: .permissions)
     private let cursorBundleID = "com.todesktop.230313mzl4w4u92"
-    
+
     private func checkAllPermissions() {
         // Check accessibility synchronously
         hasAccessibilityPermissions = AXPermissionHelpers.hasAccessibilityPermissions()
-        
+
         // Check automation and screen recording asynchronously
         Task {
             hasAutomationPermissions = await checkAutomationPermission()
             hasScreenRecordingPermissions = await checkScreenRecordingPermission()
-            
-            logger.info("Initial permission status - Accessibility: \(hasAccessibilityPermissions), Automation: \(hasAutomationPermissions), Screen Recording: \(hasScreenRecordingPermissions)")
+
+            logger
+                .info(
+                    "Initial permission status - Accessibility: \(hasAccessibilityPermissions), Automation: \(hasAutomationPermissions), Screen Recording: \(hasScreenRecordingPermissions)"
+                )
         }
     }
-    
+
     private func checkAutomationPermission() async -> Bool {
         // Ensure we're on the main thread for NSAppleScript
         await MainActor.run {
             performAutomationCheck()
         }
     }
-    
+
     private func performAutomationCheck() -> Bool {
         // Check if we have automation permission for System Events
         let systemEventsScript = NSAppleScript(source: """
@@ -89,26 +95,26 @@ public final class PermissionsManager: ObservableObject {
                 return name of first process whose frontmost is true
             end tell
         """)
-        
+
         var errorDict: NSDictionary?
         let result = systemEventsScript?.executeAndReturnError(&errorDict)
-        
+
         // If we can access System Events, we have automation permission
-        if result != nil && errorDict == nil {
+        if result != nil, errorDict == nil {
             return true
         }
-        
+
         // Fallback: try to check Cursor directly
         let cursorScript = NSAppleScript(source: """
             tell application id "\(cursorBundleID)"
                 return exists
             end tell
         """)
-        
+
         let cursorResult = cursorScript?.executeAndReturnError(&errorDict)
         return cursorResult != nil && errorDict == nil
     }
-    
+
     private func checkScreenRecordingPermission() async -> Bool {
         do {
             // Try to get shareable content - this will fail if we don't have permission
@@ -119,27 +125,27 @@ public final class PermissionsManager: ObservableObject {
             return false
         }
     }
-    
+
     private func startMonitoring() {
         monitoringTask = Task {
             while !Task.isCancelled {
                 try? await Task.sleep(nanoseconds: 2_000_000_000) // 2 seconds
-                
+
                 // Re-check all permissions
                 let newAccessibility = AXPermissionHelpers.hasAccessibilityPermissions()
                 let newAutomation = await checkAutomationPermission()
                 let newScreenRecording = await checkScreenRecordingPermission()
-                
+
                 if newAccessibility != self.hasAccessibilityPermissions {
                     self.hasAccessibilityPermissions = newAccessibility
                     self.logger.info("Accessibility permissions changed to: \(newAccessibility)")
                 }
-                
+
                 if newAutomation != self.hasAutomationPermissions {
                     self.hasAutomationPermissions = newAutomation
                     self.logger.info("Automation permissions changed to: \(newAutomation)")
                 }
-                
+
                 if newScreenRecording != self.hasScreenRecordingPermissions {
                     self.hasScreenRecordingPermissions = newScreenRecording
                     self.logger.info("Screen recording permissions changed to: \(newScreenRecording)")

@@ -1,53 +1,59 @@
-import Foundation
-import OpenAI
 import AppKit
 import Diagnostics
+import Foundation
+import OpenAI
 
 @MainActor
 final class OpenAIService: AIService {
-    let provider: AIProvider = .openAI
-    private let client: OpenAI
-    
+    // MARK: Lifecycle
+
     init(apiKey: String) {
         self.client = OpenAI(apiToken: apiKey)
     }
-    
+
+    // MARK: Internal
+
+    let provider: AIProvider = .openAI
+
     func analyzeImage(_ request: ImageAnalysisRequest) async throws -> ImageAnalysisResponse {
         guard let imageData = request.image.tiffRepresentation,
               let bitmap = NSBitmapImageRep(data: imageData),
-              let jpegData = bitmap.representation(using: .jpeg, properties: [.compressionFactor: 0.8]) else {
+              let jpegData = bitmap.representation(using: .jpeg, properties: [.compressionFactor: 0.8])
+        else {
             throw AIServiceError.invalidImage
         }
-        
+
         let base64Image = jpegData.base64EncodedString()
-        
-        let textContent = ChatQuery.ChatCompletionMessageParam.UserMessageParam.Content.VisionContent.ChatCompletionContentPartTextParam(text: request.prompt)
-        let imageContent = ChatQuery.ChatCompletionMessageParam.UserMessageParam.Content.VisionContent.ChatCompletionContentPartImageParam(
-            imageUrl: .init(url: "data:image/jpeg;base64,\(base64Image)", detail: .auto)
-        )
-        
+
+        let textContent = ChatQuery.ChatCompletionMessageParam.UserMessageParam.Content.VisionContent
+            .ChatCompletionContentPartTextParam(text: request.prompt)
+        let imageContent = ChatQuery.ChatCompletionMessageParam.UserMessageParam.Content.VisionContent
+            .ChatCompletionContentPartImageParam(
+                imageUrl: .init(url: "data:image/jpeg;base64,\(base64Image)", detail: .auto)
+            )
+
         let userMessage = ChatQuery.ChatCompletionMessageParam.UserMessageParam(
             content: .vision([
                 .chatCompletionContentPartTextParam(textContent),
-                .chatCompletionContentPartImageParam(imageContent)
+                .chatCompletionContentPartImageParam(imageContent),
             ])
         )
-        
+
         let messages: [ChatQuery.ChatCompletionMessageParam] = [.user(userMessage)]
-        
+
         let query = ChatQuery(
             messages: messages,
             model: Model(request.model.rawValue),
             maxTokens: 1000
         )
-        
+
         do {
             let response = try await client.chats(query: query)
-            
+
             guard let content = response.choices.first?.message.content else {
                 throw AIServiceError.invalidResponse
             }
-            
+
             return ImageAnalysisResponse(
                 text: content,
                 model: request.model,
@@ -70,7 +76,7 @@ final class OpenAIService: AIService {
             case "rate_limit_error":
                 throw AIServiceError.serviceUnavailable // Or a specific rate limit error if defined
             case "insufficient_quota":
-                 throw AIServiceError.serviceUnavailable // Or a specific quota error
+                throw AIServiceError.serviceUnavailable // Or a specific quota error
             default:
                 // Fallback for other OpenAI APIErrors
                 logger.warning("Unhandled OpenAI APIError type: \(openAIError.type). Message: \(openAIError.message)")
@@ -82,7 +88,9 @@ final class OpenAIService: AIService {
         } catch {
             // General catch-all, try to interpret based on message if possible
             let errorMessage = error.localizedDescription.lowercased()
-            if errorMessage.contains("api key") || errorMessage.contains("unauthorized") || errorMessage.contains("bearer auth") {
+            if errorMessage.contains("api key") || errorMessage.contains("unauthorized") || errorMessage
+                .contains("bearer auth")
+            {
                 throw AIServiceError.apiKeyMissing
             }
             if errorMessage.contains("rate_limit") || errorMessage.contains("rate limit") {
@@ -95,16 +103,20 @@ final class OpenAIService: AIService {
             throw AIServiceError.networkError(error) // Fallback to generic network error
         }
     }
-    
+
     func isAvailable() async -> Bool {
         // Simply return true if we have a client with an API key
         // The actual test will happen when we try to use it
-        return true
+        true
     }
-    
+
     func supportedModels() -> [AIModel] {
         [.gpt4o, .gpt4TurboVision, .gpt4oMini, .o1, .clipVitL14]
     }
-    
+
+    // MARK: Private
+
+    private let client: OpenAI
+
     private let logger = Logger(category: .api)
 }

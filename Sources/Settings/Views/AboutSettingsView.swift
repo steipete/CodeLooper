@@ -3,8 +3,6 @@ import SwiftUI
 
 struct AboutSettingsView: View {
     // MARK: Internal
-    
-    @State private var pulsateScale: CGFloat = 1.0
 
     var body: some View {
         VStack(spacing: 0) {
@@ -63,7 +61,6 @@ struct AboutSettingsView: View {
                         }
                     }
 
-
                     // Links Section
                     DSSettingsSection("Resources") {
                         LinkRow(
@@ -111,6 +108,8 @@ struct AboutSettingsView: View {
 
     // MARK: Private
 
+    @State private var pulsateScale: CGFloat = 1.0
+
     private var appVersion: String {
         Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "Unknown"
     }
@@ -125,7 +124,6 @@ struct AboutSettingsView: View {
         }
     }
 }
-
 
 // MARK: - Link Row Component
 
@@ -186,7 +184,6 @@ private struct LinkRow: View {
         }
     }
 }
-
 
 // MARK: - Preview
 

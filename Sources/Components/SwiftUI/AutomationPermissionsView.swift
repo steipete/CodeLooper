@@ -118,14 +118,14 @@ class AutomationPermissionsViewModel: ObservableObject {
     private func checkAutomationPermission() -> Bool {
         // NSAppleScript must be executed on the main thread
         if Thread.isMainThread {
-            return performAutomationCheck()
+            performAutomationCheck()
         } else {
-            return DispatchQueue.main.sync {
+            DispatchQueue.main.sync {
                 performAutomationCheck()
             }
         }
     }
-    
+
     private func performAutomationCheck() -> Bool {
         // Check if we have automation permission for System Events
         let systemEventsScript = NSAppleScript(source: """
@@ -133,22 +133,22 @@ class AutomationPermissionsViewModel: ObservableObject {
                 return name of first process whose frontmost is true
             end tell
         """)
-        
+
         var errorDict: NSDictionary?
         let result = systemEventsScript?.executeAndReturnError(&errorDict)
-        
+
         // If we can access System Events, we have automation permission
-        if result != nil && errorDict == nil {
+        if result != nil, errorDict == nil {
             return true
         }
-        
+
         // Fallback: try to check Cursor directly
         let cursorScript = NSAppleScript(source: """
             tell application id "\(cursorBundleID)"
                 return exists
             end tell
         """)
-        
+
         let cursorResult = cursorScript?.executeAndReturnError(&errorDict)
         return cursorResult != nil && errorDict == nil
     }

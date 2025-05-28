@@ -70,7 +70,6 @@ struct AdvancedSettingsView: View {
                 }
             }
 
-
             // Danger Zone
             DSSettingsSection("Danger Zone") {
                 DSCard(style: .filled) {
@@ -88,9 +87,9 @@ struct AdvancedSettingsView: View {
                                 .font(Typography.caption1())
                                 .foregroundColor(ColorPalette.textSecondary)
                         }
-                        
+
                         Spacer()
-                        
+
                         DSButton("Reset & Restart", style: .destructive) {
                             showResetAndRestartConfirmation = true
                         }
@@ -107,7 +106,9 @@ struct AdvancedSettingsView: View {
                 resetAllDataAndRestart()
             }
         } message: {
-            Text("This will reset all CodeLooper settings and data to defaults, then restart the application. This action cannot be undone.")
+            Text(
+                "This will reset all CodeLooper settings and data to defaults, then restart the application. This action cannot be undone."
+            )
         }
         .alert("Logs Cleared", isPresented: $showLogsClearedAlert) {
             Button("OK") {}
@@ -166,25 +167,25 @@ struct AdvancedSettingsView: View {
             .showDebugTab,
             .useDynamicMenuBarIcon
         )
-        
+
         // Clear logs
         clearLogsFiles()
-        
+
         // Post notification for any cleanup
         NotificationCenter.default.post(
             name: .menuBarVisibilityChanged,
             object: nil,
             userInfo: ["visible": Defaults[.showInMenuBar]]
         )
-        
+
         // Restart the application
         restartApplication()
     }
-    
+
     private func clearLogsFiles() {
         let logsPath = NSHomeDirectory() + "/Library/Logs/CodeLooper/"
         let fileManager = FileManager.default
-        
+
         do {
             let contents = try fileManager.contentsOfDirectory(atPath: logsPath)
             for file in contents {
@@ -195,34 +196,34 @@ struct AdvancedSettingsView: View {
             // Silently handle error - logs folder might not exist or be empty
         }
     }
-    
+
     private func restartApplication() {
         // Get the current application path
         let appPath = Bundle.main.bundlePath
-        
+
         // Create a script to restart the app after a brief delay
         let script = """
         #!/bin/bash
         sleep 1
         open "\(appPath)"
         """
-        
+
         // Write script to temp file
         let tempFile = NSTemporaryDirectory() + "restart_codelooper.sh"
         try? script.write(toFile: tempFile, atomically: true, encoding: .utf8)
-        
+
         // Make script executable and run it
         let chmod = Process()
         chmod.launchPath = "/bin/chmod"
         chmod.arguments = ["+x", tempFile]
         chmod.launch()
         chmod.waitUntilExit()
-        
+
         let restart = Process()
         restart.launchPath = "/bin/bash"
         restart.arguments = [tempFile]
         restart.launch()
-        
+
         // Terminate current app
         NSApplication.shared.terminate(nil)
     }

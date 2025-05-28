@@ -1,13 +1,41 @@
-import SwiftUI
 import Defaults
+import SwiftUI
 
 public struct CursorAnalysisView: View {
-    @StateObject private var analyzer = CursorScreenshotAnalyzer()
-    @State private var customPrompt = ""
-    @State private var selectedPromptType = PromptType.general
-    @Default(.aiProvider) private var aiProvider
-    @Default(.aiModel) private var aiModel
-    
+    // MARK: Public
+
+    public var body: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            headerSection
+
+            Divider()
+
+            promptSection
+
+            actionSection
+
+            if analyzer.isAnalyzing {
+                ProgressView("Analyzing Cursor window...")
+                    .frame(maxWidth: .infinity)
+                    .padding()
+            }
+
+            if let error = analyzer.lastError {
+                errorView(error)
+            }
+
+            if let analysis = analyzer.lastAnalysis {
+                analysisResultView(analysis)
+            }
+
+            Spacer()
+        }
+        .padding()
+        .frame(minWidth: 600, minHeight: 400)
+    }
+
+    // MARK: Private
+
     private enum PromptType: String, CaseIterable {
         case general = "General Analysis"
         case errors = "Error Detection"
@@ -15,73 +43,52 @@ public struct CursorAnalysisView: View {
         case code = "Code Understanding"
         case working = "Working Detection"
         case custom = "Custom Prompt"
-        
+
+        // MARK: Internal
+
         var prompt: String {
             switch self {
             case .general:
-                return CursorScreenshotAnalyzer.AnalysisPrompts.generalAnalysis
+                CursorScreenshotAnalyzer.AnalysisPrompts.generalAnalysis
             case .errors:
-                return CursorScreenshotAnalyzer.AnalysisPrompts.errorDetection
+                CursorScreenshotAnalyzer.AnalysisPrompts.errorDetection
             case .progress:
-                return CursorScreenshotAnalyzer.AnalysisPrompts.progressCheck
+                CursorScreenshotAnalyzer.AnalysisPrompts.progressCheck
             case .code:
-                return CursorScreenshotAnalyzer.AnalysisPrompts.codeUnderstanding
+                CursorScreenshotAnalyzer.AnalysisPrompts.codeUnderstanding
             case .working:
-                return CursorScreenshotAnalyzer.AnalysisPrompts.working
+                CursorScreenshotAnalyzer.AnalysisPrompts.working
             case .custom:
-                return ""
+                ""
             }
         }
     }
-    
-    public var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            headerSection
-            
-            Divider()
-            
-            promptSection
-            
-            actionSection
-            
-            if analyzer.isAnalyzing {
-                ProgressView("Analyzing Cursor window...")
-                    .frame(maxWidth: .infinity)
-                    .padding()
-            }
-            
-            if let error = analyzer.lastError {
-                errorView(error)
-            }
-            
-            if let analysis = analyzer.lastAnalysis {
-                analysisResultView(analysis)
-            }
-            
-            Spacer()
-        }
-        .padding()
-        .frame(minWidth: 600, minHeight: 400)
-    }
-    
+
+    @StateObject private var analyzer = CursorScreenshotAnalyzer()
+    @State private var customPrompt = ""
+    @State private var selectedPromptType = PromptType.general
+
+    @Default(.aiProvider) private var aiProvider
+    @Default(.aiModel) private var aiModel
+
     private var headerSection: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text("Cursor Window Analysis")
                 .font(.title2)
                 .fontWeight(.semibold)
-            
+
             HStack {
                 Label("Provider: \(aiProvider.displayName)", systemImage: "cpu")
                     .font(.caption)
                     .foregroundColor(.secondary)
-                
+
                 Label("Model: \(aiModel.displayName)", systemImage: "brain")
                     .font(.caption)
                     .foregroundColor(.secondary)
             }
         }
     }
-    
+
     private var promptSection: some View {
         VStack(alignment: .leading, spacing: 12) {
             Picker("Analysis Type", selection: $selectedPromptType) {
@@ -90,13 +97,13 @@ public struct CursorAnalysisView: View {
                 }
             }
             .pickerStyle(.menu)
-            
+
             if selectedPromptType == .custom {
                 VStack(alignment: .leading, spacing: 4) {
                     Text("Custom Prompt")
                         .font(.caption)
                         .foregroundColor(.secondary)
-                    
+
                     TextEditor(text: $customPrompt)
                         .font(.system(.body, design: .monospaced))
                         .frame(minHeight: 80)
@@ -105,7 +112,7 @@ public struct CursorAnalysisView: View {
             }
         }
     }
-    
+
     private var actionSection: some View {
         HStack {
             Button("Analyze Cursor Window") {
@@ -115,7 +122,7 @@ public struct CursorAnalysisView: View {
             }
             .buttonStyle(.borderedProminent)
             .disabled(analyzer.isAnalyzing || (selectedPromptType == .custom && customPrompt.isEmpty))
-            
+
             Button("Clear") {
                 analyzer.lastAnalysis = nil
                 analyzer.lastError = nil
@@ -123,13 +130,13 @@ public struct CursorAnalysisView: View {
             .disabled(analyzer.lastAnalysis == nil && analyzer.lastError == nil)
         }
     }
-    
+
     private func errorView(_ error: Error) -> some View {
         VStack(alignment: .leading, spacing: 8) {
             Label("Error", systemImage: "exclamationmark.triangle.fill")
                 .font(.headline)
                 .foregroundColor(.red)
-            
+
             Text(error.localizedDescription)
                 .font(.system(.body, design: .monospaced))
                 .padding()
@@ -137,13 +144,13 @@ public struct CursorAnalysisView: View {
                 .cornerRadius(8)
         }
     }
-    
+
     private func analysisResultView(_ analysis: ImageAnalysisResponse) -> some View {
         VStack(alignment: .leading, spacing: 12) {
             Label("Analysis Result", systemImage: "checkmark.circle.fill")
                 .font(.headline)
                 .foregroundColor(.green)
-            
+
             ScrollView {
                 Text(analysis.text)
                     .font(.system(.body, design: .default))
@@ -153,7 +160,7 @@ public struct CursorAnalysisView: View {
                     .background(Color.green.opacity(0.05))
                     .cornerRadius(8)
             }
-            
+
             if let tokens = analysis.tokensUsed {
                 Text("Tokens used: \(tokens)")
                     .font(.caption)
@@ -161,7 +168,7 @@ public struct CursorAnalysisView: View {
             }
         }
     }
-    
+
     private func analyzeWindow() async {
         do {
             if selectedPromptType == .custom {
@@ -177,9 +184,9 @@ public struct CursorAnalysisView: View {
 }
 
 #if DEBUG
-struct CursorAnalysisView_Previews: PreviewProvider {
-    static var previews: some View {
-        CursorAnalysisView()
+    struct CursorAnalysisView_Previews: PreviewProvider {
+        static var previews: some View {
+            CursorAnalysisView()
+        }
     }
-}
 #endif

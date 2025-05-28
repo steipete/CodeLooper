@@ -2,27 +2,30 @@ import Foundation
 
 /// Manages the JavaScript hook script resource
 public enum CursorJSHookScript {
+    // MARK: Public
+
     /// Current version of the JavaScript hook
     public static let version = "1.2.2"
-    
+
     /// Load the JavaScript hook template from resources
     public static func loadTemplate() throws -> String {
         // Try to load from bundle first
         if let bundlePath = Bundle.main.path(forResource: "cursor-hook", ofType: "js", inDirectory: "JavaScript"),
-           let content = try? String(contentsOfFile: bundlePath) {
+           let content = try? String(contentsOfFile: bundlePath)
+        {
             return content
         }
-        
+
         // Try development path
         let devPath = FileManager.default.currentDirectoryPath + "/Resources/JavaScript/cursor-hook.js"
         if let content = try? String(contentsOfFile: devPath) {
             return content
         }
-        
+
         // Fallback to inline script for development
         return inlineScript
     }
-    
+
     /// Generate the JavaScript hook with the specified port
     /// - Parameter port: The WebSocket port to connect to
     /// - Returns: The complete JavaScript code ready for injection
@@ -30,7 +33,9 @@ public enum CursorJSHookScript {
         let template = try loadTemplate()
         return template.replacingOccurrences(of: #""__CODELOOPER_PORT_PLACEHOLDER__""#, with: String(port))
     }
-    
+
+    // MARK: Private
+
     /// The inline script (used as fallback during development)
     private static let inlineScript = """
     // CodeLooper Cursor Hook
@@ -39,10 +44,10 @@ public enum CursorJSHookScript {
 
     (function() {
         'use strict';
-        
+
         const HOOK_VERSION = '1.2.2';
         const HEARTBEAT_INTERVAL = 1000; // 1 second
-        
+
         // Check if hook already exists and clean it up
         if (window.__codeLooperHook) {
             console.log('🔄 CodeLooper: Cleaning up existing hook on port ' + window.__codeLooperPort);
@@ -75,14 +80,14 @@ public enum CursorJSHookScript {
                 const notification = document.createElement('div');
                 notification.textContent = '✅ CodeLooper connected successfully!';
                 notification.style.cssText = 'position: fixed; top: 20px; right: 20px; background: #10b981; color: white; padding: 12px 24px; border-radius: 8px; font-weight: 500; z-index: 999999; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); animation: slideIn 0.3s ease-out; font-family: -apple-system, BlinkMacSystemFont, sans-serif; font-size: 14px;';
-                
+
                 // Add animation
                 const style = document.createElement('style');
                 style.textContent = '@keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }';
                 document.head.appendChild(style);
-                
+
                 document.body.appendChild(notification);
-                
+
                 // Remove notification after 5 seconds
                 setTimeout(() => {
                     notification.style.opacity = '0';
@@ -93,13 +98,13 @@ public enum CursorJSHookScript {
                         style.remove();
                     }, 300);
                 }, 5000);
-                
+
                 // Also show in console
                 console.log('%c✅ CodeLooper Hook Active!', 'color: #10b981; font-size: 16px; font-weight: bold;');
                 console.log('Port:', port);
                 console.log('Version:', HOOK_VERSION);
                 console.log('Ready to receive commands');
-                
+
             } catch (e) {
                 console.error('Failed to show notification:', e);
             }
@@ -110,7 +115,7 @@ public enum CursorJSHookScript {
             if (window.__codeLooperHeartbeat) {
                 clearInterval(window.__codeLooperHeartbeat);
             }
-            
+
             // Start heartbeat
             window.__codeLooperHeartbeat = setInterval(() => {
                 if (ws.readyState === WebSocket.OPEN) {
@@ -127,7 +132,7 @@ public enum CursorJSHookScript {
 
         function handleCommand(command) {
             let result;
-            
+
             switch(command.type) {
                 case 'getSystemInfo':
                     result = {
@@ -141,7 +146,7 @@ public enum CursorJSHookScript {
                         hookVersion: HOOK_VERSION
                     };
                     break;
-                    
+
                 case 'querySelector':
                     const element = document.querySelector(command.selector);
                     result = element ? {
@@ -152,7 +157,7 @@ public enum CursorJSHookScript {
                         text: element.textContent?.substring(0, 100)
                     } : { found: false };
                     break;
-                    
+
                 case 'getElementInfo':
                     const el = document.querySelector(command.selector);
                     if (el) {
@@ -168,7 +173,7 @@ public enum CursorJSHookScript {
                         result = { found: false };
                     }
                     break;
-                    
+
                 case 'clickElement':
                     const target = document.querySelector(command.selector);
                     if (target && target instanceof HTMLElement) {
@@ -178,7 +183,7 @@ public enum CursorJSHookScript {
                         result = { success: false, error: 'Element not found or not clickable' };
                     }
                     break;
-                    
+
                 case 'getActiveElement':
                     const active = document.activeElement;
                     result = {
@@ -188,13 +193,13 @@ public enum CursorJSHookScript {
                         value: active?.value || active?.textContent
                     };
                     break;
-                    
+
                 case 'showNotification':
                     // Display a notification in the console with custom styling
                     const message = command.message || 'Hello from CodeLooper!';
                     const style = command.style || 'background: linear-gradient(45deg, #667eea 0%, #764ba2 100%); color: white; font-size: 14px; padding: 20px; border-radius: 8px; font-weight: bold;';
                     console.log('%c' + message, style);
-                    
+
                     // Try to show a browser notification if permissions allow
                     if (command.browserNotification && typeof Notification !== 'undefined' && Notification.permission === 'granted') {
                         new Notification(command.title || 'CodeLooper', {
@@ -202,20 +207,20 @@ public enum CursorJSHookScript {
                             icon: command.icon || 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="%23667eea" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M8 12a4 4 0 0 0 8 0"/></svg>'
                         });
                     }
-                    
+
                     // Create a temporary DOM element for visual feedback
                     if (command.showToast) {
                         const toast = document.createElement('div');
                         toast.textContent = message;
                         toast.style.cssText = 'position: fixed; top: 20px; right: 20px; background: linear-gradient(45deg, #667eea 0%, #764ba2 100%); color: white; padding: 16px 24px; border-radius: 8px; font-family: -apple-system, BlinkMacSystemFont, sans-serif; font-size: 14px; font-weight: 500; box-shadow: 0 4px 12px rgba(0,0,0,0.15); z-index: 999999; animation: slideIn 0.3s ease-out;';
-                        
+
                         // Add animation
                         const styleEl = document.createElement('style');
                         styleEl.textContent = '@keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }';
                         document.head.appendChild(styleEl);
-                        
+
                         document.body.appendChild(toast);
-                        
+
                         // Remove after delay
                         setTimeout(() => {
                             toast.style.animation = 'slideOut 0.3s ease-in forwards';
@@ -225,22 +230,22 @@ public enum CursorJSHookScript {
                                 styleEl.remove();
                             }, 300);
                         }, command.duration || 3000);
-                        
+
                         // Add slide out animation
                         styleEl.textContent += ' @keyframes slideOut { from { transform: translateX(0); opacity: 1; } to { transform: translateX(100%); opacity: 0; } }';
                     }
-                    
+
                     result = { success: true, message: 'Notification shown' };
                     break;
-                    
+
                 case 'getVersion':
                     result = { version: HOOK_VERSION };
                     break;
-                    
+
                 case 'ping':
                     result = { pong: true, timestamp: new Date().toISOString() };
                     break;
-                    
+
                 case 'rawCode':
                     // Fallback for backward compatibility - will fail with Trusted Types
                     result = {
@@ -248,7 +253,7 @@ public enum CursorJSHookScript {
                         suggestion: 'Available commands: getSystemInfo, querySelector, getElementInfo, clickElement, getActiveElement, showNotification, getVersion, ping'
                     };
                     break;
-                    
+
                 default:
                     result = {
                         error: 'Unknown command type',
@@ -256,7 +261,7 @@ public enum CursorJSHookScript {
                         availableCommands: ['getSystemInfo', 'querySelector', 'getElementInfo', 'clickElement', 'getActiveElement', 'showNotification', 'getVersion', 'ping']
                     };
             }
-            
+
             return result;
         }
 
@@ -270,10 +275,10 @@ public enum CursorJSHookScript {
                     console.log('🔄 CodeLooper: Connected to ' + url);
                     ws.send('ready');
                     reconnectAttempts = 0; // Reset on successful connection
-                    
+
                     // Show success notification
                     showSuccessNotification();
-                    
+
                     // Start heartbeat
                     startHeartbeat(ws);
                 };
@@ -287,7 +292,7 @@ public enum CursorJSHookScript {
                     window.__codeLooperHook = null;
                     window.__codeLooperPort = null;
                     window.__codeLooperVersion = null;
-                    
+
                     // Stop heartbeat
                     if (window.__codeLooperHeartbeat) {
                         clearInterval(window.__codeLooperHeartbeat);
@@ -310,12 +315,12 @@ public enum CursorJSHookScript {
                     try {
                         // Parse message as a command
                         const command = JSON.parse(e.data);
-                        
+
                         // Don't respond to our own heartbeats
                         if (command.type === 'heartbeat') {
                             return;
                         }
-                        
+
                         result = handleCommand(command);
                     } catch (e) {
                         // Fallback for non-JSON messages (backward compatibility)

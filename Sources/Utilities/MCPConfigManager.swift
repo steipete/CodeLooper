@@ -21,23 +21,18 @@ struct MCPRoot: Codable {
 }
 
 struct MCPServerEntry: Codable {
-    // Core MCP server properties matching actual mcp.json format
-    var type: String? // "stdio" for some servers
-    var command: String? // Main command (e.g., "npx", "mise", "env")
-    var args: [String]? // Command arguments
-    var env: [String: String]? // Environment variables
-    var url: String? // For URL-based servers like gitmcp
-    
-    // Internal tracking properties (not in actual mcp.json)
-    var name: String?
-    var enabled: Bool?
-    var version: String? // For XcodeBuildMCP
-    var customCliName: String? // For Claude Code
-    var incrementalBuildsEnabled: Bool? // For XcodeBuildMCP
-    var sentryDisabled: Bool? // For XcodeBuildMCP
-    
+    // MARK: Lifecycle
+
     // Custom initializer for backward compatibility
-    init(name: String? = nil, enabled: Bool? = nil, command: String? = nil, args: [String]? = nil, type: String? = nil, env: [String: String]? = nil, url: String? = nil) {
+    init(
+        name: String? = nil,
+        enabled: Bool? = nil,
+        command: String? = nil,
+        args: [String]? = nil,
+        type: String? = nil,
+        env: [String: String]? = nil,
+        url: String? = nil
+    ) {
         self.name = name
         self.enabled = enabled
         self.command = command
@@ -46,6 +41,23 @@ struct MCPServerEntry: Codable {
         self.env = env
         self.url = url
     }
+
+    // MARK: Internal
+
+    // Core MCP server properties matching actual mcp.json format
+    var type: String? // "stdio" for some servers
+    var command: String? // Main command (e.g., "npx", "mise", "env")
+    var args: [String]? // Command arguments
+    var env: [String: String]? // Environment variables
+    var url: String? // For URL-based servers like gitmcp
+
+    // Internal tracking properties (not in actual mcp.json)
+    var name: String?
+    var enabled: Bool?
+    var version: String? // For XcodeBuildMCP
+    var customCliName: String? // For Claude Code
+    var incrementalBuildsEnabled: Bool? // For XcodeBuildMCP
+    var sentryDisabled: Bool? // For XcodeBuildMCP
 }
 
 // New struct to hold comprehensive status for an MCP
@@ -145,7 +157,13 @@ class MCPConfigManager {
 
     // MARK: - Specific MCP Management (Spec 3.3.D)
 
-    func setMCPEnabled(mcpIdentifier: String, nameForEntry: String, enabled: Bool, defaultCommand: String? = nil, defaultArgs: [String]? = nil) {
+    func setMCPEnabled(
+        mcpIdentifier: String,
+        nameForEntry: String,
+        enabled: Bool,
+        defaultCommand: String? = nil,
+        defaultArgs: [String]? = nil
+    ) {
         ensureMCPFileExists() // Make sure the file exists before trying to modify it
         var currentConfig = readMCPConfig() ?? MCPRoot() // Start with current or default
 
@@ -199,7 +217,7 @@ class MCPConfigManager {
 
         // Determine if enabled based on presence in config (actual mcp.json doesn't have enabled field)
         let isEnabled = true // If it exists in the config, it's enabled
-        
+
         var statusParts: [String] = []
         statusParts.append("Enabled")
 

@@ -120,22 +120,22 @@ extension Defaults.Keys {
 
     // --- Path for the MCP configuration file ---
     static let mcpConfigFilePath = Key<String>("mcpConfigFilePath", default: "~/.cursor/mcp_config.json")
-    
+
     // --- AI Settings ---
     static let aiProvider = Key<AIProvider>("aiProvider", default: .openAI)
     static let aiModel = Key<AIModel>("aiModel", default: .gpt4o)
     static let ollamaBaseURL = Key<String>("ollamaBaseURL", default: "http://localhost:11434")
     static let aiGlobalAnalysisIntervalSeconds = Key<Int>("aiGlobalAnalysisIntervalSeconds", default: 10)
-    
+
     // --- Git Client Settings ---
     static let gitClientApp = Key<String>("gitClientApp", default: "/Applications/Tower.app")
-    
+
     // --- Debug Settings ---
     static let showDebugTab = Key<Bool>("showDebugTab", default: {
         #if DEBUG
-        return true
+            return true
         #else
-        return false
+            return false
         #endif
     }())
     static let useDynamicMenuBarIcon = Key<Bool>("useDynamicMenuBarIcon", default: false)

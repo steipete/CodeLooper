@@ -239,7 +239,6 @@ private struct EmptyStateView: View {
     }
 }
 
-
 // MARK: - Models
 
 private struct MCPExtension: Identifiable {

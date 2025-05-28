@@ -1,7 +1,7 @@
 import AppKit
 import Diagnostics
-import SwiftUI
 @preconcurrency import ScreenCaptureKit
+import SwiftUI
 
 /// A view component that displays screen recording permission status
 /// and provides a button to grant permissions if needed
@@ -40,7 +40,8 @@ struct ScreenRecordingPermissionsView: View {
                         if !compact {
                             Text(viewModel.hasPermissions
                                 ? "CodeLooper can capture Cursor windows for AI analysis."
-                                : "CodeLooper needs permission to capture Cursor windows without shadows for AI analysis.")
+                                :
+                                "CodeLooper needs permission to capture Cursor windows without shadows for AI analysis.")
                                 .font(.caption)
                                 .foregroundColor(.secondary)
                         }
