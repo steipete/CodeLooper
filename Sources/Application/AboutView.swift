@@ -4,56 +4,121 @@ struct AboutView: View {
     // MARK: Internal
 
     var body: some View {
-        VStack(spacing: 15) {
-            Image("logo") // Assuming 'logo_large' exists in Assets
-                .resizable()
-                .aspectRatio(contentMode: .fit)
-                .frame(width: 64, height: 64)
-                .padding(.top)
+        VStack(spacing: 20) {
+            // App Icon with pulsating animation
+            if let appIcon = NSApplication.shared.applicationIconImage {
+                Link(destination: websiteURL) {
+                    Image(nsImage: appIcon)
+                        .resizable()
+                        .frame(width: 128, height: 128)
+                        .cornerRadius(24)
+                        .shadow(radius: 10)
+                        .scaleEffect(pulsateScale)
+                        .animation(
+                            Animation.easeInOut(duration: 2.0)
+                                .repeatForever(autoreverses: true),
+                            value: pulsateScale
+                        )
+                        .onAppear {
+                            pulsateScale = 1.05
+                        }
+                }
+                .buttonStyle(.plain)
+                .padding(.top, 20)
+            }
 
-            Text(appName)
+            Text("CodeLooper")
                 .font(.largeTitle)
                 .fontWeight(.semibold)
 
-            Text("Version \\(appVersion) (Build \\(buildNumber))")
+            Text("The Cursor Connection Guardian")
                 .font(.callout)
                 .foregroundColor(.secondary)
 
-            Text(copyrightInfo)
-                .font(.caption)
-                .foregroundColor(.gray)
-                .padding(.bottom)
-
-            VStack(alignment: .leading, spacing: 10) {
-                Link("CodeLooper Website", destination: websiteURL)
-                Link("Follow @CodeLoopApp on X", destination: twitterURL)
-                Link("View on GitHub", destination: githubURL)
+            HStack(spacing: 10) {
+                Text("Version \(appVersion)")
+                    .font(.caption)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 4)
+                    .background(Color.blue.opacity(0.1))
+                    .cornerRadius(4)
+                
+                Text("Build \(buildNumber)")
+                    .font(.caption)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 4)
+                    .background(Color.gray.opacity(0.1))
+                    .cornerRadius(4)
             }
-            .font(.callout)
 
-            Spacer()
-
-            Text("CodeLooper helps automate and enhance your Cursor experience.")
+            Text("CodeLooper keeps your Cursor AI sessions running smoothly by automatically detecting and resolving connection issues, stuck states, and other common problems.")
                 .font(.footnote)
                 .foregroundColor(.gray)
                 .multilineTextAlignment(.center)
-                .padding(.horizontal)
-                .padding(.bottom)
+                .padding(.horizontal, 30)
+                .padding(.vertical, 10)
+
+            Divider()
+                .padding(.horizontal, 50)
+
+            // Resources section with simple hyperlinks
+            VStack(spacing: 8) {
+                Text("RESOURCES")
+                    .font(.caption)
+                    .fontWeight(.medium)
+                    .foregroundColor(.secondary)
+                    .padding(.bottom, 4)
+
+                HStack(spacing: 4) {
+                    Image(systemName: "globe")
+                        .font(.system(size: 12))
+                        .foregroundColor(.secondary)
+                    Link("Website", destination: websiteURL)
+                        .font(.system(size: 13))
+                }
+
+                HStack(spacing: 4) {
+                    Image(systemName: "doc.text")
+                        .font(.system(size: 12))
+                        .foregroundColor(.secondary)
+                    Link("Documentation", destination: documentationURL)
+                        .font(.system(size: 13))
+                }
+
+                HStack(spacing: 4) {
+                    Image(systemName: "exclamationmark.bubble")
+                        .font(.system(size: 12))
+                        .foregroundColor(.secondary)
+                    Link("Report an Issue", destination: issuesURL)
+                        .font(.system(size: 13))
+                }
+
+                HStack(spacing: 4) {
+                    Image(systemName: "star")
+                        .font(.system(size: 12))
+                        .foregroundColor(.secondary)
+                    Link("Star on GitHub", destination: githubURL)
+                        .font(.system(size: 13))
+                }
+            }
+
+            Spacer()
         }
-        .padding(EdgeInsets(top: 20, leading: 40, bottom: 20, trailing: 40))
-        .frame(width: 400, height: 400)
+        .padding(.horizontal, 40)
+        .padding(.bottom, 30)
+        .frame(width: 400, height: 500)
     }
 
     // MARK: Private
 
-    private let appName = Bundle.main.infoDictionary?["CFBundleName"] as? String ?? "CodeLooper"
+    @State private var pulsateScale: CGFloat = 1.0
+
     private let appVersion = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "Unknown"
     private let buildNumber = Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "Unknown"
-    private let copyrightInfo = Bundle.main.infoDictionary?["NSHumanReadableCopyright"] as? String ?? "© Your Name"
-    private let githubURL = URL(string: Constants.githubRepositoryURL)!
-    private let websiteURL = URL(string: "https://codelooper.app/")!
-    private let twitterURL = URL(string: "https://x.com/CodeLoopApp")!
-}
+    private let githubURL = URL(string: "https://github.com/steipete/codelooper")!
+    private let websiteURL = URL(string: "https://codelooper.app")!
+    private let documentationURL = URL(string: "https://github.com/steipete/codelooper/wiki")!
+    private let issuesURL = URL(string: "https://github.com/steipete/codelooper/issues")!
 
 #if DEBUG
     struct AboutView_Previews: PreviewProvider {

@@ -10,7 +10,6 @@ public enum SettingsTab: String, CaseIterable, Identifiable, Sendable {
     case advanced = "Advanced"
     case log = "Log"
     case debug = "Debug"
-    case about = "About"
 
     // MARK: Public
 
@@ -26,7 +25,6 @@ public enum SettingsTab: String, CaseIterable, Identifiable, Sendable {
         case .advanced: "slider.horizontal.3"
         case .log: "doc.text"
         case .debug: "ladybug"
-        case .about: "info.circle"
         }
     }
 }
