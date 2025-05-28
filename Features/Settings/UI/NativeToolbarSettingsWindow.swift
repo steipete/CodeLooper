@@ -159,7 +159,10 @@ private class PassThroughImageView: NSImageView {
     }
     
     override func mouseDown(with event: NSEvent) {
+        // Call onClick if it's a single click
         onClick?()
+        // Pass the event to super to allow window dragging
+        super.mouseDown(with: event)
     }
     
     override func hitTest(_ point: NSPoint) -> NSView? {
@@ -169,7 +172,7 @@ private class PassThroughImageView: NSImageView {
     }
     
     override var mouseDownCanMoveWindow: Bool {
-        return false // Don't allow window dragging from the icon
+        return true // Allow window dragging from the icon
     }
     
     override func acceptsFirstMouse(for event: NSEvent?) -> Bool {
