@@ -171,7 +171,8 @@ public extension CursorScreenshotAnalyzer {
         Focus on the main functionality and purpose.
         """
         
-        public static let working = """You will receive a screenshot of a VS Code-like window that may include a chat sidebar.
+        public static let working = """
+You will receive a screenshot of a VS Code-like window that may include a chat sidebar.
 
 Your task is to determine if the AI is currently "Generating" content.
 

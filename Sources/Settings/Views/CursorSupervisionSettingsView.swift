@@ -86,7 +86,7 @@ struct CursorSupervisionSettingsView: View {
             logger.info("Tapped on settings window item: \(window.windowTitle ?? window.id). Attempting to raise.")
             if let axElement = window.windowAXElement {
                 do {
-                    try axElement.performAction(AXActionNames.kAXRaiseAction)
+                    try axElement.performAction(.raise)
                     logger.info("Successfully performed raise action for settings window: \(window.windowTitle ?? window.id)")
                 } catch {
                     logger.warning("Failed to perform raise action for settings window: \(window.windowTitle ?? window.id): \(error)")

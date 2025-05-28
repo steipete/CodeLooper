@@ -175,18 +175,17 @@ class MenuBarIconManager: ObservableObject {
         // Simple text representation for non-AI states for now
         // This can be enhanced with SF Symbols or other icons as AttributedStrings
         var attributes = AttributeContainer()
-        // Font assignment with Sendable workaround
-        let font = NSFont.systemFont(ofSize: 12)
-        attributes.font = font
+        attributes.font = .systemFont(ofSize: 12) // Example font
         attributes.foregroundColor = appearance == .darkAqua ? .white : .black
 
         var iconString: String
         switch state {
-        case .idle: iconString = "○"
-        case .paused: iconString = "⏸︎"
+        case .idle, .paused: // If idle or paused, return an empty AttributedString
+            return AttributedString()
         case .error: iconString = "⚠️"
         case .syncing: iconString = "🔄"
-        default: iconString = "●"
+        // Add other cases as needed
+        default: iconString = "●" // Default for other unhandled states, can also be empty or specific
         }
         return AttributedString(iconString, attributes: attributes)
     }

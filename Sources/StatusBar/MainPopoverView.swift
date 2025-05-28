@@ -98,21 +98,19 @@ struct MainPopoverView: View {
                         .padding(.vertical, 4)
                         .contentShape(Rectangle())
                         .onTapGesture {
-                            Self.logger.info("Tapped on window item: \(windowState.windowTitle ?? windowState.id). Attempting to raise.")
+                            logger.info("Tapped on window item: \(windowState.windowTitle ?? windowState.id). Attempting to raise.")
                             if let axElement = windowState.windowAXElement {
-                                do {
-                                    try axElement.performAction(AXActionNames.kAXRaiseAction)
-                                    Self.logger.info("Successfully performed raise action for window: \(windowState.windowTitle ?? windowState.id)")
-                                } catch {
-                                    Self.logger.warning("Failed to perform raise action for window: \(windowState.windowTitle ?? windowState.id): \(error)")
+                                if axElement.performAction(.raise) {
+                                    logger.info("Successfully performed raise action for window: \(windowState.windowTitle ?? windowState.id)")
+                                } else {
+                                    logger.warning("Failed to perform raise action for window: \(windowState.windowTitle ?? windowState.id)")
                                 }
                             } else {
-                                Self.logger.warning("Cannot raise window: AXElement is nil for \(windowState.windowTitle ?? windowState.id)")
+                                logger.warning("Cannot raise window: AXElement is nil for \(windowState.windowTitle ?? windowState.id)")
                             }
                         }
                     }
                     .listStyle(.plain)
-                    .frame(minHeight: 100, maxHeight: 250) // Adjusted height
                 }
             } else {
                 if isGlobalMonitoringEnabled {
@@ -146,7 +144,8 @@ struct MainPopoverView: View {
             .padding(.top, 5)
         }
         .padding()
-        .frame(width: 480, height: 550) // Increased popover size
+        .frame(width: 480)
+        .fixedSize(horizontal: false, vertical: true)
     }
 
     // MARK: Private
