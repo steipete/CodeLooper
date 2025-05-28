@@ -43,7 +43,11 @@ final class AppleScriptInjector {
 
     private func buildAppleScript(javascript js: String, skipDevToolsToggle: Bool) -> String {
         let logger = Logger(category: .jshook)
-        let windowTarget = targetWindowTitle != nil ? "window \"\(targetWindowTitle!)\"" : "front window"
+        let windowTarget = if let targetTitle = targetWindowTitle {
+            "(first window whose name is \"\(targetTitle)\")"
+        } else {
+            "front window"
+        }
         logger.debug("🎯 AppleScript window target: \(windowTarget)")
 
         let devToolsToggleScript = if !skipDevToolsToggle {
