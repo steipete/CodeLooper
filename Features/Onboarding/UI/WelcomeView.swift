@@ -525,168 +525,225 @@ struct CompletionStepView: View {
     var viewModel: WelcomeViewModel
 
     var body: some View {
-        VStack(spacing: 20) { // Consistent spacing
-            Spacer(minLength: 10)
-            // Header
-            VStack(spacing: 15) { // Adjusted spacing
-                Image("logo") // Keep logo for brand reinforcement
-                    .resizable()
-                    .aspectRatio(contentMode: .fit)
-                    .frame(width: 70, height: 70)
-                    .padding(.top, 20)
-
-                // Title is now handled by the parent WelcomeView if the new structure is kept.
-                // Text("All Set! 🎉")
-                // .font(.title3.weight(.semibold))
-                // .padding(.bottom, 8)
-
-                Text("CodeLooper is now configured and ready to assist you!")
-                    .font(.headline.weight(.regular))
-                    .foregroundColor(.secondary)
-                    .multilineTextAlignment(.center)
-                    .lineSpacing(4)
-                    .padding(.horizontal, 40)
-                    .padding(.bottom, 20)
-            }
-
-            // Main content with success message
-            VStack(spacing: 25) { // Adjusted spacing
-                VStack(spacing: 20) { // Adjusted spacing
-                    // Success icon
-                    ZStack {
-                        Circle()
-                            .fill(Color.green.opacity(0.8))
-                            .frame(width: 90, height: 90) // Slightly smaller
-
-                        Image(systemName: "checkmark.circle.fill") // Using a filled system icon
-                            .resizable()
-                            .aspectRatio(contentMode: .fit)
-                            .frame(width: 50) // Adjusted size
-                            .foregroundColor(.white)
-                    }
-                    .padding(.top, 10)
-
-                    // Success info
-                    VStack(spacing: 12) { // Adjusted spacing
-                        Text("CodeLooper will run quietly in your menu bar.")
-                            .font(.callout.weight(.medium))
-                            .foregroundColor(.primary)
-
-                        Text("Access its features and settings from the menu bar icon at any time.")
-                            .font(.caption)
-                            .foregroundColor(.secondary)
-                            .multilineTextAlignment(.center)
-                            .lineSpacing(3)
-                            .padding(.horizontal, 30)
-                    }
-
-                    // Start at login reminder
-                    if viewModel.startAtLogin {
-                        HStack {
-                            Image(systemName: "checkmark.seal.fill")
-                                .foregroundColor(.green)
-                            Text("CodeLooper will start automatically at login.")
-                                .font(.caption)
-                                .foregroundColor(.secondary)
-                        }
-                        .padding(.top, 5)
-                    }
+        VStack(spacing: Spacing.xLarge) {
+            Spacer()
+            
+            // Success animation
+            VStack(spacing: Spacing.large) {
+                ZStack {
+                    // Animated circles
+                    Circle()
+                        .fill(ColorPalette.success.opacity(0.1))
+                        .frame(width: 150, height: 150)
+                        .scaleEffect(1.2)
+                        .animation(.easeInOut(duration: 2).repeatForever(autoreverses: true), value: true)
+                    
+                    Circle()
+                        .fill(ColorPalette.success.opacity(0.15))
+                        .frame(width: 120, height: 120)
+                        .scaleEffect(1.1)
+                        .animation(.easeInOut(duration: 1.5).repeatForever(autoreverses: true), value: true)
+                    
+                    Circle()
+                        .fill(
+                            LinearGradient(
+                                gradient: Gradient(colors: [
+                                    ColorPalette.success,
+                                    ColorPalette.success.opacity(0.8)
+                                ]),
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            )
+                        )
+                        .frame(width: 90, height: 90)
+                    
+                    Image(systemName: "checkmark")
+                        .font(.system(size: 45, weight: .bold))
+                        .foregroundColor(.white)
                 }
-                .padding(30) // Adjusted padding
-                // .background(Color(.windowBackgroundColor).brightness(-0.03)) // Removing background
-                // .cornerRadius(12) // Removing corner radius
-                .frame(maxWidth: 400)
+                .onAppear {
+                    // Trigger animations
+                }
+                
+                VStack(spacing: Spacing.small) {
+                    Text("You're All Set!")
+                        .font(Typography.largeTitle(.bold))
+                        .foregroundColor(ColorPalette.text)
+                    
+                    Text("CodeLooper is ready to supercharge your Cursor experience")
+                        .font(Typography.body())
+                        .foregroundColor(ColorPalette.textSecondary)
+                        .multilineTextAlignment(.center)
+                        .padding(.horizontal, Spacing.large)
+                }
             }
-            .padding(.horizontal, 20)
-
-            Spacer(minLength: 20)
-
-            // Get started button
-            Button {
+            
+            // Summary cards
+            VStack(spacing: Spacing.medium) {
+                // Permissions granted
+                HStack(spacing: Spacing.medium) {
+                    Image(systemName: "shield.checkered")
+                        .font(.system(size: 20))
+                        .foregroundColor(ColorPalette.success)
+                    
+                    VStack(alignment: .leading, spacing: Spacing.xSmall) {
+                        Text("All Permissions Granted")
+                            .font(Typography.body(.medium))
+                            .foregroundColor(ColorPalette.text)
+                        
+                        Text("CodeLooper has the access it needs to assist you")
+                            .font(Typography.caption1())
+                            .foregroundColor(ColorPalette.textSecondary)
+                    }
+                    
+                    Spacer()
+                }
+                .padding(Spacing.medium)
+                .background(ColorPalette.success.opacity(0.1))
+                .cornerRadius(Layout.CornerRadius.medium)
+                
+                // Menu bar access
+                HStack(spacing: Spacing.medium) {
+                    Image(systemName: "menubar.rectangle")
+                        .font(.system(size: 20))
+                        .foregroundColor(ColorPalette.primary)
+                    
+                    VStack(alignment: .leading, spacing: Spacing.xSmall) {
+                        Text("Access from Menu Bar")
+                            .font(Typography.body(.medium))
+                            .foregroundColor(ColorPalette.text)
+                        
+                        Text("Click the chain link icon in your menu bar anytime")
+                            .font(Typography.caption1())
+                            .foregroundColor(ColorPalette.textSecondary)
+                    }
+                    
+                    Spacer()
+                }
+                .padding(Spacing.medium)
+                .background(ColorPalette.primary.opacity(0.1))
+                .cornerRadius(Layout.CornerRadius.medium)
+                
+                // Auto start reminder if enabled
+                if viewModel.startAtLogin {
+                    HStack(spacing: Spacing.medium) {
+                        Image(systemName: "power.circle.fill")
+                            .font(.system(size: 20))
+                            .foregroundColor(ColorPalette.info)
+                        
+                        VStack(alignment: .leading, spacing: Spacing.xSmall) {
+                            Text("Auto-Start Enabled")
+                                .font(Typography.body(.medium))
+                                .foregroundColor(ColorPalette.text)
+                            
+                            Text("CodeLooper will start automatically at login")
+                                .font(Typography.caption1())
+                                .foregroundColor(ColorPalette.textSecondary)
+                        }
+                        
+                        Spacer()
+                    }
+                    .padding(Spacing.medium)
+                    .background(ColorPalette.info.opacity(0.1))
+                    .cornerRadius(Layout.CornerRadius.medium)
+                }
+            }
+            .frame(maxWidth: 500)
+            .padding(.horizontal, Spacing.large)
+            
+            Spacer()
+            
+            // Finish button
+            DSButton("Start Using CodeLooper", style: .primary) {
                 viewModel.finishOnboarding()
-            } label: {
-                Text("Start Using CodeLooper")
-                    .fontWeight(.medium)
-                    .frame(maxWidth: 250) // Consistent button width
-                    .padding()
-                    .background(Color.accentColor)
-                    .foregroundColor(.white)
-                    .cornerRadius(10)
             }
-            .buttonStyle(.plain)
-            .padding(.bottom, 20)
+            .frame(width: 250)
+            
+            // Pro tip
+            Text("💡 Pro tip: Use ⌘+⇧+L to quickly toggle monitoring")
+                .font(Typography.caption1())
+                .foregroundColor(ColorPalette.textTertiary)
+                .padding(.bottom, Spacing.large)
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .frame(maxWidth: 700)
     }
 }
 
-// MARK: - Footer View
+// MARK: - Progress Bar
 
-struct FooterView: View {
-    var viewModel: WelcomeViewModel
-
+struct ProgressBar: View {
+    let currentStep: WelcomeStep
+    
     var body: some View {
-        VStack(spacing: 20) {
-            // Progress indicators using Grid for evenly spaced dots
-            Grid(alignment: .center, horizontalSpacing: 10) {
-                GridRow {
-                    ForEach(WelcomeStep.allCases, id: \.self) { step in
-                        let isActive = viewModel.currentStep.rawValue >= step.rawValue
-                        let fillColor = isActive ? Color.accentColor : Color.gray.opacity(0.3)
-
-                        Circle()
-                            .fill(fillColor)
-                            .frame(width: 8, height: 8)
-                            .gridCellAnchor(.center)
-                    }
-                }
-            }
-            .padding(.bottom, 5)
-
-            // Navigation buttons with Grid for better alignment
-            Grid {
-                GridRow {
-                    Button(
-                        action: {
-                            viewModel.goToPreviousStep()
-                        },
-                        label: {
-                            HStack(spacing: 6) {
-                                Image(systemName: "chevron.left")
-                                Text("Back")
-                            }
-                            .foregroundColor(Color.accentColor)
-                            .font(.system(size: 15, weight: .medium))
-                        }
+        GeometryReader { geometry in
+            ZStack(alignment: .leading) {
+                // Background
+                RoundedRectangle(cornerRadius: 4)
+                    .fill(ColorPalette.backgroundSecondary)
+                    .frame(height: 8)
+                
+                // Progress
+                RoundedRectangle(cornerRadius: 4)
+                    .fill(
+                        LinearGradient(
+                            gradient: Gradient(colors: [
+                                ColorPalette.primary,
+                                ColorPalette.primaryLight
+                            ]),
+                            startPoint: .leading,
+                            endPoint: .trailing
+                        )
                     )
-                    .buttonStyle(PlainButtonStyle())
-                    .gridCellAnchor(.leading)
-
-                    Button(
-                        action: {
-                            viewModel.goToNextStep()
-                        },
-                        label: {
-                            HStack(spacing: 6) {
-                                Text("Continue")
-                                Image(systemName: "chevron.right")
-                            }
-                            .font(.system(size: 15, weight: .medium))
-                            .foregroundColor(.white)
-                            .padding(.horizontal, 18)
-                            .padding(.vertical, 10)
-                            .background(Color.accentColor)
-                            .cornerRadius(8)
-                        }
-                    )
-                    .buttonStyle(PlainButtonStyle())
-                    .gridCellAnchor(.trailing)
-                }
+                    .frame(width: progressWidth(in: geometry.size.width), height: 8)
+                    .animation(.spring(response: 0.4, dampingFraction: 0.8), value: currentStep)
             }
-            .frame(maxWidth: .infinity)
         }
-        .padding(.horizontal, 40)
-        .padding(.bottom, 30)
+        .frame(height: 8)
+    }
+    
+    private func progressWidth(in totalWidth: CGFloat) -> CGFloat {
+        let steps = WelcomeStep.allCases.count
+        let currentIndex = CGFloat(currentStep.rawValue + 1)
+        return (currentIndex / CGFloat(steps)) * totalWidth
+    }
+}
+
+// MARK: - Modern Footer View
+
+struct ModernFooterView: View {
+    var viewModel: WelcomeViewModel
+    
+    var body: some View {
+        HStack {
+            // Back button
+            if viewModel.currentStep != .welcome {
+                DSButton("Back", style: .secondary) {
+                    viewModel.goToPreviousStep()
+                }
+                .frame(width: 100)
+            }
+            
+            Spacer()
+            
+            // Step indicator
+            HStack(spacing: Spacing.small) {
+                ForEach(WelcomeStep.allCases, id: \.self) { step in
+                    Circle()
+                        .fill(step == viewModel.currentStep ? ColorPalette.primary : ColorPalette.backgroundSecondary)
+                        .frame(width: 8, height: 8)
+                        .animation(.spring(response: 0.3), value: viewModel.currentStep)
+                }
+            }
+            
+            Spacer()
+            
+            // Continue button
+            DSButton(viewModel.currentStep == .settings ? "Complete Setup" : "Continue", style: .primary) {
+                viewModel.goToNextStep()
+            }
+            .frame(width: viewModel.currentStep == .settings ? 150 : 100)
+        }
+        .frame(maxWidth: .infinity)
     }
 }
 
