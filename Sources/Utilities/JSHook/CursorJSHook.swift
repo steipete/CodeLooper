@@ -299,8 +299,12 @@ public final class CursorJSHook {
     private func injectViaAppleScript() throws {
         print("🎯 Starting AppleScript injection for \(self.applicationName)")
 
+        // Check if dev console is already open
+        let isConsoleOpen = DevConsoleDetector.isDevConsoleOpen(in: self.applicationName)
+        print("🔍 Dev console already open: \(isConsoleOpen)")
+
         let js = try generateJavaScriptHook()
-        let script = buildAppleScript(javascript: js)
+        let script = buildAppleScript(javascript: js, skipDevToolsToggle: isConsoleOpen)
 
         try executeAppleScript(script)
     }
@@ -314,8 +318,22 @@ public final class CursorJSHook {
         }
     }
 
-    private func buildAppleScript(javascript js: String) -> String {
+    private func buildAppleScript(javascript js: String, skipDevToolsToggle: Bool = false) -> String {
         let windowTarget = targetWindowTitle != nil ? "window \"\(targetWindowTitle!)\"" : "front window"
+
+        let devToolsToggleScript = if !skipDevToolsToggle {
+            """
+                # Use menu bar to open developer tools
+                # Access Help menu and click Toggle Developer Tools
+                click menu item "Toggle Developer Tools" of menu 1 of menu bar item "Help" of menu bar 1
+                delay 3.0
+            """
+        } else {
+            """
+                # Dev console already open, skipping toggle
+                delay 0.5
+            """
+        }
 
         return """
         tell application "\(self.applicationName)"
@@ -333,10 +351,7 @@ public final class CursorJSHook {
                 set focused of targetWindow to true
                 delay 0.5
 
-                # Use menu bar to open developer tools
-                # Access Help menu and click Toggle Developer Tools
-                click menu item "Toggle Developer Tools" of menu 1 of menu bar item "Help" of menu bar 1
-                delay 3.0
+                \(devToolsToggleScript)
                 
                 # Focus on the console tab (if not already selected)
                 # Click in the console input area at the bottom
