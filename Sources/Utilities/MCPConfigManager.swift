@@ -9,27 +9,43 @@ struct MCPRoot: Codable {
     // MARK: Lifecycle
 
     // Initialize with empty servers and no shortcut if creating a new file
-    init(mcpServers: [String: MCPServerEntry]? = [:]) {
+    init(mcpServers: [String: MCPServerEntry]? = [:], globalShortcut: String? = "") {
         self.mcpServers = mcpServers
+        self.globalShortcut = globalShortcut
     }
 
     // MARK: Internal
 
     var mcpServers: [String: MCPServerEntry]? // Dictionary of MCP server configurations
+    var globalShortcut: String? // Global shortcut configuration
 }
 
 struct MCPServerEntry: Codable {
-    // Common properties for all MCP servers
-    var name: String
-    var enabled: Bool
-    var command: [String]? // For command-line based MCPs like Claude Code, XcodeBuild
-    // Add other MCP-specific properties here as needed
-    // e.g., version for XcodeBuild, cliName for Claude Code
+    // Core MCP server properties matching actual mcp.json format
+    var type: String? // "stdio" for some servers
+    var command: String? // Main command (e.g., "npx", "mise", "env")
+    var args: [String]? // Command arguments
+    var env: [String: String]? // Environment variables
+    var url: String? // For URL-based servers like gitmcp
+    
+    // Internal tracking properties (not in actual mcp.json)
+    var name: String?
+    var enabled: Bool?
     var version: String? // For XcodeBuildMCP
     var customCliName: String? // For Claude Code
-    // For macOS Automator, specific script paths or identifiers might be stored
     var incrementalBuildsEnabled: Bool? // For XcodeBuildMCP
     var sentryDisabled: Bool? // For XcodeBuildMCP
+    
+    // Custom initializer for backward compatibility
+    init(name: String? = nil, enabled: Bool? = nil, command: String? = nil, args: [String]? = nil, type: String? = nil, env: [String: String]? = nil, url: String? = nil) {
+        self.name = name
+        self.enabled = enabled
+        self.command = command
+        self.args = args
+        self.type = type
+        self.env = env
+        self.url = url
+    }
 }
 
 // New struct to hold comprehensive status for an MCP
@@ -38,7 +54,11 @@ struct MCPFullStatus {
     var name: String
     var enabled: Bool
     var displayStatus: String
-    var command: [String]?
+    var command: String?
+    var args: [String]?
+    var type: String?
+    var env: [String: String]?
+    var url: String?
     var version: String?
     var customCliName: String?
     var incrementalBuildsEnabled: Bool?
@@ -71,7 +91,7 @@ class MCPConfigManager {
             let data = try Data(contentsOf: mcpFilePath)
             let decoder = JSONDecoder()
             let config = try decoder.decode(MCPRoot.self, from: data)
-            logger.info("Successfully read mcp.json")
+            logger.info("Successfully read mcp.json with \(config.mcpServers?.count ?? 0) servers")
             return config
         } catch {
             logger.error("Failed to read or decode mcp.json: \(error.localizedDescription)")
@@ -125,7 +145,7 @@ class MCPConfigManager {
 
     // MARK: - Specific MCP Management (Spec 3.3.D)
 
-    func setMCPEnabled(mcpIdentifier: String, nameForEntry: String, enabled: Bool, defaultCommand: [String]? = nil) {
+    func setMCPEnabled(mcpIdentifier: String, nameForEntry: String, enabled: Bool, defaultCommand: String? = nil, defaultArgs: [String]? = nil) {
         ensureMCPFileExists() // Make sure the file exists before trying to modify it
         var currentConfig = readMCPConfig() ?? MCPRoot() // Start with current or default
 
@@ -141,6 +161,9 @@ class MCPConfigManager {
             entry.enabled = true
             if entry.command == nil, let defaultCommand {
                 entry.command = defaultCommand
+            }
+            if entry.args == nil, let defaultArgs {
+                entry.args = defaultArgs
             }
             currentConfig.mcpServers?[mcpIdentifier] = entry
             logger.info("Set MCP \(mcpIdentifier) enabled state to true")
@@ -163,6 +186,10 @@ class MCPConfigManager {
                 enabled: false,
                 displayStatus: "Not Configured",
                 command: nil,
+                args: nil,
+                type: nil,
+                env: nil,
+                url: nil,
                 version: nil,
                 customCliName: nil,
                 incrementalBuildsEnabled: nil,
@@ -170,12 +197,11 @@ class MCPConfigManager {
             )
         }
 
+        // Determine if enabled based on presence in config (actual mcp.json doesn't have enabled field)
+        let isEnabled = true // If it exists in the config, it's enabled
+        
         var statusParts: [String] = []
-        if entry.enabled {
-            statusParts.append("Enabled")
-        } else {
-            statusParts.append("Disabled")
-        }
+        statusParts.append("Enabled")
 
         if let version = entry.version, !version.isEmpty {
             statusParts.append("v\(version)")
@@ -186,16 +212,25 @@ class MCPConfigManager {
         if entry.incrementalBuildsEnabled == true {
             statusParts.append("(Incremental)")
         }
-        // Sentry status might not be something to show in a brief status string unless specifically required.
+        // Add command info for display
+        if let command = entry.command {
+            statusParts.append("(\(command))")
+        } else if let url = entry.url {
+            statusParts.append("(URL)")
+        }
 
         let displayStatus = statusParts.joined(separator: " ")
 
         return MCPFullStatus(
             id: mcpIdentifier,
-            name: entry.name,
-            enabled: entry.enabled,
-            displayStatus: displayStatus.isEmpty ? (entry.enabled ? "Enabled" : "Disabled") : displayStatus,
+            name: entry.name ?? mcpIdentifier,
+            enabled: isEnabled,
+            displayStatus: displayStatus.isEmpty ? "Enabled" : displayStatus,
             command: entry.command,
+            args: entry.args,
+            type: entry.type,
+            env: entry.env,
+            url: entry.url,
             version: entry.version,
             customCliName: entry.customCliName,
             incrementalBuildsEnabled: entry.incrementalBuildsEnabled,
