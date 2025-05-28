@@ -19,6 +19,11 @@ struct CodeLooperApp: App {
 
         logger.info("CodeLooperApp initialized. ScenePhase: \(scenePhase)")
 
+        // Check MCP extension versions on startup
+        Task {
+            await MCPVersionService.shared.checkAllVersions()
+        }
+
         // Opens settings automatically in debug builds for faster development
         #if DEBUG
             DispatchQueue.main.async {
