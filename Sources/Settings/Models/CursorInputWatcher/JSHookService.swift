@@ -90,36 +90,26 @@ class JSHookService {
     private let logger = Logger(category: .supervision)
     
     private func checkConsoleForHooks(_ element: Element) async -> String? {
-        let script = """
-        (function() {
-            if (window.cursorHook) {
-                return JSON.stringify({
-                    version: window.cursorHook.version,
-                    port: window.cursorHook.port,
-                    status: 'active'
-                });
-            }
-            return null;
-        })();
-        """
+        // TODO: Implement JavaScript execution via AXorcist
+        // Script to check for existing hooks:
+        // (function() {
+        //     if (window.cursorHook) {
+        //         return JSON.stringify({
+        //             version: window.cursorHook.version,
+        //             port: window.cursorHook.port,
+        //             status: 'active'
+        //         });
+        //     }
+        //     return null;
+        // })();
         
-        do {
-            // TODO: Implement JavaScript execution via AXorcist
-            // For now, return nil
-            let result: String? = nil
-            if let result = result {
-                return result
-            }
-        } catch {
-            logger.debug("Console check failed: \(error)")
-        }
-        
+        // For now, return nil
         return nil
     }
     
     private func probePort(_ port: UInt16, for window: MonitoredWindowInfo, portManager: PortManager) async -> Bool {
         do {
-            let hook = try await CursorJSHook(port: port)
+            _ = try await CursorJSHook(port: port)
             // TODO: Implement test connection method
             let isConnected = false
             if isConnected {
@@ -136,14 +126,14 @@ class JSHookService {
     }
     
     private func installNewHook(in window: MonitoredWindowInfo, portManager: PortManager) async {
-        guard let element = window.windowAXElement else {
+        guard window.windowAXElement != nil else {
             logger.error("No AXElement for window \(window.id)")
             return
         }
         
         let port = portManager.getOrAssignPort(for: window.id)
         do {
-            let hook = try await CursorJSHook(port: port)
+            _ = try await CursorJSHook(port: port)
             // TODO: Implement install in browser method
             // For now, just mark as hooked
             hookedWindows.insert(window.id)

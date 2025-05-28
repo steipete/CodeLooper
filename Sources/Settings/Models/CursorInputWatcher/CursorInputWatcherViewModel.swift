@@ -214,7 +214,7 @@ class CursorInputWatcherViewModel: ObservableObject {
             return
         }
         
-        let targetWindow = cursorWindows[0]
+        // Use first window for query - TODO: Implement proper window selection
         // TODO: Implement actual query execution
         let response = HandlerResponse.success(data: nil)
         await processQueryResponse(response, queryData: queryData, inputInfo: inputInfo, at: index)
