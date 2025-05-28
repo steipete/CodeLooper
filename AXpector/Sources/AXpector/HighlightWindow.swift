@@ -1,7 +1,14 @@
 import Cocoa
 
 class HighlightWindow: NSWindow {
-    override init(contentRect: NSRect, styleMask style: NSWindow.StyleMask, backing backingStoreType: NSWindow.BackingStoreType, defer flag: Bool) {
+    // MARK: Lifecycle
+
+    override init(
+        contentRect: NSRect,
+        styleMask _: NSWindow.StyleMask,
+        backing _: NSWindow.BackingStoreType,
+        defer flag: Bool
+    ) {
         super.init(contentRect: contentRect, styleMask: [.borderless], backing: .buffered, defer: flag)
 
         self.isOpaque = false
@@ -12,12 +19,14 @@ class HighlightWindow: NSWindow {
         self.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary] // Show on all spaces
     }
 
+    // MARK: Internal
+
     // Clicks through the window
     override var canBecomeKey: Bool {
-        return false
+        false
     }
 
     override var canBecomeMain: Bool {
-        return false
+        false
     }
-} 
+}

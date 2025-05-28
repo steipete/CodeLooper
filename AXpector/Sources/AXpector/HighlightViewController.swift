@@ -2,11 +2,27 @@ import Cocoa
 
 // The custom view that will draw the highlight
 class HighlightView: NSView {
-    var highlightColor: NSColor = NSColor.red.withAlphaComponent(0.3) {
+    // MARK: Lifecycle
+
+    // Ensure the view is transparent where not drawn
+    override init(frame frameRect: NSRect) {
+        super.init(frame: frameRect)
+        // No specific setup needed here for transparency, as the window is transparent.
+    }
+
+    @available(*, unavailable)
+    required init?(coder _: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+
+    // MARK: Internal
+
+    var highlightColor: NSColor = .red.withAlphaComponent(0.3) {
         didSet {
             needsDisplay = true // Redraw if color changes
         }
     }
+
     var borderWidth: CGFloat = 3.0 {
         didSet {
             needsDisplay = true
@@ -24,26 +40,16 @@ class HighlightView: NSView {
         let borderInset = borderWidth / 2.0 // Inset to keep border within bounds
         let borderRect = bounds.insetBy(dx: borderInset, dy: borderInset)
         context.stroke(borderRect)
-        
+
         // Optionally, fill the rect with a very light color
         // highlightColor.withAlphaComponent(0.1).setFill()
         // NSBezierPath(rect: bounds).fill()
-    }
-
-    // Ensure the view is transparent where not drawn
-    override init(frame frameRect: NSRect) {
-        super.init(frame: frameRect)
-        // No specific setup needed here for transparency, as the window is transparent.
-    }
-
-    required init?(coder: NSCoder) {
-        fatalError("init(coder:) has not been implemented")
     }
 }
 
 // The view controller for the highlight window
 class HighlightViewController: NSViewController {
-    private var highlightView: HighlightView!
+    // MARK: Internal
 
     override func loadView() {
         highlightView = HighlightView()
@@ -51,19 +57,23 @@ class HighlightViewController: NSViewController {
     }
 
     func updateHighlight(color: NSColor? = nil, borderWidth: CGFloat? = nil) {
-        if let color = color {
+        if let color {
             highlightView.highlightColor = color
         }
-        if let borderWidth = borderWidth {
+        if let borderWidth {
             highlightView.borderWidth = borderWidth
         }
         // The view will redraw itself due to didSet in HighlightView
     }
+
+    // MARK: Private
+
+    private var highlightView: HighlightView!
 }
 
 // Controller for the highlight window itself
 class HighlightWindowController: NSWindowController {
-    private var highlightViewController: HighlightViewController!
+    // MARK: Lifecycle
 
     convenience init() {
         let highlightVC = HighlightViewController()
@@ -74,17 +84,19 @@ class HighlightWindowController: NSWindowController {
         self.highlightViewController = highlightVC
     }
 
+    // MARK: Internal
+
     func showHighlight(at frame: NSRect, color: NSColor? = nil, borderWidth: CGFloat? = nil) {
         guard let window = self.window as? HighlightWindow else { return }
-        
+
         // Ensure frame is valid
-        guard frame.width > 0 && frame.height > 0 else {
+        guard frame.width > 0, frame.height > 0 else {
             hideHighlight()
             return
         }
-        
+
         highlightViewController.updateHighlight(color: color, borderWidth: borderWidth)
-        
+
         // Order the window out before setting the frame to prevent animation artifacts
         // if it was previously visible at a different location/size.
         window.orderOut(nil)
@@ -95,4 +107,8 @@ class HighlightWindowController: NSWindowController {
     func hideHighlight() {
         self.window?.orderOut(nil)
     }
-} 
+
+    // MARK: Private
+
+    private var highlightViewController: HighlightViewController!
+}

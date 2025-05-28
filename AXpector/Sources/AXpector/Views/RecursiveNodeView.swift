@@ -4,6 +4,7 @@ import SwiftUI
 struct RecursiveNodeView: View {
     @ObservedObject var node: AXPropertyNode // Now an ObservedObject
     @Binding var selectedNodeID: AXPropertyNode.ID?
+
     let viewModel: AXpectorViewModel // Pass viewModel for actions
 
     var body: some View {
@@ -28,15 +29,15 @@ struct RecursiveNodeView: View {
                     NodeLabel(node: node, selectedNodeID: $selectedNodeID, viewModel: viewModel)
                 }
             )
-            .onChange(of: node.isExpanded) { oldValue, newValue in
-                if newValue && node.hasChildrenAXProperty && !node.areChildrenFullyLoaded && !node.isLoadingChildren {
+            .onChange(of: node.isExpanded) { _, newValue in
+                if newValue, node.hasChildrenAXProperty, !node.areChildrenFullyLoaded, !node.isLoadingChildren {
                     viewModel.expandNodeAndLoadChildren(node)
                 }
             }
-            .id(node.id) 
+            .id(node.id)
         } else {
             NodeLabel(node: node, selectedNodeID: $selectedNodeID, viewModel: viewModel)
-                .id(node.id) 
+                .id(node.id)
         }
     }
-} 
+}
