@@ -37,9 +37,9 @@ Warning: These tools give your agent full power over your system, so integrate a
 
 ## System Requirements
 
-- **macOS Version**: macOS 14 (Sonoma) or later
-- **Architecture**: Universal Binary (Apple Silicon and Intel)
-- **Accessibility**: Requires accessibility permissions for IDE automation
+- **macOS Version**: macOS 15 (Sequoia)
+- **Architecture**: Apple Silicon
+- **Accessibility**: Requires accessibility, automation and screen capture permissions for IDE automation
 
 ### Getting Started
 
