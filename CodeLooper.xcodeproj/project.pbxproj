@@ -128,6 +128,7 @@
 		AD11CB18D8F7CE24E73C854F /* Debouncer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2211667F248167934388EAC1 /* Debouncer.swift */; };
 		AE0B126099035C9EC60FDF68 /* ElementHeuristic.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9386E52AE43115F927B9F46E /* ElementHeuristic.swift */; };
 		AE40CB2D386F76F851DF362B /* cursor-hook.js in Resources */ = {isa = PBXBuildFile; fileRef = 987465FE6147F57B5B370533 /* cursor-hook.js */; };
+		AF117898DB9DE292A02E63F4 /* Lottie in Frameworks */ = {isa = PBXBuildFile; productRef = 0296B9A9308E381618870C5E /* Lottie */; };
 		B0159087705E32209E77B537 /* FileLogger.swift in Sources */ = {isa = PBXBuildFile; fileRef = 70CB63C0A4B720286208438E /* FileLogger.swift */; };
 		B1A0FBBB30C116CAA5CF7255 /* AdvancedSettingsTab.swift in Sources */ = {isa = PBXBuildFile; fileRef = ED99E5C6403C18B582D9F473 /* AdvancedSettingsTab.swift */; };
 		B3E5C470B686C17E153AB004 /* AppEnvironment.swift in Sources */ = {isa = PBXBuildFile; fileRef = A78799854F3184746818B6C8 /* AppEnvironment.swift */; };
@@ -392,6 +393,7 @@
 				3D7B10ABA123C457786F8711 /* MenuBarExtraAccess in Frameworks */,
 				26DEF8E209C4E833EE8C2048 /* OpenAI in Frameworks */,
 				BDFA492781204ACB586E5163 /* Ollama in Frameworks */,
+				AF117898DB9DE292A02E63F4 /* Lottie in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -866,6 +868,7 @@
 				06D663B62700F815A9F0BEB6 /* MenuBarExtraAccess */,
 				0AA445C586C5EFF298BD5B0D /* OpenAI */,
 				0B727DC7A228F234F413942E /* Ollama */,
+				0296B9A9308E381618870C5E /* Lottie */,
 			);
 			productName = CodeLooper;
 			productReference = 72CAF9D1E03CFD28069B089F /* CodeLooper.app */;
@@ -893,6 +896,7 @@
 			mainGroup = 976832951D3F36585540720A;
 			packageReferences = (
 				C8F327DDD4E6265D93970A6C /* XCRemoteSwiftPackageReference "OpenAI" */,
+				D9231965E6FC8D1419E3802F /* XCRemoteSwiftPackageReference "lottie-ios" */,
 				A9F285E059E774EA69CFE3E4 /* XCRemoteSwiftPackageReference "swift-log" */,
 				EEC18EC5457F52FFE4EE0759 /* XCRemoteSwiftPackageReference "KeychainAccess" */,
 				5C6849CD25343F2442AD744E /* XCRemoteSwiftPackageReference "ollama-swift" */,
@@ -1497,6 +1501,14 @@
 				minimumVersion = 0.3.0;
 			};
 		};
+		D9231965E6FC8D1419E3802F /* XCRemoteSwiftPackageReference "lottie-ios" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/airbnb/lottie-ios";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 4.5.0;
+			};
+		};
 		EDE305AEB8660A29D02A09E9 /* XCRemoteSwiftPackageReference "Sparkle" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/sparkle-project/Sparkle.git";
@@ -1524,6 +1536,10 @@
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
+		0296B9A9308E381618870C5E /* Lottie */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = Lottie;
+		};
 		06D663B62700F815A9F0BEB6 /* MenuBarExtraAccess */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = MenuBarExtraAccess;
