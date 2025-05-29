@@ -131,6 +131,7 @@ public enum CursorJSHookScript {
         let reconnectAttempts = 0;
         const maxReconnectAttempts = 5;
         const reconnectDelay = 3000; // 3 seconds
+        let composerObserver = null; // MutationObserver for composer bar
 
         function showSuccessNotification() {
             try {
@@ -165,6 +166,103 @@ public enum CursorJSHookScript {
             }
         }
 
+        function detectResumeNeeded() {
+            // Check if resume is needed by looking for rate limit text
+            const elements = document.querySelectorAll('body *');
+            for (const el of elements) {
+                if (!el || !el.textContent) continue;
+                
+                // Check if element contains rate limit text
+                if (el.textContent.includes('stop the agent after 25 tool calls') || 
+                    el.textContent.includes('Note: we default stop')) {
+                    
+                    // Find the resume link inside this element
+                    const links = el.querySelectorAll('a, span.markdown-link, [role="link"], [data-link]');
+                    for (const link of links) {
+                        if (link.textContent.trim() === 'resume the conversation') {
+                            return true; // Resume is needed
+                        }
+                    }
+                }
+            }
+            return false;
+        }
+
+        function startComposerObserver(ws) {
+            // Stop any existing observer
+            stopComposerObserver();
+            
+            // Find the composer bar
+            const composerBar = document.querySelector('.composer-bar');
+            if (!composerBar) {
+                hookLog('🔍 CodeLooper: Composer bar not found, will retry...');
+                // Retry after a delay if not found
+                setTimeout(() => {
+                    if (ws.readyState === WebSocket.OPEN) {
+                        startComposerObserver(ws);
+                    }
+                }, 2000);
+                return false;
+            }
+            
+            hookLog('👁️ CodeLooper: Starting composer bar observation');
+            
+            // Send initial state
+            ws.send(JSON.stringify({
+                type: 'composerUpdate',
+                content: composerBar.innerHTML,
+                timestamp: new Date().toISOString(),
+                initial: true
+            }));
+            
+            // Create mutation observer
+            composerObserver = new MutationObserver((mutations) => {
+                // Debounce updates to avoid flooding
+                if (composerObserver.timeout) {
+                    clearTimeout(composerObserver.timeout);
+                }
+                
+                composerObserver.timeout = setTimeout(() => {
+                    if (ws.readyState === WebSocket.OPEN) {
+                        ws.send(JSON.stringify({
+                            type: 'composerUpdate',
+                            content: composerBar.innerHTML,
+                            timestamp: new Date().toISOString(),
+                            mutations: mutations.length
+                        }));
+                    }
+                }, 100); // 100ms debounce
+            });
+            
+            // Start observing
+            composerObserver.observe(composerBar, {
+                childList: true,
+                subtree: true,
+                attributes: true,
+                characterData: true,
+                attributeOldValue: true,
+                characterDataOldValue: true
+            });
+            
+            return true;
+        }
+        
+        function stopComposerObserver() {
+            if (composerObserver) {
+                composerObserver.disconnect();
+                if (composerObserver.timeout) {
+                    clearTimeout(composerObserver.timeout);
+                }
+                composerObserver = null;
+                hookLog('🛑 CodeLooper: Stopped composer bar observation');
+            }
+        }
+        
+        function getComposerContent() {
+            const composerBar = document.querySelector('.composer-bar');
+            return composerBar ? composerBar.innerHTML : null;
+        }
+
         function startHeartbeat(ws) {
             // Clear any existing heartbeat
             if (window.__codeLooperHeartbeat) {
@@ -174,12 +272,14 @@ public enum CursorJSHookScript {
             // Start heartbeat
             window.__codeLooperHeartbeat = setInterval(() => {
                 if (ws.readyState === WebSocket.OPEN) {
+                    const resumeNeeded = detectResumeNeeded();
                     ws.send(JSON.stringify({
                         type: 'heartbeat',
                         version: HOOK_VERSION,
                         timestamp: new Date().toISOString(),
                         location: window.location.href,
-                        readyState: ws.readyState
+                        readyState: ws.readyState,
+                        resumeNeeded: resumeNeeded
                     }));
                 }
             }, HEARTBEAT_INTERVAL);
@@ -300,12 +400,86 @@ public enum CursorJSHookScript {
                 case 'ping':
                     result = { pong: true, timestamp: new Date().toISOString() };
                     break;
+                    
+                case 'checkResumeNeeded':
+                    result = { 
+                        resumeNeeded: detectResumeNeeded(),
+                        timestamp: new Date().toISOString()
+                    };
+                    break;
+                    
+                case 'clickResume':
+                    // Find and click the resume link
+                    let clicked = false;
+                    const elements = document.querySelectorAll('body *');
+                    for (const el of elements) {
+                        if (!el || !el.textContent) continue;
+                        
+                        // Check if element contains rate limit text
+                        if (el.textContent.includes('stop the agent after 25 tool calls') || 
+                            el.textContent.includes('Note: we default stop')) {
+                            
+                            // Find the resume link inside this element
+                            const links = el.querySelectorAll('a, span.markdown-link, [role="link"], [data-link]');
+                            for (const link of links) {
+                                if (link.textContent.trim() === 'resume the conversation') {
+                                    hookLog('🔄 CodeLooper: Clicking "resume the conversation" link');
+                                    link.click();
+                                    clicked = true;
+                                    break;
+                                }
+                            }
+                            if (clicked) break;
+                        }
+                    }
+                    result = { 
+                        success: clicked,
+                        message: clicked ? 'Resume link clicked' : 'Resume link not found',
+                        timestamp: new Date().toISOString()
+                    };
+                    break;
+                    
+                case 'startComposerObserver':
+                    // Pass the WebSocket from the global reference
+                    if (window.__codeLooperHook) {
+                        const started = startComposerObserver(window.__codeLooperHook);
+                        result = {
+                            success: started,
+                            message: started ? 'Composer observer started' : 'Composer bar not found yet, will retry',
+                            timestamp: new Date().toISOString()
+                        };
+                    } else {
+                        result = {
+                            success: false,
+                            error: 'WebSocket not available',
+                            timestamp: new Date().toISOString()
+                        };
+                    }
+                    break;
+                    
+                case 'stopComposerObserver':
+                    stopComposerObserver();
+                    result = {
+                        success: true,
+                        message: 'Composer observer stopped',
+                        timestamp: new Date().toISOString()
+                    };
+                    break;
+                    
+                case 'getComposerContent':
+                    const content = getComposerContent();
+                    result = {
+                        found: content !== null,
+                        content: content,
+                        timestamp: new Date().toISOString()
+                    };
+                    break;
 
                 case 'rawCode':
                     // Fallback for backward compatibility - will fail with Trusted Types
                     result = {
                         error: 'Trusted Types policy prevents eval. Use predefined commands instead.',
-                        suggestion: 'Available commands: getSystemInfo, querySelector, getElementInfo, clickElement, getActiveElement, showNotification, getVersion, ping'
+                        suggestion: 'Available commands: getSystemInfo, querySelector, getElementInfo, clickElement, getActiveElement, showNotification, getVersion, ping, checkResumeNeeded, clickResume, startComposerObserver, stopComposerObserver, getComposerContent'
                     };
                     break;
 
@@ -313,7 +487,7 @@ public enum CursorJSHookScript {
                     result = {
                         error: 'Unknown command type',
                         type: command.type,
-                        availableCommands: ['getSystemInfo', 'querySelector', 'getElementInfo', 'clickElement', 'getActiveElement', 'showNotification', 'getVersion', 'ping']
+                        availableCommands: ['getSystemInfo', 'querySelector', 'getElementInfo', 'clickElement', 'getActiveElement', 'showNotification', 'getVersion', 'ping', 'checkResumeNeeded', 'clickResume', 'startComposerObserver', 'stopComposerObserver', 'getComposerContent']
                     };
             }
 
@@ -343,6 +517,12 @@ public enum CursorJSHookScript {
 
                     // Start heartbeat
                     startHeartbeat(ws);
+                    
+                    // Auto-start composer observer after a short delay to ensure DOM is ready
+                    setTimeout(() => {
+                        hookLog('🚀 CodeLooper: Auto-starting composer observer...');
+                        startComposerObserver(ws);
+                    }, 1000); // 1 second delay to let the page settle
                 };
 
                 ws.onerror = (e) => {
@@ -366,6 +546,9 @@ public enum CursorJSHookScript {
                         clearInterval(window.__codeLooperWaitingLog);
                         window.__codeLooperWaitingLog = null;
                     }
+                    
+                    // Stop composer observer
+                    stopComposerObserver();
 
                     // Auto-reconnect logic
                     if (reconnectAttempts < maxReconnectAttempts) {

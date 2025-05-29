@@ -13,7 +13,7 @@ class CursorInputWatcherViewModel: ObservableObject {
     init(projectRoot: String = "/Users/steipete/Projects/CodeLooper") {
         self.projectRoot = projectRoot
         self.queryManager = QueryManager(projectRoot: projectRoot)
-        self.jsHookManager = JSHookService()
+        self.jsHookManager = JSHookService.shared
         self.portManager = PortManager()
         self.heartbeatMonitor = HeartbeatMonitor()
         self.aiAnalyzer = AIWindowAnalyzer()
@@ -73,23 +73,35 @@ class CursorInputWatcherViewModel: ObservableObject {
     // MARK: - View Lifecycle
     
     func handleViewAppear() {
-        logger.info("CursorInputWatcher view appeared - refreshing connections")
-        // Re-establish connections for hooked windows
+        logger.info("CursorInputWatcher view appeared - refreshing connection states")
+        // Refresh UI state to match actual connection status
         Task {
+            // Update window list
+            await updateWindows()
+            
+            // Refresh hook statuses for all windows
             for window in cursorWindows {
                 if jsHookManager.isWindowHooked(window.id) {
-                    // Connection should already be managed by ConnectionManager
                     windowInjectionStates[window.id] = .hooked
+                    
+                    // Ensure heartbeat monitor knows about this window
+                    if let port = jsHookManager.getPort(for: window.id) {
+                        heartbeatMonitor.registerWindowPort(window.id, port: port)
+                    }
+                } else {
+                    windowInjectionStates[window.id] = .idle
                 }
             }
+            
             updateHookStatuses()
+            updateWatcherStatus()
         }
     }
     
     func handleViewDisappear() {
-        logger.info("CursorInputWatcher view disappearing - preserving connections")
-        // Don't close connections - they should persist across tab switches
-        // The ConnectionManager will maintain them
+        logger.info("CursorInputWatcher view disappearing - connections persist via singleton")
+        // Connections are maintained by the singleton JSHookService
+        // No cleanup needed here
     }
 
     // MARK: - JS Hook Management
@@ -179,6 +191,18 @@ class CursorInputWatcherViewModel: ObservableObject {
             guard let queryData = validateAndGetQueryData(for: inputInfo, at: index) else { return }
             await performQuery(queryData: queryData, inputInfo: inputInfo, index: index)
         }
+    }
+
+    // MARK: - Window Management
+    
+    private func updateWindows() async {
+        // Force refresh of window list from CursorMonitor
+        let apps = CursorMonitor.shared.monitoredApps
+        let allWindows = apps.flatMap(\.windows)
+        self.cursorWindows = allWindows
+        
+        // Let JSHookManager know about current windows
+        await jsHookManager.updateWindows(allWindows)
     }
 
     // MARK: - AI Analysis

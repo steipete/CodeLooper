@@ -7,7 +7,9 @@ import Foundation
 class JSHookService {
     // MARK: Lifecycle
 
-    init() {
+    static let shared = JSHookService()
+    
+    private init() {
         // Initialize with clean probe-once logic
         Task { @MainActor in
             await jsHookManager.initialize()
