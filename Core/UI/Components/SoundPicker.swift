@@ -10,20 +10,22 @@ struct MacAlertSound: Identifiable, Hashable, Codable {
     var displayName: String { name }  // tweak if you want prettified titles
 }
 
-/// Curated "most-popular" list of macOS alert sounds
+/// Curated list of available macOS system alert sounds
 let popularSounds: [MacAlertSound] = [
-    .init(name: "Boop"),
-    .init(name: "Breeze"),
-    .init(name: "Crystal"),
-    .init(name: "Funky"),
-    .init(name: "Heroine"),
-    .init(name: "Jump"),
-    .init(name: "Mezzo"),
-    .init(name: "Pluck"),
-    .init(name: "Pong"),
-    .init(name: "Sonar"),
-    .init(name: "Sonumi"),
-    .init(name: "Submerge")
+    .init(name: "Basso"),
+    .init(name: "Blow"),
+    .init(name: "Bottle"),
+    .init(name: "Frog"),
+    .init(name: "Funk"),
+    .init(name: "Glass"),
+    .init(name: "Hero"),
+    .init(name: "Morse"),
+    .init(name: "Ping"),
+    .init(name: "Pop"),
+    .init(name: "Purr"),
+    .init(name: "Sosumi"),
+    .init(name: "Submarine"),
+    .init(name: "Tink")
 ]
 
 /// Sound picker for rule configuration
