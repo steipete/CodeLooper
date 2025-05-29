@@ -1,5 +1,20 @@
 import SwiftUI
 
+/// A styled text input field with validation and helper text support.
+///
+/// DSTextField provides a consistent text input experience with:
+/// - Standardized styling and interaction states
+/// - Optional leading icons for visual context
+/// - Helper text for guidance and instructions
+/// - Error state handling with validation messages
+/// - Clear button functionality for easy text removal
+///
+/// ## Usage
+///
+/// ```swift
+/// DSTextField("Enter your name", text: $username)
+///     .helperText("This will be displayed publicly")
+/// ```
 public struct DSTextField: View {
     // MARK: Lifecycle
 

@@ -1,5 +1,21 @@
 import SwiftUI
 
+/// A card container component with consistent styling and elevation effects.
+///
+/// DSCard provides a structured container for grouping related content
+/// with visual separation and depth. It supports different styles for
+/// various use cases and contexts.
+///
+/// ## Usage
+///
+/// ```swift
+/// DSCard {
+///     VStack {
+///         Text("Card Title")
+///         Text("Card content goes here...")
+///     }
+/// }
+/// ```
 public struct DSCard<Content: View>: View {
     // MARK: Lifecycle
 

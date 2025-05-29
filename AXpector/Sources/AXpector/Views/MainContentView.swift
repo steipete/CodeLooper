@@ -1,6 +1,16 @@
 import DesignSystem
 import SwiftUI
 
+/// The main content view for AXpector that provides mode selection and content routing.
+///
+/// MainContentView manages:
+/// - Mode switching between Inspector and Observer modes
+/// - Navigation between tree view and details view
+/// - Layout coordination for the split view interface
+/// - State management for selected elements
+///
+/// In Inspector mode, it shows a NavigationView with tree sidebar and details.
+/// In Observer mode, it shows real-time accessibility notifications.
 struct MainContentView: View {
     @ObservedObject var viewModel: AXpectorViewModel
     @Binding var selectedNodeID: AXPropertyNode.ID?

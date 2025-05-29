@@ -1,5 +1,16 @@
 import SwiftUI
 
+/// Centralized color palette providing consistent colors across the design system.
+///
+/// ColorPalette defines:
+/// - Brand colors for primary interface elements
+/// - Semantic colors for status, alerts, and feedback
+/// - Background and surface colors for containers
+/// - Text colors with proper contrast ratios
+/// - Interactive states (hover, active, disabled)
+///
+/// All colors are optimized for both light and dark mode appearances
+/// and maintain WCAG accessibility guidelines for contrast.
 public enum ColorPalette {
     // MARK: - Brand Colors
 

@@ -1,5 +1,16 @@
 import Foundation
 
+/// Spacing system providing consistent spacing values across the design system.
+///
+/// Spacing defines:
+/// - Base spacing scale from xx-small to xxx-large
+/// - Component-specific spacing (padding, gaps, margins)
+/// - Layout spacing for containers and sections
+/// - Responsive spacing adjustments
+/// - Consistent vertical and horizontal rhythm
+///
+/// The spacing system creates visual harmony and improves
+/// readability through consistent whitespace usage.
 public enum Spacing {
     // MARK: Public
 

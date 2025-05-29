@@ -2,7 +2,17 @@ import AppKit // For pid_t (though Foundation might be enough depending on exact
 import AXorcist // For AXUIElement, AnyCodable
 import SwiftUI
 
-// Represents a node in the visual accessibility tree
+/// Represents a node in the accessibility tree with properties and child relationships.
+///
+/// AXPropertyNode encapsulates:
+/// - Core accessibility element reference and metadata
+/// - Hierarchical relationships (parent/children)
+/// - Element properties (role, title, value, attributes)
+/// - Available actions and capabilities
+/// - UI state for tree visualization and selection
+///
+/// This class serves as the data model for the accessibility tree view,
+/// enabling inspection, editing, and navigation of accessibility hierarchies.
 @MainActor // Ensure UI-related properties are accessed on the main actor
 class AXPropertyNode: ObservableObject, Identifiable, Hashable {
     // MARK: Lifecycle

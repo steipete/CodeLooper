@@ -1,6 +1,17 @@
 import DesignSystem
 import SwiftUI
 
+/// Detail view for inspecting properties and attributes of an accessibility element.
+///
+/// NodeDetailsView displays:
+/// - Element identification (role, title, description)
+/// - Editable property values with validation
+/// - Complete attribute list with types and values
+/// - Available actions for the element
+/// - Element path information for navigation
+///
+/// The view supports in-place editing of certain properties and provides
+/// comprehensive inspection capabilities for accessibility debugging.
 struct NodeDetailsView: View {
     @ObservedObject var viewModel: AXpectorViewModel
 

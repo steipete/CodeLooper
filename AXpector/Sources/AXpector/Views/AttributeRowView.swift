@@ -3,6 +3,16 @@ import SwiftUI
 
 // AXorcist import already includes logging utilities
 
+/// Row view for displaying an accessibility attribute name-value pair.
+///
+/// AttributeRowView provides formatted display of:
+/// - Attribute names with consistent styling
+/// - Type-aware value formatting and presentation  
+/// - Special handling for complex attribute types
+/// - Copy-to-clipboard functionality for debugging
+///
+/// Used within the node details view to present all accessibility
+/// attributes in a structured, readable format.
 @MainActor
 struct AttributeRowView: View {
     // MARK: Internal

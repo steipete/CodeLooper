@@ -8,6 +8,14 @@ import SwiftUI // For @MainActor
 
 // MARK: - Focus Tracking Implementation
 
+/// Extension providing real-time focus tracking across applications.
+///
+/// This extension manages:
+/// - Application activation monitoring and switching
+/// - Focused element change notifications via AXObserver
+/// - Cross-application focus tracking with automatic tree updates
+/// - Synchronization between focus changes and tree selection
+/// - Cleanup of observers when applications quit
 extension AXpectorViewModel {
     func startFocusTrackingMonitoring() {
         axInfoLog("AXpectorViewModel: Requesting to start focus tracking monitoring.") // CHANGED

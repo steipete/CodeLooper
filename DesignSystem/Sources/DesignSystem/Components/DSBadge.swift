@@ -1,5 +1,19 @@
 import SwiftUI
 
+/// A small status or label component for highlighting information.
+///
+/// DSBadge provides visual indicators for status, categories, or metadata:
+/// - Different styles for various semantic meanings
+/// - Compact size optimized for inline use
+/// - Consistent styling across different contexts
+/// - Support for different color schemes and emphasis levels
+///
+/// ## Usage
+///
+/// ```swift
+/// DSBadge("Active", style: .success)
+/// DSBadge("Beta", style: .warning)
+/// ```
 public struct DSBadge: View {
     // MARK: Lifecycle
 

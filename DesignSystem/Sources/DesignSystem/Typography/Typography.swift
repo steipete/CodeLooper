@@ -1,5 +1,16 @@
 import SwiftUI
 
+/// Typography system providing consistent text styling and hierarchy.
+///
+/// Typography defines:
+/// - Font size scale from xxx-small to xxx-large
+/// - Font weight options for different emphasis levels
+/// - Text style functions for common use cases
+/// - Semantic text styles (title, headline, body, caption)
+/// - Line height and spacing calculations
+///
+/// The typography system ensures readable text hierarchy and
+/// consistent spacing throughout the application interface.
 public enum Typography {
     // MARK: - Font Sizes
 

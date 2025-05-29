@@ -1,5 +1,16 @@
 import Cocoa
 
+/// Transparent overlay window for highlighting accessibility elements on screen.
+///
+/// HighlightWindow provides:
+/// - Transparent, click-through overlay functionality
+/// - High window level to appear above application content
+/// - Multi-space visibility for consistent highlighting
+/// - Mouse event pass-through for uninterrupted interaction
+/// - Configurable positioning and sizing for element boundaries
+///
+/// Used by AXpector to visually indicate selected accessibility elements
+/// by drawing colored borders around their screen positions.
 class HighlightWindow: NSWindow {
     // MARK: Lifecycle
 

@@ -1,5 +1,19 @@
 import SwiftUI
 
+/// A styled toggle switch component with label and description support.
+///
+/// DSToggle provides a consistent boolean input control with:
+/// - Clear labeling and descriptive text
+/// - Standardized toggle switch styling
+/// - Optional description text with custom spacing
+/// - Accessibility support for screen readers
+///
+/// ## Usage
+///
+/// ```swift
+/// DSToggle("Enable notifications", isOn: $isEnabled)
+///     .description("Receive updates when new events occur")
+/// ```
 public struct DSToggle: View {
     // MARK: Lifecycle
 

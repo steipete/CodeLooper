@@ -6,6 +6,14 @@ import AXorcist // For GlobalAXLogger and ax...Log helpers
 
 // MARK: - Highlight Window Logic
 
+/// Extension providing visual highlighting of accessibility elements on screen.
+///
+/// This extension manages:
+/// - Element boundary highlighting with colored overlays
+/// - Hover and focus-based highlighting modes
+/// - Screen coordinate calculations and transformations
+/// - Highlight window management and positioning
+/// - Visual feedback for element selection and navigation
 extension AXpectorViewModel {
     func updateHighlightForNode(_ node: AXPropertyNode?, isHover: Bool = false, isFocusHighlight: Bool = false) {
         guard let targetNode = node else {

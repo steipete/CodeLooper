@@ -1,6 +1,16 @@
 import DesignSystem
 import SwiftUI
 
+/// Picker view for selecting which application to inspect with AXpector.
+///
+/// ApplicationPickerView provides:
+/// - Dropdown list of running applications with accessible windows
+/// - Application icons and names for easy identification
+/// - Automatic refresh when applications launch or quit
+/// - Filtering to show only applications with accessibility support
+///
+/// The picker integrates with the view model to trigger accessibility
+/// tree fetching when a new application is selected.
 struct ApplicationPickerView: View {
     // MARK: Internal
 

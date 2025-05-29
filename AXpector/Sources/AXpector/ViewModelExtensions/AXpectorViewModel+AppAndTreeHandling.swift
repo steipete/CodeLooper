@@ -7,6 +7,14 @@ import SwiftUI
 
 // MARK: - Application and Tree Handling
 
+/// Extension providing application discovery and accessibility tree management.
+///
+/// This extension handles:
+/// - Running application discovery and monitoring
+/// - Periodic refresh of applications with accessible windows
+/// - Application launch/termination observation
+/// - Accessibility tree fetching and conversion
+/// - Error handling for inaccessible applications
 extension AXpectorViewModel {
     func fetchRunningApplications() {
         // Use the centralized helper from AXorcist module

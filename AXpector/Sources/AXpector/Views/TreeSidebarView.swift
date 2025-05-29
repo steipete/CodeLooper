@@ -1,6 +1,17 @@
 import DesignSystem
 import SwiftUI
 
+/// Sidebar view displaying the accessibility tree hierarchy and controls.
+///
+/// TreeSidebarView provides:
+/// - Application selection picker
+/// - Tree refresh controls and loading states
+/// - Search and filtering capabilities
+/// - Hierarchical tree view of accessibility elements
+/// - Selection management for detailed inspection
+///
+/// The view handles both loading states and tree visualization,
+/// allowing users to navigate through accessibility hierarchies efficiently.
 struct TreeSidebarView: View {
     @ObservedObject var viewModel: AXpectorViewModel
     @Binding var selectedNodeID: AXPropertyNode.ID?

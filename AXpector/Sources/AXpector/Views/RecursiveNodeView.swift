@@ -1,5 +1,16 @@
 import SwiftUI
 
+/// Recursive tree view component for displaying accessibility element hierarchies.
+///
+/// RecursiveNodeView provides:
+/// - Hierarchical tree display with expand/collapse functionality
+/// - Visual indentation based on element depth
+/// - Selection highlighting and interaction handling
+/// - Recursive rendering of child elements
+/// - Hover effects and visual feedback
+///
+/// This view recursively renders itself for child nodes, creating
+/// a complete accessibility tree visualization with navigation capabilities.
 @MainActor
 struct RecursiveNodeView: View {
     @ObservedObject var node: AXPropertyNode // Now an ObservedObject
