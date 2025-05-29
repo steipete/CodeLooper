@@ -174,6 +174,15 @@ jobs:
           chmod +x scripts/build.sh
           chmod +x scripts/codesign-app.sh
 
+      - name: Install Tuist
+        run: |
+          curl -Ls https://install.tuist.io | bash
+          echo "$HOME/.tuist/bin" >> $GITHUB_PATH
+
+      - name: Generate Xcode project with Tuist
+        run: |
+          ./scripts/generate-xcproj.sh
+
       - name: Build, Sign, and Optionally Notarize macOS App
         id: build_sign_notarize_step
         continue-on-error: true
@@ -185,40 +194,70 @@ jobs:
           APP_STORE_CONNECT_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
           APP_VERSION_FOR_SCRIPT: ${{ steps.set-version.outputs.version }}
         run: |
-          echo "Starting combined build, sign, optional notarization, and DMG creation step..."
-          FINAL_COMMAND=""
-          NOTARIZATION_INTENT_MESSAGE=""
-          VERSION_ARG="--app-version \"${APP_VERSION_FOR_SCRIPT}\""
-
-          if [[ "${{ github.event_name }}" == "workflow_dispatch" && "${{ inputs.notarize }}" == "false" ]]; then
-            echo "Workflow dispatch with notarize=false. Building, signing, and creating DMG."
-            FINAL_COMMAND="./scripts/build-and-notarize.sh --skip-notarization --create-dmg $VERSION_ARG"
-            NOTARIZATION_INTENT_MESSAGE="Notarization explicitly skipped by input. DMG will be created."
-          else
-            # For PRs, tags, or workflow_dispatch with notarize=true (default)
-            echo "Full flow: Building, signing, notarizing (if possible), and creating DMG."
-            FINAL_COMMAND="./scripts/build-and-notarize.sh --create-dmg $VERSION_ARG"
-            NOTARIZATION_INTENT_MESSAGE="Full build, sign, notarize, and DMG creation attempted."
-          fi
-
-          echo "Executing: $FINAL_COMMAND"
-          echo "Intent: $NOTARIZATION_INTENT_MESSAGE"
+          echo "Starting Xcode-based build, sign, optional notarization, and DMG creation..."
           
-          if eval "$FINAL_COMMAND"; then
-            echo "✅ Build script completed successfully."
-            # Determine notarization status for PR comment
-            if [[ "$FINAL_COMMAND" == *"--skip-notarization"* ]]; then
-              echo "notarization_status=skipped_by_command" >> $GITHUB_OUTPUT
-            elif [ -n "${{ env.APP_STORE_CONNECT_KEY_ID }}" ]; then
-              echo "notarization_status=success" >> $GITHUB_OUTPUT 
-            else
-              echo "notarization_status=skipped_no_creds" >> $GITHUB_OUTPUT
-            fi
-          else
-            echo "::error::Build script failed."
-            echo "notarization_status=failed" >> $GITHUB_OUTPUT
+          # Build with xcodebuild instead of SPM
+          echo "Building with Xcode..."
+          xcodebuild -workspace CodeLooper.xcworkspace \
+            -scheme CodeLooper \
+            -configuration Release \
+            -destination "generic/platform=macOS" \
+            build
+          
+          # Find the built app
+          APP_PATH=$(find ~/Library/Developer/Xcode/DerivedData -name "CodeLooper.app" -type d | head -1)
+          if [ -z "$APP_PATH" ]; then
+            echo "::error::Could not find built CodeLooper.app"
             exit 1
           fi
+          
+          echo "Found app at: $APP_PATH"
+          
+          # Create binary directory and copy app
+          mkdir -p binary
+          cp -R "$APP_PATH" binary/
+          
+          # Sign with hardened runtime
+          echo "Signing with hardened runtime..."
+          codesign --force --deep --options runtime \
+            --sign "Developer ID Application" \
+            binary/CodeLooper.app
+          
+          # Test notarization if credentials are available
+          if [ -n "$APP_STORE_CONNECT_KEY_ID" ]; then
+            echo "Testing notarization..."
+            
+            # Download rcodesign
+            mkdir -p tools/rcodesign/bin
+            curl -L "https://github.com/indygreg/apple-platform-rs/releases/download/apple-codesign%2F0.22.0/apple-codesign-0.22.0-macos-universal.tar.gz" | tar -xz -C tools/rcodesign --strip-components=1
+            chmod +x tools/rcodesign/rcodesign
+            mv tools/rcodesign/rcodesign tools/rcodesign/bin/
+            
+            # Create API key JSON
+            tools/rcodesign/bin/rcodesign encode-app-store-connect-api-key \
+              "$APP_STORE_CONNECT_ISSUER_ID" \
+              "$APP_STORE_CONNECT_KEY_ID" \
+              "$APP_STORE_CONNECT_P8_FILE_PATH" \
+              --output-path /tmp/api_key.json
+            
+            # Submit for notarization
+            tools/rcodesign/bin/rcodesign notary-submit \
+              --api-key-path /tmp/api_key.json \
+              --wait \
+              binary/CodeLooper.app
+              
+            echo "notarization_status=success" >> $GITHUB_OUTPUT
+          else
+            echo "notarization_status=skipped_no_creds" >> $GITHUB_OUTPUT
+          fi
+          
+          # Create DMG
+          echo "Creating DMG..."
+          mkdir -p artifacts
+          DMG_NAME="CodeLooper-macOS-${APP_VERSION_FOR_SCRIPT}.dmg"
+          hdiutil create -volname "CodeLooper" -srcfolder binary/CodeLooper.app -ov -format UDZO "artifacts/$DMG_NAME"
+          
+          echo "✅ Build, sign, notarize, and DMG creation completed successfully."
 
       - name: Verify build artifacts
         if: steps.build_sign_notarize_step.outcome == 'success'
