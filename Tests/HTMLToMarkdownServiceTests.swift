@@ -17,7 +17,7 @@ struct HTMLToMarkdownServiceTests {
         #expect(initialAvailability == false) // Initially false until libraries are loaded
         
         // Wait a bit for async initialization
-        try await Task.sleep(nanoseconds: 500_000_000) // 500ms
+        try await Task.sleep(for: .milliseconds(500)) // 500ms
         
         // Service should now be available
         let finalAvailability = await service.isAvailable
@@ -34,7 +34,7 @@ struct HTMLToMarkdownServiceTests {
         var attempts = 0
         var isReady = await service.isAvailable
         while !isReady && attempts < 10 {
-            try await Task.sleep(nanoseconds: 100_000_000) // 100ms
+            try await Task.sleep(for: .milliseconds(100)) // 100ms
             attempts += 1
             isReady = await service.isAvailable
         }
@@ -137,17 +137,17 @@ struct HTMLToMarkdownServiceTests {
         try await waitForService(service)
         
         let html = """
-        <article>
-            <h1>Main Title</h1>
-            <p>This is an <strong>important</strong> paragraph with <em>emphasis</em>.</p>
-            <h2>Subsection</h2>
-            <ul>
-                <li>Item with <a href="https://example.com">link</a></li>
-                <li>Another item</li>
-            </ul>
-            <p>Final paragraph with <code>inline code</code>.</p>
-        </article>
-        """
+            <article>
+                <h1>Main Title</h1>
+                <p>This is an <strong>important</strong> paragraph with <em>emphasis</em>.</p>
+                <h2>Subsection</h2>
+                <ul>
+                    <li>Item with <a href="https://example.com">link</a></li>
+                    <li>Another item</li>
+                </ul>
+                <p>Final paragraph with <code>inline code</code>.</p>
+            </article>
+            """
         
         let markdown = try await service.convertToMarkdown(html)
         
@@ -396,7 +396,7 @@ private func waitForService(_ service: HTMLToMarkdownService, maxAttempts: Int =
     var attempts = 0
     var isReady = await service.isAvailable
     while !isReady && attempts < maxAttempts {
-        try await Task.sleep(nanoseconds: 100_000_000) // 100ms
+        try await Task.sleep(for: .milliseconds(100)) // 100ms
         attempts += 1
         isReady = await service.isAvailable
     }

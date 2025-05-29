@@ -57,7 +57,7 @@ struct MarkdownServiceIntegrationTest {
         let service = HTMLToMarkdownService.shared
 
         // Wait for potential async initialization
-        try await Task.sleep(nanoseconds: 1_000_000_000) // 1 second
+        try await Task.sleep(for: .seconds(1)) // 1 second
 
         let isAvailable = await service.isAvailable
 
