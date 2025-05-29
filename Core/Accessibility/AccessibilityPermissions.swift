@@ -10,12 +10,14 @@ public final class PermissionsManager: ObservableObject {
     // MARK: Lifecycle
 
     public init() {
-        checkAllPermissions()
+        loadCachedPermissions()
+        scheduleInitialPermissionCheck()
         startMonitoring()
     }
 
     deinit {
         monitoringTask?.cancel()
+        initialCheckTask?.cancel()
     }
 
     // MARK: Public
@@ -30,6 +32,7 @@ public final class PermissionsManager: ObservableObject {
         logger.info("Requesting accessibility permissions")
         let granted = await AXPermissionHelpers.requestPermissions()
         self.hasAccessibilityPermissions = granted
+        cachePermissionStates()
         logger.info("Accessibility permissions request result: \(granted)")
     }
 
@@ -56,10 +59,12 @@ public final class PermissionsManager: ObservableObject {
             let granted = try await UNUserNotificationCenter.current()
                 .requestAuthorization(options: [.alert, .sound, .badge])
             self.hasNotificationPermissions = granted
+            cachePermissionStates()
             logger.info("Notification permissions request result: \(granted)")
         } catch {
             logger.error("Error requesting notification permissions: \(error)")
             self.hasNotificationPermissions = false
+            cachePermissionStates()
         }
     }
 
@@ -73,38 +78,80 @@ public final class PermissionsManager: ObservableObject {
 
     /// Manually refresh all permissions
     public func refreshPermissions() async {
-        hasAccessibilityPermissions = AXPermissionHelpers.hasAccessibilityPermissions()
-        hasAutomationPermissions = await checkAutomationPermission()
-        hasScreenRecordingPermissions = await checkScreenRecordingPermission()
-        hasNotificationPermissions = await checkNotificationPermission()
-
-        logger
-            .info(
-                "Permission status - Accessibility: \(hasAccessibilityPermissions), Automation: \(hasAutomationPermissions), Screen Recording: \(hasScreenRecordingPermissions), Notifications: \(hasNotificationPermissions)"
-            )
+        await checkAndUpdateAllPermissions()
     }
 
     // MARK: Private
 
     private var monitoringTask: Task<Void, Never>?
+    private var initialCheckTask: Task<Void, Never>?
     private let logger = Logger(category: .permissions)
     private let cursorBundleID = "com.todesktop.230313mzl4w4u92"
+    
+    // UserDefaults keys for caching permissions
+    private enum CacheKeys {
+        static let accessibilityPermissions = "cached_accessibility_permissions"
+        static let automationPermissions = "cached_automation_permissions"
+        static let screenRecordingPermissions = "cached_screen_recording_permissions"
+        static let notificationPermissions = "cached_notification_permissions"
+        static let lastPermissionCheck = "last_permission_check_timestamp"
+    }
 
-    private func checkAllPermissions() {
-        // Check accessibility synchronously
-        hasAccessibilityPermissions = AXPermissionHelpers.hasAccessibilityPermissions()
-
-        // Check other permissions asynchronously
-        Task {
-            hasAutomationPermissions = await checkAutomationPermission()
-            hasScreenRecordingPermissions = await checkScreenRecordingPermission()
-            hasNotificationPermissions = await checkNotificationPermission()
-
-            logger
-                .info(
-                    "Initial permission status - Accessibility: \(hasAccessibilityPermissions), Automation: \(hasAutomationPermissions), Screen Recording: \(hasScreenRecordingPermissions), Notifications: \(hasNotificationPermissions)"
-                )
+    private func loadCachedPermissions() {
+        let defaults = UserDefaults.standard
+        
+        // Load cached permission states for immediate UI display
+        hasAccessibilityPermissions = defaults.bool(forKey: CacheKeys.accessibilityPermissions)
+        hasAutomationPermissions = defaults.bool(forKey: CacheKeys.automationPermissions)
+        hasScreenRecordingPermissions = defaults.bool(forKey: CacheKeys.screenRecordingPermissions)
+        hasNotificationPermissions = defaults.bool(forKey: CacheKeys.notificationPermissions)
+        
+        logger.info("""
+            Loaded cached permissions - Accessibility: \(hasAccessibilityPermissions), \
+            Automation: \(hasAutomationPermissions), Screen Recording: \(hasScreenRecordingPermissions), \
+            Notifications: \(hasNotificationPermissions)
+            """)
+    }
+    
+    private func scheduleInitialPermissionCheck() {
+        // Schedule initial permission check to run after a short delay to avoid blocking app startup
+        initialCheckTask = Task {
+            // Small delay to allow UI to load with cached values first
+            try? await Task.sleep(nanoseconds: 100_000_000) // 100ms
+            await checkAndUpdateAllPermissions()
         }
+    }
+    
+    private func checkAndUpdateAllPermissions() async {
+        // Check all permissions and update both UI state and cache
+        let newAccessibility = AXPermissionHelpers.hasAccessibilityPermissions()
+        let newAutomation = await checkAutomationPermission()
+        let newScreenRecording = await checkScreenRecordingPermission()
+        let newNotifications = await checkNotificationPermission()
+        
+        // Update UI state
+        hasAccessibilityPermissions = newAccessibility
+        hasAutomationPermissions = newAutomation
+        hasScreenRecordingPermissions = newScreenRecording
+        hasNotificationPermissions = newNotifications
+        
+        // Cache the results
+        cachePermissionStates()
+        
+        logger.info("""
+            Updated permission status - Accessibility: \(hasAccessibilityPermissions), \
+            Automation: \(hasAutomationPermissions), Screen Recording: \(hasScreenRecordingPermissions), \
+            Notifications: \(hasNotificationPermissions)
+            """)
+    }
+    
+    private func cachePermissionStates() {
+        let defaults = UserDefaults.standard
+        defaults.set(hasAccessibilityPermissions, forKey: CacheKeys.accessibilityPermissions)
+        defaults.set(hasAutomationPermissions, forKey: CacheKeys.automationPermissions)
+        defaults.set(hasScreenRecordingPermissions, forKey: CacheKeys.screenRecordingPermissions)
+        defaults.set(hasNotificationPermissions, forKey: CacheKeys.notificationPermissions)
+        defaults.set(Date().timeIntervalSince1970, forKey: CacheKeys.lastPermissionCheck)
     }
 
     private func checkAutomationPermission() async -> Bool {
@@ -165,7 +212,8 @@ public final class PermissionsManager: ObservableObject {
     private func startMonitoring() {
         monitoringTask = Task {
             while !Task.isCancelled {
-                try? await Task.sleep(nanoseconds: 2_000_000_000) // 2 seconds
+                // Check permissions every 10 seconds instead of 2 to reduce overhead
+                try? await Task.sleep(nanoseconds: 10_000_000_000) // 10 seconds
 
                 // Re-check all permissions
                 let newAccessibility = AXPermissionHelpers.hasAccessibilityPermissions()
@@ -173,24 +221,35 @@ public final class PermissionsManager: ObservableObject {
                 let newScreenRecording = await checkScreenRecordingPermission()
                 let newNotifications = await checkNotificationPermission()
 
+                var permissionsChanged = false
+
                 if newAccessibility != self.hasAccessibilityPermissions {
                     self.hasAccessibilityPermissions = newAccessibility
                     self.logger.info("Accessibility permissions changed to: \(newAccessibility)")
+                    permissionsChanged = true
                 }
 
                 if newAutomation != self.hasAutomationPermissions {
                     self.hasAutomationPermissions = newAutomation
                     self.logger.info("Automation permissions changed to: \(newAutomation)")
+                    permissionsChanged = true
                 }
 
                 if newScreenRecording != self.hasScreenRecordingPermissions {
                     self.hasScreenRecordingPermissions = newScreenRecording
                     self.logger.info("Screen recording permissions changed to: \(newScreenRecording)")
+                    permissionsChanged = true
                 }
 
                 if newNotifications != self.hasNotificationPermissions {
                     self.hasNotificationPermissions = newNotifications
                     self.logger.info("Notification permissions changed to: \(newNotifications)")
+                    permissionsChanged = true
+                }
+
+                // Only update cache if permissions actually changed
+                if permissionsChanged {
+                    self.cachePermissionStates()
                 }
             }
         }
