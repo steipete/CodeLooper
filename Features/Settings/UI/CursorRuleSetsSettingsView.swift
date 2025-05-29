@@ -129,7 +129,7 @@ private struct RuleCard: View {
 
     var body: some View {
         DSCard(style: .filled) {
-            VStack(spacing: Spacing.medium) {
+            VStack(spacing: Spacing.small) {
                 // Row 1: Main rule header with consistent alignment
                 HStack(alignment: .top, spacing: Spacing.medium) {
                     // Column 1: Status indicators (fixed width)
@@ -228,7 +228,8 @@ private struct RuleCard: View {
                     Spacer()
                 }
             }
-            .padding(Spacing.medium)
+            .padding(.horizontal, Spacing.medium)
+            .padding(.vertical, Spacing.small)
         }
         .onTapGesture { onSelect() }
         .onHover { hovering in

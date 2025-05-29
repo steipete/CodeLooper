@@ -191,19 +191,19 @@ struct AISettingsView: View {
                 }
             }
 
-            if isAutoTesting || connectionTestResult != nil {
-                HStack {
-                    if isAutoTesting {
-                        DSShimmer(width: 16, height: 16, cornerRadius: 2)
-                    }
-                    Text(connectionTestResult ?? "")
-                        .font(Typography.caption1())
-                        .foregroundColor(connectionTestResult?.contains("✓") == true ? ColorPalette.success :
-                            connectionTestResult?.contains("✗") == true ? ColorPalette.error : ColorPalette
-                            .textSecondary)
+            HStack {
+                if isAutoTesting {
+                    DSShimmer(width: 16, height: 16, cornerRadius: 2)
                 }
-                .padding(.top, Spacing.xxSmall)
+                Text(connectionTestResult ?? "")
+                    .font(Typography.caption1())
+                    .foregroundColor(connectionTestResult?.contains("✓") == true ? ColorPalette.success :
+                        connectionTestResult?.contains("✗") == true ? ColorPalette.error : ColorPalette
+                        .textSecondary)
+                    .opacity((isAutoTesting || connectionTestResult != nil) ? 1 : 0)
             }
+            .padding(.top, Spacing.xxSmall)
+            .frame(minHeight: Typography.Size.xxSmall.rawValue + 4)
 
             Link("Get your API key from OpenAI", destination: URL(string: "https://platform.openai.com/api-keys")!)
                 .font(Typography.caption1())
@@ -250,19 +250,19 @@ struct AISettingsView: View {
                 }
             }
 
-            if isAutoTesting || connectionTestResult != nil {
-                HStack {
-                    if isAutoTesting {
-                        DSShimmer(width: 16, height: 16, cornerRadius: 2)
-                    }
-                    Text(connectionTestResult ?? "")
-                        .font(Typography.caption1())
-                        .foregroundColor(connectionTestResult?.contains("✓") == true ? ColorPalette.success :
-                            connectionTestResult?.contains("✗") == true ? ColorPalette.error : ColorPalette
-                            .textSecondary)
+            HStack {
+                if isAutoTesting {
+                    DSShimmer(width: 16, height: 16, cornerRadius: 2)
                 }
-                .padding(.top, Spacing.xxSmall)
+                Text(connectionTestResult ?? "")
+                    .font(Typography.caption1())
+                    .foregroundColor(connectionTestResult?.contains("✓") == true ? ColorPalette.success :
+                        connectionTestResult?.contains("✗") == true ? ColorPalette.error : ColorPalette
+                        .textSecondary)
+                    .opacity((isAutoTesting || connectionTestResult != nil) ? 1 : 0)
             }
+            .padding(.top, Spacing.xxSmall)
+            .frame(minHeight: Typography.Size.xxSmall.rawValue + 4)
 
             Link("Install Ollama", destination: URL(string: "https://ollama.ai")!)
                 .font(Typography.caption1())
