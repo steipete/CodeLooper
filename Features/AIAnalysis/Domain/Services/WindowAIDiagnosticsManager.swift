@@ -73,7 +73,6 @@ class WindowAIDiagnosticsManager: ObservableObject, Loggable {
 
         windowStates[windowId] = windowInfo
         setupTimer(for: windowInfo) // Re-setup timer which will start/stop it
-        objectWillChange.send()
     }
 
     func enableLiveWatchingForAllWindows() {
@@ -88,7 +87,6 @@ class WindowAIDiagnosticsManager: ObservableObject, Loggable {
                 setupTimer(for: windowInfo)
             }
         }
-        objectWillChange.send()
     }
 
     func disableLiveWatchingForAllWindows() {
@@ -103,7 +101,6 @@ class WindowAIDiagnosticsManager: ObservableObject, Loggable {
                 setupTimer(for: windowInfo)
             }
         }
-        objectWillChange.send()
     }
 
     // Cleanup method that must be called from MainActor context
@@ -226,7 +223,6 @@ class WindowAIDiagnosticsManager: ObservableObject, Loggable {
                                 if var updatedWindowInfo = self.windowStates[window.id] {
                                     updatedWindowInfo.gitRepository = gitRepo
                                     self.windowStates[window.id] = updatedWindowInfo
-                                    self.objectWillChange.send()
                                 }
                             }
                         }
@@ -240,7 +236,6 @@ class WindowAIDiagnosticsManager: ObservableObject, Loggable {
                                 if var updatedWindowInfo = self.windowStates[window.id] {
                                     updatedWindowInfo.gitRepository = gitRepo
                                     self.windowStates[window.id] = updatedWindowInfo
-                                    self.objectWillChange.send()
                                 }
                             }
                         }
@@ -262,7 +257,6 @@ class WindowAIDiagnosticsManager: ObservableObject, Loggable {
 
         // Update the window states
         self.windowStates = newWindowStates
-        objectWillChange.send()
     }
 
     private func setupTimer(for windowInfo: MonitoredWindowInfo) {
@@ -289,7 +283,6 @@ class WindowAIDiagnosticsManager: ObservableObject, Loggable {
                         currentInfo.lastAIAnalysisStatus = .pending
                         currentInfo.lastAIAnalysisTimestamp = Date()
                         self.windowStates[windowInfo.id] = currentInfo
-                        self.objectWillChange.send()
 
                         await self.performAIAnalysis(for: windowInfo.id)
                     }
@@ -307,10 +300,8 @@ class WindowAIDiagnosticsManager: ObservableObject, Loggable {
             if var currentInfo = self.windowStates[windowInfo.id] {
                 currentInfo.lastAIAnalysisStatus = .off
                 self.windowStates[windowInfo.id] = currentInfo
-                self.objectWillChange.send()
             }
         }
-        objectWillChange.send()
     }
 
     // swiftlint:disable:next function_body_length
@@ -320,7 +311,6 @@ class WindowAIDiagnosticsManager: ObservableObject, Loggable {
             if var windowInfo = windowStates[windowId], windowInfo.lastAIAnalysisStatus == .pending {
                 windowInfo.lastAIAnalysisStatus = .off
                 windowStates[windowId] = windowInfo
-                objectWillChange.send()
             }
             return
         }
@@ -338,7 +328,6 @@ class WindowAIDiagnosticsManager: ObservableObject, Loggable {
             windowInfo.lastAIAnalysisStatus = .off
             windowInfo.lastAIAnalysisResponseMessage = "Window is minimized"
             windowStates[windowId] = windowInfo
-            objectWillChange.send()
             return
         }
 
@@ -347,7 +336,6 @@ class WindowAIDiagnosticsManager: ObservableObject, Loggable {
             windowInfo.lastAIAnalysisStatus = .off
             windowInfo.lastAIAnalysisResponseMessage = "Window is hidden"
             windowStates[windowId] = windowInfo
-            objectWillChange.send()
             return
         }
 
@@ -413,7 +401,6 @@ class WindowAIDiagnosticsManager: ObservableObject, Loggable {
                 windowInfo.lastAIAnalysisStatus = .error
                 windowInfo.lastAIAnalysisResponseMessage = "Failed to capture screenshot"
                 windowStates[windowId] = windowInfo
-                objectWillChange.send()
                 return
             }
 
@@ -423,7 +410,6 @@ class WindowAIDiagnosticsManager: ObservableObject, Loggable {
                 windowInfo.lastAIAnalysisStatus = .error
                 windowInfo.lastAIAnalysisResponseMessage = "Failed to process screenshot"
                 windowStates[windowId] = windowInfo
-                objectWillChange.send()
                 return
             }
 
@@ -453,7 +439,6 @@ class WindowAIDiagnosticsManager: ObservableObject, Loggable {
             windowInfo.lastAIAnalysisTimestamp = Date()
             windowInfo.lastAIAnalysisStatus = .pending
             windowStates[windowId] = windowInfo
-            objectWillChange.send()
 
             // Use the predefined prompt from CursorScreenshotAnalyzer
             let prompt = CursorScreenshotAnalyzer.AnalysisPrompts.working
@@ -487,7 +472,6 @@ class WindowAIDiagnosticsManager: ObservableObject, Loggable {
                 windowInfo.lastAIAnalysisStatus = .error
                 windowInfo.lastAIAnalysisResponseMessage = "AI response invalid JSON format (extraction failed)."
                 windowStates[windowId] = windowInfo
-                objectWillChange.send()
                 return
             }
 
@@ -555,7 +539,6 @@ class WindowAIDiagnosticsManager: ObservableObject, Loggable {
         }
 
         windowStates[windowId] = windowInfo
-        objectWillChange.send()
     }
 
     // Helper function to extract JSON object from a string that might contain other text or code block markers

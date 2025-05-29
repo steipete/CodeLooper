@@ -42,7 +42,9 @@ struct MarkdownContentPopover: View {
                     isOn: $contentState.isObserving
                 )
                 .onChange(of: contentState.isObserving) { _, newValue in
-                    Task {
+                    Task { @MainActor in
+                        // Defer the action to avoid modifying state during view update
+                        try? await Task.sleep(for: .milliseconds(100))
                         if newValue {
                             await startObserving()
                         } else {
@@ -242,8 +244,10 @@ struct MarkdownContentPopover: View {
             }
 
         } catch {
-            contentState.error = error.localizedDescription
-            contentState.isObserving = false
+            await MainActor.run {
+                contentState.error = error.localizedDescription
+                contentState.isObserving = false
+            }
             logger.error("Failed to start observer: \(error)")
         }
     }

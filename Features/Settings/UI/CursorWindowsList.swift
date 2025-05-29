@@ -29,13 +29,14 @@ struct CursorWindowsList: View {
             if inputWatcherViewModel.cursorWindows.isEmpty {
                 emptyStateView
             } else {
-                ForEach(inputWatcherViewModel.cursorWindows) { window in
+                ForEach(inputWatcherViewModel.cursorWindows, id: \.id) { window in
                     if let windowState = diagnosticsManager.windowStates[window.id] {
                         WindowRow(
                             windowState: windowState,
                             style: style,
                             isGlobalMonitoringEnabled: isGlobalMonitoringEnabled,
-                            inputWatcherViewModel: inputWatcherViewModel
+                            inputWatcherViewModel: inputWatcherViewModel,
+                            diagnosticsManager: diagnosticsManager
                         )
                     }
                 }
@@ -59,7 +60,7 @@ private struct WindowRow: View {
     let style: CursorWindowsList.Style
     let isGlobalMonitoringEnabled: Bool
     @ObservedObject var inputWatcherViewModel: CursorInputWatcherViewModel
-    @ObservedObject private var diagnosticsManager = WindowAIDiagnosticsManager.shared
+    @ObservedObject var diagnosticsManager: WindowAIDiagnosticsManager
 
     @State private var isHoveringFolderIcon = false
     @State private var isHoveringFolderName = false
