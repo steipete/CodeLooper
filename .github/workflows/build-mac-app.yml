@@ -178,7 +178,7 @@ jobs:
         run: |
           # Use Homebrew to install Tuist (most reliable method)
           brew install tuist
-          tuist --version
+          tuist --help | head -5
 
       - name: Generate Xcode project with Tuist
         run: |
