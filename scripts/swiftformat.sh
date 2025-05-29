@@ -10,7 +10,7 @@ APP_DIR="$(cd "$SCRIPT_DIR/.." &> /dev/null && pwd)"
 
 # Initialize variables with defaults
 MODE="check"         # Default mode: just check, don't fix
-TARGET="$APP_DIR/Sources"     # Default target: all Sources
+TARGET="$APP_DIR"     # Default target: entire project (will scan App, Core, Features)
 VERBOSE=false        # Default: non-verbose output
 CONTINUE_ON_ERROR=false  # Default: exit with error if SwiftFormat fails
 CONFIG="$APP_DIR/.swiftformat"    # Config file path
@@ -30,7 +30,7 @@ print_usage() {
     echo "  --verbose            Show detailed output"
     echo "  --help               Display this help message"
     echo ""
-    echo "If no file or directory is specified, the entire 'Sources' directory will be formatted."
+    echo "If no file or directory is specified, the entire project (App/, Core/, Features/) will be formatted."
 }
 
 # Parse arguments
