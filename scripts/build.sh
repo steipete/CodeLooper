@@ -227,7 +227,7 @@ if [ "$SIGN_APP" = true ]; then
             "$APP_BUNDLE"
     else
         log "Using system keychain for signing..."
-        codesign --force --deep --sign "Developer ID Application" "$APP_BUNDLE"
+        codesign --force --deep --options runtime --sign "Developer ID Application" "$APP_BUNDLE"
     fi
     
     log "✅ Code signing completed"
