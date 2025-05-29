@@ -7,6 +7,26 @@
     
     const HOOK_VERSION = '1.2.2';
     const HEARTBEAT_INTERVAL = 1000; // 1 second
+    
+    // One-liner to disable hook: window.__codeLooperDisable && window.__codeLooperDisable()
+    window.__codeLooperDisable = function() {
+        console.log('🛑 CodeLooper: Disabling hook...');
+        if (window.__codeLooperHook) {
+            window.__codeLooperHook.close();
+        }
+        if (window.__codeLooperHeartbeat) {
+            clearInterval(window.__codeLooperHeartbeat);
+        }
+        if (window.__codeLooperWaitingLog) {
+            clearInterval(window.__codeLooperWaitingLog);
+        }
+        window.__codeLooperHook = null;
+        window.__codeLooperPort = null;
+        window.__codeLooperVersion = null;
+        window.__codeLooperHeartbeat = null;
+        window.__codeLooperWaitingLog = null;
+        console.log('✅ CodeLooper: Hook disabled');
+    };
 
     // Helper function for logging that works in both Node.js and browser environments
     function hookLog(msg) {
@@ -35,12 +55,17 @@
                 clearInterval(window.__codeLooperHeartbeat);
                 window.__codeLooperHeartbeat = null;
             }
+            if (window.__codeLooperWaitingLog) {
+                clearInterval(window.__codeLooperWaitingLog);
+                window.__codeLooperWaitingLog = null;
+            }
         } catch (e) {
             hookLog('🔄 CodeLooper: Error closing existing connection: ' + e);
         }
         window.__codeLooperHook = null;
         window.__codeLooperPort = null;
         window.__codeLooperVersion = null;
+        window.__codeLooperWaitingLog = null;
     }
 
     const port = __CODELOOPER_PORT_PLACEHOLDER__; // Will be replaced by Swift
@@ -419,6 +444,13 @@
 
             ws.onopen = () => {
                 hookLog('🔄 CodeLooper: Connected to ' + url);
+                
+                // Stop waiting log
+                if (window.__codeLooperWaitingLog) {
+                    clearInterval(window.__codeLooperWaitingLog);
+                    window.__codeLooperWaitingLog = null;
+                }
+                
                 ws.send('ready');
                 reconnectAttempts = 0; // Reset on successful connection
                 
@@ -449,6 +481,12 @@
                 if (window.__codeLooperHeartbeat) {
                     clearInterval(window.__codeLooperHeartbeat);
                     window.__codeLooperHeartbeat = null;
+                }
+                
+                // Stop waiting log
+                if (window.__codeLooperWaitingLog) {
+                    clearInterval(window.__codeLooperWaitingLog);
+                    window.__codeLooperWaitingLog = null;
                 }
                 
                 // Stop composer observer
@@ -500,6 +538,14 @@
         }
     }
 
+    // Start periodic waiting log (logs every 5 seconds while waiting for connection)
+    // To disable: clearInterval(window.__codeLooperWaitingLog)
+    window.__codeLooperWaitingLog = setInterval(() => {
+        if (!window.__codeLooperHook || window.__codeLooperHook.readyState !== WebSocket.OPEN) {
+            hookLog('⏳ CodeLooper: Waiting for connection on port ' + port + '... (disable with: clearInterval(window.__codeLooperWaitingLog))');
+        }
+    }, 5000);
+    
     // Start connection
     connect();
 

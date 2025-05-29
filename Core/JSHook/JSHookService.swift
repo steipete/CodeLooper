@@ -19,6 +19,10 @@ class JSHookService {
     func isWindowHooked(_ windowId: String) -> Bool {
         jsHookManager.hasHookForWindow(windowId)
     }
+    
+    func getPort(for windowId: String) -> UInt16? {
+        jsHookManager.getPort(for: windowId)
+    }
 
     func injectHook(into window: MonitoredWindowInfo, portManager _: PortManager) async {
         do {

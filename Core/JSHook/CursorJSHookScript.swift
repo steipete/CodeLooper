@@ -43,8 +43,8 @@ public enum CursorJSHookScript {
         let codeLooperVersion = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "Unknown"
         
         let template = try loadTemplate()
-        let withPort = template.replacingOccurrences(of: #""__CODELOOPER_PORT_PLACEHOLDER__""#, with: String(port))
-        let generated = withPort.replacingOccurrences(of: #""__CODELOOPER_VERSION_PLACEHOLDER__""#, with: codeLooperVersion)
+        let withPort = template.replacingOccurrences(of: "__CODELOOPER_PORT_PLACEHOLDER__", with: String(port))
+        let generated = withPort.replacingOccurrences(of: "__CODELOOPER_VERSION_PLACEHOLDER__", with: codeLooperVersion)
         
         logger.info("✅ Generated JS hook script v\(version) for port \(port) (CodeLooper v\(codeLooperVersion))")
         logger.debug("📊 Script stats: \(generated.count) chars, \(generated.components(separatedBy: .newlines).count) lines")
@@ -65,6 +65,26 @@ public enum CursorJSHookScript {
 
         const HOOK_VERSION = '1.2.2';
         const HEARTBEAT_INTERVAL = 1000; // 1 second
+        
+        // One-liner to disable hook: window.__codeLooperDisable && window.__codeLooperDisable()
+        window.__codeLooperDisable = function() {
+            console.log('🛑 CodeLooper: Disabling hook...');
+            if (window.__codeLooperHook) {
+                window.__codeLooperHook.close();
+            }
+            if (window.__codeLooperHeartbeat) {
+                clearInterval(window.__codeLooperHeartbeat);
+            }
+            if (window.__codeLooperWaitingLog) {
+                clearInterval(window.__codeLooperWaitingLog);
+            }
+            window.__codeLooperHook = null;
+            window.__codeLooperPort = null;
+            window.__codeLooperVersion = null;
+            window.__codeLooperHeartbeat = null;
+            window.__codeLooperWaitingLog = null;
+            console.log('✅ CodeLooper: Hook disabled');
+        };
 
         // Helper function for logging that works in both Node.js and browser environments
         function hookLog(msg) {
@@ -93,15 +113,20 @@ public enum CursorJSHookScript {
                     clearInterval(window.__codeLooperHeartbeat);
                     window.__codeLooperHeartbeat = null;
                 }
+                if (window.__codeLooperWaitingLog) {
+                    clearInterval(window.__codeLooperWaitingLog);
+                    window.__codeLooperWaitingLog = null;
+                }
             } catch (e) {
                 hookLog('🔄 CodeLooper: Error closing existing connection: ' + e);
             }
             window.__codeLooperHook = null;
             window.__codeLooperPort = null;
             window.__codeLooperVersion = null;
+            window.__codeLooperWaitingLog = null;
         }
 
-        const port = "__CODELOOPER_PORT_PLACEHOLDER__"; // Will be replaced by Swift
+        const port = __CODELOOPER_PORT_PLACEHOLDER__; // Will be replaced by Swift
         const url = 'ws://127.0.0.1:' + port;
         let reconnectAttempts = 0;
         const maxReconnectAttempts = 5;
@@ -111,7 +136,7 @@ public enum CursorJSHookScript {
             try {
                 // Create a toast notification in Cursor's UI
                 const notification = document.createElement('div');
-                notification.textContent = '✅ CodeLooper v"__CODELOOPER_VERSION_PLACEHOLDER__" connected successfully!';
+                notification.textContent = '✅ CodeLooper v__CODELOOPER_VERSION_PLACEHOLDER__ connected successfully!';
                 notification.style.cssText = 'position: fixed; top: 20px; right: 20px; background: #10b981; color: white; padding: 12px 24px; border-radius: 8px; font-weight: 500; z-index: 999999; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); animation: slideIn 0.3s ease-out; font-family: -apple-system, BlinkMacSystemFont, sans-serif; font-size: 14px;';
 
                 // Add animation
@@ -303,6 +328,13 @@ public enum CursorJSHookScript {
 
                 ws.onopen = () => {
                     hookLog('🔄 CodeLooper: Connected to ' + url);
+                    
+                    // Stop waiting log
+                    if (window.__codeLooperWaitingLog) {
+                        clearInterval(window.__codeLooperWaitingLog);
+                        window.__codeLooperWaitingLog = null;
+                    }
+                    
                     ws.send('ready');
                     reconnectAttempts = 0; // Reset on successful connection
 
@@ -327,6 +359,12 @@ public enum CursorJSHookScript {
                     if (window.__codeLooperHeartbeat) {
                         clearInterval(window.__codeLooperHeartbeat);
                         window.__codeLooperHeartbeat = null;
+                    }
+                    
+                    // Stop waiting log
+                    if (window.__codeLooperWaitingLog) {
+                        clearInterval(window.__codeLooperWaitingLog);
+                        window.__codeLooperWaitingLog = null;
                     }
 
                     // Auto-reconnect logic
@@ -375,6 +413,14 @@ public enum CursorJSHookScript {
             }
         }
 
+        // Start periodic waiting log (logs every 5 seconds while waiting for connection)
+        // To disable: clearInterval(window.__codeLooperWaitingLog)
+        window.__codeLooperWaitingLog = setInterval(() => {
+            if (!window.__codeLooperHook || window.__codeLooperHook.readyState !== WebSocket.OPEN) {
+                hookLog('⏳ CodeLooper: Waiting for connection on port ' + port + '... (disable with: clearInterval(window.__codeLooperWaitingLog))');
+            }
+        }, 5000);
+        
         // Start connection
         connect();
 

@@ -66,6 +66,7 @@ private struct WindowRow: View {
     @State private var isHoveringDocument = false
     @State private var isHoveringCard = false
     @State private var isHoveringGitStatus = false
+    @State private var showDebugPopover = false
 
     private static let logger = Logger(category: .ui)
 
@@ -200,16 +201,36 @@ private struct WindowRow: View {
 
             if style == .settings {
                 let injectionState = inputWatcherViewModel.getInjectionState(for: windowState.id)
-                DSButton(
-                    hasActiveHook ? "Reinject" : injectionState.isWorking ? injectionState.displayText : "Inject JS",
-                    style: .secondary,
-                    size: .small
-                ) {
-                    Task {
-                        await inputWatcherViewModel.injectJSHook(into: windowState)
+                
+                if hasActiveHook {
+                    // Show debug icon when hooked and debug mode is on
+                    if Defaults[.showDebugTab] {
+                        Button(action: {
+                            showDebugPopover = true
+                        }) {
+                            Image(systemName: "ladybug")
+                                .font(.system(size: 12))
+                                .foregroundColor(ColorPalette.primary)
+                        }
+                        .buttonStyle(.plain)
+                        .help("Debug JavaScript Functions")
+                        .popover(isPresented: $showDebugPopover) {
+                            DebugJSPopover(window: windowState, viewModel: inputWatcherViewModel)
+                        }
                     }
+                } else {
+                    // Show inject button when not hooked
+                    DSButton(
+                        injectionState.isWorking ? injectionState.displayText : "Inject JS",
+                        style: .secondary,
+                        size: .small
+                    ) {
+                        Task {
+                            await inputWatcherViewModel.injectJSHook(into: windowState)
+                        }
+                    }
+                    .disabled(injectionState.isWorking)
                 }
-                .disabled(injectionState.isWorking)
             }
         }
     }

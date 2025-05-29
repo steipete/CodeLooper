@@ -10,6 +10,7 @@
 		01FBFB51BE16DD33A4D69FDD /* WelcomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8AFEC59EAD076838E8E71639 /* WelcomeView.swift */; };
 		0210C21C932C04DE5F0ED6AC /* CursorInstanceStateManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 54B65F21681551CC52889E36 /* CursorInstanceStateManager.swift */; };
 		05937ABB3303B37DAF4A3D61 /* DiagnosticContext.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6B07276F0EF930F7FA621853 /* DiagnosticContext.swift */; };
+		05B70B09D612D31D92C37956 /* DebugJSPopover.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5B710DB1C02F2A2185FC1CC4 /* DebugJSPopover.swift */; };
 		072483B6601F637E80AFF32C /* CustomChainLinkIcon.swift in Sources */ = {isa = PBXBuildFile; fileRef = E2716B93466A5D758E1409FE /* CustomChainLinkIcon.swift */; };
 		082A720114F8D15ED0515726 /* LaunchAtLogin in Frameworks */ = {isa = PBXBuildFile; productRef = 7E3ECC987050217D4CA1A8FF /* LaunchAtLogin */; };
 		0ABB3D264768A8DB8A466EC8 /* DynamicLocatorDiscoverer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37382D210CA16F8C4A831728 /* DynamicLocatorDiscoverer.swift */; };
@@ -278,6 +279,7 @@
 		59E145D453493067A465BDC6 /* CursorMonitorService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CursorMonitorService.swift; sourceTree = "<group>"; };
 		5ABEF7DF05613D31FB3F18B9 /* Diagnostics-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = "Diagnostics-Info.plist"; sourceTree = "<group>"; };
 		5AE786A2B4DC323E00FA6ECB /* PortManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PortManager.swift; sourceTree = "<group>"; };
+		5B710DB1C02F2A2185FC1CC4 /* DebugJSPopover.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DebugJSPopover.swift; sourceTree = "<group>"; };
 		5C269CF098C4B63FEB982989 /* SparkleUpdaterManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SparkleUpdaterManager.swift; sourceTree = "<group>"; };
 		5DEDCE2213643BD9D3AD5C4B /* CursorInstanceModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CursorInstanceModels.swift; sourceTree = "<group>"; };
 		6020C10BDD9CC0EFD5A7C57E /* CustomObservation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CustomObservation.swift; sourceTree = "<group>"; };
@@ -607,6 +609,7 @@
 		3CDB825EFD72238B3AA606F2 /* Components */ = {
 			isa = PBXGroup;
 			children = (
+				5B710DB1C02F2A2185FC1CC4 /* DebugJSPopover.swift */,
 				E70C08E6F5DBA33B403CF1D1 /* MainSettingsViewModel.swift */,
 				55FC1A83F3EA25C2E2C66D1D /* RadioButtonRow.swift */,
 				A71F7E04AC4E66D9257D4669 /* SettingsSection.swift */,
@@ -1282,6 +1285,7 @@
 				211CE8C12B653D2BB34E24E9 /* SettingsTab.swift in Sources */,
 				4A83C9C9A6E21C7D5FDE6E66 /* SettingsService.swift in Sources */,
 				7167D4DEB91B9E3AC510F888 /* UserDefaultsStorage.swift in Sources */,
+				05B70B09D612D31D92C37956 /* DebugJSPopover.swift in Sources */,
 				F17E0567B5A87A71789B6541 /* MainSettingsViewModel.swift in Sources */,
 				9704442453519817D0F52F80 /* RadioButtonRow.swift in Sources */,
 				60E1996918E2C404F0B6D511 /* SettingsSection.swift in Sources */,

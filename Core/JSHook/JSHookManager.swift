@@ -37,6 +37,11 @@ class JSHookManager {
         await connectionManager.windowsChanged(windows: windows)
     }
 
+    /// Get the port number for a specific window's hook
+    func getPort(for windowId: String) -> UInt16? {
+        connectionManager.getPort(for: windowId)
+    }
+    
     /// Send a command to a specific window's hook
     func sendCommand(_ command: [String: Any], to windowId: String) async throws -> String {
         guard let hook = connectionManager.getHook(for: windowId) else {

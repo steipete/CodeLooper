@@ -13,15 +13,11 @@ enum JSHookDevConsoleDetector {
         }
         
         // First try using the existing robust WindowTextExtractor + DevConsoleDetector
-        do {
-            let isOpen = DevConsoleDetector.isDevConsoleOpen(in: applicationName)
-            logger.debug("✅ Text-based detection result: \(isOpen)")
-            
-            if isOpen {
-                return true
-            }
-        } catch {
-            logger.warning("⚠️ Text-based detection failed: \(error.localizedDescription)")
+        let isOpen = DevConsoleDetector.isDevConsoleOpen(in: applicationName)
+        logger.debug("✅ Text-based detection result: \(isOpen)")
+        
+        if isOpen {
+            return true
         }
         
         // Fallback to AppleScript window detection (improved to target correct window)
@@ -133,32 +129,6 @@ enum JSHookDevConsoleDetector {
         return false
         """
 
-        let appleScript = NSAppleScript(source: script)
-        var errorDict: NSDictionary?
-        let result = appleScript?.executeAndReturnError(&errorDict)
-        
-        // Handle errors properly
-        if let error = errorDict {
-            let errorMessage = error[NSAppleScript.errorMessage] as? String ?? "Unknown AppleScript error"
-            let errorNumber = error[NSAppleScript.errorNumber] as? Int ?? -1
-            
-            logger.error("🍎 AppleScript dev console detection failed: \(errorMessage) (Code: \(errorNumber))")
-            
-            // Check for specific error codes
-            switch errorNumber {
-            case -1743:
-                logger.error("⚠️ User denied automation permission")
-            case -600:
-                logger.error("⚠️ Application \(applicationName) not running or not found")
-            case -10004:
-                logger.error("⚠️ A privilege violation occurred")
-            default:
-                logger.error("⚠️ Unexpected AppleScript error: \(errorNumber)")
-            }
-            
-            return false
-        }
-        
         return executeAppleScriptDetection(script: script, logger: logger)
     }
     

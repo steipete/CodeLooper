@@ -97,6 +97,10 @@ final class ConnectionManager {
         hooks[windowId] != nil
     }
     
+    func getPort(for windowId: String) -> UInt16? {
+        windowPorts[windowId]
+    }
+    
     // MARK: - Private Implementation
     
     private func probeAvailablePorts() async {

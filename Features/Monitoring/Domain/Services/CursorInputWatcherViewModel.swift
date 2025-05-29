@@ -69,6 +69,28 @@ class CursorInputWatcherViewModel: ObservableObject {
     var isWatchingEnabled: Bool {
         Defaults[.isGlobalMonitoringEnabled]
     }
+    
+    // MARK: - View Lifecycle
+    
+    func handleViewAppear() {
+        logger.info("CursorInputWatcher view appeared - refreshing connections")
+        // Re-establish connections for hooked windows
+        Task {
+            for window in cursorWindows {
+                if jsHookManager.isWindowHooked(window.id) {
+                    // Connection should already be managed by ConnectionManager
+                    windowInjectionStates[window.id] = .hooked
+                }
+            }
+            updateHookStatuses()
+        }
+    }
+    
+    func handleViewDisappear() {
+        logger.info("CursorInputWatcher view disappearing - preserving connections")
+        // Don't close connections - they should persist across tab switches
+        // The ConnectionManager will maintain them
+    }
 
     // MARK: - JS Hook Management
 
