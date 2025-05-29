@@ -50,7 +50,7 @@ concurrency:
 jobs:
   build_and_process_mac_app:
     name: Build, Sign & Optionally Notarize macOS CodeLooper App
-    runs-on: macos-latest
+    runs-on: ghcr.io/cirruslabs/macos-runner:sequoia
     timeout-minutes: 60
 
     outputs:
@@ -65,11 +65,11 @@ jobs:
           fetch-depth: 0
           submodules: recursive
 
-      # Set up Swift environment - use latest Xcode with Swift 6.0
+      # Set up Swift environment - use Xcode 16.4 with Swift 6.0
       - name: Setup Xcode and Swift 6.0
         run: |
-          # Use Xcode 16.2 which includes Swift 6.0
-          sudo xcode-select -s /Applications/Xcode_16.2.app
+          # Use Xcode 16.4 which includes Swift 6.0 (pre-installed on Cirrus Sequoia)
+          sudo xcodes select 16.4
           swift --version
           xcodebuild -version
 
@@ -177,19 +177,24 @@ jobs:
           chmod +x scripts/build.sh
           chmod +x scripts/codesign-app.sh
 
-      - name: Install build tools (Tuist and xcbeautify)
+      - name: Install build tools (Tuist, xcbeautify, SwiftLint, SwiftFormat)
         run: |
-          # Use Homebrew to install Tuist (most reliable method)
-          brew install tuist
+          # Use Homebrew to install all build tools
+          brew install tuist xcbeautify swiftlint swiftformat
           tuist --help | head -5
-          
-          # Install xcbeautify for cleaner build output
-          brew install xcbeautify
 
       - name: Generate Xcode project with Tuist
         run: |
           # Generate Xcode project with Swift 6.0
           ./scripts/generate-xcproj.sh
+
+      - name: Run SwiftFormat (check only)
+        run: |
+          swiftformat --lint .
+
+      - name: Run SwiftLint
+        run: |
+          swiftlint lint --strict
 
       - name: Build, Sign, and Optionally Notarize macOS App
         id: build_sign_notarize_step
