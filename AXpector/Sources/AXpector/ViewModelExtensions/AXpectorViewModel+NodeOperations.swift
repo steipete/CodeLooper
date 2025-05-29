@@ -7,6 +7,14 @@ import Defaults // ADD for Defaults
 
 // MARK: - Node Operations (Finding, Expanding, Mapping)
 
+/// Extension providing node operations and tree manipulation functionality.
+///
+/// This extension handles:
+/// - Node discovery and lookup operations within accessibility trees
+/// - Tree expansion and collapse state management
+/// - Node property mapping and conversion from AXorcist elements
+/// - Child node relationship management
+/// - Tree traversal and navigation utilities
 extension AXpectorViewModel {
     // Function to find a node by ID in the tree structure
     func findNode(by id: AXPropertyNode.ID?, in tree: [AXPropertyNode]) -> AXPropertyNode? {

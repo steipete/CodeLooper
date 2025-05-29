@@ -1,5 +1,11 @@
 import Foundation
 
+/// Extension providing timeout functionality for async Task operations.
+///
+/// This extension adds timeout capabilities to Swift's Task system, allowing
+/// operations to be cancelled if they exceed a specified time limit. Essential
+/// for preventing hung operations in network calls, file operations, and other
+/// potentially blocking async work.
 extension Task where Success == Never, Failure == Never {
     /// Run a task with a timeout, throwing a TimeoutError if the timeout is exceeded
     /// Modern implementation using async/await without task groups

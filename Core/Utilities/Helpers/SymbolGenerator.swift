@@ -1,10 +1,17 @@
 import AppKit
 import Foundation
 
-// Simple utility to generate a symbol.png file for the menu bar
-// Run with: swift SymbolGenerator.swift
-
-// Use this script separately if needed
+/// Utility for generating menu bar icon symbols and assets.
+///
+/// SymbolGenerator provides:
+/// - Menu bar icon generation with proper sizing (22x22 pixels)
+/// - High-DPI asset creation (@2x variants)
+/// - Symbol styling consistent with macOS design guidelines
+/// - Asset export for build integration
+/// - Template icon generation for different states
+///
+/// This utility can be run as a standalone script to regenerate
+/// menu bar assets when needed: `swift SymbolGenerator.swift`
 enum SymbolGenerator {
     // MARK: Internal
 

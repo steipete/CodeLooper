@@ -4,6 +4,23 @@ import Diagnostics
 import Foundation
 import Network
 
+/// Core JavaScript injection system for deep integration with Cursor IDE.
+///
+/// CursorJSHook provides the foundation for CodeLooper's Cursor automation by:
+/// - Injecting JavaScript code into Cursor's Electron renderer process
+/// - Establishing bidirectional WebSocket communication channels
+/// - Managing hook lifecycle including connection, injection, and cleanup
+/// - Providing command execution interface for UI automation
+/// - Monitoring hook health and connection status
+///
+/// The system works by:
+/// 1. Starting a WebSocket server on a designated port
+/// 2. Using AppleScript to inject JavaScript that connects back to the server
+/// 3. Maintaining persistent communication for real-time commands
+/// 4. Providing high-level APIs for Cursor interaction and monitoring
+///
+/// This enables CodeLooper to detect stuck states, automate recovery actions,
+/// and provide seamless supervision of Cursor IDE instances.
 @MainActor
 public final class CursorJSHook {
     // MARK: Lifecycle

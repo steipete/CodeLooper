@@ -9,7 +9,11 @@ import SwiftUI
 
 // MARK: - Color Extensions for Conversion
 
-// Extend SwiftUI Color to have better conversion to NSColor
+/// Extension providing SwiftUI Color to NSColor conversion for macOS compatibility.
+///
+/// This extension bridges SwiftUI's Color type with AppKit's NSColor for use in
+/// mixed SwiftUI/AppKit contexts. Provides safe conversion methods that handle
+/// color space differences and system color mapping.
 extension Color {
     func toNSColor() -> NSColor {
         // This is a simplified conversion just returning system colors

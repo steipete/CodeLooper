@@ -1,9 +1,16 @@
 import AppKit
 import Foundation
 
-// This file is needed to provide the NSImage extension used by MenuBarIconManager
-// Instead of forwarding to ResourceLoader, we'll reimplement the functionality
-// to avoid circular dependencies and module import issues
+/// Extension providing resource loading capabilities for NSImage.
+///
+/// This extension provides menu bar icon loading functionality with:
+/// - Multiple resource location fallback strategies
+/// - Development and production resource path handling
+/// - Circular dependency avoidance with ResourceLoader
+/// - Bundle resource discovery and caching
+/// - Error handling for missing assets
+///
+/// Used primarily by MenuBarIconManager for status icon loading.
 extension NSImage {
     // This is a reimplementation that matches ResourceLoader's functionality
     @MainActor

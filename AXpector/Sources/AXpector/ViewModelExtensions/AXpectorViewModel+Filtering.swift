@@ -5,6 +5,15 @@ import SwiftUI // For @Published properties if any were moved (not in this exten
 import AXorcist // For GlobalAXLogger and ax...Log helpers
 import Foundation // For NSRegularExpression
 
+/// Extension providing advanced filtering capabilities for accessibility tree nodes.
+///
+/// This extension handles:
+/// - Text-based filtering with pattern matching and regex support
+/// - Multi-criteria filtering (role, title, value, attributes)
+/// - Debounced filter input processing for performance
+/// - Filter state management and persistence
+/// - Tree node visibility calculations based on filter results
+
 // MARK: - Filter Criteria Structures (used by Filtering Logic)
 
 // Note: These are defined here to be accessible by the AXpectorViewModel extension below.

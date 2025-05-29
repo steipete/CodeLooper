@@ -6,6 +6,19 @@ import Diagnostics
 @preconcurrency import Foundation
 import SwiftUI
 
+/// Central coordinator for Cursor input monitoring and JavaScript hook management.
+///
+/// CursorInputWatcherViewModel serves as the primary ViewModel for monitoring functionality:
+/// - Orchestrates JavaScript hook injection and management across Cursor windows
+/// - Coordinates with port management for WebSocket connection allocation
+/// - Manages heartbeat monitoring to ensure hook responsiveness
+/// - Integrates with AI analysis for window state detection
+/// - Provides UI state management for monitoring views and debugging
+/// - Handles query execution and response processing
+///
+/// This ViewModel acts as the central nervous system for CodeLooper's monitoring
+/// capabilities, coordinating between multiple services to provide comprehensive
+/// Cursor supervision and automated intervention.
 @MainActor
 class CursorInputWatcherViewModel: ObservableObject {
     // MARK: Lifecycle

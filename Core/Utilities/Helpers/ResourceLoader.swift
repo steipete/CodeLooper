@@ -1,8 +1,17 @@
 import AppKit
 import Foundation
 
-// Class for resource and configuration loading
-// All methods are static with no mutable state, so can properly conform to Sendable
+/// Utility class for loading application resources and configuration values.
+///
+/// ResourceLoader provides type-safe access to:
+/// - Info.plist configuration values
+/// - App Transport Security settings
+/// - URL scheme configurations
+/// - Bundle resource loading
+/// - Configuration validation and error handling
+///
+/// All methods are static and thread-safe, making this class suitable
+/// for use across different actors and concurrent contexts.
 public final class ResourceLoader: Sendable {
     // Get a value from Info.plist with type safety
     public static func getInfoPlistValue<T>(for key: String) -> T? {
