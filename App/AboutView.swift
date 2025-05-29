@@ -24,7 +24,7 @@ struct AboutView: View {
                         }
                 }
                 .buttonStyle(.plain)
-                .padding(.top, 20)
+                .padding(.top, 40)
             }
 
             Text("CodeLooper")
