@@ -118,8 +118,8 @@ struct AISettingsView: View {
                 .frame(maxWidth: .infinity, alignment: .center)
                 .padding(.top, Spacing.xxSmall)
 
-            // Manual AI Window Analysis
-            DSSettingsSection("Manual AI Window Analysis") {
+            // AI Analysis
+            DSSettingsSection("AI Analysis") {
                 VStack(alignment: .leading, spacing: Spacing.medium) {
                     Text(
                         "The AI service will be used to analyze screenshots of Cursor windows and provide insights about what the application is currently doing."
@@ -195,12 +195,15 @@ struct AISettingsView: View {
                 if isAutoTesting {
                     DSShimmer(width: 16, height: 16, cornerRadius: 2)
                 }
-                Text(connectionTestResult ?? "")
-                    .font(Typography.caption1())
-                    .foregroundColor(connectionTestResult?.contains("✓") == true ? ColorPalette.success :
-                        connectionTestResult?.contains("✗") == true ? ColorPalette.error : ColorPalette
-                        .textSecondary)
-                    .opacity((isAutoTesting || connectionTestResult != nil) ? 1 : 0)
+                // Show text only if it's not the "validating soon" message
+                if connectionTestResult != StatusMessage.validatingSoon {
+                    Text(connectionTestResult ?? "")
+                        .font(Typography.caption1())
+                        .foregroundColor(connectionTestResult?.contains("✓") == true ? ColorPalette.success :
+                            connectionTestResult?.contains("✗") == true ? ColorPalette.error : ColorPalette
+                            .textSecondary)
+                        .opacity((isAutoTesting || connectionTestResult != nil) ? 1 : 0)
+                }
             }
             .padding(.top, Spacing.xxSmall)
             .frame(minHeight: Typography.Size.xxSmall.rawValue + 4)
@@ -254,12 +257,15 @@ struct AISettingsView: View {
                 if isAutoTesting {
                     DSShimmer(width: 16, height: 16, cornerRadius: 2)
                 }
-                Text(connectionTestResult ?? "")
-                    .font(Typography.caption1())
-                    .foregroundColor(connectionTestResult?.contains("✓") == true ? ColorPalette.success :
-                        connectionTestResult?.contains("✗") == true ? ColorPalette.error : ColorPalette
-                        .textSecondary)
-                    .opacity((isAutoTesting || connectionTestResult != nil) ? 1 : 0)
+                // Show text only if it's not the "validating soon" message
+                if connectionTestResult != StatusMessage.validatingSoon {
+                    Text(connectionTestResult ?? "")
+                        .font(Typography.caption1())
+                        .foregroundColor(connectionTestResult?.contains("✓") == true ? ColorPalette.success :
+                            connectionTestResult?.contains("✗") == true ? ColorPalette.error : ColorPalette
+                            .textSecondary)
+                        .opacity((isAutoTesting || connectionTestResult != nil) ? 1 : 0)
+                }
             }
             .padding(.top, Spacing.xxSmall)
             .frame(minHeight: Typography.Size.xxSmall.rawValue + 4)
