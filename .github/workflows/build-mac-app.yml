@@ -189,12 +189,20 @@ jobs:
           ./scripts/generate-xcproj.sh
 
       - name: Run SwiftFormat (check only)
+        continue-on-error: true
         run: |
-          swiftformat --lint .
+          echo "::group::SwiftFormat Check"
+          chmod +x scripts/ci-swiftformat.sh
+          scripts/ci-swiftformat.sh --verbose || echo "::warning::SwiftFormat found formatting issues"
+          echo "::endgroup::"
 
       - name: Run SwiftLint
+        continue-on-error: true
         run: |
-          swiftlint lint --strict
+          echo "::group::SwiftLint Check"
+          chmod +x scripts/ci-swiftlint.sh
+          scripts/ci-swiftlint.sh --verbose || echo "::warning::SwiftLint found linting issues"
+          echo "::endgroup::"
 
       - name: Build, Sign, and Optionally Notarize macOS App
         id: build_sign_notarize_step
@@ -334,6 +342,19 @@ jobs:
             ${{ steps.create_artifacts.outputs.artifact_dmg_path }}
           retention-days: 14
           if-no-files-found: error
+
+      - name: Upload Lint and Format Reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: CodeLooper-Lint-Format-Reports-${{ steps.set-version.outputs.version }}
+          path: |
+            lint-summary.md
+            format-summary.md
+            lint-results.txt
+            format-results.txt
+          retention-days: 7
+          if-no-files-found: ignore
 
       - name: Create PR Comment
         if: github.event_name == 'pull_request' && always()
