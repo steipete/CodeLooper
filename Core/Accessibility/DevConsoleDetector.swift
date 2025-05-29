@@ -79,10 +79,8 @@ public enum DevConsoleDetector {
 
         // Count how many dev console keywords are present
         var matchCount = 0
-        for keyword in devConsoleKeywords {
-            if normalizedText.contains(keyword.lowercased()) {
-                matchCount += 1
-            }
+        for keyword in devConsoleKeywords where normalizedText.contains(keyword.lowercased()) {
+            matchCount += 1
         }
 
         // If we find multiple dev console keywords, it's likely the console is open

@@ -150,14 +150,12 @@ class HeartbeatMonitor: Loggable {
     private func checkAllHeartbeats() {
         // Check for timed out heartbeats
         let now = Date()
-        for (windowId, lastHeartbeat) in lastHeartbeats {
-            if now.timeIntervalSince(lastHeartbeat) > heartbeatTimeout {
-                logger.warning("Heartbeat timeout for window \(windowId)")
-                var status = HeartbeatStatus()
-                status.lastHeartbeat = lastHeartbeat
-                status.isAlive = false
-                delegate?.heartbeatMonitor(self, didUpdateStatus: status, for: windowId)
-            }
+        for (windowId, lastHeartbeat) in lastHeartbeats where now.timeIntervalSince(lastHeartbeat) > heartbeatTimeout {
+            logger.warning("Heartbeat timeout for window \(windowId)")
+            var status = HeartbeatStatus()
+            status.lastHeartbeat = lastHeartbeat
+            status.isAlive = false
+            delegate?.heartbeatMonitor(self, didUpdateStatus: status, for: windowId)
         }
     }
 }

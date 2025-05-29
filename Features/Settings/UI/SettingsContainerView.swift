@@ -30,8 +30,12 @@ struct SettingsContainerView: View {
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
         }
-        .frame(minWidth: 600, maxWidth: 880,
-               minHeight: 400, maxHeight: 1200)
+        .frame(
+            minWidth: 600,
+            maxWidth: 880,
+            minHeight: 400,
+            maxHeight: 1200
+        )
         .background(ColorPalette.background)
         .withDesignSystem()
     }

@@ -20,6 +20,7 @@ These scripts in the root directory provide a consistent interface but delegate 
 
 - `build.sh` - Main build script for the application
 - `build-and-notarize.sh` - Complete workflow to build, sign, and notarize the app for distribution
+- `clean-and-regenerate.sh` - Clean build artifacts and regenerate Xcode project
 - `lint.sh` - Code quality and formatting checks
 - `run-swiftformat.sh` - Swift code formatting
 - `run-swiftlint.sh` - Swift code linting
@@ -28,6 +29,7 @@ These scripts in the root directory provide a consistent interface but delegate 
 ### Implementation Scripts
 
 - `scripts/build.sh` - Main build script implementation
+- `scripts/clean-and-regenerate.sh` - Clean and regenerate implementation
 - `scripts/swiftlint.sh` - SwiftLint implementation
 - `scripts/swiftformat.sh` - SwiftFormat implementation
 - `scripts/swift-check.sh` - Validation implementation

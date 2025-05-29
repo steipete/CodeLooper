@@ -230,6 +230,7 @@ actor OperationTracker {
     }
 
     /// Get operation statistics for reporting
+    // swiftlint:disable:next large_tuple
     func getOperationStatistics() -> (
         counts: [String: Int],
         errors: [String: [Error]],

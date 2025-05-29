@@ -58,6 +58,7 @@ class SettingsToolbarDelegate: NSObject, NSToolbarDelegate {
         return identifiers
     }
 
+    // swiftlint:disable:next function_body_length
     func toolbar(
         _: NSToolbar,
         itemForItemIdentifier itemIdentifier: NSToolbarItem.Identifier,

@@ -155,6 +155,7 @@ class WindowAIDiagnosticsManager: ObservableObject, Loggable {
         }
     }
 
+    // swiftlint:disable:next function_body_length
     private func updateMonitoredWindows(_ apps: [MonitoredAppInfo]) {
         var newWindowStates: [String: MonitoredWindowInfo] = [:]
         var activeWindowIDs = Set<String>()
@@ -497,10 +498,11 @@ class WindowAIDiagnosticsManager: ObservableObject, Loggable {
                 let aiResult = try decoder.decode(AIResponse.self, from: jsonData)
                 let statusString = aiResult.status.lowercased()
 
-                logger
-                    .info(
-                        "Successfully parsed AI JSON response for window \(windowId). Status: '\(statusString)', Reason: '\(aiResult.reason ?? "N/A")'"
-                    )
+                logger.info(
+                    """
+                    Successfully parsed AI JSON response for window \(windowId). Status: '\(statusString)', Reason: '\(aiResult.reason ?? "N/A")'
+                    """
+                )
 
                 switch statusString {
                 case "working":
@@ -510,10 +512,12 @@ class WindowAIDiagnosticsManager: ObservableObject, Loggable {
                 case "unknown":
                     windowInfo.lastAIAnalysisStatus = .unknown
                 default:
-                    logger
-                        .warning(
-                            "Unexpected AI analysis status value in JSON response for window \(windowId): '\(statusString)'. Expected 'working', 'not_working', or 'unknown'."
-                        )
+                    logger.warning(
+                        """
+                        Unexpected AI analysis status value in JSON response for window \(windowId): '\(statusString)'. \
+                        Expected 'working', 'not_working', or 'unknown'.
+                        """
+                    )
                     windowInfo.lastAIAnalysisStatus = .error
                 }
                 windowInfo.lastAIAnalysisResponseMessage = aiResult.reason ?? "No reason provided."
@@ -521,7 +525,10 @@ class WindowAIDiagnosticsManager: ObservableObject, Loggable {
             } catch {
                 let extractedString = String(data: jsonData, encoding: .utf8) ?? "Invalid UTF-8 Data"
                 logger.error(
-                    "Failed to decode extracted AI JSON for window \(windowId): \(error.localizedDescription). Extracted data (string): '\(extractedString)'. Original raw response: '\(response.text)'"
+                    """
+                    Failed to decode extracted AI JSON for window \(windowId): \(error.localizedDescription). \
+                    Extracted data (string): '\(extractedString)'. Original raw response: '\(response.text)'
+                    """
                 )
                 windowInfo.lastAIAnalysisStatus = .error
                 windowInfo.lastAIAnalysisResponseMessage = "AI response JSON parsing error (after extraction)."
@@ -591,10 +598,11 @@ class WindowAIDiagnosticsManager: ObservableObject, Loggable {
                                     return data
                                 }
                             } else {
-                                logger
-                                    .warning(
-                                        "Content extracted with pattern '\(patternString)' ('\(jsonString)') does not appear to be valid JSON (prefix/suffix check failed)."
-                                    )
+                                logger.warning(
+                                    """
+                                    Content extracted with pattern '\(patternString)' ('\(jsonString)') does not appear to be valid JSON (prefix/suffix check failed).
+                                    """
+                                )
                             }
                         }
                     }

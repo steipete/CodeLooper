@@ -103,10 +103,10 @@ struct MarkdownContentPopover: View {
                         Task {
                             await fetchContent()
                         }
-                    }) {
+                    }, label: {
                         Image(systemName: "arrow.clockwise")
                             .font(.caption)
-                    }
+                    })
                     .buttonStyle(.plain)
                     .disabled(contentState.isLoading || !viewModel.checkHookStatus(for: window))
                     .help("Refresh")

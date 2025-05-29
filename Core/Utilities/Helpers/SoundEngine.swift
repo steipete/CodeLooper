@@ -60,9 +60,14 @@ enum SoundEngine {
             mElement: kAudioObjectPropertyElementMain
         )
 
-        guard AudioObjectGetPropertyData(defaultDeviceID,
-                                         &address, 0, nil,
-                                         &size, &defaultDeviceID) == noErr
+        guard AudioObjectGetPropertyData(
+            defaultDeviceID,
+            &address,
+            0,
+            nil,
+            &size,
+            &defaultDeviceID
+        ) == noErr
         else {
             return false
         }
@@ -73,18 +78,28 @@ enum SoundEngine {
         address.mScope = kAudioObjectPropertyScopeOutput
 
         let hasMute = AudioObjectHasProperty(defaultDeviceID, &address) &&
-            AudioObjectGetPropertyData(defaultDeviceID,
-                                       &address, 0, nil,
-                                       &size, &mute) == noErr
+            AudioObjectGetPropertyData(
+                defaultDeviceID,
+                &address,
+                0,
+                nil,
+                &size,
+                &mute
+            ) == noErr
         if hasMute { return mute != 0 }
 
         // Device offers no mute flag → treat vol == 0 as "muted"
         var vol: Float32 = 1
         size = UInt32(MemoryLayout<Float32>.size)
         address.mSelector = kAudioDevicePropertyVolumeScalar
-        if AudioObjectGetPropertyData(defaultDeviceID,
-                                      &address, 0, nil,
-                                      &size, &vol) == noErr
+        if AudioObjectGetPropertyData(
+            defaultDeviceID,
+            &address,
+            0,
+            nil,
+            &size,
+            &vol
+        ) == noErr
         {
             return vol == 0
         }

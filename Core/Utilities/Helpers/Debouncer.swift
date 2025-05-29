@@ -18,7 +18,7 @@ import Foundation
 /// }
 /// ```
 @MainActor
-public final class Debouncer: Sendable {
+public final class Debouncer {
     // MARK: Lifecycle
 
     public init(delay: TimeInterval) {

@@ -51,7 +51,8 @@ enum JSHookDevConsoleDetector {
 
                         # Check for multiple dev console keywords
                         set keywordCount to 0
-                        set keywords to {"Console", "Elements", "Network", "Sources", "Lighthouse", "DevTools", "Performance", "Memory", "Application", "Security", "Debugger"}
+                        set keywords to {"Console", "Elements", "Network", "Sources", "Lighthouse", ¬
+                                        "DevTools", "Performance", "Memory", "Application", "Security", "Debugger"}
 
                         repeat with keyword in keywords
                             if elementText contains keyword then

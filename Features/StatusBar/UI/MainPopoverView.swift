@@ -99,11 +99,11 @@ struct MainPopoverView: View {
             HStack {
                 Button(action: {
                     MainSettingsCoordinator.shared.showSettings()
-                }) {
+                }, label: {
                     Image(systemName: "gearshape")
                         .font(.system(size: 16))
                         .foregroundColor(ColorPalette.textSecondary)
-                }
+                })
                 .buttonStyle(.plain)
                 .help("Open Settings")
 

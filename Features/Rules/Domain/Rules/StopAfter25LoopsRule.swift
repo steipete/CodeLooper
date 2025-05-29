@@ -21,6 +21,7 @@ public class StopAfter25LoopsRule {
     // MARK: Internal
 
     /// Execute the rule for a specific window
+    // swiftlint:disable:next function_body_length
     func execute(windowId: String, jsHookService: JSHookService) async -> Bool {
         do {
             // Check current execution count

@@ -92,6 +92,7 @@ private struct AnimatedChainLink1Shape: Shape {
         set { animationProgress = newValue }
     }
 
+    // swiftlint:disable:next function_body_length
     func path(in rect: CGRect) -> Path {
         var path = Path()
         let scaleX = rect.width / 100.0 // Your Lottie is 100x100
@@ -188,6 +189,7 @@ private struct AnimatedChainLink2Shape: Shape {
         set { animationProgress = newValue }
     }
 
+    // swiftlint:disable:next function_body_length
     func path(in rect: CGRect) -> Path {
         var path = Path()
         let scaleX = rect.width / 100.0 // Your Lottie is 100x100

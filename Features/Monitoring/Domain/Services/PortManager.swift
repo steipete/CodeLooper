@@ -76,11 +76,9 @@ class PortManager: Loggable {
 
         // If all ports are used, find the first port without an active window
         let activeWindowIds = Set(windowPortMap.keys)
-        for (windowId, port) in windowPortMap {
-            if !activeWindowIds.contains(windowId) {
-                releasePort(for: windowId)
-                return port
-            }
+        for (windowId, port) in windowPortMap where !activeWindowIds.contains(windowId) {
+            releasePort(for: windowId)
+            return port
         }
 
         // Fallback: return base port + random offset
