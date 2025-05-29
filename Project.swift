@@ -27,7 +27,7 @@ let project = Project(
         .remote(url: "https://github.com/MacPaw/OpenAI", requirement: .upToNextMajor(from: "0.3.0")),
         .remote(url: "https://github.com/loopwork-ai/ollama-swift", requirement: .upToNextMajor(from: "1.0.0")),
         .remote(url: "https://github.com/airbnb/lottie-ios", requirement: .upToNextMajor(from: "4.5.0")),
-        .remote(url: "https://github.com/apple/swift-testing.git", requirement: .upToNextMajor(from: "0.8.0")),
+        .remote(url: "https://github.com/apple/swift-testing.git", requirement: .upToNextMajor(from: "0.12.0")),
         .local(path: "AXorcist"),
         .local(path: "AXpector"),
         .local(path: "DesignSystem"),
@@ -162,6 +162,10 @@ let project = Project(
                     "OTHER_SWIFT_FLAGS": "-strict-concurrency=complete",
                     "ENABLE_STRICT_CONCURRENCY_CHECKS": "YES",
                     "ENABLE_TESTING": "YES",
+                    "FRAMEWORK_SEARCH_PATHS": "$(inherited) $(PLATFORM_DIR)/Developer/Library/Frameworks",
+                    // Enable automatic macro trust for Swift Testing
+                    "ENABLE_USER_SCRIPT_SANDBOXING": "NO",
+                    "SWIFT_PACKAGE_MACRO_VALIDATION": "NO",
                 ]
             )
         ),

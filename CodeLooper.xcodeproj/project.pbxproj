@@ -2009,6 +2009,8 @@
 				CODE_SIGN_IDENTITY = "-";
 				ENABLE_STRICT_CONCURRENCY_CHECKS = YES;
 				ENABLE_TESTING = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
+				FRAMEWORK_SEARCH_PATHS = "$(inherited) $(PLATFORM_DIR)/Developer/Library/Frameworks";
 				INFOPLIST_FILE = "Derived/InfoPlists/CodeLooperTests-Info.plist";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -2026,6 +2028,7 @@
 				);
 				SWIFT_COMPILATION_MODE = singlefile;
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_PACKAGE_MACRO_VALIDATION = NO;
 				SWIFT_VERSION = 6.0;
 				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/CodeLooper.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/CodeLooper";
 				TEST_TARGET_NAME = CodeLooper;
@@ -2039,6 +2042,8 @@
 				CODE_SIGN_IDENTITY = "-";
 				ENABLE_STRICT_CONCURRENCY_CHECKS = YES;
 				ENABLE_TESTING = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
+				FRAMEWORK_SEARCH_PATHS = "$(inherited) $(PLATFORM_DIR)/Developer/Library/Frameworks";
 				INFOPLIST_FILE = "Derived/InfoPlists/CodeLooperTests-Info.plist";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -2052,6 +2057,7 @@
 				SDKROOT = macosx;
 				SWIFT_COMPILATION_MODE = wholemodule;
 				SWIFT_OPTIMIZATION_LEVEL = "-Owholemodule";
+				SWIFT_PACKAGE_MACRO_VALIDATION = NO;
 				SWIFT_VERSION = 6.0;
 				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/CodeLooper.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/CodeLooper";
 				TEST_TARGET_NAME = CodeLooper;
@@ -2368,7 +2374,7 @@
 			repositoryURL = "https://github.com/apple/swift-testing.git";
 			requirement = {
 				kind = upToNextMajorVersion;
-				minimumVersion = 0.8.0;
+				minimumVersion = 0.12.0;
 			};
 		};
 		C8F327DDD4E6265D93970A6C /* XCRemoteSwiftPackageReference "OpenAI" */ = {

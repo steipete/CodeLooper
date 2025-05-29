@@ -37,6 +37,8 @@ let package = Package(
         .package(url: "https://github.com/airbnb/lottie-ios", .upToNextMajor(from: "4.5.0")),
         // Development-only dependencies
         .package(url: "https://github.com/cpisciotta/xcbeautify", from: "2.28.0"),
+        // Testing framework
+        .package(url: "https://github.com/apple/swift-testing.git", from: "0.12.0"),
     ],
     targets: [
         .target(
@@ -89,6 +91,7 @@ let package = Package(
             dependencies: [
                 "CodeLooper",
                 "Diagnostics",
+                .product(name: "Testing", package: "swift-testing"),
             ],
             path: "Tests",
             resources: [
