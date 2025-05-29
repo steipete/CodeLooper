@@ -176,11 +176,8 @@ jobs:
 
       - name: Install Tuist
         run: |
-          # Use the new installation method
-          curl -L https://github.com/tuist/tuist/releases/latest/download/tuist.zip -o tuist.zip
-          unzip tuist.zip
-          sudo mv tuist /usr/local/bin/tuist
-          rm tuist.zip
+          # Use Homebrew to install Tuist (most reliable method)
+          brew install tuist
           tuist --version
 
       - name: Generate Xcode project with Tuist
