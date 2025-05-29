@@ -176,8 +176,12 @@ jobs:
 
       - name: Install Tuist
         run: |
-          curl -Ls https://install.tuist.io | bash
-          echo "$HOME/.tuist/bin" >> $GITHUB_PATH
+          # Use the new installation method
+          curl -L https://github.com/tuist/tuist/releases/latest/download/tuist.zip -o tuist.zip
+          unzip tuist.zip
+          sudo mv tuist /usr/local/bin/tuist
+          rm tuist.zip
+          tuist --version
 
       - name: Generate Xcode project with Tuist
         run: |
