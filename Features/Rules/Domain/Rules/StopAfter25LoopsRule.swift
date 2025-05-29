@@ -24,29 +24,11 @@ public class StopAfter25LoopsRule {
     // swiftlint:disable:next function_body_length
     func execute(windowId: String, jsHookService: JSHookService) async -> Bool {
         do {
-            // Check current execution count
             let currentCount = RuleCounterManager.shared.getCount(for: ruleName)
-
+            
             guard currentCount < 25 else {
-                logger.info("🛑 Rule '\(displayName)' has reached 25 executions limit, stopping")
-
-                // Play sound if enabled
-                if Defaults[.enableRuleSounds] {
-                    let soundName = Defaults[.stopAfter25LoopsRuleSound]
-                    SoundEngine.playSystemSound(named: soundName)
-                }
-
-                // Send notification if enabled
-                if Defaults[.enableRuleNotifications] {
-                    await UserNotificationManager.shared.sendRuleExecutionNotification(
-                        ruleName: ruleName,
-                        displayName: displayName,
-                        executionCount: currentCount,
-                        isWarning: false
-                    )
-                }
-
-                return false // Stop execution
+                await handleRuleLimit(currentCount: currentCount)
+                return false
             }
 
             // Check if rule action is needed
@@ -133,6 +115,27 @@ public class StopAfter25LoopsRule {
 
     private let logger = Logger(category: .rules)
     private let sessionLogger = SessionLogger.shared
+    
+    /// Handle when rule limit is reached
+    private func handleRuleLimit(currentCount: Int) async {
+        logger.info("🛑 Rule '\(displayName)' has reached 25 executions limit, stopping")
+
+        // Play sound if enabled
+        if Defaults[.enableRuleSounds] {
+            let soundName = Defaults[.stopAfter25LoopsRuleSound]
+            SoundEngine.playSystemSound(named: soundName)
+        }
+
+        // Send notification if enabled
+        if Defaults[.enableRuleNotifications] {
+            await UserNotificationManager.shared.sendRuleExecutionNotification(
+                ruleName: ruleName,
+                displayName: displayName,
+                executionCount: currentCount,
+                isWarning: false
+            )
+        }
+    }
 }
 
 // MARK: - Notification Names

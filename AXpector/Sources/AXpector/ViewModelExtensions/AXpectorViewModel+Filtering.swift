@@ -51,7 +51,7 @@ extension AXpectorViewModel {
         {
             axDebugLog(
                 "Parsed criteria: \(criteria.map { 
-                    "(\($0.isNegated ? "NOT " : "")\($0.key): (\($0.isRegex ? "regex: " : "")\($0.value))" 
+                    "(\($0.isNegated ? "NOT " : "")\($0.key): \($0.isRegex ? "regex: " : "")\($0.value)"
                 })"
             )
         }

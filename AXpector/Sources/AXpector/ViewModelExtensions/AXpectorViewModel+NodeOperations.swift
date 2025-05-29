@@ -70,8 +70,11 @@ extension AXpectorViewModel {
         }
 
         if node.areChildrenFullyLoaded || node.isLoadingChildren {
-            if node.areChildrenFullyLoaded { axInfoLog("Node \(node.displayName) children are already fully loaded.") }
-            else { axInfoLog("Node \(node.displayName) children are already loading.") }
+            if node.areChildrenFullyLoaded {
+                axInfoLog("Node \(node.displayName) children are already fully loaded.")
+            } else {
+                axInfoLog("Node \(node.displayName) children are already loading.")
+            }
             node.isExpanded = true
             return
         }
@@ -117,7 +120,10 @@ extension AXpectorViewModel {
             let childrenToAssign: [AXPropertyNode]
             if !self.debouncedFilterText.isEmpty {
                 axInfoLog(
-                    "Re-filtering \(fetchedPropertyNodeChildren.count) newly loaded children for node \(node.displayName) against filter: \(self.debouncedFilterText)"
+                    """
+                    Re-filtering \(fetchedPropertyNodeChildren.count) newly loaded children for node \(node.displayName) \
+                    against filter: \(self.debouncedFilterText)
+                    """
                 )
                 childrenToAssign = filterNodes(
                     fetchedPropertyNodeChildren,
@@ -170,8 +176,11 @@ extension AXpectorViewModel {
             let childTitle = childAttributes[AXAttributeNames.kAXTitleAttribute]?.value as? String
             var childPathComponent = childRole ?? "UnknownRole"
             if let title = childTitle,
-               !title.isEmpty { childPathComponent += "[\"\(title.prefix(20))\"]" }
-            else { childPathComponent += "[EL:\(String(describing: childAX.underlyingElement).suffix(8))]" }
+               !title.isEmpty {
+                childPathComponent += "[\"\(title.prefix(20))\"]"
+            } else {
+                childPathComponent += "[EL:\(String(describing: childAX.underlyingElement).suffix(8))]"
+            }
             let childFullPath = pathOfElementToFetchChildrenFor
                 .isEmpty ? childPathComponent : "\(pathOfElementToFetchChildrenFor)/\(childPathComponent)"
 
@@ -331,8 +340,7 @@ extension AXpectorViewModel {
             pid: pid,
             role: role ?? "N/A",
             title: title ?? "",
-            descriptionText: axElementFromCollectAll.attributes?[AXAttributeNames.kAXDescriptionAttribute]?
-                .value as? String ?? "",
+            descriptionText: axElementFromCollectAll.attributes?[AXAttributeNames.kAXDescriptionAttribute]?.value as? String ?? "",
             value: axElementFromCollectAll.attributes?[AXAttributeNames.kAXValueAttribute]?.value as? String ?? "",
             fullPath: newPath, children: mappedChildren, attributes: axElementFromCollectAll.attributes ?? [:],
             actions: axElementFromCollectAll.actions ?? [],

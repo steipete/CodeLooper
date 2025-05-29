@@ -2,6 +2,14 @@ import Foundation
 import os
 import OSLog
 
+/// Operation statistics structure
+struct OperationStatistics {
+    let counts: [String: Int]
+    let errors: [String: [Error]]
+    let timings: [String: [TimeInterval]]
+    let pendingOperations: [UUID: (operation: String, startTime: Date)]
+}
+
 /// Handles operation tracking functionality for the DiagnosticsLogger
 actor OperationTracker {
     // MARK: Internal
@@ -230,14 +238,8 @@ actor OperationTracker {
     }
 
     /// Get operation statistics for reporting
-    // swiftlint:disable:next large_tuple
-    func getOperationStatistics() -> (
-        counts: [String: Int],
-        errors: [String: [Error]],
-        timings: [String: [TimeInterval]],
-        pendingOperations: [UUID: (operation: String, startTime: Date)]
-    ) {
-        (
+    func getOperationStatistics() -> OperationStatistics {
+        OperationStatistics(
             counts: operationCounts,
             errors: operationErrors,
             timings: operationTimings,
