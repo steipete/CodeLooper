@@ -31,10 +31,6 @@ public enum AIErrorMapper {
             return mapURLError(urlError)
         }
 
-        if let nsError = error as? NSError {
-            return mapNSError(nsError)
-        }
-
         // Handle provider-specific errors
         switch provider {
         case .openAI:
@@ -42,6 +38,9 @@ public enum AIErrorMapper {
         case .ollama:
             return mapOllamaError(error)
         }
+        
+        // Fallback: All Swift errors bridge to NSError, so we can cast directly
+        return mapNSError(error as NSError)
     }
 
     /// Maps URLError instances to appropriate AIServiceError cases
@@ -115,7 +114,7 @@ public enum AIErrorMapper {
         switch nsError.domain {
         case NSURLErrorDomain:
             // Convert NSError to URLError and map
-            let urlError = URLError(URLError.Code(rawValue: nsError.code) ?? URLError.Code.unknown)
+            let urlError = URLError(URLError.Code(rawValue: nsError.code))
             return mapURLError(urlError)
 
         case "NSPOSIXErrorDomain":

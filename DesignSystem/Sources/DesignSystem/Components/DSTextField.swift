@@ -56,10 +56,10 @@ public struct DSTextField: View {
                     }
 
                 if showClearButton, !text.isEmpty {
-                    Button(action: { text = "" }) {
+                    Button(action: { text = "" }, label: {
                         Image(systemName: "xmark.circle.fill")
                             .foregroundColor(ColorPalette.textSecondary)
-                    }
+                    })
                     .buttonStyle(.borderless)
                 }
             }

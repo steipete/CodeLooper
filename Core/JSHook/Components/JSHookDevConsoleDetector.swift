@@ -104,7 +104,8 @@ enum JSHookDevConsoleDetector {
 
                             # Check if this is a Cursor window with inline dev tools
                             # Look for specific UI elements that indicate dev console
-                            if windowName contains "Cursor" or windowName contains ".js" or windowName contains ".ts" or windowName contains ".swift" then
+                            if windowName contains "Cursor" or windowName contains ".js" or ¬
+                               windowName contains ".ts" or windowName contains ".swift" then
                                 # Try to get all UI elements in this window
                                 set allElements to entire contents of aWindow
 
@@ -113,7 +114,8 @@ enum JSHookDevConsoleDetector {
 
                                 # Check for multiple dev console keywords
                                 set keywordCount to 0
-                                set keywords to {"Console", "Elements", "Network", "Sources", "Lighthouse", "DevTools", "Performance", "Memory", "Application"}
+                                set keywords to {"Console", "Elements", "Network", "Sources", ¬
+                                                "Lighthouse", "DevTools", "Performance", "Memory", "Application"}
 
                                 repeat with keyword in keywords
                                     if elementText contains keyword then

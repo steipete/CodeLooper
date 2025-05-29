@@ -85,6 +85,7 @@ final class AppNotificationCoordinator: Loggable {
             Task { @MainActor [weak self] in
                 guard let self else { return }
                 self.logger.info("📍 Menu bar highlight requested for \(duration) seconds")
+                // swiftlint:disable:next todo
                 // TODO: Implement menu bar highlighting animation
             }
         }

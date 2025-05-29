@@ -444,7 +444,9 @@ class ProcessMonitoringTickUseCase {
             do {
                 try await UserNotificationManager.shared.sendNotification(
                     title: "CodeLooper: Persistent Failure",
-                    body: "Cursor instance (PID: \(self.pid)) has encountered persistent recovery failures and is now marked unrecoverable.",
+                    body: """
+                          Cursor instance (PID: \(self.pid)) has encountered persistent recovery failures and is now marked unrecoverable.
+                          """,
                     identifier: "persistent_failure_\(self.pid)"
                 )
             } catch {

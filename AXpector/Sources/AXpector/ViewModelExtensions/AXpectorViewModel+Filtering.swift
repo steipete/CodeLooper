@@ -107,6 +107,7 @@ extension AXpectorViewModel {
         return (criteria, generalTerms)
     }
 
+    // swiftlint:disable:next function_body_length
     func filterNodes(_ nodes: [AXPropertyNode], criteria: [FilterCriterion],
                      generalTerms: [GeneralTermCriterion]) -> [AXPropertyNode]
     {
@@ -117,12 +118,21 @@ extension AXpectorViewModel {
                 var specificFieldMatches = false
                 let targetValue = criterion.value
                 switch criterion.key {
-                case "role": specificFieldMatches = match(text: node.role.lowercased(), pattern: targetValue,
-                                                          isRegex: criterion.isRegex)
-                case "title": specificFieldMatches = match(text: node.title.lowercased(), pattern: targetValue,
-                                                           isRegex: criterion.isRegex)
-                case "value": specificFieldMatches = match(text: node.value.lowercased(), pattern: targetValue,
-                                                           isRegex: criterion.isRegex)
+                case "role": specificFieldMatches = match(
+                    text: node.role.lowercased(),
+                    pattern: targetValue,
+                    isRegex: criterion.isRegex
+                )
+                case "title": specificFieldMatches = match(
+                    text: node.title.lowercased(),
+                    pattern: targetValue,
+                    isRegex: criterion.isRegex
+                )
+                case "value": specificFieldMatches = match(
+                    text: node.value.lowercased(),
+                    pattern: targetValue,
+                    isRegex: criterion.isRegex
+                )
                 case "desc": specificFieldMatches = match(text: node.descriptionText.lowercased(), pattern: targetValue,
                                                           isRegex: criterion.isRegex)
                 case "path": specificFieldMatches = match(text: node.fullPath.lowercased(), pattern: targetValue,
@@ -250,11 +260,9 @@ extension AXpectorViewModel {
     }
 
     private func expandAllParentsInFilteredTree(nodes: [AXPropertyNode]) {
-        for node in nodes {
-            if !node.children.isEmpty {
-                node.isExpanded = true
-                expandAllParentsInFilteredTree(nodes: node.children)
-            }
+        for node in nodes where !node.children.isEmpty {
+            node.isExpanded = true
+            expandAllParentsInFilteredTree(nodes: node.children)
         }
     }
 

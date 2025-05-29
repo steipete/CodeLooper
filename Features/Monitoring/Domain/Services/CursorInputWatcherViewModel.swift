@@ -362,6 +362,7 @@ class CursorInputWatcherViewModel: ObservableObject, Loggable {
     // Query-related methods
     private func validateAndGetQueryData(for inputInfo: WatchedInputInfo, at _: Int) -> QueryData? {
         // For now, return a stub query data
+        // swiftlint:disable:next todo
         // TODO: Implement proper query loading from JSON files
         QueryData(
             name: inputInfo.queryFile,
@@ -377,7 +378,10 @@ class CursorInputWatcherViewModel: ObservableObject, Loggable {
             return
         }
 
-        // Use first window for query - TODO: Implement proper window selection
+        // Use first window for query 
+        // swiftlint:disable:next todo
+        // TODO: Implement proper window selection
+        // swiftlint:disable:next todo
         // TODO: Implement actual query execution
         let response = HandlerResponse.success(data: nil)
         await processQueryResponse(response, queryData: queryData, inputInfo: inputInfo, at: index)

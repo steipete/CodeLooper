@@ -58,7 +58,7 @@ public enum WindowTextExtractor {
         guard CFGetTypeID(window) == AXUIElementGetTypeID() else {
             throw ExtractionError.invalidWindowElement
         }
-        let windowElement = unsafeBitCast(window, to: AXUIElement.self)
+        let windowElement = unsafeDowncast(window, to: AXUIElement.self)
         return extractTextFromElement(windowElement)
     }
 
@@ -96,7 +96,7 @@ public enum WindowTextExtractor {
         guard CFGetTypeID(window) == AXUIElementGetTypeID() else {
             throw ExtractionError.invalidWindowElement
         }
-        let windowElement = unsafeBitCast(window, to: AXUIElement.self)
+        let windowElement = unsafeDowncast(window, to: AXUIElement.self)
         return extractTextFromElement(windowElement)
     }
 

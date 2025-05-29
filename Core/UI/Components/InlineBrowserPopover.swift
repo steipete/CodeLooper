@@ -73,7 +73,7 @@ private struct WebView: NSViewRepresentable {
         func webView(
             _: WKWebView,
             decidePolicyFor navigationAction: WKNavigationAction,
-            decisionHandler: @escaping (WKNavigationActionPolicy) -> Void
+            decisionHandler: @escaping @MainActor @Sendable (WKNavigationActionPolicy) -> Void
         ) {
             // Allow the initial load, but open external links in default browser
             if navigationAction.navigationType == .linkActivated {

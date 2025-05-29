@@ -17,6 +17,7 @@ import SwiftUI // For @MainActor
 /// - Synchronization between focus changes and tree selection
 /// - Cleanup of observers when applications quit
 extension AXpectorViewModel {
+    // swiftlint:disable:next function_body_length
     func startFocusTrackingMonitoring() {
         axInfoLog("AXpectorViewModel: Requesting to start focus tracking monitoring.") // CHANGED
 
@@ -97,8 +98,11 @@ extension AXpectorViewModel {
     }
 
     @MainActor
-    private func handleFocusNotificationFromAXorcist(focusedElement: Element, pid: pid_t,
-                                                     notification: AXNotification)
+    private func handleFocusNotificationFromAXorcist(
+        focusedElement: Element,
+        pid: pid_t,
+        notification: AXNotification
+    )
     {
         axDebugLog(
             "AXpectorVM.handleFocusNotification: Element: \(focusedElement.briefDescription()), PID: \(pid), Notification: \(notification.rawValue)"
