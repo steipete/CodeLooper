@@ -12,13 +12,13 @@ let package = Package(
     ],
     dependencies: [
         // Core UI and settings
-        .package(url: "https://github.com/sindresorhus/Defaults", .upToNextMajor(from: "9.0.2")),
+        .package(url: "https://github.com/sindresorhus/Defaults", .upToNextMajor(from: "9.0.3")),
         .package(url: "https://github.com/siteline/SwiftUI-Introspect.git", from: "1.3.0"),
         .package(url: "https://github.com/sindresorhus/KeyboardShortcuts", .upToNextMajor(from: "2.3.0")),
         // Logging
         .package(url: "https://github.com/apple/swift-log.git", from: "1.6.3"),
         // User experience - launch at login
-        .package(url: "https://github.com/sindresorhus/LaunchAtLogin", .upToNextMajor(from: "5.0.0")),
+        .package(url: "https://github.com/sindresorhus/LaunchAtLogin", .upToNextMajor(from: "5.0.2")),
         // Keychain access
         .package(url: "https://github.com/kishikawakatsumi/KeychainAccess.git", .upToNextMajor(from: "4.2.2")),
         // Accessibility utilities
@@ -27,14 +27,14 @@ let package = Package(
         // Design System
         .package(path: "DesignSystem"),
         // Auto-updater
-        .package(url: "https://github.com/sparkle-project/Sparkle.git", .upToNextMajor(from: "2.0.0")),
+        .package(url: "https://github.com/sparkle-project/Sparkle.git", .upToNextMajor(from: "2.7.0")),
         // MenuBarExtra enhancements
         .package(url: "https://github.com/orchetect/MenuBarExtraAccess.git", .upToNextMajor(from: "1.2.1")),
         // AI and image analysis dependencies
-        .package(url: "https://github.com/MacPaw/OpenAI", .upToNextMajor(from: "0.3.0")),
-        .package(url: "https://github.com/loopwork-ai/ollama-swift", .upToNextMajor(from: "1.0.0")),
+        .package(url: "https://github.com/MacPaw/OpenAI", .upToNextMajor(from: "0.4.3")),
+        .package(url: "https://github.com/loopwork-ai/ollama-swift", .upToNextMajor(from: "1.4.0")),
         // Animation library
-        .package(url: "https://github.com/airbnb/lottie-ios", .upToNextMajor(from: "4.5.0")),
+        .package(url: "https://github.com/airbnb/lottie-ios", .upToNextMajor(from: "4.5.2")),
         // Development-only dependencies
         .package(url: "https://github.com/cpisciotta/xcbeautify", from: "2.28.0"),
     ],
