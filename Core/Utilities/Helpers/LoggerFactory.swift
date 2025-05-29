@@ -58,8 +58,12 @@ public enum LoggerFactory {
     private static func categoryFromType<T>(_ type: T.Type) -> LogCategory {
         let typeName = String(describing: type)
         
-        // Map based on common naming patterns
+        // Map based on common naming patterns and specific types
         switch typeName {
+        case "AppDelegate":
+            return .appDelegate
+        case let name where name.contains("SparkleUpdater") || name.contains("Updater"):
+            return .appLifecycle
         case let name where name.contains("Monitor"):
             return .supervision
         case let name where name.contains("Intervention"):

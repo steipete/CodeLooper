@@ -65,7 +65,4 @@ public class SparkleUpdaterManager: NSObject, SPUUpdaterDelegate, SPUStandardUse
     }() // The () here executes the closure and assigns the result to updaterController
 
     // MARK: Private
-
-    // Use .appLifecycle as .updater is not available. Consider adding .updater to LogCategory later.
-    private let logger = Logger(category: .appLifecycle)
 }

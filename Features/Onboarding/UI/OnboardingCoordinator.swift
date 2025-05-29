@@ -77,8 +77,6 @@ class WelcomeWindowCoordinator: NSObject {
     }
 
     // MARK: Private
-
-    private let logger = Logger(category: .onboarding)
     private var cancellables = Set<AnyCancellable>()
 
     // MARK: - Notification Handling

@@ -173,9 +173,6 @@ public final class AppDelegate: NSObject, NSApplicationDelegate, ObservableObjec
     // MARK: Internal
 
     // MARK: - Logger
-
-    // Use custom Logger for categorized logging
-    let logger = Logger(category: .appDelegate)
     // Services - initialized directly in AppDelegate
     var loginItemManager: LoginItemManager?
     var axApplicationObserver: AXApplicationObserver?
