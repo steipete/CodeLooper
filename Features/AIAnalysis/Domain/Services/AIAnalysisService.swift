@@ -2,7 +2,7 @@ import Defaults
 import Foundation
 import SwiftUI
 
-public enum AIProvider: String, CaseIterable, Identifiable, Codable, Defaults.Serializable {
+public enum AIProvider: String, CaseIterable, Identifiable, Codable, Defaults.Serializable, Sendable {
     case openAI = "OpenAI"
     case ollama = "Ollama"
 
@@ -18,7 +18,7 @@ public enum AIProvider: String, CaseIterable, Identifiable, Codable, Defaults.Se
     }
 }
 
-public enum AIModel: String, CaseIterable, Identifiable, Codable, Defaults.Serializable {
+public enum AIModel: String, CaseIterable, Identifiable, Codable, Defaults.Serializable, Sendable {
     // OpenAI Models
     case gpt4o = "gpt-4o"
     case gpt4TurboVision = "gpt-4-turbo-2024-04-09"
