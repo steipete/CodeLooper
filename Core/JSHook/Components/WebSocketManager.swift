@@ -1,7 +1,6 @@
 import Diagnostics
 import Foundation
 import Network
-import Utilities
 
 /// Manages WebSocket connections for JavaScript hook communication with Cursor.
 ///
@@ -68,7 +67,7 @@ final class WebSocketManager: Loggable {
         }
 
         listener?.newConnectionHandler = { [weak self] connection in
-            logger.info("🌀 Browser connecting...")
+            self?.logger.info("🌀 Browser connecting...")
             Task { @MainActor in
                 self?.adoptConnection(connection)
             }
@@ -96,7 +95,7 @@ final class WebSocketManager: Loggable {
                 return
             }
 
-            try await Task.sleep(seconds: TimingConfiguration.pollInterval)
+            try await Task.sleep(for: .seconds(TimingConfiguration.pollInterval))
         }
 
         logger.error("❌ Handshake timeout after \(timeout)s")
@@ -180,17 +179,17 @@ final class WebSocketManager: Loggable {
     }
 
     private func handleConnectionStateChange(_ state: NWConnection.State, for connection: NWConnection) {
-        Logger(category: .jshook).info("🌀 WS Connection state: \(state)")
+        logger.info("🌀 WS Connection state: \(state)")
 
         switch state {
         case .ready:
-            Logger(category: .jshook).info("🌀 WS Connection is ready. Starting message pump.")
+            logger.info("🌀 WS Connection is ready. Starting message pump.")
             startMessagePump(for: connection)
         case let .failed(error):
-            Logger(category: .jshook).error("🌀 WS Connection failed: \(error.localizedDescription)")
+            logger.error("🌀 WS Connection failed: \(error.localizedDescription)")
             cleanupConnection(error: .connectionLost(underlyingError: error))
         case .cancelled:
-            Logger(category: .jshook).info("🌀 WS Connection cancelled.")
+            logger.info("🌀 WS Connection cancelled.")
             cleanupConnection(error: .cancelled)
         default:
             break
@@ -217,7 +216,7 @@ final class WebSocketManager: Loggable {
         error: Error?
     ) {
         guard self.connection === connection else {
-            Logger(category: .jshook).debug("🌀 Ignoring message from stale connection.")
+            logger.debug("🌀 Ignoring message from stale connection.")
             return
         }
 
@@ -242,7 +241,7 @@ final class WebSocketManager: Loggable {
                 hookError = .connectionLost(underlyingError: error)
             }
             
-            Logger(category: .jshook).error("🌀 WS Receive error: \(hookError.errorDescription ?? error.localizedDescription)")
+            logger.error("🌀 WS Receive error: \(hookError.errorDescription ?? error.localizedDescription)")
             cleanupConnection(error: hookError)
             return
         }
@@ -258,7 +257,6 @@ final class WebSocketManager: Loggable {
     }
 
     private func processReceivedText(_ text: String) {
-        let logger = Logger(category: .jshook)
 
         // Handle handshake
         if text == "ready", !handshakeCompleted {
@@ -289,7 +287,7 @@ final class WebSocketManager: Loggable {
                     return
                 } else {
                     // Only warn about truly unknown message types
-                    Logger(category: .jshook).warning("⚠️ Unknown message type '\(type)'")
+                    logger.warning("⚠️ Unknown message type '\(type)'")
                 }
             }
         }
@@ -327,7 +325,7 @@ final class WebSocketManager: Loggable {
         let isInitial = json["initial"] as? Bool ?? false
         let mutations = json["mutations"] as? Int ?? 0
 
-        Logger(category: .jshook).info("📝 Composer update: \(mutations) mutations")
+        logger.info("📝 Composer update: \(mutations) mutations")
 
         NotificationCenter.default.post(
             name: Notification.Name("CursorComposerUpdate"),
@@ -343,13 +341,13 @@ final class WebSocketManager: Loggable {
 
     private func handleSendCompletion(error: NWError?) {
         if let error {
-            Logger(category: .jshook).error("🌀 WS Send error: \(error.localizedDescription)")
+            logger.error("🌀 WS Send error: \(error.localizedDescription)")
             if let pending = self.pending {
                 self.pending = nil
                 pending.resume(throwing: error)
             }
         } else {
-            Logger(category: .jshook).debug("🌀 WS Send completed successfully")
+            logger.debug("🌀 WS Send completed successfully")
         }
     }
 

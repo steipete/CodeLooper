@@ -61,7 +61,7 @@ public final class CursorJSHook {
 
                 logger.info("⏳ Waiting for JavaScript to start WebSocket client...")
                 // Give the browser time to parse and execute the injected JavaScript
-                try await Task.sleep(for: .seconds(2))
+                try await Task.sleep(for: .seconds(TimingConfiguration.mediumDelay))
 
                 logger.info("🤝 Waiting for handshake from browser...")
                 try await webSocketManager.waitForHandshake()
@@ -229,7 +229,7 @@ public final class CursorJSHook {
             if isHooked {
                 return true
             }
-            try? await Task.sleep(nanoseconds: 20_000_000) // 0.02 second
+            try? await Task.sleep(for: .seconds(TimingConfiguration.pollInterval)) // 0.02 second
         }
 
         return false

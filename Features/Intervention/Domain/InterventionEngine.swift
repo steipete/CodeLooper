@@ -25,7 +25,7 @@ import SwiftUI // For ObservableObject
 /// The engine maintains a careful balance between being helpful and avoiding
 /// disruptive interventions, with configurable thresholds and cooldown periods.
 @MainActor
-public class CursorInterventionEngine: ObservableObject {
+public class CursorInterventionEngine: ObservableObject, Loggable {
     // MARK: Lifecycle
 
     // MARK: - Initialization
@@ -135,7 +135,6 @@ public class CursorInterventionEngine: ObservableObject {
 
     // MARK: Private
 
-    private let logger = Diagnostics.Logger(category: .interventionEngine)
     private let axorcist: AXorcist
     private let sessionLogger: SessionLogger
     private let locatorManager: LocatorManager

@@ -82,7 +82,7 @@ public final class AppDelegate: NSObject, NSApplicationDelegate, ObservableObjec
                 guard let self else { return }
                 
                 // Give the SingleInstanceLock time to check
-                try? await Task.sleep(nanoseconds: 600_000_000) // 0.6 seconds
+                try? await Task.sleep(for: .seconds(TimingConfiguration.shortDelay)) // 0.6 seconds
 
                 guard let singleInstanceLock = self.singleInstanceLock else { return }
                 
@@ -412,7 +412,7 @@ public final class AppDelegate: NSObject, NSApplicationDelegate, ObservableObjec
             // Enable AI live watching for all windows if supervision is already enabled at startup
             Task { @MainActor in
                 // Give the monitoring system a moment to detect existing windows
-                try? await Task.sleep(nanoseconds: 1_000_000_000) // 1 second
+                try? await Task.sleep(for: .seconds(TimingConfiguration.mediumDelay)) // 1 second
                 WindowAIDiagnosticsManager.shared.enableLiveWatchingForAllWindows()
                 self.logger.info("Enabled AI live watching for all existing windows at startup")
             }

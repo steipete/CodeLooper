@@ -5,7 +5,6 @@ import Foundation
 import OpenAI
 @preconcurrency import ScreenCaptureKit
 import Vision
-import Utilities
 
 @MainActor
 public final class CursorScreenshotAnalyzer: ObservableObject, Loggable {
@@ -65,7 +64,7 @@ public final class CursorScreenshotAnalyzer: ObservableObject, Loggable {
                     }
                     // Wait before retrying
                     logger.info("Retrying AI analysis in \(CursorScreenshotAnalyzer.retryDelaySeconds) seconds...")
-                    try? await Task.sleep(seconds: CursorScreenshotAnalyzer.retryDelaySeconds)
+                    try? await Task.sleep(for: .seconds(CursorScreenshotAnalyzer.retryDelaySeconds))
                     continue // Next attempt
                 default:
                     throw error // Non-retryable AIServiceError, rethrow immediately

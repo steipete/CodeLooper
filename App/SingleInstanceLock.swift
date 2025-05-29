@@ -89,7 +89,7 @@ public final class SingleInstanceLock {
 
             // Wait a brief moment for responses
             Task {
-                try? await Task.sleep(nanoseconds: 500_000_000) // 0.5 seconds
+                try? await Task.sleep(for: .milliseconds(500)) // 0.5 seconds
 
                 // If no response received, we're the primary instance
                 if self.checkContinuation != nil {

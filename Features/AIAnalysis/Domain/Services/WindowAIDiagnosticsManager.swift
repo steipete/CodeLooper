@@ -5,7 +5,6 @@ import Diagnostics
 import Foundation
 @preconcurrency import ScreenCaptureKit
 import SwiftUI // For ObservableObject
-import Utilities
 
 /// Manages AI-powered diagnostics and analysis of Cursor windows for intelligent interventions.
 ///
@@ -374,10 +373,11 @@ class WindowAIDiagnosticsManager: ObservableObject, Loggable {
                             )
                     }
                 } catch {
-                    logger
-                        .error(
-                            "Failed to get SCShareableContent for targeted window analysis: \(error.localizedDescription)"
-                        )
+                    ErrorHandlingUtility.logError(
+                        error,
+                        context: "Failed to get SCShareableContent for targeted window analysis",
+                        logger: logger
+                    )
                 }
             } else {
                 logger
@@ -422,7 +422,7 @@ class WindowAIDiagnosticsManager: ObservableObject, Loggable {
             }
 
             // Screenshot has changed or is new, store it and proceed with analysis
-            previousScreenshots[windowId] = tiffData
+            previousScreenshots[windowId] = jpegData
             logger
                 .info(
                     "Screenshot changes detected for window: \(windowInfo.windowTitle ?? windowId). Proceeding with AI analysis using 'working' prompt."
@@ -510,19 +510,18 @@ class WindowAIDiagnosticsManager: ObservableObject, Loggable {
                 windowInfo.lastAIAnalysisResponseMessage = "AI response JSON parsing error (after extraction)."
             }
 
-        } catch let error as AIServiceError {
-            logger.error("AI analysis failed for window \(windowId) with AIServiceError: \(error.localizedDescription)")
+        } catch let aiError as AIServiceError {
+            let context = "AI analysis failed for window \(windowId)"
+            ErrorHandlingUtility.logError(aiError, context: context, logger: logger)
+            
             windowInfo.lastAIAnalysisStatus = .error
-            var detailedMessage = error.localizedDescription
-            if let recovery = error.recoverySuggestion {
-                detailedMessage += " \n💡 \(recovery)"
-            }
-            windowInfo.lastAIAnalysisResponseMessage = detailedMessage
+            windowInfo.lastAIAnalysisResponseMessage = AIErrorMapper.formatUserFriendlyMessage(for: aiError)
         } catch {
-            logger.error("AI analysis failed for window \(windowId) with general error: \(error.localizedDescription)")
+            let context = "AI analysis failed for window \(windowId)"
+            ErrorHandlingUtility.logError(error, context: context, logger: logger)
+            
             windowInfo.lastAIAnalysisStatus = .error
-            windowInfo.lastAIAnalysisResponseMessage = error
-                .localizedDescription // General error, no specific recovery suggestion format
+            windowInfo.lastAIAnalysisResponseMessage = error.localizedDescription
         }
 
         windowStates[windowId] = windowInfo

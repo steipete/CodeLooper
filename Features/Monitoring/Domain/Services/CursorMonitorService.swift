@@ -47,7 +47,7 @@ import SwiftUI
 /// // Monitor will automatically detect and handle Cursor issues
 /// ```
 @MainActor
-public class CursorMonitor: ObservableObject {
+public class CursorMonitor: ObservableObject, Loggable {
     // MARK: Lifecycle
 
     /// Creates a new CursorMonitor with the specified dependencies.
@@ -158,7 +158,6 @@ public class CursorMonitor: ObservableObject {
 
     var isMonitoringActive: Bool = false
 
-    let logger = Diagnostics.Logger(category: .supervision)
     var monitoringTask: Task<Void, Error>?
     let sessionLogger: SessionLogger
     let locatorManager: LocatorManager

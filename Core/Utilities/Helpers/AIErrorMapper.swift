@@ -49,25 +49,25 @@ public enum AIErrorMapper {
     public static func mapURLError(_ urlError: URLError) -> AIServiceError {
         switch urlError.code {
         case .notConnectedToInternet, .networkConnectionLost:
-            return .networkError("No internet connection available")
+            return .networkError(URLError(.notConnectedToInternet))
             
         case .timedOut:
-            return .timeout
+            return .serviceUnavailable
             
         case .cannotConnectToHost, .cannotFindHost:
-            return .networkError("Cannot connect to AI service")
+            return .networkError(URLError(.cannotConnectToHost))
             
         case .badServerResponse:
-            return .invalidResponse("Invalid response from AI service")
+            return .invalidResponse
             
         case .userCancelledAuthentication, .userAuthenticationRequired:
-            return .authenticationFailed
+            return .apiKeyMissing
             
         case .badURL:
-            return .configurationError("Invalid AI service URL")
+            return .connectionFailed("Invalid AI service URL")
             
         default:
-            return .networkError("Network error: \(urlError.localizedDescription)")
+            return .networkError(urlError)
         }
     }
     
@@ -84,15 +84,15 @@ public enum AIErrorMapper {
         case "NSPOSIXErrorDomain":
             switch nsError.code {
             case 61: // Connection refused
-                return .networkError("AI service connection refused")
+                return .connectionFailed("AI service connection refused")
             case 60: // Operation timed out
-                return .timeout
+                return .serviceUnavailable
             default:
-                return .networkError("System error: \(nsError.localizedDescription)")
+                return .networkError(nsError)
             }
             
         default:
-            return .unknownError("System error: \(nsError.localizedDescription)")
+            return .networkError(nsError)
         }
     }
     
@@ -104,29 +104,29 @@ public enum AIErrorMapper {
     public static func mapHTTPError(_ statusCode: Int, responseData: Data? = nil) -> AIServiceError {
         switch statusCode {
         case 400:
-            return .invalidRequest("Bad request - check your input parameters")
+            return .invalidResponse
             
         case 401:
-            return .authenticationFailed
+            return .apiKeyMissing
             
         case 403:
-            return .authenticationFailed
+            return .apiKeyMissing
             
         case 404:
-            return .configurationError("AI service endpoint not found")
+            return .connectionFailed("AI service endpoint not found")
             
         case 408:
-            return .timeout
+            return .serviceUnavailable
             
         case 429:
-            return .rateLimitExceeded
+            return .serviceUnavailable
             
         case 500...599:
-            return .serverError("AI service is temporarily unavailable")
+            return .serviceUnavailable
             
         default:
             let message = extractErrorMessage(from: responseData) ?? "HTTP \(statusCode)"
-            return .unknownError("Server error: \(message)")
+            return .connectionFailed("Server error: \(message)")
         }
     }
     
@@ -138,26 +138,26 @@ public enum AIErrorMapper {
         
         // Check for common OpenAI error patterns
         if errorDescription.contains("api key") || errorDescription.contains("authentication") {
-            return .authenticationFailed
+            return .apiKeyMissing
         }
         
         if errorDescription.contains("rate limit") || errorDescription.contains("quota") {
-            return .rateLimitExceeded
+            return .serviceUnavailable
         }
         
         if errorDescription.contains("model") && errorDescription.contains("not found") {
-            return .modelNotAvailable("Requested OpenAI model is not available")
+            return .modelNotFound("Requested OpenAI model is not available")
         }
         
         if errorDescription.contains("content") && errorDescription.contains("policy") {
-            return .contentFiltered("Content violates OpenAI usage policies")
+            return .invalidResponse
         }
         
         if errorDescription.contains("tokens") || errorDescription.contains("length") {
-            return .invalidRequest("Request exceeds maximum token limit")
+            return .invalidResponse
         }
         
-        return .unknownError("OpenAI error: \(error.localizedDescription)")
+        return .networkError(error)
     }
     
     /// Maps Ollama-specific errors
@@ -168,22 +168,22 @@ public enum AIErrorMapper {
         
         // Check for common Ollama error patterns
         if errorDescription.contains("model") && (errorDescription.contains("not found") || errorDescription.contains("not available")) {
-            return .modelNotAvailable("Requested Ollama model is not available or not downloaded")
+            return .modelNotFound("Requested Ollama model is not available or not downloaded")
         }
         
         if errorDescription.contains("connection") && errorDescription.contains("refused") {
-            return .networkError("Ollama service is not running")
+            return .ollamaNotRunning
         }
         
         if errorDescription.contains("out of memory") || errorDescription.contains("insufficient") {
-            return .serverError("Insufficient system resources for Ollama")
+            return .serviceUnavailable
         }
         
         if errorDescription.contains("invalid") && errorDescription.contains("format") {
-            return .invalidRequest("Invalid request format for Ollama")
+            return .invalidResponse
         }
         
-        return .unknownError("Ollama error: \(error.localizedDescription)")
+        return .networkError(error)
     }
     
     /// Extracts error message from response data

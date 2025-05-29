@@ -8,7 +8,7 @@ import Defaults
 /// This coordinator manages the setup and lifecycle of monitoring services,
 /// intervention systems, and AI analysis to reduce complexity in AppDelegate.
 @MainActor
-final class AppSupervisionCoordinator {
+final class AppSupervisionCoordinator: Loggable {
     // MARK: - Initialization
     
     init() {
@@ -38,7 +38,7 @@ final class AppSupervisionCoordinator {
         
         Task { @MainActor in
             // Give the monitoring system time to detect existing windows
-            try? await Task.sleep(for: .seconds(1))
+            try? await Task.sleep(for: .seconds(TimingConfiguration.shortDelay))
             WindowAIDiagnosticsManager.shared.enableLiveWatchingForAllWindows()
             logger.info("✅ Enabled AI live watching for existing windows at startup")
         }
@@ -79,8 +79,6 @@ final class AppSupervisionCoordinator {
     #endif
     
     // MARK: - Private Implementation
-    
-    private let logger = Logger(category: .supervision)
     
     /// Setup monitoring preference observers
     private func setupMonitoringPreferences() {

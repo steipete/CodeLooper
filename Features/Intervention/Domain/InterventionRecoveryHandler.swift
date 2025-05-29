@@ -2,7 +2,6 @@ import AppKit
 import AXorcist
 import Diagnostics
 import Foundation
-import Utilities
 
 /// Executes recovery actions for stuck or unresponsive Cursor instances.
 ///
@@ -45,7 +44,7 @@ class InterventionRecoveryHandler: Loggable {
         }
 
         // Wait a moment
-        try? await Task.sleep(seconds: InterventionConstants.interventionActionDelay)
+        try? await Task.sleep(for: .seconds(InterventionConstants.interventionActionDelay))
 
         // Step 2: Click resume button
         guard await clickResumeButton(for: pid) else {
@@ -161,7 +160,7 @@ class InterventionRecoveryHandler: Loggable {
         self.logger.info("PID \(String(describing: pid)): Successfully focused/clicked main input field.")
 
         // Wait a moment before typing
-        try? await Task.sleep(seconds: TimingConfiguration.typeDelay)
+        try? await Task.sleep(for: .seconds(TimingConfiguration.typeDelay))
 
         // Type a space and backspace to trigger activity
         let typeSpaceAction = PerformActionCommand(
@@ -173,7 +172,7 @@ class InterventionRecoveryHandler: Loggable {
         )
         _ = self.axorcist.handlePerformAction(command: typeSpaceAction)
 
-        try? await Task.sleep(seconds: TimingConfiguration.shortDelay)
+        try? await Task.sleep(for: .seconds(TimingConfiguration.shortDelay))
 
         // Clear the space
         let clearAction = PerformActionCommand(

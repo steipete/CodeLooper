@@ -70,7 +70,7 @@ struct AISettingsView: View {
 
                             // Test the new provider automatically
                             Task {
-                                try? await Task.sleep(nanoseconds: 200_000_000) // 0.2 seconds
+                                try? await Task.sleep(for: .milliseconds(200)) // 0.2 seconds
 
                                 if (newValue == .openAI && !openAIAPIKey.isEmpty) ||
                                     (newValue == .ollama)
@@ -146,7 +146,7 @@ struct AISettingsView: View {
                 configureAIManager()
 
                 // Small delay to let UI settle
-                try? await Task.sleep(nanoseconds: 500_000_000) // 0.5 seconds
+                try? await Task.sleep(for: .milliseconds(500)) // 0.5 seconds
 
                 // Only test if we have credentials
                 if (aiProvider == .openAI && !openAIAPIKey.isEmpty) ||

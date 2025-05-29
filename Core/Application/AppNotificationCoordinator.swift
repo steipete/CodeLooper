@@ -8,7 +8,7 @@ import Defaults
 /// This coordinator manages notification subscriptions, system sleep/wake events,
 /// and preference changes to reduce complexity in AppDelegate.
 @MainActor
-final class AppNotificationCoordinator {
+final class AppNotificationCoordinator: Loggable {
     // MARK: - Initialization
     
     init() {
@@ -63,8 +63,6 @@ final class AppNotificationCoordinator {
     }
     
     // MARK: - Private Implementation
-    
-    private let logger = Logger(category: .appDelegate)
     private var notificationObservers: [NSObjectProtocol] = []
     private var notificationTasks: [Task<Void, Never>] = []
     private weak var windowManager: WindowManager?
@@ -179,7 +177,7 @@ final class AppNotificationCoordinator {
         
         Task { @MainActor in
             // Give system time to stabilize after wake
-            try? await Task.sleep(for: .seconds(2))
+            try? await Task.sleep(for: .seconds(TimingConfiguration.mediumDelay))
             // Resume all monitored apps
             for app in CursorMonitor.shared.monitoredApps {
                 CursorMonitor.shared.resumeMonitoring(for: app.pid)

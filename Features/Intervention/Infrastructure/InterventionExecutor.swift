@@ -35,7 +35,7 @@ extension CursorMonitor {
         keyDownEvent.post(tap: .cghidEventTap)
 
         // Small delay between key down and up
-        try? await Task.sleep(for: .milliseconds(50))
+        try? await Task.sleep(for: .seconds(TimingConfiguration.typeDelay))
 
         keyUpEvent.post(tap: .cghidEventTap)
 

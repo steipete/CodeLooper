@@ -61,6 +61,9 @@ public enum LogCategory: String, CaseIterable {
     case jshook = "JSHook"
     case intervention = "Intervention"
     case rules = "Rules"
+    case aiAnalysis = "AIAnalysis"
+    case networking = "Networking"
+    case git = "Git"
 
     // MARK: Public
 

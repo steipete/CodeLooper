@@ -65,6 +65,24 @@ public enum TimingConfiguration {
     /// Standard delay between intervention actions
     public static let interventionActionDelay: TimeInterval = 2.0
     
+    /// Delay for typing actions
+    public static let typeDelay: TimeInterval = 0.1
+    
+    /// Short delay for general use
+    public static let shortDelay: TimeInterval = 0.5
+    
+    /// Medium delay for general use
+    public static let mediumDelay: TimeInterval = 1.0
+    
+    /// Interval for permission checking
+    public static let permissionCheckInterval: TimeInterval = 10.0
+    
+    /// Polling interval for general use
+    public static let pollInterval: TimeInterval = 0.2
+    
+    /// Delay for update check progress simulation
+    public static let updateCheckDelay: TimeInterval = 5.0
+    
     // MARK: - Retry and Recovery
     
     /// Base delay for retry operations before exponential backoff

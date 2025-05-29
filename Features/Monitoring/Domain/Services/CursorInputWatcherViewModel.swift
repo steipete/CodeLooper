@@ -5,7 +5,6 @@ import Defaults
 import Diagnostics
 @preconcurrency import Foundation
 import SwiftUI
-import Utilities
 
 /// Central coordinator for Cursor input monitoring and JavaScript hook management.
 ///
@@ -283,7 +282,7 @@ class CursorInputWatcherViewModel: ObservableObject, Loggable {
 
                     // Check probe results after a short delay
                     Task {
-                        try? await Task.sleep(seconds: TimingConfiguration.probeDelay)
+                        try? await Task.sleep(for: .seconds(TimingConfiguration.probeDelay))
                         if self.jsHookService.isWindowHooked(newWindow.id) {
                             self.windowInjectionStates[newWindow.id] = .hooked
                         } else {

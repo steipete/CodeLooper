@@ -1,6 +1,5 @@
 import Diagnostics
 import Foundation
-import Utilities
 
 /// Delegate protocol for heartbeat status updates from monitored JavaScript hooks.
 protocol HeartbeatMonitorDelegate: AnyObject {
@@ -93,7 +92,7 @@ class HeartbeatMonitor: Loggable {
             while !Task.isCancelled {
                 checkAllHeartbeats()
 
-                try? await Task.sleep(seconds: TimingConfiguration.heartbeatCheckInterval)
+                try? await Task.sleep(for: .seconds(TimingConfiguration.heartbeatCheckInterval))
             }
         }
     }

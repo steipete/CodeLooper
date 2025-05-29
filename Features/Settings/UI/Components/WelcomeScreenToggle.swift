@@ -36,7 +36,7 @@ public func forceTriggerWelcomeScreen() {
     // We can use Task with sleep instead of DispatchQueue to stay on MainActor
     // Adding @MainActor to the closure to ensure Swift 6 concurrency safety
     Task { @MainActor in
-        try? await Task.sleep(for: .milliseconds(500)) // 0.5 seconds
+        try? await Task.sleep(for: .seconds(TimingConfiguration.shortDelay))
         logger.info("Posting delayed notification to show welcome window")
 
         // Post notification again
@@ -44,7 +44,7 @@ public func forceTriggerWelcomeScreen() {
         NotificationCenter.default.post(name: .showSettingsWindow, object: nil)
 
         // Add a second delay for final attempt
-        try? await Task.sleep(for: .milliseconds(500)) // Another 0.5 seconds
+        try? await Task.sleep(for: .seconds(TimingConfiguration.shortDelay))
         logger.info("Forcing app to foreground and posting notification again")
 
         // Force app to foreground

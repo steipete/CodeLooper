@@ -2,7 +2,6 @@ import AppKit
 import Diagnostics
 import Foundation
 import OpenAI
-import Utilities
 
 @MainActor
 final class OpenAIService: AIService, Loggable {

@@ -51,7 +51,7 @@ class UploadCompletionFeedback {
                 }
 
                 // Step 3: Wait for 2 seconds
-                try await Task.sleep(for: .seconds(2))
+                try await Task.sleep(for: .seconds(TimingConfiguration.mediumDelay))
 
                 // Check for cancellation
                 try Task.checkCancellation()

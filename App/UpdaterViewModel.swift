@@ -41,9 +41,10 @@ public class UpdaterViewModel: ObservableObject {
         manager.updaterController.checkForUpdates(nil) // Pass nil for sender
 
         // For now, just simulate it ending after a delay.
-        DispatchQueue.main.asyncAfter(deadline: .now() + 5) { [weak self] in
-            self?.isUpdateInProgress = false
-            self?.lastUpdateCheckDate = Date()
+        Task { @MainActor in
+            try? await Task.sleep(for: .seconds(TimingConfiguration.updateCheckDelay))
+            self.isUpdateInProgress = false
+            self.lastUpdateCheckDate = Date()
         }
     }
 

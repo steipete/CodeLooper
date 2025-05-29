@@ -79,7 +79,7 @@ public enum LoggerFactory {
         case let name where name.contains("Git"):
             return .git
         case let name where name.contains("StatusBar") || name.contains("MenuBar"):
-            return .statusbar
+            return .statusBar
         case let name where name.contains("Onboarding") || name.contains("Welcome"):
             return .onboarding
         default:

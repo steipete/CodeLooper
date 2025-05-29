@@ -3,7 +3,6 @@ import AXorcist
 import Diagnostics
 import Foundation
 import Network
-import Utilities
 
 /// Errors that can occur during hook connection
 enum ConnectionError: Error, LocalizedError {
@@ -98,7 +97,7 @@ final class JSHookService: Loggable {
         
         // Wait for any ongoing probing to complete
         while state.isProbing {
-            try await Task.sleep(seconds: TimingConfiguration.shortDelay)
+            try await Task.sleep(for: .seconds(TimingConfiguration.shortDelay))
         }
         
         guard let port = getNextAvailablePort() else {
@@ -127,8 +126,11 @@ final class JSHookService: Loggable {
             state.windowPorts.removeValue(forKey: window.id)
             state.availablePorts.append(port)
             
-            logger.error("❌ Hook installation failed: \(error)")
-            // Handle specific error types
+            ErrorHandlingUtility.handleAndLog(
+                error,
+                logger: logger,
+                context: "Hook installation failed for window '\(windowTitle)'"
+            )
             handleHookInstallationError(error, for: window)
             throw error
         }
@@ -140,7 +142,11 @@ final class JSHookService: Loggable {
             try await installHook(for: window)
             logger.info("✅ Hook installed for window: \(window.id)")
         } catch {
-            logger.error("❌ Failed to install hook for window \(window.id): \(error)")
+            ErrorHandlingUtility.handleAndLog(
+                error,
+                logger: logger,
+                context: "Failed to install hook for window \(window.id)"
+            )
             handleHookInstallationError(error, for: window)
         }
     }
@@ -261,7 +267,11 @@ final class JSHookService: Loggable {
             logger.error("System Events access denied")
             showAutomationPermissionAlert()
         default:
-            logger.error("Hook installation failed with code \(nsError.code): \(nsError.localizedDescription)")
+            ErrorHandlingUtility.handleAndLog(
+                error,
+                logger: logger,
+                context: "Hook installation failed with code \(nsError.code)"
+            )
         }
     }
     

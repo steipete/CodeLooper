@@ -111,19 +111,16 @@ class AIWindowAnalyzer {
     }
 
     private func saveScreenshot(_ image: NSImage) async throws -> String {
-        guard let tiffData = image.tiffRepresentation,
-              let bitmap = NSBitmapImageRep(data: tiffData),
-              let pngData = bitmap.representation(using: .png, properties: [:])
-        else {
-            throw AnalysisError.saveFailed
-        }
-
+        let jpegData = try ImageProcessor.convertToJPEG(image)
+        
         let tempDir = FileManager.default.temporaryDirectory
-        let filename = "cursor_window_\(UUID().uuidString).png"
+        let filename = "cursor_window_\(UUID().uuidString).jpg"
         let fileURL = tempDir.appendingPathComponent(filename)
-
-        try pngData.write(to: fileURL)
+        
+        try jpegData.write(to: fileURL)
         return fileURL.path
+
+
     }
 
     private func analyzeScreenshotWithAI(screenshotPath: String) async -> String {
@@ -181,7 +178,7 @@ class AIWindowAnalyzer {
         guard let imageData = try? Data(contentsOf: URL(fileURLWithPath: path)) else {
             return nil
         }
-        return imageData.base64EncodedString()
+        return ImageProcessor.convertToBase64(imageData)
     }
 
     private func callOpenAIVisionAPI(apiKey: String, base64Image: String, prompt: String) async throws -> String {

@@ -4,7 +4,6 @@ import Diagnostics
 import Foundation
 @preconcurrency import ScreenCaptureKit
 @preconcurrency import UserNotifications
-import Utilities
 
 /// Centralized manager for handling all app permissions
 @MainActor
@@ -157,7 +156,7 @@ public final class PermissionsManager: ObservableObject, Loggable {
         // Schedule initial permission check to run after a short delay to avoid blocking app startup
         initialCheckTask = Task {
             // Small delay to allow UI to load with cached values first
-            try? await Task.sleep(seconds: TimingConfiguration.shortDelay)
+            try? await Task.sleep(for: .seconds(TimingConfiguration.shortDelay))
             await checkAndUpdateAllPermissions()
         }
     }
@@ -253,7 +252,7 @@ public final class PermissionsManager: ObservableObject, Loggable {
         monitoringTask = Task {
             while !Task.isCancelled {
                 // Check permissions every 10 seconds instead of 2 to reduce overhead
-                try? await Task.sleep(seconds: TimingConfiguration.permissionCheckInterval)
+                try? await Task.sleep(for: .seconds(TimingConfiguration.permissionCheckInterval))
 
                 // Re-check all permissions
                 let newAccessibility = AXPermissionHelpers.hasAccessibilityPermissions()

@@ -2,7 +2,6 @@ import AppKit
 import Diagnostics
 import Foundation
 import Ollama
-import Utilities
 
 @MainActor
 final class OllamaService: AIService, Loggable {

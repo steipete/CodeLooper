@@ -164,7 +164,7 @@ class AutomationPermissionsViewModel: ObservableObject {
             var lastState = hasPermissions
 
             while !Task.isCancelled {
-                try? await Task.sleep(nanoseconds: 2_000_000_000) // 2 seconds
+                try? await Task.sleep(for: .seconds(2)) // 2 seconds
 
                 let currentState = await checkAutomationPermission()
 

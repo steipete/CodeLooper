@@ -33,7 +33,7 @@ actor HTMLToMarkdownService {
     func convertToMarkdown(_ html: String) async throws -> String {
         // Wait for initialization if needed
         while !isInitialized {
-            try await Task.sleep(nanoseconds: 100_000_000) // 100ms
+            try await Task.sleep(for: .milliseconds(100)) // 100ms
         }
 
         return try await withCheckedThrowingContinuation { continuation in
@@ -60,7 +60,7 @@ actor HTMLToMarkdownService {
     func convertToMarkdown(_ html: String, options: ConversionOptions) async throws -> String {
         // Wait for initialization if needed
         while !isInitialized {
-            try await Task.sleep(nanoseconds: 100_000_000) // 100ms
+            try await Task.sleep(for: .milliseconds(100)) // 100ms
         }
 
         guard let domParser = self.domParser,

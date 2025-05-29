@@ -43,8 +43,9 @@ concurrency:
   group: "${{ github.workflow }}-${{ github.ref }}"
   cancel-in-progress: true
 
-env:
-  DEVELOPER_DIR: /Applications/Xcode_16.3.app
+# Use default Xcode on GitHub runner
+# env:
+#   DEVELOPER_DIR: /Applications/Xcode_16.2.app
 
 jobs:
   build_and_process_mac_app:

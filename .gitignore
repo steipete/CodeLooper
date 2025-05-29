@@ -96,3 +96,9 @@ fastlane/test_output
 
 # SwiftLint
 swiftlint_report.json
+
+# Tools and build artifacts
+tools/
+artifacts/
+binary/
+.private_keys/
