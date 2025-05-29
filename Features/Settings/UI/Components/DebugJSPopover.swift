@@ -1,11 +1,22 @@
 import AppKit
 import SwiftUI
 
+// Separate state class to isolate state updates and prevent AttributeGraph cycles
+@MainActor
+private class DebugPopoverState: ObservableObject {
+    @Published var customMessage = "debug test"
+    @Published var lastResult = ""
+    @Published var isExecuting = false
+}
+
 struct DebugJSPopover: View {
     // MARK: Internal
     
     let window: MonitoredWindowInfo
-    let viewModel: CursorInputWatcherViewModel
+    @ObservedObject var viewModel: CursorInputWatcherViewModel
+    
+    // Create a separate StateObject to isolate state updates
+    @StateObject private var debugState = DebugPopoverState()
     
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -67,19 +78,19 @@ struct DebugJSPopover: View {
                     .fontWeight(.medium)
                 
                 HStack {
-                    TextField("Message", text: $customMessage)
+                    TextField("Message", text: $debugState.customMessage)
                         .textFieldStyle(.roundedBorder)
                     
                     Button("Send") {
                         Task {
                             await executeCommand([
                                 "type": "showNotification",
-                                "message": customMessage,
+                                "message": debugState.customMessage,
                                 "showToast": true
                             ])
                         }
                     }
-                    .disabled(isExecuting || customMessage.isEmpty)
+                    .disabled(debugState.isExecuting || debugState.customMessage.isEmpty)
                 }
             }
             
@@ -96,20 +107,20 @@ struct DebugJSPopover: View {
                     
                     Button(action: {
                         NSPasteboard.general.clearContents()
-                        NSPasteboard.general.setString(lastResult, forType: .string)
+                        NSPasteboard.general.setString(debugState.lastResult, forType: .string)
                     }) {
                         Image(systemName: "doc.on.doc")
                             .font(.caption)
                     }
                     .buttonStyle(.plain)
-                    .disabled(lastResult.isEmpty)
+                    .disabled(debugState.lastResult.isEmpty)
                     .help("Copy to clipboard")
                 }
                 
                 ScrollView {
-                    Text(lastResult.isEmpty ? "No result yet" : lastResult)
+                    Text(debugState.lastResult.isEmpty ? "No result yet" : debugState.lastResult)
                         .font(.system(.caption, design: .monospaced))
-                        .foregroundColor(lastResult.isEmpty ? .secondary : .primary)
+                        .foregroundColor(debugState.lastResult.isEmpty ? .secondary : .primary)
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .padding(8)
                         .background(Color.gray.opacity(0.1))
@@ -124,10 +135,6 @@ struct DebugJSPopover: View {
     
     // MARK: Private
     
-    @State private var customMessage = "debug test"
-    @State private var lastResult = ""
-    @State private var isExecuting = false
-    
     @ViewBuilder
     private func DebugButton(_ title: String, _ icon: String, action: @escaping () async -> Void) -> some View {
         Button(action: {
@@ -141,23 +148,31 @@ struct DebugJSPopover: View {
         }
         .buttonStyle(.bordered)
         .controlSize(.small)
-        .disabled(isExecuting)
+        .disabled(debugState.isExecuting)
     }
     
     private func executeCommand(_ command: [String: Any]) async {
         guard viewModel.checkHookStatus(for: window) else {
-            lastResult = "Error: No active hook for this window"
+            debugState.lastResult = "Error: No active hook for this window"
             return
         }
         
-        isExecuting = true
-        defer { isExecuting = false }
+        debugState.isExecuting = true
+        defer { 
+            Task { @MainActor in
+                debugState.isExecuting = false
+            }
+        }
         
         do {
             let result = try await viewModel.jsHookManager.sendCommand(command, to: window.id)
-            lastResult = result
+            await MainActor.run {
+                debugState.lastResult = result
+            }
         } catch {
-            lastResult = "Error: \(error.localizedDescription)"
+            await MainActor.run {
+                debugState.lastResult = "Error: \(error.localizedDescription)"
+            }
         }
     }
 }
