@@ -16,71 +16,62 @@ final class OllamaService: AIService, Loggable {
     let provider: AIProvider = .ollama
 
     func analyzeImage(_ request: ImageAnalysisRequest) async throws -> ImageAnalysisResponse {
-        let jpegData = try await ErrorHandlingUtility.handle(
-            operation: { try ImageProcessor.optimizeForAI(request.image) },
-            context: "Optimizing image for Ollama",
-            logger: logger,
-            recoverableError: { _ in throw AIServiceError.invalidImage }
-        )
+        let jpegData: Data
+        do {
+            jpegData = try ImageProcessor.optimizeForAI(request.image)
+        } catch {
+            logger.error("❌ Optimizing image for Ollama failed: \(error.localizedDescription)")
+            throw AIServiceError.invalidImage
+        }
 
-        return try await ErrorHandlingUtility.handle(
-            operation: {
-                let response = try await client.generate(
-                    model: Model.ID(stringLiteral: request.model.rawValue),
-                    prompt: request.prompt,
-                    images: [jpegData]
-                )
-                
-                return ImageAnalysisResponse(
-                    text: response.response,
-                    model: request.model,
-                    tokensUsed: nil
-                )
-            },
-            context: "Ollama image generation",
-            logger: logger,
-            recoverableError: { error in
-                throw AIErrorMapper.mapError(error, from: .ollama)
-            }
-        )
+        do {
+            let response = try await client.generate(
+                model: Model.ID(stringLiteral: request.model.rawValue),
+                prompt: request.prompt,
+                images: [jpegData]
+            )
+            
+            return ImageAnalysisResponse(
+                text: response.response,
+                model: request.model,
+                tokensUsed: nil
+            )
+        } catch {
+            logger.error("❌ Ollama image generation failed: \(error.localizedDescription)")
+            throw AIErrorMapper.mapError(error, from: .ollama)
+        }
     }
 
     func isAvailable() async -> Bool {
-        await ErrorHandlingUtility.handle(
-            operation: {
-                _ = try await client.listModels()
-                return true
-            },
-            context: "Checking Ollama availability",
-            logger: logger,
-            fallback: false
-        )
+        do {
+            _ = try await client.listModels()
+            return true
+        } catch {
+            logger.error("❌ Checking Ollama availability failed: \(error.localizedDescription)")
+            return false
+        }
     }
 
     func checkServiceAndModels() async throws -> (serviceRunning: Bool, visionModelsInstalled: [String]) {
-        try await ErrorHandlingUtility.handle(
-            operation: {
-                let models = try await client.listModels()
-                let visionModels = models.models
-                    .map(\.name)
-                    .filter { name in
-                        let lowercased = name.lowercased()
-                        return lowercased.contains("llava") || lowercased.contains("bakllava")
-                    }
-                return (true, visionModels)
-            },
-            context: "Checking Ollama service and models",
-            logger: logger,
-            recoverableError: { error in
-                // Check if it's a connection error (Ollama not running)
-                if let urlError = error as? URLError,
-                   urlError.code == .cannotFindHost || urlError.code == .cannotConnectToHost
-                {
-                    throw AIServiceError.ollamaNotRunning
+        do {
+            let models = try await client.listModels()
+            let visionModels = models.models
+                .map(\.name)
+                .filter { name in
+                    let lowercased = name.lowercased()
+                    return lowercased.contains("llava") || lowercased.contains("bakllava")
                 }
-                throw AIServiceError.networkError(error)
+            return (true, visionModels)
+        } catch {
+            logger.error("❌ Checking Ollama service and models failed: \(error.localizedDescription)")
+            // Check if it's a connection error (Ollama not running)
+            if let urlError = error as? URLError,
+               urlError.code == .cannotFindHost || urlError.code == .cannotConnectToHost
+            {
+                throw AIServiceError.ollamaNotRunning
             }
-        )
+            throw AIServiceError.networkError(error)
+        }
     }
 
     func supportedModels() -> [AIModel] {

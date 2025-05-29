@@ -16,12 +16,13 @@ final class OpenAIService: AIService, Loggable {
     let provider: AIProvider = .openAI
 
     func analyzeImage(_ request: ImageAnalysisRequest) async throws -> ImageAnalysisResponse {
-        let base64Image = try await ErrorHandlingUtility.handle(
-            operation: { try ImageProcessor.convertToBase64(request.image) },
-            context: "Converting image to base64 for OpenAI",
-            logger: logger,
-            recoverableError: { _ in throw AIServiceError.invalidImage }
-        )
+        let base64Image: String
+        do {
+            base64Image = try ImageProcessor.convertToBase64(request.image)
+        } catch {
+            logger.error("❌ Converting image to base64 for OpenAI failed: \(error.localizedDescription)")
+            throw AIServiceError.invalidImage
+        }
 
         let textContent = ChatQuery.ChatCompletionMessageParam.UserMessageParam.Content.VisionContent
             .ChatCompletionContentPartTextParam(text: request.prompt)
@@ -45,26 +46,22 @@ final class OpenAIService: AIService, Loggable {
             maxTokens: 1000
         )
 
-        return try await ErrorHandlingUtility.handle(
-            operation: {
-                let response = try await client.chats(query: query)
-                
-                guard let content = response.choices.first?.message.content else {
-                    throw AIServiceError.invalidResponse
-                }
-                
-                return ImageAnalysisResponse(
-                    text: content,
-                    model: request.model,
-                    tokensUsed: response.usage?.totalTokens
-                )
-            },
-            context: "OpenAI chat completion",
-            logger: logger,
-            recoverableError: { error in
-                throw AIErrorMapper.mapError(error, from: .openAI)
+        do {
+            let response = try await client.chats(query: query)
+            
+            guard let content = response.choices.first?.message.content else {
+                throw AIServiceError.invalidResponse
             }
-        )
+            
+            return ImageAnalysisResponse(
+                text: content,
+                model: request.model,
+                tokensUsed: response.usage?.totalTokens
+            )
+        } catch {
+            logger.error("❌ OpenAI chat completion failed: \(error.localizedDescription)")
+            throw AIErrorMapper.mapError(error, from: .openAI)
+        }
     }
 
     func isAvailable() async -> Bool {

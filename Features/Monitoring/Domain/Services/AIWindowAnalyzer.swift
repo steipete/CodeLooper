@@ -178,7 +178,8 @@ class AIWindowAnalyzer {
         guard let imageData = try? Data(contentsOf: URL(fileURLWithPath: path)) else {
             return nil
         }
-        return ImageProcessor.convertToBase64(imageData)
+        guard let image = NSImage(data: imageData) else { return nil }
+        return try? ImageProcessor.convertToBase64(image)
     }
 
     private func callOpenAIVisionAPI(apiKey: String, base64Image: String, prompt: String) async throws -> String {
