@@ -14,9 +14,6 @@ Thumbs.db
 ## User settings
 xcuserdata/
 
-## Shared Xcode data
-*/xcshareddata/
-
 ## Obj-C/Swift specific
 *.hmap
 *.ipa
