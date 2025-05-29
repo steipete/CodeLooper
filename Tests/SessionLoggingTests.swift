@@ -88,11 +88,11 @@ struct SessionLoggingTests {
     @Test
     func fileLoggerWriting() async throws {
         // FileLogger is now a singleton actor that uses OSLog
-        let fileLogger = await FileLogger.shared
+        let fileLogger = await Diagnostics.FileLogger.shared
 
         // Test logging - FileLogger now uses OSLog exclusively
-        await fileLogger.log("Test file log entry", level: .info, category: "test", file: #file, function: #function, line: #line)
-        await fileLogger.log("Test error entry", level: .error, category: "test", file: #file, function: #function, line: #line)
+        await fileLogger.log("Test file log entry", level: OSLogType.info, category: "test", file: #file, function: #function, line: #line)
+        await fileLogger.log("Test error entry", level: OSLogType.error, category: "test", file: #file, function: #function, line: #line)
 
         // FileLogger now uses OSLog, so we can't check file contents
         // Just verify the logging didn't crash
@@ -102,10 +102,10 @@ struct SessionLoggingTests {
     @Test
     func fileLoggerErrorHandling() async throws {
         // FileLogger is now a singleton and always valid
-        let fileLogger = await FileLogger.shared
+        let fileLogger = await Diagnostics.FileLogger.shared
 
         // Test logging - should not crash
-        await fileLogger.log("This should not crash", level: .info, category: "test", file: #file, function: #function, line: #line)
+        await fileLogger.log("This should not crash", level: OSLogType.info, category: "test", file: #file, function: #function, line: #line)
 
         // Give logger time to attempt writing
         try await Task.sleep(for: .milliseconds(100))
@@ -137,7 +137,8 @@ struct SessionLoggingTests {
         // Test logging through logger instances
         await MainActor.run {
             logManager.app.info("Test app log")
-            logManager.supervision.debug("Test supervision log")
+            let supervisionLogger = logManager.getLogger(for: .supervision)
+            supervisionLogger.debug("Test supervision log")
             
             #expect(true) // If we get here, log management works
         }
@@ -187,7 +188,7 @@ struct SessionLoggingTests {
         // Test integration of all logging components
         let sessionLogger = await Diagnostics.SessionLogger.shared
         let logManager = await Diagnostics.LogManager.shared
-        let fileLogger = await FileLogger.shared
+        let fileLogger = await Diagnostics.FileLogger.shared
 
         // Test that all components can work together
         await MainActor.run {
@@ -195,7 +196,7 @@ struct SessionLoggingTests {
             logManager.app.info("Manager log test")
         }
         
-        await fileLogger.log("File log test", level: .info, category: "test", file: #file, function: #function, line: #line)
+        await fileLogger.log("File log test", level: OSLogType.info, category: "test", file: #file, function: #function, line: #line)
 
         // Test concurrent usage
         await withTaskGroup(of: Void.self) { group in
@@ -217,7 +218,7 @@ struct SessionLoggingTests {
 
             group.addTask {
                 for i in 0 ..< 5 {
-                    await fileLogger.log("File \(i)", level: .debug, category: "test", file: #file, function: #function, line: #line)
+                    await fileLogger.log("File \(i)", level: OSLogType.debug, category: "test", file: #file, function: #function, line: #line)
                 }
             }
         }

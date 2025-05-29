@@ -17,8 +17,8 @@ struct IntegrationTests {
 
         func startup() async {
             isRunning = true
-            coordinator = AppServiceCoordinator()
-            windowManager = WindowManager()
+            coordinator = await AppServiceCoordinator()
+            windowManager = await WindowManager()
         }
 
         func shutdown() async {
@@ -30,14 +30,8 @@ struct IntegrationTests {
 
     /// Test helper to create temporary defaults
     func withTemporaryDefaults<T>(_ block: () throws -> T) rethrows -> T {
-        let originalSuite = Defaults.suite
-        let testSuite = UserDefaults(suiteName: "com.codelooper.test.\(UUID().uuidString)")!
-        Defaults.suite = testSuite
-
-        defer {
-            Defaults.suite = originalSuite
-        }
-
+        // Note: Defaults library no longer supports changing suite at runtime
+        // Just run the block directly
         return try block()
     }
 
