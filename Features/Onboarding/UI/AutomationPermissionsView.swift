@@ -85,8 +85,11 @@ class AutomationPermissionsViewModel: ObservableObject {
     // MARK: Lifecycle
 
     init() {
-        checkPermissions()
-        startMonitoring()
+        // Start the async permission check
+        Task {
+            await checkPermissions()
+            startMonitoring()
+        }
     }
 
     deinit {
@@ -110,19 +113,21 @@ class AutomationPermissionsViewModel: ObservableObject {
     private let logger = Logger(category: .permissions)
     private let cursorBundleID = "com.todesktop.230313mzl4w4u92"
 
-    private func checkPermissions() {
+    private func checkPermissions() async {
         // Check automation permission for Cursor
-        hasPermissions = checkAutomationPermission()
-        logger.info("Automation permissions status for Cursor: \(hasPermissions)")
+        let permission = await checkAutomationPermission()
+        hasPermissions = permission
+        logger.info("Automation permissions status for Cursor: \(permission)")
     }
 
-    private func checkAutomationPermission() -> Bool {
-        // NSAppleScript must be executed on the main thread
-        if Thread.isMainThread {
-            performAutomationCheck()
-        } else {
-            DispatchQueue.main.sync {
-                performAutomationCheck()
+    private func checkAutomationPermission() async -> Bool {
+        // Execute AppleScript asynchronously to avoid blocking SwiftUI updates
+        await withCheckedContinuation { continuation in
+            Task.detached {
+                let result = await MainActor.run {
+                    self.performAutomationCheck()
+                }
+                continuation.resume(returning: result)
             }
         }
     }
@@ -161,7 +166,7 @@ class AutomationPermissionsViewModel: ObservableObject {
             while !Task.isCancelled {
                 try? await Task.sleep(nanoseconds: 2_000_000_000) // 2 seconds
 
-                let currentState = checkAutomationPermission()
+                let currentState = await checkAutomationPermission()
 
                 if currentState != lastState {
                     lastState = currentState
