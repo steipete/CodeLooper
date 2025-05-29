@@ -3,13 +3,29 @@ import AudioToolbox
 import CoreAudio
 import Foundation
 
-/// Built-in tones or the user's preferred alert
+/// Represents system sounds that can be played by the SoundEngine.
+///
+/// This enum provides a type-safe way to specify which sound to play,
+/// supporting both the user's preferred alert sound and named system sounds.
 enum SystemSound {
+    /// The user's preferred alert sound as configured in System Settings
     case userAlert // kSystemSoundID_UserPreferredAlert
+    /// A named system sound file (e.g. "Boop.aiff")
     case named(String) // e.g. "Boop.aiff"
 }
 
-/// One tiny helper that does everything
+/// A lightweight sound playback engine that respects system sound settings.
+///
+/// SoundEngine provides a simple interface for playing system sounds while
+/// automatically checking for mute states and respecting the user's sound
+/// preferences. It caches sound resources for efficient playback and handles
+/// both modern and legacy sound APIs.
+///
+/// Key features:
+/// - Respects system mute state
+/// - Honors "Play user interface sounds" setting
+/// - Caches sound resources for performance
+/// - Falls back to NSSound for compatibility
 enum SoundEngine {
     // MARK: Internal
 

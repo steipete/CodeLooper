@@ -3,6 +3,18 @@ import AXorcist
 import Diagnostics
 import Foundation
 
+/// Service responsible for managing JavaScript hook lifecycle in Cursor windows.
+///
+/// JSHookService provides a high-level interface for installing and managing JavaScript
+/// hooks in Cursor IDE windows. It coordinates with the JSHookManager to handle hook
+/// installation, monitoring, and error handling. The service runs on the main actor
+/// to ensure thread safety when interacting with UI elements.
+///
+/// Key responsibilities:
+/// - Managing hook installation for new windows
+/// - Tracking hook status for monitored windows
+/// - Coordinating with port management for WebSocket connections
+/// - Handling hook installation errors and recovery
 @MainActor
 class JSHookService {
     // MARK: Lifecycle

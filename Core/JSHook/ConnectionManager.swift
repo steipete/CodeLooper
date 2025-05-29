@@ -2,7 +2,18 @@ import Diagnostics
 import Foundation
 import Network
 
-/// Manages the entire JavaScript hook connection lifecycle with clean probe-once logic
+/// Manages the entire JavaScript hook connection lifecycle with clean probe-once logic.
+///
+/// ConnectionManager is responsible for coordinating WebSocket port allocation,
+/// JavaScript hook injection, and connection lifecycle management for Cursor windows.
+/// It implements a probe-once strategy to efficiently discover available ports at
+/// startup and manages the allocation of ports to windows as they appear.
+///
+/// Key features:
+/// - Efficient port discovery with probe-once logic
+/// - Dynamic port allocation for new windows
+/// - Automatic cleanup when windows close
+/// - Thread-safe operation on MainActor
 @MainActor
 final class ConnectionManager {
     // MARK: Internal
