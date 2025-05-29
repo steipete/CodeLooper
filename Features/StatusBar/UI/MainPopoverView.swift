@@ -50,7 +50,7 @@ struct MainPopoverView: View {
             DSDivider()
 
             // Monitoring status section
-            if let cursorApp = cursorMonitor.monitoredApps.first {
+            if !cursorMonitor.monitoredApps.isEmpty {
                 // Windows list without "Monitored:" label
                 CursorWindowsList(style: .popover)
             } else {
