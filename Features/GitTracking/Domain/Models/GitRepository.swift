@@ -1,7 +1,7 @@
 import Foundation
 
 /// Represents information about a Git repository
-public struct GitRepository: Sendable {
+public struct GitRepository: Sendable, Equatable, Hashable {
     // MARK: Lifecycle
 
     public init(
