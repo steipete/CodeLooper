@@ -206,7 +206,6 @@ jobs:
 
       - name: Build, Sign, and Optionally Notarize macOS App
         id: build_sign_notarize_step
-        continue-on-error: true
         env:
           MACOS_SIGNING_P12_FILE_PATH: ${{ steps.prepare_p12_cert.outputs.p12_file_path }}
           MACOS_SIGNING_CERTIFICATE_PASSWORD: ${{ secrets.MACOS_SIGNING_CERTIFICATE_PASSWORD }}
