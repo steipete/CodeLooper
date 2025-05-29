@@ -74,15 +74,19 @@ public final class AppDelegate: NSObject, NSApplicationDelegate, ObservableObjec
         // Single instance check
         singleInstanceLock = SingleInstanceLock(identifier: "me.steipete.codelooper.instance")
 
-        // Wait for the async check to complete
-        Task {
+        // Check single instance asynchronously
+        Task { @MainActor [weak self] in
+            guard let self else { return }
+            
             // Give the SingleInstanceLock time to check
             try? await Task.sleep(nanoseconds: 600_000_000) // 0.6 seconds
 
-            if !singleInstanceLock!.isPrimaryInstance {
-                logger.warning("Another instance of CodeLooper is already running. Terminating this instance.")
+            guard let singleInstanceLock = self.singleInstanceLock else { return }
+            
+            if !singleInstanceLock.isPrimaryInstance {
+                self.logger.warning("Another instance of CodeLooper is already running. Terminating this instance.")
                 // Bring the other instance to the front
-                singleInstanceLock!.activateExistingInstance()
+                singleInstanceLock.activateExistingInstance()
                 NSApp.terminate(nil)
             }
         }
