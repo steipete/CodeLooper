@@ -38,9 +38,6 @@ public enum AIErrorMapper {
         case .ollama:
             return mapOllamaError(error)
         }
-        
-        // Fallback: All Swift errors bridge to NSError, so we can cast directly
-        return mapNSError(error as NSError)
     }
 
     /// Maps URLError instances to appropriate AIServiceError cases
