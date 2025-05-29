@@ -3,6 +3,17 @@ import Defaults
 import Diagnostics
 import Foundation
 
+/// Manages state for individual Cursor IDE instances including intervention tracking and recovery status.
+///
+/// CursorInstanceStateManager provides:
+/// - Manual pause state management for user-controlled supervision
+/// - Intervention counter tracking to prevent excessive automation
+/// - Connection issue monitoring and recovery attempts
+/// - Recovery failure counting with escalation logic
+/// - Instance-specific state persistence and cleanup
+///
+/// This centralized state manager ensures consistent behavior across
+/// monitoring cycles and provides reliable state tracking for each Cursor instance.
 @MainActor
 public class CursorInstanceStateManager: ObservableObject {
     // MARK: Lifecycle

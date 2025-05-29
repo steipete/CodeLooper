@@ -1,10 +1,22 @@
 import Diagnostics
 import Foundation
 
+/// Delegate protocol for heartbeat status updates from monitored JavaScript hooks.
 protocol HeartbeatMonitorDelegate: AnyObject {
     func heartbeatMonitor(_ monitor: HeartbeatMonitor, didUpdateStatus status: HeartbeatStatus, for windowId: String)
 }
 
+/// Monitors heartbeat signals from JavaScript hooks injected into Cursor windows.
+///
+/// HeartbeatMonitor provides:
+/// - Real-time heartbeat signal tracking from JavaScript injection
+/// - Connection health monitoring and status reporting
+/// - Timeout detection for unresponsive hooks
+/// - Delegate notifications for status changes
+/// - Automatic cleanup of stale heartbeat tracking
+///
+/// The monitor listens for periodic heartbeat signals sent by injected
+/// JavaScript code to verify that hooks remain active and responsive.
 @MainActor
 class HeartbeatMonitor {
     // MARK: Lifecycle
