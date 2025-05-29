@@ -16,7 +16,7 @@ final class NativeToolbarSettingsWindow: NSWindow {
         )
 
         super.init(
-            contentRect: NSRect(x: 0, y: 0, width: 720, height: 800),
+            contentRect: NSRect(x: 0, y: 0, width: 720, height: 750),
             styleMask: [.closable, .miniaturizable, .resizable, .titled, .unifiedTitleAndToolbar, .fullSizeContentView],
             backing: .buffered,
             defer: false

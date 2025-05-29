@@ -54,7 +54,7 @@ struct CodeLooperApp: App {
                 .environmentObject(sessionLogger)
         }
         .windowResizability(.contentSize)
-        .defaultSize(width: 640, height: 950)
+        .defaultSize(width: 640, height: 800)
         .commandsRemoved()
         .handlesExternalEvents(matching: Set(arrayLiteral: "settings"))
         .commands {
