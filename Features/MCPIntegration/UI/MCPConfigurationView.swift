@@ -208,13 +208,13 @@ private struct MCPCard: View {
                 Text("...")
                     .font(Typography.caption2())
             }
-            .frame(width: 60, alignment: .center)
+            .frame(minWidth: 85, alignment: .center)
         } else {
             let displayVersion = getDisplayVersion()
             let hasUpdate = checkForUpdate()
             
             DSBadge("v\(displayVersion)", style: hasUpdate ? .warning : .default)
-                .frame(width: 60, alignment: .center)
+                .frame(minWidth: 85, alignment: .center)
         }
     }
     
