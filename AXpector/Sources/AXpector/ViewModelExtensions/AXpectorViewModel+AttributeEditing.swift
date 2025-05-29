@@ -65,7 +65,8 @@ extension AXpectorViewModel {
                 let collectedLogs = axGetLogEntries()
                 for logEntry in collectedLogs {
                     axDebugLog(
-                        "AXorcist (IsSettable Prep) Log [L:\(logEntry.level.rawValue) T:\(logEntry.timestamp)]: \(logEntry.message) Details: \(logEntry.details ?? [:])"
+                        "AXorcist (IsSettable Prep) Log [L:\(logEntry.level.rawValue) T:\(logEntry.timestamp)]: " +
+                        "\(logEntry.message) Details: \(logEntry.details ?? [:])"
                     )
                 }
                 axClearLogs()
@@ -75,12 +76,10 @@ extension AXpectorViewModel {
                 let currentValue = node.attributes[attributeKey]?.value
                 var stringValue = ""
                 if let val = currentValue {
-                    if let str = val as? String { stringValue = str }
-                    else if let num = val as? NSNumber { stringValue = num.stringValue }
+                    if let str = val as? String { stringValue = str } else if let num = val as? NSNumber { stringValue = num.stringValue }
                     // else if let boolVal = val as? Bool { stringValue = boolVal ? "true" : "false" } // Handle Bool
                     // explicitly if needed
-                    else if let anyCodable = val as? AnyCodable { stringValue = String(describing: anyCodable.value) }
-                    else { stringValue = String(describing: val) }
+                    else if let anyCodable = val as? AnyCodable { stringValue = String(describing: anyCodable.value) } else { stringValue = String(describing: val) }
                 }
                 self.editingAttributeKey = attributeKey
                 self.editingAttributeValueString = stringValue
@@ -163,7 +162,8 @@ extension AXpectorViewModel {
                 let collectedLogs = axGetLogEntries()
                 for logEntry in collectedLogs {
                     axDebugLog(
-                        "AXorcist (SetAttribute) Log [L:\(logEntry.level.rawValue) T:\(logEntry.timestamp)]: \(logEntry.message) Details: \(logEntry.details ?? [:])"
+                        "AXorcist (SetAttribute) Log [L:\(logEntry.level.rawValue) T:\(logEntry.timestamp)]: " +
+                        "\(logEntry.message) Details: \(logEntry.details ?? [:])"
                     )
                 }
                 axClearLogs()
@@ -239,7 +239,8 @@ extension AXpectorViewModel {
             let collectedLogs = axGetLogEntries()
             for logEntry in collectedLogs {
                 axDebugLog(
-                    "AXorcist (RefreshNode) Log [L:\(logEntry.level.rawValue) T:\(logEntry.timestamp)]: \(logEntry.message) Details: \(logEntry.details ?? [:])"
+                    "AXorcist (RefreshNode) Log [L:\(logEntry.level.rawValue) T:\(logEntry.timestamp)]: " +
+                    "\(logEntry.message) Details: \(logEntry.details ?? [:])"
                 )
             }
             axClearLogs()
@@ -289,7 +290,8 @@ extension AXpectorViewModel {
             let collectedLogs = axGetLogEntries()
             for logEntry in collectedLogs {
                 axDebugLog(
-                    "AXorcist (IsSettable Display) Log [L:\(logEntry.level.rawValue) T:\(logEntry.timestamp)]: \(logEntry.message) Details: \(logEntry.details ?? [:])"
+                    "AXorcist (IsSettable Display) Log [L:\(logEntry.level.rawValue) T:\(logEntry.timestamp)]: " +
+                    "\(logEntry.message) Details: \(logEntry.details ?? [:])"
                 )
             }
             axClearLogs()
@@ -339,8 +341,11 @@ extension AXpectorViewModel {
     }
 
     @MainActor
-    func fetchAttributeUIDisplayInfo(for node: AXPropertyNode, attributeKey: String,
-                                     attributeValue: AnyCodable?) -> AttributeDisplayInfo
+    func fetchAttributeUIDisplayInfo(
+        for node: AXPropertyNode,
+        attributeKey: String,
+        attributeValue: AnyCodable?
+    ) -> AttributeDisplayInfo
     {
         axDebugLog("AXpectorVM.fetchAttributeUIDisplayInfo for \(attributeKey) on node: \(node.id)")
 

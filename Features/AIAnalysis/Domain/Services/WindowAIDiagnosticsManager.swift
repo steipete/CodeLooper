@@ -507,10 +507,10 @@ class WindowAIDiagnosticsManager: ObservableObject, Loggable {
                 windowInfo.lastAIAnalysisResponseMessage = aiResult.reason ?? "No reason provided."
 
             } catch {
-                logger
-                    .error(
-                        "Failed to decode extracted AI JSON for window \(windowId): \(error.localizedDescription). Extracted data (string): '\(String(data: jsonData, encoding: .utf8) ?? "Invalid UTF-8 Data")'. Original raw response: '\(response.text)'"
-                    )
+                let extractedString = String(data: jsonData, encoding: .utf8) ?? "Invalid UTF-8 Data"
+                logger.error(
+                    "Failed to decode extracted AI JSON for window \(windowId): \(error.localizedDescription). Extracted data (string): '\(extractedString)'. Original raw response: '\(response.text)'"
+                )
                 windowInfo.lastAIAnalysisStatus = .error
                 windowInfo.lastAIAnalysisResponseMessage = "AI response JSON parsing error (after extraction)."
             }

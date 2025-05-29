@@ -78,7 +78,7 @@ struct AttributeRowView: View {
                                 var refToNavigate: AXUIElement?
                                 if attributeUIType == .axElement {
                                     if CFGetTypeID(valueRef) == AXUIElementGetTypeID() {
-                                        refToNavigate = (valueRef as! AXUIElement)
+                                        refToNavigate = unsafeBitCast(valueRef, to: AXUIElement.self)
                                     } else {
                                         axWarningLog(
                                             "Attribute \(attributeKey) expected AXUIElement but got other type."
@@ -86,7 +86,7 @@ struct AttributeRowView: View {
                                     }
                                 } else if attributeUIType == .arrayOfAXElements {
                                     if CFGetTypeID(valueRef) == CFArrayGetTypeID() {
-                                        let array = valueRef as! CFArray
+                                        let array = unsafeBitCast(valueRef, to: CFArray.self)
                                         if CFArrayGetCount(array) > 0 {
                                             let firstElementRaw = CFArrayGetValueAtIndex(array, 0)
                                             // Ensure the first element is indeed an AXUIElement
@@ -104,7 +104,7 @@ struct AttributeRowView: View {
                                                 // wrapper in AXorcistLib, it handles its own lifetime.
                                                 // Given AXUIElement is a direct CFType, direct pass is fine if usage is
                                                 // immediate.
-                                                refToNavigate = (firstElementTyped as! AXUIElement)
+                                                refToNavigate = unsafeBitCast(firstElementTyped, to: AXUIElement.self)
                                                 // No need to CFRetain refToNavigate here as it's from within a CFArray
                                                 // whose lifetime is managed by valueRef.
                                             } else {
@@ -140,8 +140,8 @@ struct AttributeRowView: View {
                                     // array is valid for its call.
                                     // The original valueRef (single element or array) is released.
                                     if attributeUIType == .axElement,
-                                       let singleElementValueRef = valueRef as! AXUIElement?,
-                                       singleElementValueRef === finalRefToNavigate
+                                       CFGetTypeID(valueRef) == AXUIElementGetTypeID(),
+                                       unsafeBitCast(valueRef, to: AXUIElement.self) === finalRefToNavigate
                                     {
                                         // If it was a single element, it was already released by defer. This path is
                                         // tricky.

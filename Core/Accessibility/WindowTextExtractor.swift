@@ -51,7 +51,7 @@ public enum WindowTextExtractor {
             throw ExtractionError.noFrontWindow
         }
 
-        // Extract text from window
+        // Extract text from window  
         let windowElement = window as! AXUIElement
         return extractTextFromElement(windowElement)
     }
@@ -86,7 +86,7 @@ public enum WindowTextExtractor {
             throw ExtractionError.noFrontWindow
         }
 
-        // Extract text from window
+        // Extract text from window  
         let windowElement = window as! AXUIElement
         return extractTextFromElement(windowElement)
     }

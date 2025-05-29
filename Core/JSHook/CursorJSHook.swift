@@ -265,7 +265,11 @@ public final class CursorJSHook {
         let logger = Logger(category: .jshook)
         logger.info("🎯 Preparing Cursor window and console for manual injection")
 
-        // Build AppleScript to activate window and open console
+        let script = buildWindowPreparationScript()
+        executeWindowPreparationScript(script, logger: logger)
+    }
+    
+    private func buildWindowPreparationScript() -> String {
         let windowTarget = if let targetTitle = targetWindowTitle {
             "(first window whose name is \"\(targetTitle)\")"
         } else {
@@ -276,23 +280,10 @@ public final class CursorJSHook {
             in: applicationName,
             targetWindowTitle: targetWindowTitle
         )
-        logger.debug("🔍 Dev console already open: \(isConsoleOpen)")
 
-        let devToolsToggleScript = if !isConsoleOpen {
-            """
-                # Use menu bar to open developer tools
-                # Access Help menu and click Toggle Developer Tools
-                click menu item "Toggle Developer Tools" of menu 1 of menu bar item "Help" of menu bar 1
-                delay 3.0
-            """
-        } else {
-            """
-                # Dev console already open, skipping toggle
-                delay 0.5
-            """
-        }
+        let devToolsToggleScript = buildDevToolsToggleScript(isConsoleOpen: isConsoleOpen)
 
-        let script = """
+        return """
         tell application "\(applicationName)"
             activate
             delay 0.5
@@ -321,7 +312,25 @@ public final class CursorJSHook {
             end tell
         end tell
         """
-
+    }
+    
+    private func buildDevToolsToggleScript(isConsoleOpen: Bool) -> String {
+        if !isConsoleOpen {
+            return """
+                # Use menu bar to open developer tools
+                # Access Help menu and click Toggle Developer Tools
+                click menu item "Toggle Developer Tools" of menu 1 of menu bar item "Help" of menu bar 1
+                delay 3.0
+            """
+        } else {
+            return """
+                # Dev console already open, skipping toggle
+                delay 0.5
+            """
+        }
+    }
+    
+    private func executeWindowPreparationScript(_ script: String, logger: Logger) {
         logger.info("🚀 Executing window preparation AppleScript...")
 
         let appleScript = NSAppleScript(source: script)

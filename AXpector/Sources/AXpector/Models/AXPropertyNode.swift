@@ -17,10 +17,21 @@ import SwiftUI
 class AXPropertyNode: ObservableObject, Identifiable, Hashable {
     // MARK: Lifecycle
 
-    init(id: UUID, axElementRef: AXUIElement, pid: pid_t,
-         role: String, title: String, descriptionText: String, value: String, fullPath: String,
-         children: [AXPropertyNode], attributes: [String: AnyCodable], actions: [String],
-         hasChildrenAXProperty: Bool, depth: Int)
+    init(
+        id: UUID,
+        axElementRef: AXUIElement,
+        pid: pid_t,
+        role: String,
+        title: String,
+        descriptionText: String,
+        value: String,
+        fullPath: String,
+        children: [AXPropertyNode],
+        attributes: [String: AnyCodable],
+        actions: [String],
+        hasChildrenAXProperty: Bool,
+        depth: Int
+    )
     {
         self.id = id
         self.axElementRef = axElementRef
@@ -61,15 +72,15 @@ class AXPropertyNode: ObservableObject, Identifiable, Hashable {
     var areChildrenFullyLoaded: Bool = false // Can be updated after a dynamic load
 
     var displayName: String {
-        let t = title.trimmingCharacters(in: .whitespacesAndNewlines)
-        let d = descriptionText.trimmingCharacters(in: .whitespacesAndNewlines)
-        let v = value.trimmingCharacters(in: .whitespacesAndNewlines)
+        let trimmedTitle = title.trimmingCharacters(in: .whitespacesAndNewlines)
+        let trimmedDescription = descriptionText.trimmingCharacters(in: .whitespacesAndNewlines)
+        let trimmedValue = value.trimmingCharacters(in: .whitespacesAndNewlines)
 
-        if !t.isEmpty, t != "Untitled" { return t }
-        if !d.isEmpty { return d }
-        if !v.isEmpty {
+        if !trimmedTitle.isEmpty, trimmedTitle != "Untitled" { return trimmedTitle }
+        if !trimmedDescription.isEmpty { return trimmedDescription }
+        if !trimmedValue.isEmpty {
             let maxLength = 50
-            return v.count > maxLength ? String(v.prefix(maxLength)) + "..." : v
+            return trimmedValue.count > maxLength ? String(trimmedValue.prefix(maxLength)) + "..." : trimmedValue
         }
         if !role.isEmpty, role != "N/A" { return role }
         return "Element (ID: \(id.uuidString.prefix(8)))"

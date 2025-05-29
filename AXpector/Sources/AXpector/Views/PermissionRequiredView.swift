@@ -16,7 +16,8 @@ struct PermissionRequiredView: View {
                 .foregroundColor(ColorPalette.text)
 
             Text(
-                "AXpector needs Accessibility permissions to inspect other applications. Please enable it for CodeLooper in System Settings."
+                "AXpector needs Accessibility permissions to inspect other applications. " +
+                "Please enable it for CodeLooper in System Settings."
             )
             .font(Typography.body())
             .foregroundColor(ColorPalette.textSecondary)
