@@ -51,7 +51,20 @@ final class WebSocketManager {
             logger.debug("🔧 Created NWListener with WebSocket protocol")
         } catch {
             logger.error("❌ Failed to create listener on port \(port): \(error)")
-            throw CursorJSHook.HookError.portInUse(port: port.rawValue)
+            
+            // Map specific errors to appropriate hook errors
+            if let posixError = error as? POSIXError {
+                switch posixError.code {
+                case .EADDRINUSE:
+                    throw CursorJSHook.HookError.portInUse(port: port.rawValue)
+                case .EACCES:
+                    throw CursorJSHook.HookError.applescriptPermissionDenied
+                default:
+                    throw CursorJSHook.HookError.networkError(URLError(.cannotConnectToHost))
+                }
+            } else {
+                throw CursorJSHook.HookError.portInUse(port: port.rawValue)
+            }
         }
 
         listener?.newConnectionHandler = { [weak self] connection in
@@ -87,13 +100,10 @@ final class WebSocketManager {
             try await Task.sleep(for: .milliseconds(200))
         }
 
-        logger.error("❌ Connection timeout after \(timeout)s")
-        throw CursorJSHook.HookError.connectionLost(
-            underlyingError: NSError(
-                domain: "TimeoutError",
-                code: -1001,
-                userInfo: [NSLocalizedDescriptionKey: "Connection timeout after \(timeout) seconds"]
-            )
+        logger.error("❌ Handshake timeout after \(timeout)s")
+        throw CursorJSHook.HookError.timeout(
+            duration: timeout,
+            operation: "WebSocket handshake"
         )
     }
 
@@ -213,8 +223,28 @@ final class WebSocketManager {
         }
 
         if let error {
-            Logger(category: .jshook).error("🌀 WS Receive error: \(error.localizedDescription)")
-            cleanupConnection(error: .connectionLost(underlyingError: error))
+            let hookError: CursorJSHook.HookError
+            
+            // Map specific network errors to appropriate hook errors
+            if let nwError = error as? NWError {
+                switch nwError {
+                case .posix(let code) where code == .ECONNREFUSED:
+                    hookError = .connectionLost(underlyingError: error)
+                case .posix(let code) where code == .ETIMEDOUT:
+                    hookError = .timeout(duration: 0, operation: "message receive")
+                case .posix(let code) where code == .EPIPE:
+                    hookError = .connectionLost(underlyingError: error)
+                default:
+                    hookError = .networkError(URLError(.networkConnectionLost))
+                }
+            } else if let urlError = error as? URLError {
+                hookError = .networkError(urlError)
+            } else {
+                hookError = .connectionLost(underlyingError: error)
+            }
+            
+            Logger(category: .jshook).error("🌀 WS Receive error: \(hookError.errorDescription ?? error.localizedDescription)")
+            cleanupConnection(error: hookError)
             return
         }
 

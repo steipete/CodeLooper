@@ -92,12 +92,119 @@ public final class CursorJSHook {
 
     // MARK: - Types
 
-    public enum HookError: Error {
+    /// Comprehensive error types for JavaScript hook operations.
+    ///
+    /// These errors provide specific context for different failure modes,
+    /// enabling appropriate recovery strategies and user communication.
+    public enum HookError: Error, LocalizedError, CustomStringConvertible, RetryableError {
+        // Connection errors
         case notConnected
-        case injectionFailed(Error?)
         case connectionLost(underlyingError: Error)
-        case cancelled
         case portInUse(port: UInt16)
+        case handshakeFailed(reason: String)
+        case timeout(duration: TimeInterval, operation: String)
+        
+        // Injection and script errors
+        case injectionFailed(Error?)
+        case scriptExecutionFailed(message: String)
+        case applescriptPermissionDenied
+        case applescriptError(code: OSStatus, message: String)
+        
+        // Network and communication errors
+        case networkError(URLError)
+        case messageSerializationFailed(Error)
+        case invalidResponse(received: String)
+        
+        // State and lifecycle errors
+        case cancelled
+        case alreadyConnected
+        case invalidState(current: String, expected: String)
+        
+        // WebSocket specific errors
+        case webSocketCloseCode(code: UInt16, reason: String)
+        case protocolError(description: String)
+        
+        // MARK: - Error Information
+        
+        public var errorDescription: String? {
+            switch self {
+            case .notConnected:
+                return "JavaScript hook is not connected to Cursor"
+            case .connectionLost(let error):
+                return "Connection to Cursor was lost: \(error.localizedDescription)"
+            case .portInUse(let port):
+                return "Port \(port) is already in use by another application"
+            case .handshakeFailed(let reason):
+                return "WebSocket handshake failed: \(reason)"
+            case .timeout(let duration, let operation):
+                return "\(operation) timed out after \(duration) seconds"
+            case .injectionFailed(let error):
+                return "Failed to inject JavaScript: \(error?.localizedDescription ?? "unknown error")"
+            case .scriptExecutionFailed(let message):
+                return "JavaScript execution failed: \(message)"
+            case .applescriptPermissionDenied:
+                return "AppleScript automation permission is required"
+            case .applescriptError(let code, let message):
+                return "AppleScript error \(code): \(message)"
+            case .networkError(let urlError):
+                return "Network error: \(urlError.localizedDescription)"
+            case .messageSerializationFailed(let error):
+                return "Failed to serialize message: \(error.localizedDescription)"
+            case .invalidResponse(let received):
+                return "Invalid response received: \(received)"
+            case .cancelled:
+                return "Operation was cancelled"
+            case .alreadyConnected:
+                return "Hook is already connected"
+            case .invalidState(let current, let expected):
+                return "Invalid state '\(current)', expected '\(expected)'"
+            case .webSocketCloseCode(let code, let reason):
+                return "WebSocket closed with code \(code): \(reason)"
+            case .protocolError(let description):
+                return "Protocol error: \(description)"
+            }
+        }
+        
+        public var description: String {
+            errorDescription ?? "Unknown hook error"
+        }
+        
+        /// Indicates whether this error suggests a retry might succeed (RetryableError conformance)
+        public var isRetryable: Bool {
+            switch self {
+            case .networkError, .timeout, .connectionLost, .handshakeFailed:
+                return true
+            case .portInUse, .applescriptPermissionDenied, .cancelled, .invalidState:
+                return false
+            case .injectionFailed, .scriptExecutionFailed, .applescriptError:
+                return false
+            case .messageSerializationFailed, .invalidResponse, .protocolError:
+                return false
+            case .notConnected, .alreadyConnected:
+                return false
+            case .webSocketCloseCode(let code, _):
+                // Retry on temporary codes, not on permanent failures
+                return code != 1008 && code != 1003 // Not policy violation or unsupported data
+            }
+        }
+        
+        /// Recovery suggestions for the user
+        public var recoverySuggestion: String? {
+            switch self {
+            case .portInUse:
+                return "Try restarting CodeLooper or check if another instance is running"
+            case .applescriptPermissionDenied:
+                return "Grant automation permissions in System Settings > Privacy & Security > Automation"
+            case .networkError:
+                return "Check your network connection and try again"
+            case .timeout:
+                return "Ensure Cursor is running and responsive, then try again"
+            case .handshakeFailed:
+                return "Restart Cursor and try connecting again"
+            default:
+                return nil
+            }
+        }
     }
 
     /// Returns true if the WebSocket connection is active and the handshake is complete
