@@ -67,6 +67,7 @@ private struct WindowRow: View {
     @State private var isHoveringCard = false
     @State private var isHoveringGitStatus = false
     @State private var showDebugPopover = false
+    @State private var showMarkdownPopover = false
 
     private static let logger = Logger(category: .ui)
 
@@ -217,6 +218,20 @@ private struct WindowRow: View {
                         .popover(isPresented: $showDebugPopover) {
                             DebugJSPopover(window: windowState, viewModel: inputWatcherViewModel)
                         }
+                    }
+                    
+                    // Show markdown content viewer
+                    Button(action: {
+                        showMarkdownPopover = true
+                    }) {
+                        Image(systemName: "doc.text.magnifyingglass")
+                            .font(.system(size: 12))
+                            .foregroundColor(ColorPalette.primary)
+                    }
+                    .buttonStyle(.plain)
+                    .help("View Sidebar Content")
+                    .popover(isPresented: $showMarkdownPopover) {
+                        MarkdownContentPopover(window: windowState, viewModel: inputWatcherViewModel)
                     }
                 } else {
                     // Show inject button when not hooked
