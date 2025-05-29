@@ -68,6 +68,7 @@ private struct WindowRow: View {
     @State private var isHoveringGitStatus = false
     @State private var showDebugPopover = false
     @State private var showMarkdownPopover = false
+    @State private var showGitHubPopover = false
 
     private static let logger = Logger(category: .ui)
 
@@ -376,6 +377,22 @@ private struct WindowRow: View {
                         Text("(\(gitRepo.dirtyFileCount)M, \(gitRepo.untrackedFileCount)U)")
                             .font(Typography.caption2())
                             .foregroundColor(isHoveringGitStatus ? ColorPalette.accent : ColorPalette.textSecondary)
+                    }
+                    
+                    // GitHub info button (appears on hover if GitHub URL is available)
+                    if isHoveringGitStatus, let githubURL = gitRepo.githubURL {
+                        Button(action: {
+                            showGitHubPopover = true
+                        }) {
+                            Image(systemName: "info.circle")
+                                .font(.system(size: 10))
+                                .foregroundColor(ColorPalette.accent)
+                        }
+                        .buttonStyle(.borderless)
+                        .help("View on GitHub")
+                        .popover(isPresented: $showGitHubPopover) {
+                            InlineBrowserPopover.github(url: githubURL)
+                        }
                     }
                 }
                 .scaleEffect(isHoveringGitStatus ? 1.02 : 1.0)
