@@ -3,10 +3,13 @@ import DesignSystem
 import SwiftUI
 
 /// A card component for displaying intervention rule information and controls.
-struct RuleCard: View {
+struct RuleCard<Rule>: View where Rule: Identifiable {
     // MARK: - Properties
     
-    let rule: InterventionRule
+    let rule: Rule
+    let name: String
+    let description: String
+    let isEnabled: Bool
     let isSelected: Bool
     let executionCount: Int
     let onSelect: () -> Void
@@ -20,11 +23,11 @@ struct RuleCard: View {
                 // Header with title and toggle
                 HStack {
                     VStack(alignment: .leading, spacing: Spacing.xxxSmall) {
-                        Text(rule.displayName)
+                        Text(name)
                             .font(Typography.body(.medium))
                             .foregroundColor(ColorPalette.text)
                         
-                        Text(rule.description)
+                        Text(description)
                             .font(Typography.caption1())
                             .foregroundColor(ColorPalette.textSecondary)
                             .lineLimit(2)
@@ -32,7 +35,7 @@ struct RuleCard: View {
                     
                     Spacer()
                     
-                    DSToggle("", isOn: .constant(rule.isEnabled))
+                    DSToggle("", isOn: .constant(isEnabled))
                         .onTapGesture {
                             onToggle()
                         }
@@ -52,7 +55,7 @@ struct RuleCard: View {
                     
                     Spacer()
                     
-                    if rule.isEnabled {
+                    if isEnabled {
                         HStack(spacing: Spacing.xxxSmall) {
                             Circle()
                                 .fill(ColorPalette.success)
@@ -75,12 +78,6 @@ struct RuleCard: View {
                     }
                 }
                 
-                // Configuration details (if selected)
-                if isSelected {
-                    Divider()
-                    
-                    RuleConfigurationView(rule: rule)
-                }
             }
         }
         .onTapGesture {
@@ -90,102 +87,5 @@ struct RuleCard: View {
     }
 }
 
-/// Configuration view for rule details
-private struct RuleConfigurationView: View {
-    let rule: InterventionRule
-    
-    var body: some View {
-        VStack(alignment: .leading, spacing: Spacing.small) {
-            Text("Configuration")
-                .font(Typography.subheadline(.medium))
-                .foregroundColor(ColorPalette.text)
-            
-            VStack(alignment: .leading, spacing: Spacing.xxSmall) {
-                ForEach(rule.configurationItems, id: \.key) { item in
-                    HStack {
-                        Text(item.key)
-                            .font(Typography.caption1())
-                            .foregroundColor(ColorPalette.textSecondary)
-                        
-                        Spacer()
-                        
-                        Text(item.value)
-                            .font(Typography.caption1(.medium))
-                            .foregroundColor(ColorPalette.text)
-                    }
-                }
-            }
-            .padding(.leading, Spacing.small)
-        }
-    }
-}
 
-// MARK: - Supporting Types
 
-struct InterventionRule: Identifiable {
-    let id = UUID()
-    let name: String
-    let displayName: String
-    let description: String
-    let isEnabled: Bool
-    let configurationItems: [(key: String, value: String)]
-    
-    static let stopAfter25Loops = InterventionRule(
-        name: "StopAfter25LoopsRule",
-        displayName: "Stop After 25 Loops", 
-        description: "Prevents infinite loops by stopping execution after 25 iterations",
-        isEnabled: true,
-        configurationItems: [
-            ("Max Iterations", "25"),
-            ("Sound Enabled", "Yes"),
-            ("Notifications", "Warning at 20")
-        ]
-    )
-    
-    static let connectionErrorRecovery = InterventionRule(
-        name: "ConnectionErrorRecovery",
-        displayName: "Connection Error Recovery",
-        description: "Automatically attempts to recover from connection errors",
-        isEnabled: false,
-        configurationItems: [
-            ("Max Retry Attempts", "3"),
-            ("Retry Delay", "2 seconds"),
-            ("Auto Resume", "Yes")
-        ]
-    )
-    
-    static let fileConflictResolver = InterventionRule(
-        name: "FileConflictResolver", 
-        displayName: "File Conflict Resolver",
-        description: "Resolves file conflicts that prevent saving",
-        isEnabled: false,
-        configurationItems: [
-            ("Auto Backup", "Yes"),
-            ("Conflict Strategy", "Keep Both"),
-            ("Notify User", "Always")
-        ]
-    )
-}
-
-// MARK: - Preview
-
-#Preview {
-    VStack(spacing: Spacing.medium) {
-        RuleCard(
-            rule: .stopAfter25Loops,
-            isSelected: false,
-            executionCount: 12,
-            onSelect: {},
-            onToggle: {}
-        )
-        
-        RuleCard(
-            rule: .connectionErrorRecovery,
-            isSelected: true,
-            executionCount: 5,
-            onSelect: {},
-            onToggle: {}
-        )
-    }
-    .padding()
-}

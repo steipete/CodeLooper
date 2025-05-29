@@ -20,7 +20,7 @@ struct CursorRuleSetsSettingsView: View {
             ScrollView {
                 VStack(spacing: Spacing.medium) {
                     ForEach(rules) { rule in
-                        RuleCard(
+                        InterventionRuleCard(
                             rule: rule,
                             isSelected: selectedRule?.id == rule.id,
                             executionCount: ruleCounter.getCount(for: ruleKeyForRule(rule.name))
@@ -116,9 +116,9 @@ struct CursorRuleSetsSettingsView: View {
     }
 }
 
-// MARK: - Rule Card
+// MARK: - Internal Rule Card
 
-private struct RuleCard: View {
+private struct InterventionRuleCard: View {
     // MARK: Internal
 
     let rule: InterventionRule
@@ -279,7 +279,7 @@ private struct RuleCard: View {
     }
 }
 
-// MARK: - Compact Sound Picker
+// MARK: - Internal Compact Sound Picker
 
 private struct CompactSoundPicker: View {
     // MARK: Internal
