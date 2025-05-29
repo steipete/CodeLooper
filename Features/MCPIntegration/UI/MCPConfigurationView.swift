@@ -2,7 +2,6 @@ import Defaults
 import DesignSystem
 import SwiftUI
 
-
 struct ExternalMCPsSettingsView: View {
     // MARK: Internal
 

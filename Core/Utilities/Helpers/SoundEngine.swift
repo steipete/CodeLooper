@@ -32,7 +32,7 @@ enum SoundEngine {
 
     // MARK: Private
 
-    private static nonisolated(unsafe) var cache: [String: SystemSoundID] = [:]
+    private nonisolated(unsafe) static var cache: [String: SystemSoundID] = [:]
 
     /// Quick test for master-output mute (works on Apple Silicon & Intel)
     private static var isOutputMuted: Bool {

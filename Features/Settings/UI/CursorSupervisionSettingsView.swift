@@ -53,7 +53,7 @@ struct CursorSupervisionSettingsView: View {
                         label: "Update Interval",
                         showValue: true
                     ) { "\(Int($0))s" }
-                    
+
                     Text("Choosing a too quick interval might increase CPU load or token cost.")
                         .font(Typography.caption1())
                         .foregroundColor(ColorPalette.textSecondary)

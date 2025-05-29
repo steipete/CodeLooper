@@ -89,4 +89,3 @@ public class RuleCounterManager: ObservableObject {
 extension Notification.Name {
     static let ruleCounterUpdated = Notification.Name("ruleCounterUpdated")
 }
-

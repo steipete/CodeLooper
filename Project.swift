@@ -17,7 +17,10 @@ let project = Project(
         .remote(url: "https://github.com/siteline/SwiftUI-Introspect.git", requirement: .upToNextMajor(from: "0.9.0")),
         .remote(url: "https://github.com/apple/swift-log.git", requirement: .upToNextMajor(from: "1.5.0")),
         .remote(url: "https://github.com/sindresorhus/LaunchAtLogin", requirement: .upToNextMajor(from: "5.0.0")),
-        .remote(url: "https://github.com/kishikawakatsumi/KeychainAccess.git", requirement: .upToNextMajor(from: "4.2.2")),
+        .remote(
+            url: "https://github.com/kishikawakatsumi/KeychainAccess.git",
+            requirement: .upToNextMajor(from: "4.2.2")
+        ),
         .remote(url: "https://github.com/sparkle-project/Sparkle.git", requirement: .upToNextMajor(from: "2.0.0")),
         .remote(url: "https://github.com/sindresorhus/KeyboardShortcuts", requirement: .upToNextMajor(from: "2.0.0")),
         .remote(url: "https://github.com/orchetect/MenuBarExtraAccess.git", requirement: .upToNextMajor(from: "1.2.1")),
@@ -26,7 +29,7 @@ let project = Project(
         .remote(url: "https://github.com/airbnb/lottie-ios", requirement: .upToNextMajor(from: "4.5.0")),
         .local(path: "AXorcist"),
         .local(path: "AXpector"),
-        .local(path: "DesignSystem")
+        .local(path: "DesignSystem"),
     ],
     settings: .settings(
         base: [
@@ -42,14 +45,14 @@ let project = Project(
             // Enable Asset Symbol Extensions
             "ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS": "YES",
             // Enable modern build security measures
-            "ENABLE_STRICT_CONCURRENCY_CHECKS": "YES"
+            "ENABLE_STRICT_CONCURRENCY_CHECKS": "YES",
         ],
         configurations: [
             .debug(name: "Debug", settings: [
                 "OTHER_SWIFT_FLAGS": "$(inherited) -warn-concurrency -enable-actor-data-race-checks",
-                "ENABLE_HARDENED_RUNTIME": "YES"
+                "ENABLE_HARDENED_RUNTIME": "YES",
             ]),
-            .release(name: "Release", settings: [:])
+            .release(name: "Release", settings: [:]),
         ],
         defaultSettings: .recommended
     ),
@@ -63,7 +66,7 @@ let project = Project(
             sources: ["Core/Diagnostics/**"],
             dependencies: [
                 .package(product: "Logging"),
-                .package(product: "AXorcist")
+                .package(product: "AXorcist"),
             ],
             settings: .settings(
                 base: [
@@ -71,7 +74,7 @@ let project = Project(
                     "MACOSX_DEPLOYMENT_TARGET": "14.0",
                     "OTHER_SWIFT_FLAGS": "-strict-concurrency=complete",
                     "ENABLE_STRICT_CONCURRENCY_CHECKS": "YES",
-                    "CLANG_ENABLE_MODULE_DEBUGGING": "YES"
+                    "CLANG_ENABLE_MODULE_DEBUGGING": "YES",
                 ]
             )
         ),
@@ -85,7 +88,7 @@ let project = Project(
             sources: [
                 "App/**",
                 "Features/**",
-                "Core/**"
+                "Core/**",
             ],
             resources: [
                 "Resources/CodeLooper.sdef",
@@ -93,7 +96,7 @@ let project = Project(
                 "Resources/JavaScript/**",
                 "Resources/chain_link_lottie.json",
                 "App/Resources/Assets.xcassets",
-                "CodeLooper/Base.lproj/**"
+                "CodeLooper/Base.lproj/**",
             ],
             entitlements: .file(path: "App/Resources/Entitlements/CodeLooper.entitlements"),
             dependencies: [
@@ -111,14 +114,14 @@ let project = Project(
                 .package(product: "MenuBarExtraAccess"),
                 .package(product: "OpenAI"),
                 .package(product: "Ollama"),
-                .package(product: "Lottie")
+                .package(product: "Lottie"),
             ],
             settings: .settings(
                 base: [
                     "INFOPLIST_FILE": "App/Info.plist",
                     "PRODUCT_BUNDLE_IDENTIFIER": "me.steipete.codelooper",
                     "MARKETING_VERSION": "2025.5.2",
-                    "CURRENT_PROJECT_VERSION": "2"
+                    "CURRENT_PROJECT_VERSION": "2",
                     // Team ID will be inherited from project-level if not specified per target/config
                 ],
                 configurations: [
@@ -126,16 +129,16 @@ let project = Project(
                         "CODE_SIGN_IDENTITY": "Apple Development",
                         "CODE_SIGN_STYLE": "Automatic",
                         "DEVELOPMENT_TEAM": "Y5PE65HELJ", // Updated with your Team ID
-                        "ENABLE_HARDENED_RUNTIME": "YES"
+                        "ENABLE_HARDENED_RUNTIME": "YES",
                     ]),
                     .release(name: "Release", settings: [
                         // Release signing settings can be more specific if needed, e.g., Apple Distribution
                         // "CODE_SIGN_IDENTITY": "Apple Distribution",
-                        "DEVELOPMENT_TEAM": "Y5PE65HELJ" // Updated with your Team ID for consistency
-                    ])
+                        "DEVELOPMENT_TEAM": "Y5PE65HELJ", // Updated with your Team ID for consistency
+                    ]),
                 ]
             )
-        )
+        ),
     ],
     schemes: [
         .scheme(
@@ -147,6 +150,6 @@ let project = Project(
             archiveAction: .archiveAction(configuration: "Release"),
             profileAction: .profileAction(configuration: "Release", executable: "CodeLooper"),
             analyzeAction: .analyzeAction(configuration: "Debug")
-        )
+        ),
     ]
 )

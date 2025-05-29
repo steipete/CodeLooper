@@ -121,7 +121,7 @@ struct AdvancedSettingsView: View {
             Defaults[.verboseLogging] = enableDetailedLogging
             LogConfiguration.shared.updateVerbosity(enableDetailedLogging)
         }
-        .onChange(of: enableDetailedLogging) { oldValue, newValue in
+        .onChange(of: enableDetailedLogging) { _, newValue in
             // Update verbose logging when detailed logging changes
             Defaults[.verboseLogging] = newValue
             LogConfiguration.shared.updateVerbosity(newValue)

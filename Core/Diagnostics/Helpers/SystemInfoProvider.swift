@@ -1,7 +1,7 @@
 import Foundation
 
 /// Provides system information for diagnostic reports
-struct SystemInfoProvider {
+enum SystemInfoProvider {
     /// Get detailed system information for diagnostics
     /// - Returns: A formatted string with system information
     static func getSystemInfoSection() -> String {

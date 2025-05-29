@@ -2,7 +2,6 @@ import Defaults
 import DesignSystem
 import SwiftUI
 
-
 public struct CursorAnalysisView: View {
     // MARK: Public
 
@@ -117,10 +116,8 @@ public struct CursorAnalysisView: View {
                         .foregroundColor(ColorPalette.textSecondary)
                 }
             }
-
         }
     }
-
 
     private var promptSection: some View {
         VStack(alignment: .leading, spacing: Spacing.medium) {
@@ -169,7 +166,6 @@ public struct CursorAnalysisView: View {
             }
         }
     }
-
 
     private func errorView(_ error: Error) -> some View {
         VStack(alignment: .leading, spacing: 8) {

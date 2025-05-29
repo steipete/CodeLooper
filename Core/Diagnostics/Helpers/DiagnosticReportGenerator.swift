@@ -1,7 +1,7 @@
 import Foundation
 
 /// Generates diagnostic reports from operation tracking data
-struct DiagnosticReportGenerator {
+enum DiagnosticReportGenerator {
     /// Generate a diagnostic report from operation statistics
     /// - Parameters:
     ///   - counts: Operation counts dictionary

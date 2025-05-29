@@ -283,7 +283,8 @@ class AXpectorViewModel: ObservableObject {
                    role == AXRoleNames.kAXStaticTextRole as String
                 {
                     if let value = targetNode.attributes[AXAttributeNames.kAXValueAttribute]?.value as? String,
-                       !value.isEmpty { stringCriteria[AXAttributeNames.kAXValueAttribute] = value } else { stringCriteria[AXAttributeNames.kAXTitleAttribute] = targetNode.displayName }
+                       !value.isEmpty { stringCriteria[AXAttributeNames.kAXValueAttribute] = value }
+                    else { stringCriteria[AXAttributeNames.kAXTitleAttribute] = targetNode.displayName }
                 } else { stringCriteria[AXAttributeNames.kAXTitleAttribute] = targetNode.displayName }
             }
 

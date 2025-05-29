@@ -6,7 +6,7 @@ let config = Config(
         resolveDependenciesWithSystemScm: false,
         disablePackageVersionLocking: false,
         clonedSourcePackagesDirPath: nil,
-        staticSideEffectsWarningTargets: .all, 
+        staticSideEffectsWarningTargets: .all,
         enforceExplicitDependencies: false,
         defaultConfiguration: nil,
         optionalAuthentication: false

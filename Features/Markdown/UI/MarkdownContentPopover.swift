@@ -3,7 +3,6 @@ import DesignSystem
 import Diagnostics
 import SwiftUI
 
-
 @MainActor
 private class MarkdownContentState: ObservableObject {
     @Published var markdownContent: String = ""
@@ -67,7 +66,7 @@ struct MarkdownContentPopover: View {
                     Image(systemName: "exclamationmark.triangle")
                         .foregroundColor(.orange)
                         .font(.caption)
-                        .frame(width: 14, height: 14)  // Fixed size
+                        .frame(width: 14, height: 14) // Fixed size
                     Text(error)
                         .font(.caption)
                         .foregroundColor(.secondary)
@@ -76,7 +75,7 @@ struct MarkdownContentPopover: View {
                     Image(systemName: "checkmark.circle")
                         .foregroundColor(.green)
                         .font(.caption)
-                        .frame(width: 14, height: 14)  // Fixed size
+                        .frame(width: 14, height: 14) // Fixed size
                     Text("Updated: \(updateTime, style: .relative)")
                         .font(.caption)
                         .foregroundColor(.secondary)

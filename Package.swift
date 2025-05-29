@@ -4,10 +4,10 @@ import PackageDescription
 let package = Package(
     name: "CodeLooper",
     platforms: [
-        .macOS(.v14)
+        .macOS(.v14),
     ],
     products: [
-        .executable(name: "CodeLooper", targets: ["CodeLooper"])
+        .executable(name: "CodeLooper", targets: ["CodeLooper"]),
     ],
     dependencies: [
         // Core UI and settings
@@ -37,14 +37,14 @@ let package = Package(
         // Testing framework
         .package(url: "https://github.com/apple/swift-testing.git", from: "0.8.0"),
         // Development-only dependencies
-        .package(url: "https://github.com/cpisciotta/xcbeautify", from: "2.28.0")
+        .package(url: "https://github.com/cpisciotta/xcbeautify", from: "2.28.0"),
     ],
     targets: [
         .target(
             name: "Diagnostics",
             dependencies: [
                 .product(name: "Logging", package: "swift-log"),
-                "Defaults"
+                "Defaults",
             ],
             path: "Core/Diagnostics"
         ),
@@ -65,12 +65,12 @@ let package = Package(
                 .product(name: "MenuBarExtraAccess", package: "MenuBarExtraAccess"),
                 .product(name: "OpenAI", package: "OpenAI"),
                 .product(name: "Ollama", package: "ollama-swift"),
-                .product(name: "Lottie", package: "lottie-ios")
+                .product(name: "Lottie", package: "lottie-ios"),
             ],
             path: "Sources",
             exclude: ["Diagnostics"],
             resources: [
-                .copy("../Resources")
+                .copy("../Resources"),
             ],
             swiftSettings: [
                 // Using complete concurrency checking for Swift 6 compatibility.
@@ -79,12 +79,12 @@ let package = Package(
                 // - Avoiding data races and unsynchronized access to shared mutable state.
                 // - Updating dependencies to their latest versions for compatibility.
                 .unsafeFlags(["-strict-concurrency=complete"]),
-                                
+
                 // Extra runtime checking in Debug builds only
                 .unsafeFlags([
-                  "-warn-concurrency",
-                  "-enable-actor-data-race-checks"
-                ], .when(configuration: .debug))
+                    "-warn-concurrency",
+                    "-enable-actor-data-race-checks",
+                ], .when(configuration: .debug)),
             ]
         ),
         .testTarget(
@@ -92,12 +92,12 @@ let package = Package(
             dependencies: [
                 "CodeLooper",
                 "Diagnostics",
-                .product(name: "Testing", package: "swift-testing")
+                .product(name: "Testing", package: "swift-testing"),
             ],
             path: "Tests",
             resources: [
-                .copy("Resources")
+                .copy("Resources"),
             ]
-        )
+        ),
     ]
 )

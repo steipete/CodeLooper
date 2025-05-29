@@ -5,7 +5,7 @@ import OSLog
 /// Handles operation tracking functionality for the DiagnosticsLogger
 actor OperationTracker {
     // MARK: Internal
-    
+
     /// Record the start of an operation for timing and tracking purposes
     /// - Parameters:
     ///   - operation: Name of the operation being tracked
@@ -236,7 +236,7 @@ actor OperationTracker {
         timings: [String: [TimeInterval]],
         pendingOperations: [UUID: (operation: String, startTime: Date)]
     ) {
-        return (
+        (
             counts: operationCounts,
             errors: operationErrors,
             timings: operationTimings,

@@ -2,7 +2,6 @@ import Defaults
 import DesignSystem
 import SwiftUI
 
-
 // Define a Notification name for AI Service configuration changes
 extension Notification.Name {
     static let AIServiceConfigured = Notification.Name("AIServiceConfiguredNotification")

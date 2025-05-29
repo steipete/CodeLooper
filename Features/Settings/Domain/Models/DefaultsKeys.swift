@@ -126,7 +126,7 @@ extension Defaults.Keys {
     static let plainStopRuleSound = Key<String>("plainStopRuleSound", default: "")
     static let connectionIssuesRuleSound = Key<String>("connectionIssuesRuleSound", default: "")
     static let editedInAnotherChatRuleSound = Key<String>("editedInAnotherChatRuleSound", default: "")
-    
+
     // Rule-specific notification settings
     static let stopAfter25LoopsRuleNotification = Key<Bool>("stopAfter25LoopsRuleNotification", default: true)
     static let plainStopRuleNotification = Key<Bool>("plainStopRuleNotification", default: false)

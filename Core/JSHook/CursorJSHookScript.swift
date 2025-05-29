@@ -448,11 +448,11 @@ public enum CursorJSHookScript {
                     const elements = document.querySelectorAll('body *');
                     for (const el of elements) {
                         if (!el || !el.textContent) continue;
-                        
+
                         // Check if element contains rate limit text
                         if (el.textContent.includes('stop the agent after 25 tool calls') || 
                             el.textContent.includes('Note: we default stop')) {
-                            
+
                             // Find the resume link inside this element
                             const links = el.querySelectorAll('a, span.markdown-link, [role="link"], [data-link]');
                             for (const link of links) {

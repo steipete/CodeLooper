@@ -3,16 +3,20 @@ import SwiftUI
 // MARK: - Shimmer Effect Component
 
 public struct DSShimmer: View {
-    public let width: CGFloat
-    public let height: CGFloat
-    public let cornerRadius: CGFloat
-    
+    // MARK: Lifecycle
+
     public init(width: CGFloat, height: CGFloat, cornerRadius: CGFloat = 4) {
         self.width = width
         self.height = height
         self.cornerRadius = cornerRadius
     }
-    
+
+    // MARK: Public
+
+    public let width: CGFloat
+    public let height: CGFloat
+    public let cornerRadius: CGFloat
+
     public var body: some View {
         RoundedRectangle(cornerRadius: cornerRadius)
             .fill(ColorPalette.backgroundSecondary)
@@ -24,8 +28,8 @@ public struct DSShimmer: View {
 // MARK: - Shimmer ViewModifier
 
 public struct Shimmer: ViewModifier {
-    @State private var phase = 0.0
-    
+    // MARK: Public
+
     public func body(content: Content) -> some View {
         content
             .overlay {
@@ -45,6 +49,10 @@ public struct Shimmer: ViewModifier {
                 }
             }
     }
+
+    // MARK: Private
+
+    @State private var phase = 0.0
 }
 
 public extension View {

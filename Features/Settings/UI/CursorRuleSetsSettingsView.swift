@@ -5,8 +5,6 @@ import SwiftUI
 struct CursorRuleSetsSettingsView: View {
     // MARK: Internal
 
-    @StateObject private var ruleCounter = RuleCounterManager.shared
-
     var body: some View {
         VStack(alignment: .leading, spacing: Spacing.large) {
             // Header
@@ -23,7 +21,7 @@ struct CursorRuleSetsSettingsView: View {
                 VStack(spacing: Spacing.medium) {
                     ForEach(rules) { rule in
                         RuleCard(
-                            rule: rule, 
+                            rule: rule,
                             isSelected: selectedRule?.id == rule.id,
                             executionCount: ruleCounter.getCount(for: ruleKeyForRule(rule.name))
                         ) {
@@ -54,6 +52,8 @@ struct CursorRuleSetsSettingsView: View {
     }
 
     // MARK: Private
+
+    @StateObject private var ruleCounter = RuleCounterManager.shared
 
     @State private var rules: [InterventionRule] = [
         InterventionRule(
@@ -105,13 +105,13 @@ struct CursorRuleSetsSettingsView: View {
             rules[index].enabled.toggle()
         }
     }
-    
+
     private func ruleKeyForRule(_ ruleName: String) -> String {
         switch ruleName {
         case "Stop after 25 loops":
-            return "StopAfter25LoopsRule"
+            "StopAfter25LoopsRule"
         default:
-            return ruleName
+            ruleName
         }
     }
 }
@@ -138,7 +138,7 @@ private struct RuleCard: View {
                             Circle()
                                 .fill(rule.enabled ? ColorPalette.success : ColorPalette.textTertiary)
                                 .frame(width: 8, height: 8)
-                            
+
                             Text("\(executionCount)")
                                 .font(Typography.caption1(.semibold))
                                 .foregroundColor(ColorPalette.accent)
@@ -187,7 +187,7 @@ private struct RuleCard: View {
                     }
                     .frame(width: 80, alignment: .trailing)
                 }
-                
+
                 // Row 2: Trigger -> Action flow (centered with consistent spacing)
                 HStack(spacing: Spacing.medium) {
                     Spacer()
@@ -201,28 +201,30 @@ private struct RuleCard: View {
                         .frame(width: 140)
                     Spacer()
                 }
-                
+
                 // Row 3: Sound and notification controls (bottom left)
                 HStack(spacing: Spacing.medium) {
                     // Sound picker
                     CompactSoundPicker(ruleName: rule.name)
-                    
+
                     // Notification checkbox
                     HStack(spacing: Spacing.xSmall) {
                         Button(action: {
                             toggleNotification(for: rule.name)
                         }) {
-                            Image(systemName: getNotificationEnabled(for: rule.name) ? "checkmark.square.fill" : "square")
-                                .foregroundColor(getNotificationEnabled(for: rule.name) ? ColorPalette.accent : ColorPalette.textSecondary)
+                            Image(systemName: getNotificationEnabled(for: rule.name) ? "checkmark.square.fill" :
+                                "square")
+                                .foregroundColor(getNotificationEnabled(for: rule.name) ? ColorPalette
+                                    .accent : ColorPalette.textSecondary)
                                 .font(.system(size: 16))
                         }
                         .buttonStyle(.plain)
-                        
+
                         Text("Notification")
                             .font(Typography.caption1())
                             .foregroundColor(ColorPalette.text)
                     }
-                    
+
                     Spacer()
                 }
             }
@@ -238,13 +240,13 @@ private struct RuleCard: View {
 
     @State private var isHovered = false
     @State private var showPopover = false
-    
+
     // Per-rule notification settings
     @Default(.stopAfter25LoopsRuleNotification) private var stopAfter25LoopsNotification
     @Default(.plainStopRuleNotification) private var plainStopNotification
     @Default(.connectionIssuesRuleNotification) private var connectionIssuesNotification
     @Default(.editedInAnotherChatRuleNotification) private var editedInAnotherChatNotification
-    
+
     private func toggleNotification(for ruleName: String) {
         switch ruleName {
         case "Stop after 25 loops":
@@ -259,19 +261,19 @@ private struct RuleCard: View {
             break
         }
     }
-    
+
     private func getNotificationEnabled(for ruleName: String) -> Bool {
         switch ruleName {
         case "Stop after 25 loops":
-            return stopAfter25LoopsNotification
+            stopAfter25LoopsNotification
         case "Plain Stop":
-            return plainStopNotification
+            plainStopNotification
         case "Connection Issues":
-            return connectionIssuesNotification
+            connectionIssuesNotification
         case "Edited in another chat":
-            return editedInAnotherChatNotification
+            editedInAnotherChatNotification
         default:
-            return false
+            false
         }
     }
 }
@@ -292,7 +294,7 @@ private struct CompactSoundPicker: View {
                 Image(systemName: "speaker.wave.2")
                     .foregroundColor(currentSound.isEmpty ? ColorPalette.textSecondary : ColorPalette.accent)
                     .font(.system(size: 14))
-                
+
                 Text(currentSound.isEmpty ? "None" : currentSound)
                     .font(Typography.caption1())
                     .foregroundColor(ColorPalette.text)
@@ -317,26 +319,27 @@ private struct CompactSoundPicker: View {
     // MARK: Private
 
     @State private var isShowingPicker = false
+
     @Default(.stopAfter25LoopsRuleSound) private var stopAfter25Sound
     @Default(.plainStopRuleSound) private var plainStopSound
     @Default(.connectionIssuesRuleSound) private var connectionIssuesSound
     @Default(.editedInAnotherChatRuleSound) private var editedInAnotherChatSound
-    
+
     private var currentSound: String {
         switch ruleName {
         case "Stop after 25 loops":
-            return stopAfter25Sound
+            stopAfter25Sound
         case "Plain Stop":
-            return plainStopSound
+            plainStopSound
         case "Connection Issues":
-            return connectionIssuesSound
+            connectionIssuesSound
         case "Edited in another chat":
-            return editedInAnotherChatSound
+            editedInAnotherChatSound
         default:
-            return ""
+            ""
         }
     }
-    
+
     private func setSound(_ sound: String) {
         switch ruleName {
         case "Stop after 25 loops":
@@ -351,7 +354,7 @@ private struct CompactSoundPicker: View {
             break
         }
     }
-    
+
     private func playSound() {
         guard !currentSound.isEmpty else { return }
         SoundEngine.playSystemSound(named: currentSound)
@@ -361,8 +364,6 @@ private struct CompactSoundPicker: View {
 // MARK: - Compact Sound Picker Popover
 
 private struct CompactSoundPickerPopover: View {
-    // MARK: Internal
-    
     @Binding var selectedSound: String
     @Binding var isPresented: Bool
 
@@ -383,7 +384,7 @@ private struct CompactSoundPickerPopover: View {
                         selectedSound = ""
                         isPresented = false
                     }
-                    
+
                     // System sounds
                     ForEach(popularSounds) { sound in
                         SoundOptionRow(

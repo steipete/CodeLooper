@@ -27,20 +27,22 @@ actor DiagnosticsLogger {
     // Singleton instance with thread-safe initialization
     static let shared = DiagnosticsLogger()
 
+    let operationTracker = OperationTracker()
+
     /// Record the start of an operation for timing and tracking purposes
     /// - Parameters:
     ///   - operation: Name of the operation being tracked
     ///   - context: Additional context to log
     /// - Returns: A UUID that uniquely identifies this operation instance
-    func recordOperationStart(_ operation: String, context: [String: Any]? = nil) async -> UUID {
-        return await operationTracker.recordOperationStart(operation, context: nil)
+    func recordOperationStart(_ operation: String, context _: [String: Any]? = nil) async -> UUID {
+        await operationTracker.recordOperationStart(operation, context: nil)
     }
 
     /// Record the successful completion of an operation
     /// - Parameters:
     ///   - operationId: The UUID returned when starting the operation
     ///   - context: Additional context to log
-    func recordOperationSuccess(_ operationId: UUID, context: [String: Any]? = nil) async {
+    func recordOperationSuccess(_ operationId: UUID, context _: [String: Any]? = nil) async {
         await operationTracker.recordOperationSuccess(operationId, context: nil)
     }
 
@@ -49,7 +51,7 @@ actor DiagnosticsLogger {
     ///   - operation: Name of the operation being completed
     ///   - context: Additional context to log
     /// - Warning: This method is less reliable - prefer using the UUID-based version to avoid race conditions
-    func recordOperationSuccess(_ operation: String, context: [String: Any]? = nil) async {
+    func recordOperationSuccess(_ operation: String, context _: [String: Any]? = nil) async {
         await operationTracker.recordOperationSuccess(operation, context: nil)
     }
 
@@ -58,7 +60,7 @@ actor DiagnosticsLogger {
     ///   - operationId: The UUID returned when starting the operation
     ///   - error: The error that occurred
     ///   - context: Additional context to log
-    func recordOperationFailure(_ operationId: UUID, error: Error, context: [String: Any]? = nil) async {
+    func recordOperationFailure(_ operationId: UUID, error: Error, context _: [String: Any]? = nil) async {
         await operationTracker.recordOperationFailure(operationId, error: error, context: nil)
     }
 
@@ -68,7 +70,7 @@ actor DiagnosticsLogger {
     ///   - error: The error that occurred
     ///   - context: Additional context to log
     /// - Warning: This method is less reliable - prefer using the UUID-based version to avoid race conditions
-    func recordOperationFailure(_ operation: String, error: Error, context: [String: Any]? = nil) async {
+    func recordOperationFailure(_ operation: String, error: Error, context _: [String: Any]? = nil) async {
         await operationTracker.recordOperationFailure(operation, error: error, context: nil)
     }
 
@@ -113,10 +115,6 @@ actor DiagnosticsLogger {
         await operationTracker.resetOperationData()
         logger.info("All diagnostic tracking data has been reset")
     }
-
-    // MARK: Internal
-
-    let operationTracker = OperationTracker()
 
     // MARK: Private
 

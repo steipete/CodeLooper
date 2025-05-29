@@ -61,7 +61,8 @@ extension AXpectorViewModel {
         }
 
         if node.areChildrenFullyLoaded || node.isLoadingChildren {
-            if node.areChildrenFullyLoaded { axInfoLog("Node \(node.displayName) children are already fully loaded.") } else { axInfoLog("Node \(node.displayName) children are already loading.") }
+            if node.areChildrenFullyLoaded { axInfoLog("Node \(node.displayName) children are already fully loaded.") }
+            else { axInfoLog("Node \(node.displayName) children are already loading.") }
             node.isExpanded = true
             return
         }
@@ -156,7 +157,9 @@ extension AXpectorViewModel {
             let childRole = childAttributes[AXAttributeNames.kAXRoleAttribute]?.value as? String
             let childTitle = childAttributes[AXAttributeNames.kAXTitleAttribute]?.value as? String
             var childPathComponent = childRole ?? "UnknownRole"
-            if let t = childTitle, !t.isEmpty { childPathComponent += "[\"\(t.prefix(20))\"]" } else { childPathComponent += "[EL:\(String(describing: childAX.underlyingElement).suffix(8))]" }
+            if let t = childTitle,
+               !t.isEmpty { childPathComponent += "[\"\(t.prefix(20))\"]" }
+            else { childPathComponent += "[EL:\(String(describing: childAX.underlyingElement).suffix(8))]" }
             let childFullPath = pathOfElementToFetchChildrenFor
                 .isEmpty ? childPathComponent : "\(pathOfElementToFetchChildrenFor)/\(childPathComponent)"
 
