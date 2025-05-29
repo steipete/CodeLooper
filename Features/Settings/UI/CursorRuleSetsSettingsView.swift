@@ -202,21 +202,12 @@ private struct RuleCard: View {
                     Spacer()
                 }
                 
-                // Row 3: On execution settings (grid aligned)
+                // Row 3: Sound and notification controls (bottom left)
                 HStack(spacing: Spacing.medium) {
-                    // Column 1: Label (fixed width to align with status column)
-                    Text("On execution")
-                        .font(Typography.caption2(.medium))
-                        .foregroundColor(ColorPalette.textSecondary)
-                        .textCase(.uppercase)
-                        .frame(width: 100, alignment: .leading)
-                    
-                    // Column 2: Sound picker
+                    // Sound picker
                     CompactSoundPicker(ruleName: rule.name)
                     
-                    Spacer()
-                    
-                    // Column 3: Notification (aligned with actions column)
+                    // Notification checkbox
                     HStack(spacing: Spacing.xSmall) {
                         Button(action: {
                             toggleNotification(for: rule.name)
@@ -231,7 +222,8 @@ private struct RuleCard: View {
                             .font(Typography.caption1())
                             .foregroundColor(ColorPalette.text)
                     }
-                    .frame(width: 120, alignment: .leading)
+                    
+                    Spacer()
                 }
             }
             .padding(Spacing.medium)
@@ -246,16 +238,41 @@ private struct RuleCard: View {
 
     @State private var isHovered = false
     @State private var showPopover = false
-    @Default(.enableRuleNotifications) private var enableRuleNotifications
+    
+    // Per-rule notification settings
+    @Default(.stopAfter25LoopsRuleNotification) private var stopAfter25LoopsNotification
+    @Default(.plainStopRuleNotification) private var plainStopNotification
+    @Default(.connectionIssuesRuleNotification) private var connectionIssuesNotification
+    @Default(.editedInAnotherChatRuleNotification) private var editedInAnotherChatNotification
     
     private func toggleNotification(for ruleName: String) {
-        // For now, toggle global setting. In the future, this could be per-rule
-        enableRuleNotifications.toggle()
+        switch ruleName {
+        case "Stop after 25 loops":
+            Defaults[.stopAfter25LoopsRuleNotification].toggle()
+        case "Plain Stop":
+            Defaults[.plainStopRuleNotification].toggle()
+        case "Connection Issues":
+            Defaults[.connectionIssuesRuleNotification].toggle()
+        case "Edited in another chat":
+            Defaults[.editedInAnotherChatRuleNotification].toggle()
+        default:
+            break
+        }
     }
     
     private func getNotificationEnabled(for ruleName: String) -> Bool {
-        // For now, use global setting. In the future, this could be per-rule
-        return enableRuleNotifications
+        switch ruleName {
+        case "Stop after 25 loops":
+            return stopAfter25LoopsNotification
+        case "Plain Stop":
+            return plainStopNotification
+        case "Connection Issues":
+            return connectionIssuesNotification
+        case "Edited in another chat":
+            return editedInAnotherChatNotification
+        default:
+            return false
+        }
     }
 }
 
