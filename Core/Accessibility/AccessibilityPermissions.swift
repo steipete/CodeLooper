@@ -2,6 +2,7 @@ import AXorcist
 import Diagnostics
 import Foundation
 @preconcurrency import ScreenCaptureKit
+import UserNotifications
 
 /// Centralized manager for handling all app permissions
 @MainActor
@@ -22,6 +23,7 @@ public final class PermissionsManager: ObservableObject {
     @Published public private(set) var hasAccessibilityPermissions: Bool = false
     @Published public private(set) var hasAutomationPermissions: Bool = false
     @Published public private(set) var hasScreenRecordingPermissions: Bool = false
+    @Published public private(set) var hasNotificationPermissions: Bool = false
 
     /// Request accessibility permissions
     public func requestAccessibilityPermissions() async {
@@ -47,15 +49,38 @@ public final class PermissionsManager: ObservableObject {
         }
     }
 
+    /// Request notification permissions
+    public func requestNotificationPermissions() async {
+        logger.info("Requesting notification permissions")
+        do {
+            let granted = try await UNUserNotificationCenter.current()
+                .requestAuthorization(options: [.alert, .sound, .badge])
+            self.hasNotificationPermissions = granted
+            logger.info("Notification permissions request result: \(granted)")
+        } catch {
+            logger.error("Error requesting notification permissions: \(error)")
+            self.hasNotificationPermissions = false
+        }
+    }
+
+    /// Open System Settings for notification permissions
+    public func openNotificationSettings() {
+        logger.info("Opening System Settings for notification permissions")
+        if let url = URL(string: "x-apple.systempreferences:com.apple.preference.notifications") {
+            NSWorkspace.shared.open(url)
+        }
+    }
+
     /// Manually refresh all permissions
     public func refreshPermissions() async {
         hasAccessibilityPermissions = AXPermissionHelpers.hasAccessibilityPermissions()
         hasAutomationPermissions = await checkAutomationPermission()
         hasScreenRecordingPermissions = await checkScreenRecordingPermission()
+        hasNotificationPermissions = await checkNotificationPermission()
 
         logger
             .info(
-                "Permission status - Accessibility: \(hasAccessibilityPermissions), Automation: \(hasAutomationPermissions), Screen Recording: \(hasScreenRecordingPermissions)"
+                "Permission status - Accessibility: \(hasAccessibilityPermissions), Automation: \(hasAutomationPermissions), Screen Recording: \(hasScreenRecordingPermissions), Notifications: \(hasNotificationPermissions)"
             )
     }
 
@@ -69,14 +94,15 @@ public final class PermissionsManager: ObservableObject {
         // Check accessibility synchronously
         hasAccessibilityPermissions = AXPermissionHelpers.hasAccessibilityPermissions()
 
-        // Check automation and screen recording asynchronously
+        // Check other permissions asynchronously
         Task {
             hasAutomationPermissions = await checkAutomationPermission()
             hasScreenRecordingPermissions = await checkScreenRecordingPermission()
+            hasNotificationPermissions = await checkNotificationPermission()
 
             logger
                 .info(
-                    "Initial permission status - Accessibility: \(hasAccessibilityPermissions), Automation: \(hasAutomationPermissions), Screen Recording: \(hasScreenRecordingPermissions)"
+                    "Initial permission status - Accessibility: \(hasAccessibilityPermissions), Automation: \(hasAutomationPermissions), Screen Recording: \(hasScreenRecordingPermissions), Notifications: \(hasNotificationPermissions)"
                 )
         }
     }
@@ -131,6 +157,11 @@ public final class PermissionsManager: ObservableObject {
         }
     }
 
+    private func checkNotificationPermission() async -> Bool {
+        let settings = await UNUserNotificationCenter.current().notificationSettings()
+        return settings.authorizationStatus == .authorized
+    }
+
     private func startMonitoring() {
         monitoringTask = Task {
             while !Task.isCancelled {
@@ -140,6 +171,7 @@ public final class PermissionsManager: ObservableObject {
                 let newAccessibility = AXPermissionHelpers.hasAccessibilityPermissions()
                 let newAutomation = await checkAutomationPermission()
                 let newScreenRecording = await checkScreenRecordingPermission()
+                let newNotifications = await checkNotificationPermission()
 
                 if newAccessibility != self.hasAccessibilityPermissions {
                     self.hasAccessibilityPermissions = newAccessibility
@@ -154,6 +186,11 @@ public final class PermissionsManager: ObservableObject {
                 if newScreenRecording != self.hasScreenRecordingPermissions {
                     self.hasScreenRecordingPermissions = newScreenRecording
                     self.logger.info("Screen recording permissions changed to: \(newScreenRecording)")
+                }
+
+                if newNotifications != self.hasNotificationPermissions {
+                    self.hasNotificationPermissions = newNotifications
+                    self.logger.info("Notification permissions changed to: \(newNotifications)")
                 }
             }
         }

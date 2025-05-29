@@ -1,164 +1,156 @@
 import Diagnostics
 import Foundation
-import OSLog
-@preconcurrency import UserNotifications
+import UserNotifications
 
-/// UserNotificationManager handles user notifications on macOS with full Swift 6 concurrency compliance.
-/// This actor safely manages notification authorization and delivery while properly handling
-/// the interaction with UNUserNotificationCenter's @MainActor isolation.
-public actor UserNotificationManager {
+/// Manager for handling user notifications
+@MainActor
+public final class UserNotificationManager: ObservableObject {
     // MARK: Lifecycle
-
-    // MARK: - Initialization
-
+    
     private init() {
+        logger.info("UserNotificationManager initialized")
+        requestNotificationPermissions()
+    }
+    
+    // MARK: Public
+    
+    public static let shared = UserNotificationManager()
+    
+    @Published public private(set) var hasPermission = false
+    @Published public private(set) var authorizationStatus: UNAuthorizationStatus = .notDetermined
+    
+    /// Request notification permissions
+    public func requestNotificationPermissions() {
         Task {
             do {
-                let granted = try await UNUserNotificationCenter.current()
-                    .requestAuthorization(options: [.alert, .sound])
-                if granted {
-                    Self.logger.info("User notification permissions granted.")
-                } else {
-                    Self.logger.warning("User notification permissions not granted.")
+                let granted = try await UNUserNotificationCenter.current().requestAuthorization(
+                    options: [.alert, .sound, .badge]
+                )
+                
+                await MainActor.run {
+                    self.hasPermission = granted
+                    logger.info("Notification permission \(granted ? "granted" : "denied")")
                 }
+                
+                await checkAuthorizationStatus()
             } catch {
-                Self.logger.error("Error requesting user notification permissions: \(error.localizedDescription)")
+                logger.error("Failed to request notification permissions: \(error)")
             }
         }
     }
-
-    // MARK: Public
-
-    // MARK: - Singleton
-
-    public static let shared = UserNotificationManager()
-
-    // MARK: - Public Methods
-
-    /// Sends a user notification with the specified parameters
-    /// - Parameters:
-    ///   - identifier: Unique identifier for the notification
-    ///   - title: The notification title
-    ///   - body: The notification body text
-    ///   - subtitle: Optional subtitle for the notification
-    ///   - soundName: Optional name of the sound file to play (e.g., "Blow.aiff"). "default" for default sound, nil for
-    /// no sound.
-    ///   - categoryIdentifier: Optional category identifier for the notification
-    ///   - userInfo: Optional user information for the notification
+    
+    /// Check current authorization status
+    public func checkAuthorizationStatus() async {
+        let settings = await UNUserNotificationCenter.current().notificationSettings()
+        
+        await MainActor.run {
+            self.authorizationStatus = settings.authorizationStatus
+            self.hasPermission = settings.authorizationStatus == .authorized
+        }
+    }
+    
+    /// Send a notification
     public func sendNotification(
-        identifier: String = UUID().uuidString,
         title: String,
         body: String,
-        subtitle: String? = nil,
-        soundName: String? = "default",
-        categoryIdentifier _: String? = nil,
-        userInfo _: [AnyHashable: Any]? = nil
-    ) async {
-        let authorizationStatus = await UNUserNotificationCenter.getSafeAuthorizationStatus()
-
-        guard authorizationStatus == .authorized else {
-            Self.logger.debug("Cannot send notification, authorization denied or not determined.")
-            return
+        identifier: String? = nil,
+        sound: UNNotificationSound? = .default,
+        badge: NSNumber? = nil
+    ) async throws {
+        guard hasPermission else {
+            logger.warning("Cannot send notification: permission not granted")
+            throw NotificationError.permissionDenied
         }
-
+        
         let content = UNMutableNotificationContent()
         content.title = title
         content.body = body
-
-        if let subtitle {
-            content.subtitle = subtitle
+        
+        if let sound = sound {
+            content.sound = sound
         }
-
-        // Construct UNNotificationSound from soundName
-        if let name = soundName {
-            if name.lowercased() == "default" {
-                content.sound = UNNotificationSound.default
-            } else if !name.isEmpty {
-                content.sound = UNNotificationSound(named: UNNotificationSoundName(rawValue: name))
-            } else {
-                // Explicitly empty name might mean no sound, or treat as an error/default.
-                // For now, treating empty string as no sound (same as nil soundName if not for "default" special case)
-                content.sound = nil
-            }
-        } else {
-            content.sound = nil // No sound if soundName is nil
+        
+        if let badge = badge {
+            content.badge = badge
         }
-
-        let request = UNNotificationRequest(identifier: identifier, content: content, trigger: nil)
-
+        
+        let notificationId = identifier ?? UUID().uuidString
+        let request = UNNotificationRequest(
+            identifier: notificationId,
+            content: content,
+            trigger: nil // Immediate delivery
+        )
+        
         do {
-            try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
-                UNUserNotificationCenter.current().add(request) { error in
-                    if let error {
-                        continuation.resume(throwing: error)
-                    } else {
-                        continuation.resume(returning: ())
-                    }
-                }
-            }
-            Self.logger.info("Notification \"\(identifier)\" scheduled successfully.")
+            try await UNUserNotificationCenter.current().add(request)
+            logger.info("Sent notification: \(title)")
         } catch {
-            Self.logger.error("Error sending notification \"\(identifier)\": \(error.localizedDescription)")
+            logger.error("Failed to send notification: \(error)")
+            throw NotificationError.deliveryFailed(error)
         }
     }
-
-    /// Removes a pending notification with the specified identifier
-    /// - Parameter identifier: The identifier of the notification to remove
-    public func removePendingNotification(identifier: String) {
-        UNUserNotificationCenter.current().removePendingNotificationRequests(withIdentifiers: [identifier])
-        Self.logger.info("Removed pending notification request for identifier: \(identifier)")
+    
+    /// Send rule execution notification
+    public func sendRuleExecutionNotification(
+        ruleName: String,
+        displayName: String,
+        executionCount: Int,
+        isWarning: Bool = false
+    ) async {
+        guard hasPermission else { return }
+        
+        let title: String
+        let body: String
+        
+        if isWarning {
+            title = "Rule Execution Warning"
+            body = "\(displayName) has executed \(executionCount) times. Will stop at 25 executions."
+        } else if executionCount >= 25 {
+            title = "Rule Execution Stopped"
+            body = "\(displayName) has reached the maximum of 25 executions and has been stopped."
+        } else {
+            title = "Rule Executed"
+            body = "\(displayName) executed successfully (execution #\(executionCount))"
+        }
+        
+        do {
+            try await sendNotification(
+                title: title,
+                body: body,
+                identifier: "rule-\(ruleName)-\(Date().timeIntervalSince1970)"
+            )
+        } catch {
+            logger.error("Failed to send rule execution notification: \(error)")
+        }
     }
-
-    /// Removes all pending notifications
-    public func removeAllPendingNotifications() {
-        UNUserNotificationCenter.current().removeAllPendingNotificationRequests()
-        Self.logger.info("Removed all pending notification requests.")
+    
+    /// Open notification settings
+    public func openNotificationSettings() {
+        guard let settingsURL = URL(string: "x-apple.systempreferences:com.apple.preference.notifications") else {
+            logger.error("Failed to create notification settings URL")
+            return
+        }
+        
+        NSWorkspace.shared.open(settingsURL)
     }
-
+    
     // MARK: Private
-
-    private static let logger = Logger(category: .notifications)
-
-    private var isAuthorizationRequested = false
-
-    // MARK: - Authorization
-
-    /// Checks current authorization status
-    private func checkAuthorizationStatus() async -> UNAuthorizationStatus {
-        let settings = await UNUserNotificationCenter.current().notificationSettings()
-        return settings.authorizationStatus
-    }
+    
+    private let logger = Logger(category: .utilities)
 }
 
-// MARK: - Sendable Conformance
+// MARK: - Error Types
 
-extension UserNotificationManager: Sendable {}
-
-// MARK: - UNAuthorizationStatus Extension
-
-extension UNAuthorizationStatus {
-    /// String representation for logging purposes
-    var description: String {
+public enum NotificationError: LocalizedError {
+    case permissionDenied
+    case deliveryFailed(Error)
+    
+    public var errorDescription: String? {
         switch self {
-        case .notDetermined:
-            return "notDetermined"
-        case .denied:
-            return "denied"
-        case .authorized:
-            return "authorized"
-        case .provisional:
-            return "provisional"
-        case .ephemeral:
-            return "ephemeral"
-        @unknown default:
-            return "unknown(\(rawValue))"
+        case .permissionDenied:
+            return "Notification permission was denied"
+        case .deliveryFailed(let error):
+            return "Failed to deliver notification: \(error.localizedDescription)"
         }
-    }
-}
-
-// Extend UNUserNotificationCenter to provide a Sendable way to get status
-extension UNUserNotificationCenter {
-    static func getSafeAuthorizationStatus() async -> UNAuthorizationStatus {
-        await UNUserNotificationCenter.current().notificationSettings().authorizationStatus
     }
 }

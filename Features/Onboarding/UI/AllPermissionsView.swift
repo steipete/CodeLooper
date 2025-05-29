@@ -16,7 +16,7 @@ struct AllPermissionsView: View {
                     Task {
                         await permissionsManager.requestAccessibilityPermissions()
                     }
-                }
+            }
 
             DSDivider()
 
@@ -37,6 +37,19 @@ struct AllPermissionsView: View {
                 hasPermission: permissionsManager.hasScreenRecordingPermissions,
                 onGrantPermission: permissionsManager.openScreenRecordingSettings
             )
+
+            DSDivider()
+
+            // Notification Permission
+            PermissionRowView(
+                title: "Notifications",
+                description: "Notify you about important events and completion of tasks",
+                hasPermission: permissionsManager.hasNotificationPermissions
+            )                {
+                    Task {
+                        await permissionsManager.requestNotificationPermissions()
+                    }
+            }
         }
     }
 

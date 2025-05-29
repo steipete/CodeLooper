@@ -222,33 +222,40 @@ struct AccessibilityStepView: View {
                         icon: "hand.tap.fill",
                         iconColor: ColorPalette.primary,
                         title: "Accessibility Access",
-                        description: "Required to detect and interact with Cursor's UI elements",
-                        content: {
+                        description: "Required to detect and interact with Cursor's UI elements"
+                    )                        {
                             PermissionsView(showTitle: false, compact: false)
-                        }
-                    )
+                    }
                     
                     // Automation Permission
                     PermissionCard(
                         icon: "gearshape.2.fill",
                         iconColor: ColorPalette.success,
                         title: "Automation Permission",
-                        description: "Enables JavaScript injection and advanced Cursor control",
-                        content: {
+                        description: "Enables JavaScript injection and advanced Cursor control"
+                    )                        {
                             AutomationPermissionsView(showTitle: false, compact: false)
-                        }
-                    )
+                    }
                     
                     // Screen Recording Permission
                     PermissionCard(
                         icon: "rectangle.dashed.badge.record",
                         iconColor: ColorPalette.info,
                         title: "Screen Recording",
-                        description: "Allows AI analysis of Cursor windows for intelligent assistance",
-                        content: {
+                        description: "Allows AI analysis of Cursor windows for intelligent assistance"
+                    )                        {
                             ScreenRecordingPermissionsView(showTitle: false, compact: false)
-                        }
-                    )
+                    }
+                    
+                    // Notification Permission
+                    PermissionCard(
+                        icon: "bell.badge.fill",
+                        iconColor: ColorPalette.warning,
+                        title: "Notifications",
+                        description: "Get notified about important events and task completions"
+                    )                        {
+                            NotificationPermissionsView(showTitle: false, compact: false)
+                    }
                 }
                 .padding(.horizontal, Spacing.large)
                 
