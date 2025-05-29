@@ -1,6 +1,7 @@
 import Diagnostics
 import Foundation
 import Network
+import Utilities
 
 /// Manages WebSocket connections for JavaScript hook communication with Cursor.
 ///
@@ -15,7 +16,7 @@ import Network
 /// real-time control and monitoring of Cursor's web-based UI through
 /// injected JavaScript code.
 @MainActor
-final class WebSocketManager {
+final class WebSocketManager: Loggable {
     // MARK: Lifecycle
 
     // MARK: - Initialization
@@ -38,7 +39,6 @@ final class WebSocketManager {
     // MARK: - Public Methods
 
     func startListener() async throws {
-        let logger = Logger(category: .jshook)
         logger.info("🌐 Starting WebSocket listener on port \(port)...")
 
         let params = NWParameters.tcp
@@ -85,7 +85,6 @@ final class WebSocketManager {
     }
 
     func waitForHandshake(timeout: TimeInterval = 120.0) async throws {
-        let logger = Logger(category: .jshook)
         logger.info("⏳ Waiting for browser to connect...")
 
         let startTime = Date()
@@ -97,7 +96,7 @@ final class WebSocketManager {
                 return
             }
 
-            try await Task.sleep(for: .seconds(0.2))
+            try await Task.sleep(seconds: TimingConfiguration.pollInterval)
         }
 
         logger.error("❌ Handshake timeout after \(timeout)s")

@@ -3,6 +3,7 @@ import AXorcist
 import Diagnostics
 import Foundation
 import Network
+import Utilities
 
 /// Errors that can occur during hook connection
 enum ConnectionError: Error, LocalizedError {
@@ -45,7 +46,7 @@ enum JSHookError: Error, LocalizedError {
 /// - Handling hook installation errors and recovery
 /// - Sending commands to hooked windows
 @MainActor
-final class JSHookService {
+final class JSHookService: Loggable {
     // MARK: - Singleton
     
     static let shared = JSHookService()
@@ -97,7 +98,7 @@ final class JSHookService {
         
         // Wait for any ongoing probing to complete
         while state.isProbing {
-            try await Task.sleep(for: .milliseconds(100))
+            try await Task.sleep(seconds: TimingConfiguration.shortDelay)
         }
         
         guard let port = getNextAvailablePort() else {
@@ -209,7 +210,6 @@ final class JSHookService {
     
     // MARK: - Private Implementation
     
-    private let logger = Logger(category: .jshook)
     private var state = ServiceState()
     
     private struct ServiceState {
