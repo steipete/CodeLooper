@@ -6,9 +6,6 @@ struct CursorRuleSetsSettingsView: View {
     // MARK: Internal
 
     @StateObject private var ruleCounter = RuleCounterManager.shared
-    @Default(.showRuleExecutionCounters) private var showCounters
-    @Default(.enableRuleNotifications) private var enableNotifications
-    @Default(.enableRuleSounds) private var enableSounds
 
     var body: some View {
         VStack(alignment: .leading, spacing: Spacing.large) {
@@ -21,34 +18,18 @@ struct CursorRuleSetsSettingsView: View {
                     .foregroundColor(ColorPalette.textSecondary)
             }
 
-            // Rule Execution Stats - Prominent Display
-            if showCounters, ruleCounter.totalRuleExecutions > 0 {
-                RuleExecutionStatsView()
-            }
-
-            // Global Rule Settings
-            DSSection("Rule Settings") {
-                VStack(alignment: .leading, spacing: Spacing.medium) {
-                    DSToggle("Show execution counters", isOn: $showCounters)
-                    DSToggle("Enable notifications", isOn: $enableNotifications)
-                    DSToggle("Enable sounds", isOn: $enableSounds)
-                }
-            }
-
             // Rules List
             ScrollView {
-                VStack(spacing: Spacing.small) {
+                VStack(spacing: Spacing.medium) {
                     ForEach(rules) { rule in
-                        RuleCard(rule: rule, isSelected: selectedRule?.id == rule.id) {
+                        RuleCard(
+                            rule: rule, 
+                            isSelected: selectedRule?.id == rule.id,
+                            executionCount: ruleCounter.getCount(for: ruleKeyForRule(rule.name))
+                        ) {
                             selectedRule = rule
                         } onToggle: {
                             toggleRule(rule)
-                        }
-
-                        // Sound picker for enabled "Stop after 25 loops" rule
-                        if rule.enabled, rule.name == "Stop after 25 loops" {
-                            RuleSoundPickerCard(ruleName: rule.name)
-                                .padding(.top, Spacing.small)
                         }
                     }
                 }
@@ -124,6 +105,15 @@ struct CursorRuleSetsSettingsView: View {
             rules[index].enabled.toggle()
         }
     }
+    
+    private func ruleKeyForRule(_ ruleName: String) -> String {
+        switch ruleName {
+        case "Stop after 25 loops":
+            return "StopAfter25LoopsRule"
+        default:
+            return ruleName
+        }
+    }
 }
 
 // MARK: - Rule Card
@@ -133,76 +123,314 @@ private struct RuleCard: View {
 
     let rule: InterventionRule
     let isSelected: Bool
+    let executionCount: Int
     let onSelect: () -> Void
     let onToggle: () -> Void
 
     var body: some View {
         DSCard(style: .filled) {
-            HStack(spacing: Spacing.medium) {
-                // Status indicator
-                Circle()
-                    .fill(rule.enabled ? ColorPalette.success : ColorPalette.textTertiary)
-                    .frame(width: 8, height: 8)
-
-                // Rule info
-                VStack(alignment: .leading, spacing: Spacing.small) {
-                    Text(rule.name)
-                        .font(Typography.body(.medium))
-                        .foregroundColor(ColorPalette.text)
-
-                    Text(rule.description)
-                        .font(Typography.caption1())
-                        .foregroundColor(ColorPalette.textSecondary)
-                        .padding(.bottom, Spacing.xxSmall)
-
+            VStack(alignment: .leading, spacing: Spacing.medium) {
+                // Main rule header
+                HStack(spacing: Spacing.medium) {
+                    // Status indicator with execution count
                     HStack(spacing: Spacing.small) {
-                        DSBadge(rule.trigger.displayName, style: .info)
-                            .frame(width: 140, alignment: .center)
-                        Image(systemName: "arrow.right")
-                            .font(.system(size: 10))
-                            .foregroundColor(ColorPalette.textTertiary)
-                        DSBadge(rule.action.displayName, style: .primary)
-                            .frame(width: 140, alignment: .center)
+                        Circle()
+                            .fill(rule.enabled ? ColorPalette.success : ColorPalette.textTertiary)
+                            .frame(width: 8, height: 8)
+                        
+                        // Execution counter badge
+                        Text("\(executionCount)")
+                            .font(Typography.caption1(.semibold))
+                            .foregroundColor(ColorPalette.accent)
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 2)
+                            .background(ColorPalette.accent.opacity(0.1))
+                            .cornerRadius(4)
+                    }
+
+                    // Rule info
+                    VStack(alignment: .leading, spacing: Spacing.small) {
+                        Text(rule.name)
+                            .font(Typography.body(.medium))
+                            .foregroundColor(ColorPalette.text)
+
+                        Text(rule.description)
+                            .font(Typography.caption1())
+                            .foregroundColor(ColorPalette.textSecondary)
+                    }
+
+                    Spacer()
+
+                    // Actions
+                    HStack(spacing: Spacing.small) {
+                        // Info button
+                        if isHovered {
+                            Button(action: {
+                                showPopover = true
+                            }) {
+                                Image(systemName: "info.circle")
+                                    .foregroundColor(ColorPalette.textSecondary)
+                            }
+                            .buttonStyle(.plain)
+                            .popover(isPresented: $showPopover) {
+                                RuleInfoPopover(rule: rule)
+                            }
+                        }
+
+                        Toggle("", isOn: .constant(rule.enabled))
+                            .toggleStyle(.switch)
+                            .controlSize(.small)
+                            .onTapGesture { onToggle() }
                     }
                 }
-
-                Spacer()
-
-                // Actions
+                
+                // Trigger -> Action flow
                 HStack(spacing: Spacing.small) {
-                    // Info button
-                    if isHovered {
-                        Button(action: {
-                            showPopover = true
-                        }) {
-                            Image(systemName: "info.circle")
-                                .foregroundColor(ColorPalette.textSecondary)
-                        }
-                        .buttonStyle(.plain)
-                        .popover(isPresented: $showPopover) {
-                            RuleInfoPopover(rule: rule)
+                    DSBadge(rule.trigger.displayName, style: .info)
+                        .frame(width: 140, alignment: .center)
+                    Image(systemName: "arrow.right")
+                        .font(.system(size: 10))
+                        .foregroundColor(ColorPalette.textTertiary)
+                    DSBadge(rule.action.displayName, style: .primary)
+                        .frame(width: 140, alignment: .center)
+                }
+                
+                // On execution settings (always show)
+                VStack(alignment: .leading, spacing: Spacing.small) {
+                    Text("On execution")
+                        .font(Typography.caption2(.medium))
+                        .foregroundColor(ColorPalette.textSecondary)
+                        .textCase(.uppercase)
+                    
+                    HStack(spacing: Spacing.medium) {
+                        // Sound picker
+                        CompactSoundPicker(ruleName: rule.name)
+                        
+                        Spacer()
+                        
+                        // Notification checkbox
+                        HStack(spacing: Spacing.xSmall) {
+                            Button(action: {
+                                toggleNotification(for: rule.name)
+                            }) {
+                                Image(systemName: getNotificationEnabled(for: rule.name) ? "checkmark.square.fill" : "square")
+                                    .foregroundColor(getNotificationEnabled(for: rule.name) ? ColorPalette.accent : ColorPalette.textSecondary)
+                                    .font(.system(size: 16))
+                            }
+                            .buttonStyle(.plain)
+                            
+                            Text("Notify")
+                                .font(Typography.caption1())
+                                .foregroundColor(ColorPalette.text)
                         }
                     }
-
-                    Toggle("", isOn: .constant(rule.enabled))
-                        .toggleStyle(.switch)
-                        .controlSize(.small)
-                        .onTapGesture { onToggle() }
                 }
+                .padding(.top, Spacing.xSmall)
             }
         }
         .onTapGesture { onSelect() }
         .onHover { hovering in
             isHovered = hovering
         }
-        .scaleEffect(isSelected ? 1.02 : 1.0)
-        .animation(.spring(response: 0.3, dampingFraction: 0.8), value: isSelected)
     }
 
     // MARK: Private
 
     @State private var isHovered = false
     @State private var showPopover = false
+    @Default(.enableRuleNotifications) private var enableRuleNotifications
+    
+    private func toggleNotification(for ruleName: String) {
+        // For now, toggle global setting. In the future, this could be per-rule
+        enableRuleNotifications.toggle()
+    }
+    
+    private func getNotificationEnabled(for ruleName: String) -> Bool {
+        // For now, use global setting. In the future, this could be per-rule
+        return enableRuleNotifications
+    }
+}
+
+// MARK: - Compact Sound Picker
+
+private struct CompactSoundPicker: View {
+    // MARK: Internal
+
+    let ruleName: String
+
+    var body: some View {
+        HStack(spacing: Spacing.xSmall) {
+            // Sound icon and picker button
+            Button(action: {
+                isShowingPicker.toggle()
+            }) {
+                HStack(spacing: Spacing.xSmall) {
+                    Image(systemName: "speaker.wave.2")
+                        .foregroundColor(currentSound.isEmpty ? ColorPalette.textSecondary : ColorPalette.accent)
+                        .font(.system(size: 14))
+                    
+                    Text(currentSound.isEmpty ? "None" : currentSound)
+                        .font(Typography.caption1())
+                        .foregroundColor(ColorPalette.text)
+                }
+                .padding(.horizontal, Spacing.xSmall)
+                .padding(.vertical, 2)
+                .background(ColorPalette.backgroundSecondary)
+                .cornerRadius(4)
+            }
+            .buttonStyle(.plain)
+            .popover(isPresented: $isShowingPicker, arrowEdge: .bottom) {
+                CompactSoundPickerPopover(
+                    selectedSound: Binding(
+                        get: { currentSound },
+                        set: { newValue in setSound(newValue) }
+                    ),
+                    isPresented: $isShowingPicker
+                )
+            }
+            
+            // Play button (only show if sound is selected)
+            if !currentSound.isEmpty {
+                Button(action: {
+                    playSound()
+                }) {
+                    Image(systemName: "play.fill")
+                        .foregroundColor(ColorPalette.accent)
+                        .font(.system(size: 12))
+                }
+                .buttonStyle(.plain)
+            }
+        }
+    }
+
+    // MARK: Private
+
+    @State private var isShowingPicker = false
+    @Default(.stopAfter25LoopsRuleSound) private var stopAfter25Sound
+    @Default(.plainStopRuleSound) private var plainStopSound
+    @Default(.connectionIssuesRuleSound) private var connectionIssuesSound
+    @Default(.editedInAnotherChatRuleSound) private var editedInAnotherChatSound
+    
+    private var currentSound: String {
+        switch ruleName {
+        case "Stop after 25 loops":
+            return stopAfter25Sound
+        case "Plain Stop":
+            return plainStopSound
+        case "Connection Issues":
+            return connectionIssuesSound
+        case "Edited in another chat":
+            return editedInAnotherChatSound
+        default:
+            return ""
+        }
+    }
+    
+    private func setSound(_ sound: String) {
+        switch ruleName {
+        case "Stop after 25 loops":
+            Defaults[.stopAfter25LoopsRuleSound] = sound
+        case "Plain Stop":
+            Defaults[.plainStopRuleSound] = sound
+        case "Connection Issues":
+            Defaults[.connectionIssuesRuleSound] = sound
+        case "Edited in another chat":
+            Defaults[.editedInAnotherChatRuleSound] = sound
+        default:
+            break
+        }
+    }
+    
+    private func playSound() {
+        guard !currentSound.isEmpty else { return }
+        SoundEngine.playSystemSound(named: currentSound)
+    }
+}
+
+// MARK: - Compact Sound Picker Popover
+
+private struct CompactSoundPickerPopover: View {
+    // MARK: Internal
+    
+    @Binding var selectedSound: String
+    @Binding var isPresented: Bool
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: Spacing.medium) {
+            Text("Select Alert Sound")
+                .font(Typography.callout(.semibold))
+                .foregroundColor(ColorPalette.text)
+
+            ScrollView {
+                LazyVStack(spacing: Spacing.xxSmall) {
+                    // None option
+                    SoundOptionRow(
+                        soundName: "",
+                        displayName: "None",
+                        isSelected: selectedSound.isEmpty
+                    ) {
+                        selectedSound = ""
+                        isPresented = false
+                    }
+                    
+                    // System sounds
+                    ForEach(popularSounds) { sound in
+                        SoundOptionRow(
+                            soundName: sound.name,
+                            displayName: sound.displayName,
+                            isSelected: selectedSound == sound.name
+                        ) {
+                            selectedSound = sound.name
+                            SoundEngine.playSystemSound(named: sound.name)
+                            isPresented = false
+                        }
+                    }
+                }
+            }
+            .frame(maxHeight: 200)
+        }
+        .padding(Spacing.medium)
+        .frame(width: 200)
+    }
+}
+
+// MARK: - Sound Option Row
+
+private struct SoundOptionRow: View {
+    let soundName: String
+    let displayName: String
+    let isSelected: Bool
+    let onSelect: () -> Void
+
+    var body: some View {
+        Button(action: onSelect) {
+            HStack {
+                Image(systemName: soundName.isEmpty ? "speaker.slash" : "speaker.wave.2")
+                    .foregroundColor(soundName.isEmpty ? ColorPalette.textSecondary : ColorPalette.accent)
+                    .font(.system(size: 12))
+                    .frame(width: 16)
+
+                Text(displayName)
+                    .font(Typography.caption1())
+                    .foregroundColor(ColorPalette.text)
+
+                Spacer()
+
+                if isSelected {
+                    Image(systemName: "checkmark")
+                        .foregroundColor(ColorPalette.accent)
+                        .font(.system(size: 10, weight: .semibold))
+                }
+            }
+            .padding(.horizontal, Spacing.xSmall)
+            .padding(.vertical, 2)
+        }
+        .buttonStyle(.plain)
+        .background(
+            RoundedRectangle(cornerRadius: 4)
+                .fill(isSelected ? ColorPalette.accent.opacity(0.1) : Color.clear)
+        )
+    }
 }
 
 // MARK: - Rule Info Popover
@@ -320,52 +548,6 @@ private struct AddRuleSheet: View {
     @State private var ruleDescription = ""
     @State private var selectedTrigger: RuleTrigger = .connectionError
     @State private var selectedAction: RuleAction = .clickResumeButton
-}
-
-// MARK: - Rule Sound Picker Card
-
-private struct RuleSoundPickerCard: View {
-    // MARK: Internal
-
-    let ruleName: String
-
-    var body: some View {
-        DSCard(style: .outlined) {
-            VStack(alignment: .leading, spacing: Spacing.medium) {
-                HStack {
-                    Image(systemName: "speaker.wave.2")
-                        .foregroundColor(ColorPalette.accent)
-                        .font(.system(size: 16))
-
-                    Text("Sound Configuration")
-                        .font(Typography.callout(.semibold))
-                        .foregroundColor(ColorPalette.text)
-
-                    Spacer()
-                }
-
-                if soundsEnabled {
-                    SoundPickerView(selectedSound: $selectedSound)
-                } else {
-                    VStack(alignment: .leading, spacing: Spacing.small) {
-                        Text("Sound is disabled")
-                            .font(Typography.body())
-                            .foregroundColor(ColorPalette.textSecondary)
-
-                        Text("Enable sounds in the global rule settings above to configure sounds for this rule.")
-                            .font(Typography.caption1())
-                            .foregroundColor(ColorPalette.textSecondary)
-                    }
-                }
-            }
-            .padding(Spacing.medium)
-        }
-    }
-
-    // MARK: Private
-
-    @Default(.stopAfter25LoopsRuleSound) private var selectedSound
-    @Default(.enableRuleSounds) private var soundsEnabled
 }
 
 // MARK: - Models

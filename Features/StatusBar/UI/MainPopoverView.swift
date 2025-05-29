@@ -74,12 +74,12 @@ struct MainPopoverView: View {
             // Rule execution stats
             RuleExecutionStatsView()
 
-            // Session stats (legacy counter)
+            // Rule execution stats
             HStack {
                 Image(systemName: "chart.bar.xaxis")
                     .font(.caption)
                     .foregroundColor(ColorPalette.textTertiary)
-                Text("Session Interventions: \(cursorMonitor.totalAutomaticInterventionsThisSessionDisplay)")
+                Text("Rule Executions: \(ruleCounter.totalRuleExecutions)")
                     .font(Typography.caption1())
                     .foregroundColor(ColorPalette.textSecondary)
             }
@@ -120,6 +120,7 @@ struct MainPopoverView: View {
 
     @ObservedObject private var cursorMonitor = CursorMonitor.shared
     @ObservedObject private var diagnosticsManager = WindowAIDiagnosticsManager.shared
+    @StateObject private var ruleCounter = RuleCounterManager.shared
 
     @Default(.isGlobalMonitoringEnabled) private var isGlobalMonitoringEnabled
 }

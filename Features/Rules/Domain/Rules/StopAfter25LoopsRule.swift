@@ -48,38 +48,38 @@ public class StopAfter25LoopsRule {
                 return false // Stop execution
             }
 
-            // Check if intervention is needed
-            let checkCommand: [String: Any] = ["type": "checkInterventionNeeded"]
+            // Check if rule action is needed
+            let checkCommand: [String: Any] = ["type": "checkRuleNeeded"]
             let checkResult = try await jsHookService.sendCommand(checkCommand, to: windowId)
 
             // Parse the result
             guard let data = checkResult.data(using: .utf8),
                   let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-                  let interventionNeeded = json["interventionNeeded"] as? Bool
+                  let ruleNeeded = json["ruleNeeded"] as? Bool
             else {
-                logger.warning("Failed to parse intervention check result for window \(windowId)")
+                logger.warning("Failed to parse rule check result for window \(windowId)")
                 return false
             }
 
-            if interventionNeeded {
-                logger.info("🔄 Intervention needed detected for window \(windowId)")
+            if ruleNeeded {
+                logger.info("🔄 Rule action needed detected for window \(windowId)")
 
-                // Perform the intervention
-                let interventionCommand: [String: Any] = ["type": "performIntervention"]
-                let interventionResult = try await jsHookService.sendCommand(interventionCommand, to: windowId)
+                // Perform the rule action
+                let ruleCommand: [String: Any] = ["type": "performRule"]
+                let ruleResult = try await jsHookService.sendCommand(ruleCommand, to: windowId)
 
-                // Parse intervention result
-                if let interventionData = interventionResult.data(using: .utf8),
-                   let interventionJson = try? JSONSerialization.jsonObject(with: interventionData) as? [String: Any],
-                   let success = interventionJson["success"] as? Bool,
+                // Parse rule result
+                if let ruleData = ruleResult.data(using: .utf8),
+                   let ruleJson = try? JSONSerialization.jsonObject(with: ruleData) as? [String: Any],
+                   let success = ruleJson["success"] as? Bool,
                    success
                 {
-                    logger.info("✅ Successfully performed intervention for window \(windowId)")
+                    logger.info("✅ Successfully performed rule action for window \(windowId)")
 
-                    // Log the intervention
+                    // Log the rule action
                     sessionLogger.log(
                         level: .info,
-                        message: "Automated rule: \(displayName) - Performed intervention (execution #\(currentCount + 1))",
+                        message: "Automated rule: \(displayName) - Performed rule action (execution #\(currentCount + 1))",
                         pid: nil
                     )
 
@@ -118,7 +118,7 @@ public class StopAfter25LoopsRule {
 
                     return true
                 } else {
-                    logger.warning("Failed to perform intervention for window \(windowId)")
+                    logger.warning("Failed to perform rule action for window \(windowId)")
                 }
             }
         } catch {

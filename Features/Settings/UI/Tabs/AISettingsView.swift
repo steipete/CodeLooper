@@ -196,6 +196,7 @@ struct AISettingsView: View {
                     if isAutoTesting {
                         ProgressView()
                             .scaleEffect(0.8)
+                            .frame(width: 16, height: 16)
                     }
                     Text(connectionTestResult ?? "")
                         .font(Typography.caption1())
@@ -256,6 +257,7 @@ struct AISettingsView: View {
                     if isAutoTesting {
                         ProgressView()
                             .scaleEffect(0.8)
+                            .frame(width: 16, height: 16)
                     }
                     Text(connectionTestResult ?? "")
                         .font(Typography.caption1())

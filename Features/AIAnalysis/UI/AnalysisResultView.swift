@@ -15,7 +15,7 @@ public struct CursorAnalysisView: View {
 
             if analyzer.isAnalyzing {
                 ProgressView("Analyzing Cursor window...")
-                    .frame(maxWidth: .infinity)
+                    .frame(maxWidth: .infinity, minHeight: 40)
                     .padding()
             }
 
@@ -107,6 +107,7 @@ public struct CursorAnalysisView: View {
                     HStack {
                         ProgressView()
                             .scaleEffect(0.6)
+                            .frame(width: 12, height: 12)
                         Text("Checking versions...")
                             .font(Typography.caption1())
                             .foregroundColor(ColorPalette.textSecondary)
@@ -118,25 +119,9 @@ public struct CursorAnalysisView: View {
                 }
             }
 
-            // MCP Extensions Version Info
-            mcpExtensionsSection
         }
     }
 
-    private var mcpExtensionsSection: some View {
-        VStack(alignment: .leading, spacing: Spacing.xSmall) {
-            Text("MCP Extensions")
-                .font(Typography.caption1(.medium))
-                .foregroundColor(ColorPalette.text)
-
-            LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 3), spacing: Spacing.xSmall) {
-                ForEach(MCPExtensionType.allCases) { mcpExtension in
-                    mcpExtensionRow(mcpExtension)
-                }
-            }
-        }
-        .padding(.top, Spacing.xSmall)
-    }
 
     private var promptSection: some View {
         VStack(alignment: .leading, spacing: Spacing.medium) {
@@ -186,37 +171,6 @@ public struct CursorAnalysisView: View {
         }
     }
 
-    private func mcpExtensionRow(_ mcpExtension: MCPExtensionType) -> some View {
-        HStack(spacing: Spacing.xxSmall) {
-            Image(systemName: mcpExtension.iconName)
-                .foregroundColor(ColorPalette.textSecondary)
-                .frame(width: 12)
-
-            Text(mcpExtension.displayName)
-                .font(Typography.caption2())
-                .foregroundColor(ColorPalette.text)
-                .lineLimit(1)
-
-            Spacer()
-
-            let latestVersion = mcpVersionService.getLatestVersion(for: mcpExtension)
-            let hasUpdate = mcpVersionService.hasUpdate(for: mcpExtension)
-
-            Text(latestVersion)
-                .font(Typography.caption2(.medium))
-                .foregroundColor(hasUpdate ? ColorPalette.warning : ColorPalette.success)
-
-            if hasUpdate {
-                Image(systemName: "arrow.up.circle.fill")
-                    .foregroundColor(ColorPalette.warning)
-                    .font(.caption2)
-            }
-        }
-        .padding(.horizontal, Spacing.xSmall)
-        .padding(.vertical, 2)
-        .background(ColorPalette.backgroundSecondary)
-        .cornerRadius(4)
-    }
 
     private func errorView(_ error: Error) -> some View {
         VStack(alignment: .leading, spacing: 8) {

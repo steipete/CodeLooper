@@ -113,27 +113,6 @@ struct GeneralSettingsView: View {
                     .disabled(updaterViewModel.isUpdateInProgress)
                 }
 
-                // Rule Execution Statistics
-                DSSettingsSection("Automation Statistics") {
-                    RuleExecutionStatsView()
-
-                    HStack {
-                        DSButton("Reset All Counters", style: .secondary, size: .small) {
-                            RuleCounterManager.shared.resetAllCounters()
-                        }
-                        .frame(width: 140)
-
-                        Spacer()
-
-                        DSToggle(
-                            "Show Counters",
-                            isOn: Binding<Bool>(
-                                get: { Defaults[.showRuleExecutionCounters] },
-                                set: { Defaults[.showRuleExecutionCounters] = $0 }
-                            )
-                        )
-                    }
-                }
 
                 // Version info
                 HStack {

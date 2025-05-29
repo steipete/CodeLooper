@@ -404,9 +404,9 @@ public enum CursorJSHookScript {
                     result = { pong: true, timestamp: new Date().toISOString() };
                     break;
 
-                case 'checkResumeNeeded':
+                case 'checkRuleNeeded':
                     result = { 
-                        resumeNeeded: detectResumeNeeded(),
+                        ruleNeeded: detectResumeNeeded(),
                         timestamp: new Date().toISOString()
                     };
                     break;
@@ -438,6 +438,37 @@ public enum CursorJSHookScript {
                     result = { 
                         success: clicked,
                         message: clicked ? 'Resume link clicked' : 'Resume link not found',
+                        timestamp: new Date().toISOString()
+                    };
+                    break;
+
+                case 'performRule':
+                    // Click the resume link to perform the rule action
+                    let ruleActionPerformed = false;
+                    const elements = document.querySelectorAll('body *');
+                    for (const el of elements) {
+                        if (!el || !el.textContent) continue;
+                        
+                        // Check if element contains rate limit text
+                        if (el.textContent.includes('stop the agent after 25 tool calls') || 
+                            el.textContent.includes('Note: we default stop')) {
+                            
+                            // Find the resume link inside this element
+                            const links = el.querySelectorAll('a, span.markdown-link, [role="link"], [data-link]');
+                            for (const link of links) {
+                                if (link.textContent.trim() === 'resume the conversation') {
+                                    hookLog('🔄 CodeLooper: Performing rule action - clicking "resume the conversation" link');
+                                    link.click();
+                                    ruleActionPerformed = true;
+                                    break;
+                                }
+                            }
+                            if (ruleActionPerformed) break;
+                        }
+                    }
+                    result = { 
+                        success: ruleActionPerformed,
+                        message: ruleActionPerformed ? 'Rule action performed - resume link clicked' : 'Resume link not found',
                         timestamp: new Date().toISOString()
                     };
                     break;
@@ -482,7 +513,7 @@ public enum CursorJSHookScript {
                     // Fallback for backward compatibility - will fail with Trusted Types
                     result = {
                         error: 'Trusted Types policy prevents eval. Use predefined commands instead.',
-                        suggestion: 'Available commands: getSystemInfo, querySelector, getElementInfo, clickElement, getActiveElement, showNotification, getVersion, ping, checkResumeNeeded, clickResume, startComposerObserver, stopComposerObserver, getComposerContent'
+                        suggestion: 'Available commands: getSystemInfo, querySelector, getElementInfo, clickElement, getActiveElement, showNotification, getVersion, ping, checkRuleNeeded, clickResume, performRule, startComposerObserver, stopComposerObserver, getComposerContent'
                     };
                     break;
 
@@ -490,7 +521,7 @@ public enum CursorJSHookScript {
                     result = {
                         error: 'Unknown command type',
                         type: command.type,
-                        availableCommands: ['getSystemInfo', 'querySelector', 'getElementInfo', 'clickElement', 'getActiveElement', 'showNotification', 'getVersion', 'ping', 'checkResumeNeeded', 'clickResume', 'startComposerObserver', 'stopComposerObserver', 'getComposerContent']
+                        availableCommands: ['getSystemInfo', 'querySelector', 'getElementInfo', 'clickElement', 'getActiveElement', 'showNotification', 'getVersion', 'ping', 'checkRuleNeeded', 'clickResume', 'performRule', 'startComposerObserver', 'stopComposerObserver', 'getComposerContent']
                     };
             }
 

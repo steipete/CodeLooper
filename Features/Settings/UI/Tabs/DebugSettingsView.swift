@@ -100,25 +100,25 @@ struct DebugSettingsView: View {
             // Debug Actions
             DSSettingsSection("Debug Actions") {
                 VStack(spacing: Spacing.medium) {
-                    DSButton("Open AXpector", style: .secondary) {
+                    DSButton("Open AXpector", style: .secondary, isFullWidth: true) {
                         NotificationCenter.default.post(name: .showAXpectorWindow, object: nil)
                     }
-                    .frame(maxWidth: .infinity, minHeight: 44)
+                    .frame(minHeight: 44)
 
-                    DSButton("Trigger Test Notification", style: .secondary) {
+                    DSButton("Trigger Test Notification", style: .secondary, isFullWidth: true) {
                         triggerTestNotification()
                     }
-                    .frame(maxWidth: .infinity, minHeight: 44)
+                    .frame(minHeight: 44)
 
-                    DSButton("Show Welcome Screen", style: .secondary) {
+                    DSButton("Show Welcome Screen", style: .secondary, isFullWidth: true) {
                         showWelcomeScreen()
                     }
-                    .frame(maxWidth: .infinity, minHeight: 44)
+                    .frame(minHeight: 44)
 
-                    DSButton("Clear All UserDefaults", style: .destructive) {
+                    DSButton("Clear All UserDefaults", style: .destructive, isFullWidth: true) {
                         clearUserDefaults()
                     }
-                    .frame(maxWidth: .infinity, minHeight: 44)
+                    .frame(minHeight: 44)
                 }
             }
 

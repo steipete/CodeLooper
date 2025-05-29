@@ -206,16 +206,19 @@ private struct MCPCard: View {
             HStack(spacing: 4) {
                 ProgressView()
                     .scaleEffect(0.6)
+                    .frame(width: 12, height: 12)
                 Text("...")
                     .font(Typography.caption2())
             }
-            .frame(minWidth: 85, alignment: .center)
+            .padding(.horizontal, Spacing.xSmall)
+            .padding(.vertical, Spacing.xxxSmall)
+            .frame(minWidth: 85, minHeight: 22, alignment: .center)
         } else {
             let displayVersion = getDisplayVersion()
             let hasUpdate = checkForUpdate()
 
             DSBadge("v\(displayVersion)", style: hasUpdate ? .warning : .default)
-                .frame(minWidth: 85, alignment: .center)
+                .frame(minWidth: 85, minHeight: 22, alignment: .center)
         }
     }
 

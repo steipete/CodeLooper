@@ -96,6 +96,7 @@ extension Defaults.Keys {
     // --- Logging Configuration (Spec 3.3.A / LogSettingsView) ---
     static let selectedLogLevel = Key<String>("selectedLogLevel", default: "info")
     static let verboseLogging = Key<Bool>("verboseLogging", default: false)
+    static let enableDetailedLogging = Key<Bool>("enableDetailedLogging", default: false)
 
     // --- AXorcist Locators (Advanced Settings - Spec 3.3.A / AdvancedSettingsView) ---
     static let sidebarActivityMaxDepth = Key<Int>("sidebarActivityMaxDepth", default: 1)
@@ -122,6 +123,9 @@ extension Defaults.Keys {
 
     // Rule-specific sound settings
     static let stopAfter25LoopsRuleSound = Key<String>("stopAfter25LoopsRuleSound", default: "Glass")
+    static let plainStopRuleSound = Key<String>("plainStopRuleSound", default: "")
+    static let connectionIssuesRuleSound = Key<String>("connectionIssuesRuleSound", default: "")
+    static let editedInAnotherChatRuleSound = Key<String>("editedInAnotherChatRuleSound", default: "")
 
     // --- Debug Settings ---
     static let debugMode = Key<Bool>("debugMode", default: {

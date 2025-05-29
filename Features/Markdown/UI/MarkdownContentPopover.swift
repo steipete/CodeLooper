@@ -60,6 +60,7 @@ struct MarkdownContentPopover: View {
                 if contentState.isLoading {
                     ProgressView()
                         .scaleEffect(0.7)
+                        .frame(width: 14, height: 14)  // Fixed size to match icon
                     Text("Fetching content...")
                         .font(.caption)
                         .foregroundColor(.secondary)
@@ -67,6 +68,7 @@ struct MarkdownContentPopover: View {
                     Image(systemName: "exclamationmark.triangle")
                         .foregroundColor(.orange)
                         .font(.caption)
+                        .frame(width: 14, height: 14)  // Fixed size
                     Text(error)
                         .font(.caption)
                         .foregroundColor(.secondary)
@@ -75,6 +77,7 @@ struct MarkdownContentPopover: View {
                     Image(systemName: "checkmark.circle")
                         .foregroundColor(.green)
                         .font(.caption)
+                        .frame(width: 14, height: 14)  // Fixed size
                     Text("Updated: \(updateTime, style: .relative)")
                         .font(.caption)
                         .foregroundColor(.secondary)
@@ -179,22 +182,33 @@ struct MarkdownContentPopover: View {
 
             // Parse the result to extract HTML content
             if let data = result.data(using: .utf8),
-               let json = try JSONSerialization.jsonObject(with: data) as? [String: Any],
-               let html = json["content"] as? String
+               let json = try JSONSerialization.jsonObject(with: data) as? [String: Any]
             {
-                contentState.htmlContent = html
+                // Check if content exists and is not null
+                if let html = json["content"] as? String, !html.isEmpty {
+                    contentState.htmlContent = html
 
-                // Convert HTML to Markdown
-                let markdown = try await markdownService.convertToMarkdown(html)
+                    // Convert HTML to Markdown
+                    let markdown = try await markdownService.convertToMarkdown(html)
 
-                await MainActor.run {
-                    contentState.markdownContent = markdown
-                    contentState.lastUpdateTime = Date()
-                    contentState.isLoading = false
+                    await MainActor.run {
+                        contentState.markdownContent = markdown
+                        contentState.lastUpdateTime = Date()
+                        contentState.isLoading = false
+                    }
+                } else {
+                    // Content is null or empty - composer bar not found
+                    await MainActor.run {
+                        contentState.htmlContent = ""
+                        contentState.markdownContent = ""
+                        contentState.error = "No composer content found"
+                        contentState.lastUpdateTime = Date()
+                        contentState.isLoading = false
+                    }
                 }
             } else {
                 await MainActor.run {
-                    contentState.error = "Failed to parse content"
+                    contentState.error = "Failed to parse response"
                     contentState.isLoading = false
                 }
             }

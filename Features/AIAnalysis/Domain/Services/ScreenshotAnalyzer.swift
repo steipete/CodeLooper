@@ -182,7 +182,7 @@ Your task is to determine if the AI is currently "Generating" content.
     *   If "Generating" (or "Generating...") is present, respond with the following JSON object:
         `{"status": "working", "reason": "AI is actively generating content."}`
     *   If "Generating" (or "Generating...") is **not** present, respond with the following JSON object:
-        `{"status": "not_working", "reason": "AI is not currently generating content."}`
+        `{"status": "not_working", "reason": "Not currently generating content."}`
 4.  **Important Rules:**
     *   Your entire response must be **only** the single JSON object specified above.
     *   Ignore all other elements in the screenshot (code, other sidebars, buttons, icons, timestamps, etc.). Your focus is solely on the "Generating" status.

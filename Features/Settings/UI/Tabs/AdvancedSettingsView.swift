@@ -1,6 +1,7 @@
 import AppKit
 import Defaults
 import DesignSystem
+import Diagnostics
 import SwiftUI
 
 struct AdvancedSettingsView: View {
@@ -14,6 +15,28 @@ struct AdvancedSettingsView: View {
             // System Permissions
             DSSettingsSection("System Permissions") {
                 AllPermissionsView()
+            }
+
+            // Rule Execution Statistics
+            DSSettingsSection("Automation Statistics") {
+                RuleExecutionStatsView()
+
+                HStack {
+                    DSButton("Reset All Counters", style: .secondary, size: .small) {
+                        RuleCounterManager.shared.resetAllCounters()
+                    }
+                    .frame(width: 140)
+
+                    Spacer()
+
+                    DSToggle(
+                        "Show Counters",
+                        isOn: Binding<Bool>(
+                            get: { Defaults[.showRuleExecutionCounters] },
+                            set: { Defaults[.showRuleExecutionCounters] = $0 }
+                        )
+                    )
+                }
             }
 
             // Developer Options
@@ -30,20 +53,11 @@ struct AdvancedSettingsView: View {
                 DSToggle(
                     "Enable Detailed Logging",
                     isOn: $enableDetailedLogging,
-                    description: "Log verbose information for troubleshooting",
+                    description: "Enable verbose logging and save logs to ~/Library/Logs/CodeLooper/",
                     descriptionLineSpacing: 3
                 )
 
-                DSDivider()
-
-                DSToggle(
-                    "Log to File",
-                    isOn: $logToFile,
-                    description: "Save logs to ~/Library/Logs/CodeLooper/",
-                    descriptionLineSpacing: 3
-                )
-
-                if logToFile {
+                if enableDetailedLogging {
                     HStack {
                         Spacer()
                         DSButton("Open Logs Folder", style: .tertiary, size: .small) {
@@ -102,12 +116,21 @@ struct AdvancedSettingsView: View {
         } message: {
             Text("All log files have been deleted.")
         }
+        .onAppear {
+            // Sync initial state
+            Defaults[.verboseLogging] = enableDetailedLogging
+            LogConfiguration.shared.updateVerbosity(enableDetailedLogging)
+        }
+        .onChange(of: enableDetailedLogging) { newValue in
+            // Update verbose logging when detailed logging changes
+            Defaults[.verboseLogging] = newValue
+            LogConfiguration.shared.updateVerbosity(newValue)
+        }
     }
 
     // MARK: Private
 
-    @State private var enableDetailedLogging = false
-    @State private var logToFile = false
+    @Default(.enableDetailedLogging) private var enableDetailedLogging
 
     @State private var showResetAndRestartConfirmation = false
     @State private var showLogsClearedAlert = false

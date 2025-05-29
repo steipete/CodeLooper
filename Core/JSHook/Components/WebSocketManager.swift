@@ -227,11 +227,12 @@ final class WebSocketManager {
             return
         }
 
-        // Handle heartbeat and other JSON messages
+        // Handle heartbeat and other JSON messages with specific types
         if let data = text.data(using: .utf8),
            let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
            let type = json["type"] as? String
         {
+            // Only handle known message types from JavaScript to Swift
             switch type {
             case "heartbeat":
                 handleHeartbeat(json)
@@ -240,11 +241,19 @@ final class WebSocketManager {
                 handleComposerUpdate(json)
                 return
             default:
-                Logger(category: .jshook).warning("⚠️ Unknown message type '\(type)'")
+                // If we have a pending command response, this might be it
+                if let pending = self.pending {
+                    self.pending = nil
+                    pending.resume(returning: text)
+                    return
+                } else {
+                    // Only warn about truly unknown message types
+                    Logger(category: .jshook).warning("⚠️ Unknown message type '\(type)'")
+                }
             }
         }
 
-        // Handle command responses
+        // Handle command responses (messages without a type field)
         if let pending = self.pending {
             self.pending = nil
             pending.resume(returning: text)
