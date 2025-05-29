@@ -3,6 +3,18 @@
 // import Diagnostics // Removed as DefaultsKeys should not be part of Diagnostics module
 import Foundation
 
+/// Extension defining all user preference keys for the CodeLooper application.
+///
+/// This extension provides type-safe access to:
+/// - Monitoring interval and automation settings
+/// - Intervention limits and behavior configuration
+/// - UI preferences and appearance options
+/// - API configuration for AI analysis
+/// - Feature toggles and experimental options
+/// - Debug and logging preferences
+///
+/// All keys include sensible defaults to ensure the app functions
+/// properly on first launch without configuration.
 extension Defaults.Keys {
     // --- Monitoring Loop Settings (Spec 3.3.A & CursorMonitor) ---
     static let monitoringIntervalSeconds = Key<TimeInterval>("monitoringIntervalSeconds", default: 1.0)

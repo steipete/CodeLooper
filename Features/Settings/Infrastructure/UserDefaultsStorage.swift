@@ -8,6 +8,17 @@ import SwiftUI
 
 // MARK: - DefaultsManager
 
+/// Singleton manager for application preferences using the Defaults library.
+///
+/// DefaultsManager provides:
+/// - Centralized preference management and access
+/// - SwiftUI bindings for reactive preference updates
+/// - Preference observation and change handling
+/// - Bulk preference reset functionality
+/// - Type-safe preference key definitions
+///
+/// The manager serves as the single source of truth for all user
+/// preferences throughout the application.
 @MainActor
 final class DefaultsManager: @unchecked Sendable {
     // MARK: Lifecycle

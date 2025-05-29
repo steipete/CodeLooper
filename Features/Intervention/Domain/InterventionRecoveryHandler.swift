@@ -3,6 +3,18 @@ import AXorcist
 import Diagnostics
 import Foundation
 
+/// Executes recovery actions for stuck or unresponsive Cursor instances.
+///
+/// InterventionRecoveryHandler provides:
+/// - Automated recovery through UI element interaction
+/// - Stop/resume functionality via accessibility actions
+/// - Connection recovery for failed JavaScript hooks
+/// - Progressive escalation of recovery attempts
+/// - Integration with AXorcist for reliable UI automation
+///
+/// The handler implements various recovery strategies including gentle
+/// nudging, forced stops, and connection restoration to bring Cursor
+/// instances back to a functional state.
 @MainActor
 class InterventionRecoveryHandler {
     // MARK: Lifecycle
