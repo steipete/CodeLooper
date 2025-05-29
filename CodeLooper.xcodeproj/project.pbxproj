@@ -105,6 +105,7 @@
 		76F1BB13703D590B4497FA50 /* AIAnalysisService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1050CA274088678E3892B440 /* AIAnalysisService.swift */; };
 		7A4AD4452ECA4934ECAA4866 /* CursorWindowInfo.swift in Sources */ = {isa = PBXBuildFile; fileRef = 264CCA2C41913E6AFB7881E9 /* CursorWindowInfo.swift */; };
 		7A9A8CF59FF98DAA368B39E9 /* AboutSettingsTab.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4BCC80D63C6ECE698941CF19 /* AboutSettingsTab.swift */; };
+		7B10AC04B1880D461BB980C0 /* SoundEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = BD5739D675F87965FEB8C03A /* SoundEngine.swift */; };
 		7B69C358953A327727D855D2 /* CursorWindowManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3FD09182D0EEA303D40F5CFC /* CursorWindowManager.swift */; };
 		7EB685ACF1C190B9DBD581D2 /* WelcomeStep+Sendable.swift in Sources */ = {isa = PBXBuildFile; fileRef = 824C15C24C4A321C3B3C1F99 /* WelcomeStep+Sendable.swift */; };
 		859CCD90726C9833FDC07521 /* StopGeneratingButtonHeuristic.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6A9BA067B809E5DBE22AC644 /* StopGeneratingButtonHeuristic.swift */; };
@@ -123,7 +124,6 @@
 		9704442453519817D0F52F80 /* RadioButtonRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 55FC1A83F3EA25C2E2C66D1D /* RadioButtonRow.swift */; };
 		970B3A1855D464A4015D21C1 /* Logger.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A63AB70345BBFD326F2CCF7 /* Logger.swift */; };
 		9762650D20B8F2DF934FFF7E /* Logging in Frameworks */ = {isa = PBXBuildFile; productRef = 5258361B849FE66B888D2295 /* Logging */; };
-		9AEA084D5844295F7615FCB5 /* SoundManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = C909E4B35F25E678A9F4A888 /* SoundManager.swift */; };
 		9B77A4E97ED17694FDC0F1BE /* ContinuationGuard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1F6416B2E14150C0B6234FC6 /* ContinuationGuard.swift */; };
 		9CC9842CEE4F37A93200D55A /* MenuBarIconManager+Debug.swift in Sources */ = {isa = PBXBuildFile; fileRef = 285A6724E4720E808D4F76DD /* MenuBarIconManager+Debug.swift */; };
 		A098A5B65D28685D2AAFA499 /* LogLevel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0E099CE754C5218188AF52FC /* LogLevel.swift */; };
@@ -363,6 +363,7 @@
 		B93FE5DBFB4CA92A0ADD0FF9 /* MarkdownContentPopover.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MarkdownContentPopover.swift; sourceTree = "<group>"; };
 		BC20A8DCDF3278BF031054DF /* WindowAIDiagnosticsManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WindowAIDiagnosticsManager.swift; sourceTree = "<group>"; };
 		BCA0983521BFC38C9EFB5342 /* WelcomeViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WelcomeViewModel.swift; sourceTree = "<group>"; };
+		BD5739D675F87965FEB8C03A /* SoundEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SoundEngine.swift; sourceTree = "<group>"; };
 		BDBFF30FAA095767B2117C5D /* MonitoredInstanceInfo.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MonitoredInstanceInfo.swift; sourceTree = "<group>"; };
 		BFB40FA7CB0F3776228402C7 /* JSHookDevConsoleDetector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JSHookDevConsoleDetector.swift; sourceTree = "<group>"; };
 		C0EEEBFFB3903381A11252D2 /* AdvancedSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdvancedSettingsView.swift; sourceTree = "<group>"; };
@@ -370,7 +371,6 @@
 		C6A0F3648B51494C5C2AF9AD /* LoginItemManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginItemManager.swift; sourceTree = "<group>"; };
 		C72BD2006DC6EEEF185E868F /* AppleScriptInjector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppleScriptInjector.swift; sourceTree = "<group>"; };
 		C7F70AAD09A9BF4D4B22A824 /* NativeToolbarSettingsWindow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NativeToolbarSettingsWindow.swift; sourceTree = "<group>"; };
-		C909E4B35F25E678A9F4A888 /* SoundManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SoundManager.swift; sourceTree = "<group>"; };
 		CA6CB723D91D9348E2086AAD /* GeneralSettingsTab.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GeneralSettingsTab.swift; sourceTree = "<group>"; };
 		CAEC29916CBA731D635D78FE /* ShortcutNames.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShortcutNames.swift; sourceTree = "<group>"; };
 		CAF7825E7C9F6185061B2C21 /* InterventionConstants.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InterventionConstants.swift; sourceTree = "<group>"; };
@@ -605,7 +605,7 @@
 				10F32EABF2C8DFEFFBCEB182 /* NotificationName.swift */,
 				0C61ED7573DC130108C460B2 /* Operations.swift */,
 				73A6D958007010288204D07C /* ResourceLoader.swift */,
-				C909E4B35F25E678A9F4A888 /* SoundManager.swift */,
+				BD5739D675F87965FEB8C03A /* SoundEngine.swift */,
 				985AD5248E2A5D2D7A6FECF3 /* SymbolGenerator.swift */,
 				8744BBC578F7C2382A4F26A6 /* UserNotificationManager.swift */,
 			);
@@ -1343,7 +1343,7 @@
 				F6405B7B33EB41611CE8EE18 /* NotificationName.swift in Sources */,
 				1599C7B21658BA82DC44F3FB /* Operations.swift in Sources */,
 				4978E1A8B5D527AE93D05087 /* ResourceLoader.swift in Sources */,
-				9AEA084D5844295F7615FCB5 /* SoundManager.swift in Sources */,
+				7B10AC04B1880D461BB980C0 /* SoundEngine.swift in Sources */,
 				E20B5D6BFD638FFFC61410B9 /* SymbolGenerator.swift in Sources */,
 				F95D4D20E2D5E3EC597A35AB /* UserNotificationManager.swift in Sources */,
 				715C20835309BB1938AAE8A1 /* TuistAssets+CodeLooper.swift in Sources */,
