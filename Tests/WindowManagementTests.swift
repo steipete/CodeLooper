@@ -336,7 +336,7 @@ func testFrameCalculations() async throws {
 }
 
 @Test("WindowManagement - Thread Safety")
-func testThreadSafety() async throws {
+func testWindowManagementThreadSafety() async throws {
     // Test concurrent access to window operations
     let windowPositionManager = await WindowPositionManager.shared
     

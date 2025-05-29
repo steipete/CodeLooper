@@ -22,7 +22,7 @@ func testBootstrapDifferentDestinations() async throws {
 
 @Test("Diagnostics - Log Level Management")
 func testLogLevelManagement() async throws {
-    let logger = Logger(category: .general)
+    var logger = Logger(category: .general)
     
     // Test setting different log levels
     logger.logLevel = .warning
@@ -74,7 +74,7 @@ func testLogCategoryProperties() async throws {
 
 @Test("Diagnostics - All Log Levels Work")
 func testAllLogLevelsWork() async throws {
-    let logger = Logger(category: .general)
+    var logger = Logger(category: .general)
     logger.logLevel = .trace
     
     // These should not throw exceptions
@@ -91,7 +91,7 @@ func testAllLogLevelsWork() async throws {
 
 @Test("Diagnostics - Metadata Handling")
 func testMetadataHandling() async throws {
-    let logger = Logger(category: .general)
+    var logger = Logger(category: .general)
     
     // Test metadata setting and getting
     logger[metadataKey: "test_key"] = "test_value"
@@ -107,7 +107,7 @@ func testMetadataHandling() async throws {
 
 @Test("Diagnostics - Log Message with Metadata")
 func testLogMessageWithMetadata() async throws {
-    let logger = Logger(category: .general)
+    var logger = Logger(category: .general)
     logger.logLevel = .debug
     
     let testMetadata: Logging.Logger.Metadata = [
@@ -138,7 +138,7 @@ func testBootstrapMultipleTimesIgnored() async throws {
 
 @Test("Diagnostics - Logger Performance")
 func testLoggerPerformance() async throws {
-    let logger = Logger(category: .general)
+    var logger = Logger(category: .general)
     logger.logLevel = .error // High level to minimize actual logging overhead
     
     let startTime = Date()
@@ -176,7 +176,7 @@ func testSourceLocationInformation() async throws {
 
 @Test("Diagnostics - Log Level Filtering")
 func testLogLevelFiltering() async throws {
-    let logger = Logger(category: .general)
+    var logger = Logger(category: .general)
     
     // Set high log level to filter out lower level messages
     logger.logLevel = .error
@@ -196,7 +196,7 @@ func testLogLevelFiltering() async throws {
 }
 
 @Test("Diagnostics - Thread Safety")
-func testThreadSafety() async throws {
+func testDiagnosticsThreadSafety() async throws {
     let logger = Logger(category: .general)
     
     // Test concurrent logging from multiple tasks

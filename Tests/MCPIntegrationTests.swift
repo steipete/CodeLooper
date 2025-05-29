@@ -6,19 +6,19 @@ import Foundation
 @Suite("MCP Integration Tests")
 struct MCPIntegrationTests {
     
-    // MARK: - MCPConfigurationService Tests
+    // MARK: - MCPConfigManager Tests
     
-    @Test("MCPConfigurationService can be initialized")
-    func testMCPConfigurationServiceInitialization() async throws {
-        let configService = MCPConfigurationService()
+    @Test("MCPConfigManager can be initialized")
+    func testMCPConfigManagerInitialization() async throws {
+        let configService = MCPConfigManager()
         
         // Test that service is created without errors
         #expect(configService != nil)
     }
     
-    @Test("MCPConfigurationService manages configuration state")
+    @Test("MCPConfigManager manages configuration state")
     func testMCPConfigurationState() async throws {
-        let configService = MCPConfigurationService()
+        let configService = MCPConfigManager()
         
         // Test configuration state management
         // Note: Without making actual file system calls, we test the service doesn't crash
@@ -108,7 +108,7 @@ struct MCPIntegrationTests {
     
     @Test("MCP service integration")
     func testMCPServiceIntegration() async throws {
-        let configService = MCPConfigurationService()
+        let configService = MCPConfigManager()
         let versionService = MCPVersionService()
         
         // Test that both services can work together

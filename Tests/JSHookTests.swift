@@ -199,9 +199,15 @@ func testJSONParsingEdgeCases() async throws {
         "not json",
         "{",
         "{}",
-        """{"type":}""",
-        """{"type": "unknown"}""",
-        """{"type": "heartbeat", "malformed": }"""
+        """
+        {"type":}
+        """,
+        """
+        {"type": "unknown"}
+        """,
+        """
+        {"type": "heartbeat", "malformed": }
+        """
     ]
     
     for malformedJSON in malformedJSONs {
@@ -226,7 +232,9 @@ func testStringEncoding() async throws {
         "ready",
         "simple text",
         "text with émojis 🚀 and unicode",
-        """{"type": "heartbeat", "message": "测试"}""",
+        """
+        {"type": "heartbeat", "message": "测试"}
+        """,
         "\n\r\t special chars",
         ""
     ]

@@ -11,7 +11,7 @@ struct LoginItemManagerTests {
     
     @Test("LoginItemManager can be initialized")
     func testLoginItemManagerInitialization() async throws {
-        let manager = LoginItemManager()
+        let manager = LoginItemManager.shared
         
         // Test that manager is created without errors
         #expect(manager != nil)
@@ -19,7 +19,7 @@ struct LoginItemManagerTests {
     
     @Test("LoginItemManager manages login state")
     func testEnableLoginItem() async throws {
-        let manager = LoginItemManager()
+        let manager = LoginItemManager.shared
         
         // Get current state
         let initialState = manager.isEnabled
@@ -40,7 +40,7 @@ struct LoginItemManagerTests {
     
     @Test("LoginItemManager handles disable functionality")
     func testDisableLoginItem() async throws {
-        let manager = LoginItemManager()
+        let manager = LoginItemManager.shared
         
         // Test disabling (this is a test, so we won't actually change system settings)
         // Instead, we test that the method doesn't crash
@@ -55,7 +55,7 @@ struct LoginItemManagerTests {
     
     @Test("LoginItemManager can check status")
     func testLoginItemStatus() async throws {
-        let manager = LoginItemManager()
+        let manager = LoginItemManager.shared
         
         // Test that status can be checked without errors
         let status = manager.isEnabled
@@ -73,7 +73,7 @@ struct LoginItemManagerTests {
     
     @Test("LoginItemManager handles state changes gracefully")
     func testLoginItemStateChanges() async throws {
-        let manager = LoginItemManager()
+        let manager = LoginItemManager.shared
         
         // Get initial state
         let initialState = manager.isEnabled
@@ -113,7 +113,7 @@ struct LoginItemManagerTests {
     
     @Test("LoginItemManager error handling")
     func testLoginItemErrorHandling() async throws {
-        let manager = LoginItemManager()
+        let manager = LoginItemManager.shared
         
         // Test that manager handles edge cases gracefully
         // Multiple rapid calls shouldn't crash
@@ -133,7 +133,7 @@ struct LoginItemManagerTests {
     
     @Test("LoginItemManager integrates with app settings")
     func testLoginItemSettingsIntegration() async throws {
-        let manager = LoginItemManager()
+        let manager = LoginItemManager.shared
         
         // Test that manager can work with settings system
         // This mainly tests that there are no conflicts or crashes
@@ -150,7 +150,7 @@ struct LoginItemManagerTests {
     
     @Test("LoginItemManager thread safety")
     func testLoginItemThreadSafety() async throws {
-        let manager = LoginItemManager()
+        let manager = LoginItemManager.shared
         
         // Test concurrent access doesn't crash
         async let status1 = Task { manager.isEnabled }
