@@ -177,11 +177,14 @@ jobs:
           chmod +x scripts/build.sh
           chmod +x scripts/codesign-app.sh
 
-      - name: Install Tuist
+      - name: Install build tools (Tuist and xcbeautify)
         run: |
           # Use Homebrew to install Tuist (most reliable method)
           brew install tuist
           tuist --help | head -5
+          
+          # Install xcbeautify for cleaner build output
+          brew install xcbeautify
 
       - name: Generate Xcode project with Tuist
         run: |
@@ -201,13 +204,14 @@ jobs:
         run: |
           echo "Starting Xcode-based build, sign, optional notarization, and DMG creation..."
           
-          # Build with xcodebuild using Swift 6.0
+          # Build with xcodebuild using Swift 6.0 and xcbeautify for clean output
           echo "Building with Xcode using Swift 6.0..."
+          set -o pipefail
           xcodebuild -workspace CodeLooper.xcworkspace \
             -scheme CodeLooper \
             -configuration Release \
             -destination "generic/platform=macOS" \
-            build
+            build | xcbeautify
           
           # Find the built app
           APP_PATH=$(find ~/Library/Developer/Xcode/DerivedData -name "CodeLooper.app" -type d | head -1)
