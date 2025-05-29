@@ -169,7 +169,7 @@ struct DebugJSPopover: View {
         }
 
         do {
-            let result = try await viewModel.jsHookCoordinator.sendCommand(command, to: window.id)
+            let result = try await viewModel.jsHookService.sendCommand(command, to: window.id)
             await MainActor.run {
                 debugState.lastResult = result
             }

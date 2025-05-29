@@ -174,7 +174,7 @@ struct MarkdownContentPopover: View {
 
         do {
             // Get composer content from the JS hook
-            let result = try await viewModel.jsHookManager.sendCommand([
+            let result = try await viewModel.jsHookService.sendCommand([
                 "type": "getComposerContent",
             ], to: window.id)
 
@@ -229,7 +229,7 @@ struct MarkdownContentPopover: View {
 
         do {
             // Start the composer observer
-            _ = try await viewModel.jsHookManager.sendCommand([
+            _ = try await viewModel.jsHookService.sendCommand([
                 "type": "startComposerObserver",
             ], to: window.id)
 
@@ -257,7 +257,7 @@ struct MarkdownContentPopover: View {
 
         do {
             // Stop the composer observer
-            _ = try await viewModel.jsHookManager.sendCommand([
+            _ = try await viewModel.jsHookService.sendCommand([
                 "type": "stopComposerObserver",
             ], to: window.id)
         } catch {

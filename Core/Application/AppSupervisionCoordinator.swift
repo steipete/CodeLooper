@@ -61,7 +61,7 @@ final class AppSupervisionCoordinator {
         WindowAIDiagnosticsManager.shared.disableLiveWatchingForAllWindows()
         
         // Stop JavaScript hooks
-        JSHookCoordinator.shared.stopAllHooks()
+        JSHookService.shared.stopAllHooks()
         
         logger.info("✅ Supervision stopped")
     }

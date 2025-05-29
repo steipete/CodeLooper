@@ -21,12 +21,12 @@ public class RuleExecutor {
             return
         }
 
-        let jsHookCoordinator = JSHookCoordinator.shared
-        let windowIds = jsHookCoordinator.getAllHookedWindowIds()
+        let jsHookService = JSHookService.shared
+        let windowIds = jsHookService.getAllHookedWindowIds()
 
         // Execute StopAfter25LoopsRule if enabled
         if Defaults[.enableCursorForceStoppedRecovery] {
-            await executeStopAfter25LoopsRule(for: windowIds, jsHookCoordinator: jsHookCoordinator)
+            await executeStopAfter25LoopsRule(for: windowIds, jsHookService: jsHookService)
         }
 
         // Future rules can be added here
@@ -38,9 +38,9 @@ public class RuleExecutor {
     private let stopAfter25LoopsRule = StopAfter25LoopsRule()
 
     /// Execute the StopAfter25LoopsRule for all windows
-    private func executeStopAfter25LoopsRule(for windowIds: [String], jsHookCoordinator: JSHookCoordinator) async {
+    private func executeStopAfter25LoopsRule(for windowIds: [String], jsHookService: JSHookService) async {
         for windowId in windowIds {
-            let success = await stopAfter25LoopsRule.execute(windowId: windowId, jsHookCoordinator: jsHookCoordinator)
+            let success = await stopAfter25LoopsRule.execute(windowId: windowId, jsHookService: jsHookService)
             if success {
                 logger.info("StopAfter25LoopsRule executed successfully for window \(windowId)")
             } else {
