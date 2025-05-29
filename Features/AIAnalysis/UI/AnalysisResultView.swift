@@ -89,14 +89,14 @@ public struct CursorAnalysisView: View {
     private var headerSection: some View {
         VStack(alignment: .leading, spacing: Spacing.small) {
             HStack {
-                Image(systemName: "cpu")
-                    .foregroundColor(ColorPalette.textSecondary)
+                Text("🏢")
+                    .font(Typography.caption1())
                 Text("Provider: \(aiProvider.displayName)")
                     .font(Typography.caption1())
                     .foregroundColor(ColorPalette.textSecondary)
 
-                Image(systemName: "brain")
-                    .foregroundColor(ColorPalette.textSecondary)
+                Text("🧠")
+                    .font(Typography.caption1())
                 Text("Model: \(aiModel.displayName)")
                     .font(Typography.caption1())
                     .foregroundColor(ColorPalette.textSecondary)
