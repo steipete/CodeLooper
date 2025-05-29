@@ -319,9 +319,9 @@ struct AISettingsView: View {
             var successMessage = ""
             if AIServiceManager.shared.currentProvider == .ollama {
                 let models = AIServiceManager.shared.supportedModels().map(\.displayName)
-                successMessage = messagePrefix + StatusMessage.ollamaConnected(models)
+                successMessage = StatusMessage.ollamaConnected(models)
             } else {
-                successMessage = messagePrefix + StatusMessage.openAIConnected
+                successMessage = StatusMessage.openAIConnected
             }
             connectionTestResult = successMessage
             NotificationCenter.default.post(name: .AIServiceConfigured, object: nil) // Post notification
