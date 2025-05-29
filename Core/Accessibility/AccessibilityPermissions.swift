@@ -1,3 +1,4 @@
+import AppKit
 import AXorcist
 import Diagnostics
 import Foundation
@@ -55,14 +56,53 @@ public final class PermissionsManager: ObservableObject {
     /// Request notification permissions
     public func requestNotificationPermissions() async {
         logger.info("Requesting notification permissions")
-        do {
-            let granted = try await UNUserNotificationCenter.current()
-                .requestAuthorization(options: [.alert, .sound, .badge])
-            self.hasNotificationPermissions = granted
+        
+        // First check current authorization status
+        let center = UNUserNotificationCenter.current()
+        let currentSettings = await center.notificationSettings()
+        
+        switch currentSettings.authorizationStatus {
+        case .notDetermined:
+            // Only request if not determined yet
+            do {
+                let granted = try await center.requestAuthorization(options: [.alert, .sound, .badge])
+                self.hasNotificationPermissions = granted
+                cachePermissionStates()
+                logger.info("Notification permissions request result: \(granted)")
+                
+                if !granted {
+                    await showPermissionDeniedAlert()
+                }
+            } catch {
+                logger.error("Error requesting notification permissions: \(error)")
+                self.hasNotificationPermissions = false
+                cachePermissionStates()
+                await showPermissionErrorAlert(error: error)
+            }
+            
+        case .denied:
+            logger.info("Notification permissions were previously denied")
+            self.hasNotificationPermissions = false
             cachePermissionStates()
-            logger.info("Notification permissions request result: \(granted)")
-        } catch {
-            logger.error("Error requesting notification permissions: \(error)")
+            await showPermissionSettingsAlert()
+            
+        case .authorized:
+            logger.info("Notification permissions already granted")
+            self.hasNotificationPermissions = true
+            cachePermissionStates()
+            
+        case .provisional:
+            logger.info("Notification permissions are provisional")
+            self.hasNotificationPermissions = true
+            cachePermissionStates()
+            
+        case .ephemeral:
+            logger.info("Notification permissions are ephemeral")
+            self.hasNotificationPermissions = true
+            cachePermissionStates()
+            
+        @unknown default:
+            logger.warning("Unknown notification permission status")
             self.hasNotificationPermissions = false
             cachePermissionStates()
         }
@@ -252,6 +292,43 @@ public final class PermissionsManager: ObservableObject {
                     self.cachePermissionStates()
                 }
             }
+        }
+    }
+    
+    // MARK: - Alert Helpers
+    
+    @MainActor
+    private func showPermissionDeniedAlert() {
+        let alert = NSAlert()
+        alert.messageText = "Notification Permission Denied"
+        alert.informativeText = "You denied notification permissions. CodeLooper uses notifications to inform you about automation events and important updates."
+        alert.alertStyle = .warning
+        alert.addButton(withTitle: "OK")
+        alert.runModal()
+    }
+    
+    @MainActor
+    private func showPermissionErrorAlert(error: Error) {
+        let alert = NSAlert()
+        alert.messageText = "Permission Request Failed"
+        alert.informativeText = "Failed to request notification permissions: \(error.localizedDescription)"
+        alert.alertStyle = .critical
+        alert.addButton(withTitle: "OK")
+        alert.runModal()
+    }
+    
+    @MainActor
+    private func showPermissionSettingsAlert() {
+        let alert = NSAlert()
+        alert.messageText = "Notification Permission Required"
+        alert.informativeText = "Notification permissions were previously denied. Please enable them in System Settings > Privacy & Security > Notifications."
+        alert.alertStyle = .informational
+        alert.addButton(withTitle: "Open System Settings")
+        alert.addButton(withTitle: "Cancel")
+        
+        let response = alert.runModal()
+        if response == .alertFirstButtonReturn {
+            openNotificationSettings()
         }
     }
 }

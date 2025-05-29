@@ -10,7 +10,10 @@ public final class UserNotificationManager: ObservableObject {
 
     private init() {
         logger.info("UserNotificationManager initialized")
-        requestNotificationPermissions()
+        // Don't request permissions automatically - let PermissionsManager handle it
+        Task {
+            await checkAuthorizationStatus()
+        }
     }
 
     // MARK: Public
