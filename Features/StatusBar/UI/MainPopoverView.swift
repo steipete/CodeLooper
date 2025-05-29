@@ -6,6 +6,17 @@ import DesignSystem
 import Diagnostics
 import SwiftUI
 
+/// The main popover view displayed when clicking the menu bar icon.
+///
+/// MainPopoverView provides:
+/// - Quick status overview of monitoring state
+/// - Toggle controls for supervision
+/// - Monitored instance list with details
+/// - Quick access to settings and actions
+/// - Compact presentation optimized for popover
+///
+/// This view serves as the primary interface for quick interactions
+/// without opening the full settings window.
 struct MainPopoverView: View {
     // MARK: Internal
 

@@ -4,6 +4,18 @@ import DesignSystem
 import Diagnostics
 import SwiftUI
 
+/// Advanced settings view for power users and debugging.
+///
+/// AdvancedSettingsView provides access to:
+/// - System permissions management
+/// - Automation statistics and counters
+/// - Debug menu toggles
+/// - Developer-focused options
+/// - Advanced configuration settings
+///
+/// This view contains settings that are typically not needed
+/// for everyday use but are valuable for troubleshooting and
+/// advanced customization.
 struct AdvancedSettingsView: View {
     // MARK: Internal
 

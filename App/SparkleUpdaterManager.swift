@@ -3,6 +3,17 @@ import Diagnostics
 import os
 import Sparkle
 
+/// Manages the Sparkle auto-update framework integration.
+///
+/// SparkleUpdaterManager provides:
+/// - Automatic update checking and installation
+/// - Update UI presentation and user interaction
+/// - Delegate callbacks for update lifecycle events
+/// - Configuration of update channels and behavior
+///
+/// This manager wraps Sparkle's functionality to provide a clean
+/// interface for the rest of the application while handling all
+/// update-related delegate callbacks and UI presentation.
 @MainActor
 public class SparkleUpdaterManager: NSObject, SPUUpdaterDelegate, SPUStandardUserDriverDelegate, ObservableObject {
     // MARK: Lifecycle

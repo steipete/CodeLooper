@@ -2,6 +2,17 @@ import Combine
 import Sparkle
 import SwiftUI // For ObservableObject
 
+/// View model for managing application update functionality.
+///
+/// UpdaterViewModel provides:
+/// - Integration with Sparkle updater framework
+/// - Update status monitoring and progress tracking
+/// - Manual update check triggering
+/// - Update check date tracking
+///
+/// This view model bridges the Sparkle framework with SwiftUI,
+/// providing reactive updates for the UI while managing the
+/// underlying update process.
 @MainActor
 public class UpdaterViewModel: ObservableObject {
     // MARK: Lifecycle

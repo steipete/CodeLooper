@@ -1,5 +1,15 @@
 import SwiftUI
 
+/// Configuration view for Claude Code MCP (Model Context Protocol) integration.
+///
+/// ClaudeCodeConfigView allows users to:
+/// - Configure custom CLI command names
+/// - Set up aliases for Claude Code installation
+/// - Verify CLI installation and functionality
+/// - Customize integration settings
+///
+/// This view handles the configuration of how CodeLooper
+/// interacts with the Claude Code command-line interface.
 struct ClaudeCodeConfigView: View {
     // MARK: Internal
 

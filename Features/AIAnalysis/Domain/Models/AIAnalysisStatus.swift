@@ -1,5 +1,13 @@
 import Foundation
 
+/// Status of AI-powered window analysis operations.
+///
+/// Tracks the current state of AI analysis including:
+/// - Active analysis (working/not working)
+/// - Pending or scheduled analysis
+/// - Error conditions during analysis
+/// - Disabled state when live watching is off
+/// - Unknown states for error handling
 public enum AIAnalysisStatus: String, Codable, CaseIterable, Identifiable {
     case working
     case notWorking

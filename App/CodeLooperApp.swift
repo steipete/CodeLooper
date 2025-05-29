@@ -7,6 +7,17 @@ import MenuBarExtraAccess
 import os
 import SwiftUI
 
+/// The main entry point for the CodeLooper SwiftUI application.
+///
+/// CodeLooperApp configures:
+/// - Application lifecycle and scene management
+/// - Menu bar integration with custom status item
+/// - Settings window presentation
+/// - Global keyboard shortcuts
+/// - AppDelegate bridging for legacy functionality
+///
+/// The app uses SwiftUI's modern app lifecycle while maintaining
+/// compatibility with AppKit features through the AppDelegate.
 @main
 struct CodeLooperApp: App {
     // MARK: Lifecycle
