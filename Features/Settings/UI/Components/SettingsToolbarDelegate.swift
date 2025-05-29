@@ -73,7 +73,7 @@ class SettingsToolbarDelegate: NSObject, NSToolbarDelegate {
 
             // App icon - load from Assets.xcassets
             let iconView = PassThroughImageView()
-            if let iconImage = NSImage(named: NSImage.Name("loop-color")) {
+            if let iconImage = NSImage(named: "loop-color") {
                 iconView.image = iconImage
             } else {
                 // Fallback to application icon

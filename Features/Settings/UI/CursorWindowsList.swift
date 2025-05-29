@@ -68,7 +68,6 @@ private struct WindowRow: View {
     @State private var isHoveringGitStatus = false
     @State private var showDebugPopover = false
     @State private var showMarkdownPopover = false
-    @State private var showGitHubPopover = false
 
     private static let logger = Logger(category: .ui)
 
@@ -382,17 +381,14 @@ private struct WindowRow: View {
                     // GitHub info button (appears on hover if GitHub URL is available)
                     if isHoveringGitStatus, let githubURL = gitRepo.githubURL {
                         Button(action: {
-                            showGitHubPopover = true
+                            NSWorkspace.shared.open(githubURL)
                         }) {
                             Image(systemName: "info.circle")
                                 .font(.system(size: 10))
                                 .foregroundColor(ColorPalette.accent)
                         }
                         .buttonStyle(.borderless)
-                        .help("View on GitHub")
-                        .popover(isPresented: $showGitHubPopover) {
-                            InlineBrowserPopover.github(url: githubURL)
-                        }
+                        .help("Open on GitHub")
                     }
                 }
                 .scaleEffect(isHoveringGitStatus ? 1.02 : 1.0)

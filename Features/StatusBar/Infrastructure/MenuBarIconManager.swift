@@ -208,7 +208,7 @@ class MenuBarIconManager: ObservableObject {
         // Define colors based on current appearance (though direct Text view modifiers are better)
         let workingColor: Color = .green
         let notWorkingColor: Color = .red
-        let unknownColor: Color = .yellow
+        let unknownColor: Color = .orange
 
         if working > 0 {
             appendStatus(emoji: "🟢", count: working, color: workingColor)

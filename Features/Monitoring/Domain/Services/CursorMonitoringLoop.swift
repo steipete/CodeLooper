@@ -29,11 +29,11 @@ extension CursorMonitor {
                 } else {
                     // When global monitoring is disabled, sleep longer to reduce overhead
                     logger.debug("Global monitoring disabled, skipping monitoring cycle")
-                    try? await Task.sleep(for: .seconds(10))
+                    try? await Task.sleep(for: .seconds(10.0))
                 }
 
                 // Sleep between monitoring cycles
-                try? await Task.sleep(for: .seconds(5))
+                try? await Task.sleep(for: .seconds(5.0))
             }
 
             // Cleanup when monitoring stops

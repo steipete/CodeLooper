@@ -25,7 +25,7 @@ struct MainPopoverView: View {
             // Header with logo
             HStack(spacing: Spacing.small) {
                 // App icon
-                if let iconImage = NSImage(named: NSImage.Name("AppIcon")) {
+                if let iconImage = NSImage(named: "loop-color") {
                     Image(nsImage: iconImage)
                         .resizable()
                         .frame(width: 24, height: 24)

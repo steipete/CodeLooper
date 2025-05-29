@@ -23,7 +23,7 @@ public class RetryManager {
     // MARK: Public
     
     /// Retry configuration parameters
-    public struct RetryConfiguration {
+    public struct RetryConfiguration: Sendable {
         public let maxAttempts: Int
         public let initialDelay: TimeInterval
         public let maxDelay: TimeInterval
@@ -68,10 +68,10 @@ public class RetryManager {
     ///   - onRetry: Optional callback for retry attempts
     /// - Returns: The result of the successful operation
     /// - Throws: The last error if all retries fail
-    public func execute<T>(
-        operation: @escaping () async throws -> T,
-        shouldRetry: ((Error) -> Bool)? = nil,
-        onRetry: ((Int, Error, TimeInterval) -> Void)? = nil
+    public func execute<T: Sendable>(
+        operation: @escaping @Sendable () async throws -> T,
+        shouldRetry: (@Sendable (Error) -> Bool)? = nil,
+        onRetry: (@Sendable (Int, Error, TimeInterval) -> Void)? = nil
     ) async throws -> T {
         var lastError: Error?
         var delay = config.initialDelay
@@ -129,8 +129,8 @@ public class RetryManager {
     ///   - retryableErrors: Specific error types that should be retried
     /// - Returns: The result of the successful operation
     /// - Throws: The last error if all retries fail
-    public func execute<T, E: Error>(
-        operation: @escaping () async throws -> T,
+    public func execute<T: Sendable, E: Error>(
+        operation: @escaping @Sendable () async throws -> T,
         retryableErrors: [E.Type]
     ) async throws -> T where E: Equatable {
         return try await execute(operation: operation) { error in

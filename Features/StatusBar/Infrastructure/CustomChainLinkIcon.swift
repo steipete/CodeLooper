@@ -15,7 +15,7 @@ struct CustomChainLinkIcon: View {
         ZStack {
             // Debug background to see the full frame
             Rectangle()
-                .fill(Color.yellow.opacity(0.1))
+                .fill(Color.orange.opacity(0.1))
                 .frame(width: size, height: size)
 
             // Animated first chain link

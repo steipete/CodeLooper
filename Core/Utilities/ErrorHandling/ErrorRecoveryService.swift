@@ -1,6 +1,7 @@
 import AppKit
 import Diagnostics
 import Foundation
+import UserNotifications
 
 /// Centralized error recovery service providing automated recovery strategies and user notifications.
 ///
@@ -16,33 +17,33 @@ public class ErrorRecoveryService {
     
     public init() {
         self.retryManager = RetryManager(config: .default)
-        self.logger = Logger(category: .errorHandling)
+        self.logger = Logger(category: .utilities)
     }
     
     // MARK: Public
     
     /// Recovery strategy for different types of errors
-    public enum RecoveryStrategy {
+    public enum RecoveryStrategy: Sendable {
         case retry(maxAttempts: Int)
-        case fallback(operation: () async throws -> Void)
+        case fallback(operation: @Sendable () async throws -> Void)
         case userIntervention(message: String, actions: [RecoveryAction])
         case ignore
         case escalate(to: EscalationLevel)
     }
     
     /// Recovery actions that users can take
-    public struct RecoveryAction {
+    public struct RecoveryAction: Sendable {
         public let title: String
-        public let action: () async -> Void
+        public let action: @Sendable () async -> Void
         
-        public init(title: String, action: @escaping () async -> Void) {
+        public init(title: String, action: @escaping @Sendable () async -> Void) {
             self.title = title
             self.action = action
         }
     }
     
     /// Escalation levels for critical errors
-    public enum EscalationLevel {
+    public enum EscalationLevel: Sendable {
         case logWarning
         case notifyUser
         case disableFeature
@@ -93,8 +94,8 @@ public class ErrorRecoveryService {
     ///   - recoveryStrategy: Optional custom recovery strategy
     /// - Returns: The result of the operation
     /// - Throws: Error if recovery fails
-    public func executeWithRecovery<T>(
-        operation: @escaping () async throws -> T,
+    public func executeWithRecovery<T: Sendable>(
+        operation: @escaping @Sendable () async throws -> T,
         context: String,
         recoveryStrategy: RecoveryStrategy? = nil
     ) async throws -> T {
@@ -106,7 +107,7 @@ public class ErrorRecoveryService {
             let strategy = recoveryStrategy ?? determineRecoveryStrategy(for: error)
             
             switch strategy {
-            case .retry(let maxAttempts):
+            case .retry:
                 return try await retryManager.execute(
                     operation: operation,
                     onRetry: { attempt, error, delay in
@@ -229,7 +230,8 @@ public class ErrorRecoveryService {
     private func recoveryStrategyForNSError(_ error: NSError) -> RecoveryStrategy {
         switch error.domain {
         case NSURLErrorDomain:
-            return recoveryStrategyForURLError(URLError(.init(rawValue: error.code) ?? .unknown))
+            let urlErrorCode = URLError.Code(rawValue: error.code)
+            return recoveryStrategyForURLError(URLError(urlErrorCode))
         case NSCocoaErrorDomain:
             if error.code == NSFileReadNoPermissionError {
                 return .userIntervention(
@@ -250,7 +252,8 @@ public class ErrorRecoveryService {
     private func attemptRetry(error: Error, maxAttempts: Int, context: String) async -> Bool {
         logger.info("🔄 Attempting retry recovery for '\(context)' (max \(maxAttempts) attempts)")
         // In a real implementation, this would coordinate with the retry manager
-        // For now, just log the attempt
+        // For now, just log the attempt and return false to indicate manual intervention needed
+        _ = maxAttempts // Acknowledge the parameter to avoid warning
         return false
     }
     
