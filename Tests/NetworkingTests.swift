@@ -310,17 +310,20 @@ struct NetworkingTests {
     
     @Test("RetryManager handles network retries with backoff")
     func testRetryManagerNetworkRetries() async throws {
-        let retryManager = RetryManager()
+        let config = RetryManager.RetryConfiguration(maxAttempts: 3)
+        let retryManager = RetryManager(config: config)
         var attemptCount = 0
         
         // Test successful retry after failures
-        let result = try await retryManager.retry(maxAttempts: 3) {
-            attemptCount += 1
-            if attemptCount < 3 {
-                throw URLError(.networkConnectionLost)
+        let result = try await retryManager.execute(
+            operation: {
+                attemptCount += 1
+                if attemptCount < 3 {
+                    throw URLError(.networkConnectionLost)
+                }
+                return "Success"
             }
-            return "Success"
-        }
+        )
         
         #expect(result == "Success")
         #expect(attemptCount == 3)
@@ -328,14 +331,17 @@ struct NetworkingTests {
     
     @Test("RetryManager respects max attempts limit")
     func testRetryManagerMaxAttempts() async throws {
-        let retryManager = RetryManager()
+        let config = RetryManager.RetryConfiguration(maxAttempts: 2)
+        let retryManager = RetryManager(config: config)
         var attemptCount = 0
         
         do {
-            _ = try await retryManager.retry(maxAttempts: 2) {
-                attemptCount += 1
-                throw URLError(.timedOut)
-            }
+            _ = try await retryManager.execute(
+                operation: {
+                    attemptCount += 1
+                    throw URLError(.timedOut)
+                }
+            )
             #expect(false, "Should have thrown after max attempts")
         } catch {
             #expect(attemptCount == 2)
@@ -345,14 +351,17 @@ struct NetworkingTests {
     
     @Test("RetryManager handles non-retryable errors")
     func testRetryManagerNonRetryableErrors() async throws {
-        let retryManager = RetryManager()
+        let config = RetryManager.RetryConfiguration(maxAttempts: 3)
+        let retryManager = RetryManager(config: config)
         var attemptCount = 0
         
         do {
-            _ = try await retryManager.retry(maxAttempts: 3) {
-                attemptCount += 1
-                throw URLError(.badURL) // Non-retryable error
-            }
+            _ = try await retryManager.execute(
+                operation: {
+                    attemptCount += 1
+                    throw URLError(.badURL) // Non-retryable error
+                }
+            )
             #expect(false, "Should have thrown immediately")
         } catch {
             #expect(attemptCount == 1) // Should not retry non-retryable errors
@@ -429,16 +438,19 @@ struct NetworkingTests {
         }
         
         // Test retry mechanism
-        let retryManager = RetryManager()
+        let config = RetryManager.RetryConfiguration(maxAttempts: 2)
+        let retryManager = RetryManager(config: config)
         var attempts = 0
         
-        let retryResult = try await retryManager.retry(maxAttempts: 2) {
-            attempts += 1
-            if attempts == 1 {
-                throw URLError(.timedOut)
+        let retryResult = try await retryManager.execute(
+            operation: {
+                attempts += 1
+                if attempts == 1 {
+                    throw URLError(.timedOut)
+                }
+                return "Retry Success"
             }
-            return "Retry Success"
-        }
+        )
         
         #expect(retryResult == "Retry Success")
         #expect(attempts == 2)

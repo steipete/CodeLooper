@@ -362,9 +362,9 @@ struct HTMLToMarkdownServiceTests {
                 <div class="message-body">
                     <p>I can help you with that! Here's a code example:</p>
                     <pre><code class="language-swift">
-func greet(name: String) -> String {
-    return "Hello, \\(name)!"
-}
+                        func greet(name: String) -> String {
+                            return "Hello, \\(name)!"
+                        }
                     </code></pre>
                     <p>This function takes a <code>name</code> parameter and returns a greeting.</p>
                     <ul>
