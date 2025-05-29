@@ -17,20 +17,21 @@ import SwiftUI
 extension Color {
     func toNSColor() -> NSColor {
         // This is a simplified conversion just returning system colors
-        if self == .green {
-            NSColor.systemGreen
-        } else if self == .red {
-            NSColor.systemRed
-        } else if self == .blue {
-            NSColor.systemBlue
-        } else if self == .orange {
-            NSColor.systemOrange
-        } else if self == .primary {
-            NSColor.labelColor
-        } else if self == .secondary {
-            NSColor.secondaryLabelColor
-        } else {
-            NSColor.controlAccentColor
+        switch self {
+        case .green:
+            return NSColor.systemGreen
+        case .red:
+            return NSColor.systemRed
+        case .blue:
+            return NSColor.systemBlue
+        case .orange:
+            return NSColor.systemOrange
+        case .primary:
+            return NSColor.labelColor
+        case .secondary:
+            return NSColor.secondaryLabelColor
+        default:
+            return NSColor.controlAccentColor
         }
     }
 }

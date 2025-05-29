@@ -32,43 +32,43 @@ struct DebugJSPopover: View {
 
             // Built-in commands
             LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 2), spacing: 8) {
-                DebugButton("Ping", "network") {
+                debugButton("Ping", "network") {
                     await executeCommand(["type": "ping"])
                 }
 
-                DebugButton("Version", "info.circle") {
+                debugButton("Version", "info.circle") {
                     await executeCommand(["type": "getVersion"])
                 }
 
-                DebugButton("System Info", "desktopcomputer") {
+                debugButton("System Info", "desktopcomputer") {
                     await executeCommand(["type": "getSystemInfo"])
                 }
 
-                DebugButton("Active Element", "cursorarrow.click.2") {
+                debugButton("Active Element", "cursorarrow.click.2") {
                     await executeCommand(["type": "getActiveElement"])
                 }
 
-                DebugButton("Check Rule Needed", "play.circle") {
+                debugButton("Check Rule Needed", "play.circle") {
                     await executeCommand(["type": "checkRuleNeeded"])
                 }
 
-                DebugButton("Click Resume", "play.fill") {
+                debugButton("Click Resume", "play.fill") {
                     await executeCommand(["type": "clickResume"])
                 }
 
-                DebugButton("Perform Rule", "gearshape.fill") {
+                debugButton("Perform Rule", "gearshape.fill") {
                     await executeCommand(["type": "performRule"])
                 }
 
-                DebugButton("Start Composer Observer", "eye") {
+                debugButton("Start Composer Observer", "eye") {
                     await executeCommand(["type": "startComposerObserver"])
                 }
 
-                DebugButton("Stop Composer Observer", "eye.slash") {
+                debugButton("Stop Composer Observer", "eye.slash") {
                     await executeCommand(["type": "stopComposerObserver"])
                 }
 
-                DebugButton("Get Composer Content", "text.quote") {
+                debugButton("Get Composer Content", "text.quote") {
                     await executeCommand(["type": "getComposerContent"])
                 }
             }
@@ -140,7 +140,7 @@ struct DebugJSPopover: View {
     // MARK: Private
 
     @ViewBuilder
-    private func DebugButton(_ title: String, _ icon: String, action: @escaping () async -> Void) -> some View {
+    private func debugButton(_ title: String, _ icon: String, action: @escaping () async -> Void) -> some View {
         Button(action: {
             Task {
                 await action()

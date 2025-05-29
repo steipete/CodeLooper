@@ -71,7 +71,7 @@ struct InlineBrowserPopover: View {
 private struct WebView: NSViewRepresentable {
     class Coordinator: NSObject, WKNavigationDelegate {
         func webView(
-            _: WKWebView,
+            _ webView: WKWebView,
             decidePolicyFor navigationAction: WKNavigationAction,
             decisionHandler: @escaping (WKNavigationActionPolicy) -> Void
         ) {

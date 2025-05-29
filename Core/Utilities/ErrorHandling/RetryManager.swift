@@ -185,7 +185,11 @@ public class RetryManager {
         switch error.domain {
         case NSURLErrorDomain:
             // Handle URL errors
-            isRetryableURLError(URLError(URLError.Code(rawValue: error.code) ?? .unknown))
+            if let urlErrorCode = URLError.Code(rawValue: error.code) {
+                return isRetryableURLError(URLError(urlErrorCode))
+            } else {
+                return false
+            }
         case "NWErrorDomain":
             // Network framework errors
             error.code != 57 // Connection refused is usually not retryable
