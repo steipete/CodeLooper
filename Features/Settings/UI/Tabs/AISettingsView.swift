@@ -2,6 +2,7 @@ import Defaults
 import DesignSystem
 import SwiftUI
 
+
 // Define a Notification name for AI Service configuration changes
 extension Notification.Name {
     static let AIServiceConfigured = Notification.Name("AIServiceConfiguredNotification")
@@ -194,9 +195,7 @@ struct AISettingsView: View {
             if isAutoTesting || connectionTestResult != nil {
                 HStack {
                     if isAutoTesting {
-                        ProgressView()
-                            .scaleEffect(0.8)
-                            .frame(width: 16, height: 16)
+                        DSShimmer(width: 16, height: 16, cornerRadius: 2)
                     }
                     Text(connectionTestResult ?? "")
                         .font(Typography.caption1())
@@ -255,9 +254,7 @@ struct AISettingsView: View {
             if isAutoTesting || connectionTestResult != nil {
                 HStack {
                     if isAutoTesting {
-                        ProgressView()
-                            .scaleEffect(0.8)
-                            .frame(width: 16, height: 16)
+                        DSShimmer(width: 16, height: 16, cornerRadius: 2)
                     }
                     Text(connectionTestResult ?? "")
                         .font(Typography.caption1())

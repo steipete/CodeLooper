@@ -2,6 +2,7 @@ import Defaults
 import DesignSystem
 import SwiftUI
 
+
 public struct CursorAnalysisView: View {
     // MARK: Public
 
@@ -105,9 +106,7 @@ public struct CursorAnalysisView: View {
 
                 if mcpVersionService.isChecking {
                     HStack {
-                        ProgressView()
-                            .scaleEffect(0.6)
-                            .frame(width: 12, height: 12)
+                        DSShimmer(width: 12, height: 12, cornerRadius: 2)
                         Text("Checking versions...")
                             .font(Typography.caption1())
                             .foregroundColor(ColorPalette.textSecondary)

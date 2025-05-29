@@ -1,6 +1,7 @@
 import Defaults
 import SwiftUI
 
+
 struct CursorInputWatcherView: View {
     // MARK: Internal
 
@@ -153,11 +154,8 @@ private struct WindowRow: View {
         } else {
             HStack(spacing: 4) {
                 if injectionState.isWorking {
-                    // Show progress indicator
-                    ProgressView()
-                        .scaleEffect(0.6)
-                        .controlSize(.mini)
-                        .frame(width: 12, height: 12)
+                    // Show shimmer indicator
+                    DSShimmer(width: 12, height: 12, cornerRadius: 2)
 
                     Text(injectionState.displayText)
                         .font(.caption)

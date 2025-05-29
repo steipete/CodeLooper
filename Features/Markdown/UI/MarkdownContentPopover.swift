@@ -3,6 +3,7 @@ import DesignSystem
 import Diagnostics
 import SwiftUI
 
+
 @MainActor
 private class MarkdownContentState: ObservableObject {
     @Published var markdownContent: String = ""
@@ -58,9 +59,7 @@ struct MarkdownContentPopover: View {
             // Status bar
             HStack {
                 if contentState.isLoading {
-                    ProgressView()
-                        .scaleEffect(0.7)
-                        .frame(width: 14, height: 14)  // Fixed size to match icon
+                    DSShimmer(width: 14, height: 14, cornerRadius: 2)
                     Text("Fetching content...")
                         .font(.caption)
                         .foregroundColor(.secondary)

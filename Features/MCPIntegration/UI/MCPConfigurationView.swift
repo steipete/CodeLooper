@@ -2,6 +2,7 @@ import Defaults
 import DesignSystem
 import SwiftUI
 
+
 struct ExternalMCPsSettingsView: View {
     // MARK: Internal
 
@@ -203,16 +204,7 @@ private struct MCPCard: View {
     @ViewBuilder
     private var versionBadge: some View {
         if mcpVersionService.isChecking {
-            HStack(spacing: 4) {
-                ProgressView()
-                    .scaleEffect(0.6)
-                    .frame(width: 12, height: 12)
-                Text("...")
-                    .font(Typography.caption2())
-            }
-            .padding(.horizontal, Spacing.xSmall)
-            .padding(.vertical, Spacing.xxxSmall)
-            .frame(minWidth: 85, minHeight: 22, alignment: .center)
+            DSShimmer(width: 85, height: 22, cornerRadius: 12)
         } else {
             let displayVersion = getDisplayVersion()
             let hasUpdate = checkForUpdate()
@@ -229,17 +221,15 @@ private struct MCPCard: View {
                 // Icon
                 Image(systemName: mcp.icon)
                     .font(.system(size: 24))
-                    .foregroundColor(mcp.enabled ? ColorPalette.primary : ColorPalette.textTertiary)
+                    .foregroundColor(mcp.enabled ? ColorPalette.text : ColorPalette.textTertiary)
                     .frame(width: 40, height: 40)
-                    .background(ColorPalette.backgroundSecondary)
-                    .cornerRadiusDS(Layout.CornerRadius.medium)
 
                 // Info
                 VStack(alignment: .leading, spacing: Spacing.small) {
                     HStack(spacing: Spacing.xSmall) {
                         Text(mcp.name)
                             .font(Typography.body(.medium))
-                            .foregroundColor(mcp.githubURL != nil ? ColorPalette.primary : ColorPalette.text)
+                            .foregroundColor(ColorPalette.text)
 
                         Spacer()
 
