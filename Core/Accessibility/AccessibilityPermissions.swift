@@ -71,20 +71,20 @@ public final class PermissionsManager: ObservableObject {
                 logger.info("Notification permissions request result: \(granted)")
                 
                 if !granted {
-                    await showPermissionDeniedAlert()
+                    showPermissionDeniedAlert()
                 }
             } catch {
                 logger.error("Error requesting notification permissions: \(error)")
                 self.hasNotificationPermissions = false
                 cachePermissionStates()
-                await showPermissionErrorAlert(error: error)
+                showPermissionErrorAlert(error: error)
             }
             
         case .denied:
             logger.info("Notification permissions were previously denied")
             self.hasNotificationPermissions = false
             cachePermissionStates()
-            await showPermissionSettingsAlert()
+            showPermissionSettingsAlert()
             
         case .authorized:
             logger.info("Notification permissions already granted")
