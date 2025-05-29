@@ -14,9 +14,9 @@
             buildForAnalyzing = "YES">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "C1361A92D9A8D2B373F76CB0"
-               BuildableName = "CodeLooper.app"
-               BlueprintName = "CodeLooper"
+               BlueprintIdentifier = "10BE54014AA41930AA72ED71"
+               BuildableName = "Diagnostics.framework"
+               BlueprintName = "Diagnostics"
                ReferencedContainer = "container:CodeLooper.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
@@ -27,30 +27,9 @@
       selectedDebuggerIdentifier = "Xcode.DebuggerFoundation.Debugger.LLDB"
       selectedLauncherIdentifier = "Xcode.DebuggerFoundation.Launcher.LLDB"
       shouldUseLaunchSchemeArgsEnv = "YES"
-      codeCoverageEnabled = "YES"
-      onlyGenerateCoverageForSpecifiedTargets = "YES">
+      disableMainThreadChecker = "YES">
       <Testables>
-         <TestableReference
-            skipped = "NO"
-            parallelizable = "NO">
-            <BuildableReference
-               BuildableIdentifier = "primary"
-               BlueprintIdentifier = "87FF64A5770C04C33FEACE92"
-               BuildableName = "CodeLooperTests.xctest"
-               BlueprintName = "CodeLooperTests"
-               ReferencedContainer = "container:CodeLooper.xcodeproj">
-            </BuildableReference>
-         </TestableReference>
       </Testables>
-      <CodeCoverageTargets>
-         <BuildableReference
-            BuildableIdentifier = "primary"
-            BlueprintIdentifier = "C1361A92D9A8D2B373F76CB0"
-            BuildableName = "CodeLooper.app"
-            BlueprintName = "CodeLooper"
-            ReferencedContainer = "container:CodeLooper.xcodeproj">
-         </BuildableReference>
-      </CodeCoverageTargets>
    </TestAction>
    <LaunchAction
       buildConfiguration = "Debug"
@@ -62,16 +41,15 @@
       debugDocumentVersioning = "YES"
       debugServiceExtension = "internal"
       allowLocationSimulation = "YES">
-      <BuildableProductRunnable
-         runnableDebuggingMode = "0">
+      <MacroExpansion>
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "C1361A92D9A8D2B373F76CB0"
-            BuildableName = "CodeLooper.app"
-            BlueprintName = "CodeLooper"
+            BlueprintIdentifier = "10BE54014AA41930AA72ED71"
+            BuildableName = "Diagnostics.framework"
+            BlueprintName = "Diagnostics"
             ReferencedContainer = "container:CodeLooper.xcodeproj">
          </BuildableReference>
-      </BuildableProductRunnable>
+      </MacroExpansion>
    </LaunchAction>
    <ProfileAction
       buildConfiguration = "Release"
@@ -79,16 +57,15 @@
       savedToolIdentifier = ""
       useCustomWorkingDirectory = "NO"
       debugDocumentVersioning = "YES">
-      <BuildableProductRunnable
-         runnableDebuggingMode = "0">
+      <MacroExpansion>
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "C1361A92D9A8D2B373F76CB0"
-            BuildableName = "CodeLooper.app"
-            BlueprintName = "CodeLooper"
+            BlueprintIdentifier = "10BE54014AA41930AA72ED71"
+            BuildableName = "Diagnostics.framework"
+            BlueprintName = "Diagnostics"
             ReferencedContainer = "container:CodeLooper.xcodeproj">
          </BuildableReference>
-      </BuildableProductRunnable>
+      </MacroExpansion>
    </ProfileAction>
    <AnalyzeAction
       buildConfiguration = "Debug">
