@@ -199,14 +199,14 @@ class WindowAIDiagnosticsManager: ObservableObject {
                     setupTimer(for: currentWindowInfo)
                 }
 
-                // Track document path and fetch Git repository info
+                // Track document path and fetch Git repository info for this window
                 if let documentPath = currentWindowInfo.documentPath {
                     Task {
-                        // Record this document access
-                        await self.documentPathTracker.recordDocumentAccess(documentPath)
+                        // Record this document access for this specific window
+                        await self.documentPathTracker.recordDocumentAccess(documentPath, forWindow: window.id)
 
-                        // Get repository using heuristic (specific path or most frequent)
-                        if let gitRepo = await self.documentPathTracker.getRepositoryForDocument(documentPath) {
+                        // Get repository for this window (with per-window fallback heuristic)
+                        if let gitRepo = await self.documentPathTracker.getRepositoryForDocument(documentPath, forWindow: window.id) {
                             DispatchQueue.main.async {
                                 if var updatedWindowInfo = self.windowStates[window.id] {
                                     updatedWindowInfo.gitRepository = gitRepo
@@ -217,9 +217,9 @@ class WindowAIDiagnosticsManager: ObservableObject {
                         }
                     }
                 } else {
-                    // No document path, but try to get the most frequent repository
+                    // For windows without document paths, try to get the most frequent repository for this window
                     Task {
-                        if let gitRepo = await self.documentPathTracker.getMostFrequentRepository() {
+                        if let gitRepo = await self.documentPathTracker.getMostFrequentRepository(forWindow: window.id) {
                             DispatchQueue.main.async {
                                 if var updatedWindowInfo = self.windowStates[window.id] {
                                     updatedWindowInfo.gitRepository = gitRepo
@@ -239,6 +239,8 @@ class WindowAIDiagnosticsManager: ObservableObject {
             timers[windowID]?.invalidate()
             timers.removeValue(forKey: windowID)
             previousScreenshots.removeValue(forKey: windowID)
+            // Clear per-window tracking data
+            documentPathTracker.clearTracking(forWindow: windowID)
             // No need to remove from windowStates here, as newWindowStates will become self.windowStates
         }
 
