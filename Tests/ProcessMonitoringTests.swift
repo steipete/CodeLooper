@@ -3,7 +3,7 @@ import AppKit
 import Foundation
 import Testing
 
-@Test("ProcessMonitoring - RecoveryType Enum Cases")
+
 func recoveryTypeEnumCases() async throws {
     // Test that all recovery types are available
     let allCases = RecoveryType.allCases
@@ -16,7 +16,7 @@ func recoveryTypeEnumCases() async throws {
     #expect(allCases.contains(.forceStop))
 }
 
-@Test("ProcessMonitoring - RecoveryType String Values")
+
 func recoveryTypeStringValues() async throws {
     #expect(RecoveryType.connection.rawValue == "connection")
     #expect(RecoveryType.stopGenerating.rawValue == "stopGenerating")
@@ -24,7 +24,7 @@ func recoveryTypeStringValues() async throws {
     #expect(RecoveryType.forceStop.rawValue == "forceStop")
 }
 
-@Test("ProcessMonitoring - RecoveryType Codable")
+
 func recoveryTypeCodable() async throws {
     let recoveryType = RecoveryType.connection
 
@@ -39,7 +39,7 @@ func recoveryTypeCodable() async throws {
     #expect(decodedType == recoveryType)
 }
 
-@Test("ProcessMonitoring - RecoveryType Hashable")
+
 func recoveryTypeHashable() async throws {
     var recoverySet: Set<RecoveryType> = []
 
@@ -52,7 +52,7 @@ func recoveryTypeHashable() async throws {
     #expect(recoverySet.contains(.stopGenerating))
 }
 
-@Test("ProcessMonitoring - CursorInstanceStatus Unknown")
+
 func cursorInstanceStatusUnknown() async throws {
     let status = CursorInstanceStatus.unknown
     #expect(status == .unknown)
@@ -62,7 +62,7 @@ func cursorInstanceStatusUnknown() async throws {
     #expect(status == anotherUnknown)
 }
 
-@Test("ProcessMonitoring - CursorInstanceStatus Working")
+
 func cursorInstanceStatusWorking() async throws {
     let status1 = CursorInstanceStatus.working(detail: "Generating")
     let status2 = CursorInstanceStatus.working(detail: "Generating")
@@ -78,7 +78,7 @@ func cursorInstanceStatusWorking() async throws {
     #expect(generating != sidebarActivity)
 }
 
-@Test("ProcessMonitoring - CursorInstanceStatus Idle")
+
 func cursorInstanceStatusIdle() async throws {
     let status = CursorInstanceStatus.idle
     #expect(status == .idle)
@@ -88,7 +88,7 @@ func cursorInstanceStatusIdle() async throws {
     #expect(status != .working(detail: "test"))
 }
 
-@Test("ProcessMonitoring - CursorInstanceStatus Recovering")
+
 func cursorInstanceStatusRecovering() async throws {
     let status1 = CursorInstanceStatus.recovering(type: .connection, attempt: 1)
     let status2 = CursorInstanceStatus.recovering(type: .connection, attempt: 1)
@@ -110,7 +110,7 @@ func cursorInstanceStatusRecovering() async throws {
     #expect(stuckRecovery != forceStopRecovery)
 }
 
-@Test("ProcessMonitoring - CursorInstanceStatus Error")
+
 func cursorInstanceStatusError() async throws {
     let status1 = CursorInstanceStatus.error(reason: "Connection failed")
     let status2 = CursorInstanceStatus.error(reason: "Connection failed")
@@ -126,7 +126,7 @@ func cursorInstanceStatusError() async throws {
     #expect(errorStatus != unrecoverableStatus)
 }
 
-@Test("ProcessMonitoring - CursorInstanceStatus Unrecoverable")
+
 func cursorInstanceStatusUnrecoverable() async throws {
     let status1 = CursorInstanceStatus.unrecoverable(reason: "Complete failure")
     let status2 = CursorInstanceStatus.unrecoverable(reason: "Complete failure")
@@ -137,7 +137,7 @@ func cursorInstanceStatusUnrecoverable() async throws {
     #expect(status1 != status3)
 }
 
-@Test("ProcessMonitoring - CursorInstanceStatus Paused")
+
 func cursorInstanceStatusPaused() async throws {
     let status = CursorInstanceStatus.paused
     #expect(status == .paused)
@@ -148,7 +148,7 @@ func cursorInstanceStatusPaused() async throws {
     #expect(status != .error(reason: "test"))
 }
 
-@Test("ProcessMonitoring - CursorInstanceStatus Hashable")
+
 func cursorInstanceStatusHashable() async throws {
     var statusSet: Set<CursorInstanceStatus> = []
 
@@ -169,7 +169,7 @@ func cursorInstanceStatusHashable() async throws {
     #expect(statusSet.contains(.working(detail: "test")))
 }
 
-@Test("ProcessMonitoring - CursorInstanceStatus State Transitions")
+
 func cursorInstanceStatusStateTransitions() async throws {
     // Test logical state transitions
     let initialStatus = CursorInstanceStatus.unknown
@@ -194,7 +194,7 @@ func cursorInstanceStatusStateTransitions() async throws {
     #expect(recovery1 != recovery3)
 }
 
-@Test("ProcessMonitoring - Recovery Type Priority")
+
 func recoveryTypePriority() async throws {
     // Test that different recovery types can be prioritized
     let recoveryTypes = RecoveryType.allCases
@@ -210,7 +210,7 @@ func recoveryTypePriority() async throws {
     #expect(recoveryTypes.contains(.stopGenerating))
 }
 
-@Test("ProcessMonitoring - Status Error vs Unrecoverable")
+
 func statusErrorVsUnrecoverable() async throws {
     // Test distinction between recoverable errors and unrecoverable ones
     let recoverableError = CursorInstanceStatus.error(reason: "Temporary connection issue")
@@ -224,7 +224,7 @@ func statusErrorVsUnrecoverable() async throws {
     #expect(error1 != error2)
 }
 
-@Test("ProcessMonitoring - Status Working Detail Variations")
+
 func statusWorkingDetailVariations() async throws {
     // Test various working detail strings
     let detailVariations = [
@@ -248,7 +248,8 @@ func statusWorkingDetailVariations() async throws {
     }
 }
 
-@Test("ProcessMonitoring - Recovery Attempt Progression")
+
+@Test
 func recoveryAttemptProgression() async throws {
     // Test recovery attempt counting
     var recoveryAttempts: [CursorInstanceStatus] = []
@@ -270,7 +271,7 @@ func recoveryAttemptProgression() async throws {
     #expect(attempt1 != attempt5)
 }
 
-@Test("ProcessMonitoring - Status Type Safety")
+
 func statusTypeSafety() async throws {
     // Test that the status enum works with type-safe collections
     let statuses: [CursorInstanceStatus] = [

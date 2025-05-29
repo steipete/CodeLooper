@@ -6,7 +6,6 @@ import Foundation
 import Testing
 
 /// Integration tests for end-to-end application functionality
-@Suite("Integration Tests")
 struct IntegrationTests {
     // MARK: - Test Utilities
 
@@ -44,7 +43,7 @@ struct IntegrationTests {
 
     // MARK: - Application Lifecycle Tests
 
-    @Test("Full application lifecycle - startup and shutdown")
+    @Test
     func fullApplicationLifecycle() async throws {
         let app = MockCodeLooperApp()
 
@@ -68,7 +67,7 @@ struct IntegrationTests {
         #expect(app.windowManager == nil)
     }
 
-    @Test("Service coordinator initialization and dependency injection")
+    @Test
     func serviceCoordinatorInitialization() async throws {
         let coordinator = AppServiceCoordinator()
 
@@ -87,7 +86,7 @@ struct IntegrationTests {
 
     // MARK: - Cursor Detection and Monitoring Tests
 
-    @Test("End-to-end Cursor detection and monitoring flow")
+    @Test
     func cursorDetectionAndMonitoring() async throws {
         let coordinator = AppServiceCoordinator()
         let monitor = coordinator.cursorMonitor
@@ -132,7 +131,7 @@ struct IntegrationTests {
         }
     }
 
-    @Test("Window management integration")
+    @Test
     func windowManagementIntegration() async throws {
         let coordinator = AppServiceCoordinator()
         let monitor = coordinator.cursorMonitor
@@ -178,7 +177,7 @@ struct IntegrationTests {
 
     // MARK: - Intervention Flow Tests
 
-    @Test("Complete intervention detection and recovery flow")
+    @Test
     func interventionFlow() async throws {
         let coordinator = AppServiceCoordinator()
         let monitor = coordinator.cursorMonitor
@@ -216,7 +215,7 @@ struct IntegrationTests {
         await monitor.stopMonitoringLoop()
     }
 
-    @Test("Rule execution integration")
+    @Test
     func ruleExecutionIntegration() async throws {
         let ruleExecutor = RuleExecutor()
 
@@ -229,7 +228,7 @@ struct IntegrationTests {
 
     // MARK: - Settings Persistence Tests
 
-    @Test("Settings persistence across service restarts")
+    @Test
     func settingsPersistenceIntegration() async throws {
         try withTemporaryDefaults {
             // Set some test settings
@@ -259,7 +258,7 @@ struct IntegrationTests {
         }
     }
 
-    @Test("Window settings persistence")
+    @Test
     func windowSettingsPersistence() async throws {
         try withTemporaryDefaults {
             // Create window with settings
@@ -293,7 +292,7 @@ struct IntegrationTests {
 
     // MARK: - Permission Flow Tests
 
-    @Test("Permission validation flow")
+    @Test
     func permissionFlowIntegration() async throws {
         // Test accessibility permissions check
         let hasAccessibilityPermissions = AccessibilityPermissions.hasAccessibilityPermissions()
@@ -308,7 +307,7 @@ struct IntegrationTests {
         #expect(status != nil)
     }
 
-    @Test("AXorcist integration with permissions")
+    @Test
     func aXorcistPermissionIntegration() async throws {
         let axorcist = AXorcist()
 
@@ -334,7 +333,7 @@ struct IntegrationTests {
 
     // MARK: - Cross-Service Integration Tests
 
-    @Test("Service coordination and communication")
+    @Test
     func serviceCoordination() async throws {
         let coordinator = AppServiceCoordinator()
 
@@ -351,7 +350,7 @@ struct IntegrationTests {
         #expect(true)
     }
 
-    @Test("Error handling across service boundaries")
+    @Test
     func crossServiceErrorHandling() async throws {
         let coordinator = AppServiceCoordinator()
         let monitor = coordinator.cursorMonitor

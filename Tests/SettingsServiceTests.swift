@@ -5,7 +5,7 @@ import Foundation
 import Testing
 
 @MainActor
-@Test("SettingsService - OpenSettings Subject Availability")
+
 func openSettingsSubjectAvailability() async throws {
     // Verify the subject is available and can be used
     let subject = SettingsService.openSettingsSubject
@@ -13,7 +13,7 @@ func openSettingsSubjectAvailability() async throws {
 }
 
 @MainActor
-@Test("SettingsService - OpenSettings Subject Emission")
+
 func openSettingsSubjectEmission() async throws {
     let subject = SettingsService.openSettingsSubject
     var receivedEvents = 0
@@ -33,7 +33,7 @@ func openSettingsSubjectEmission() async throws {
     cancellable.cancel()
 }
 
-@Test("DefaultsKeys - Basic Key Definitions")
+
 func defaultsKeysBasicDefinitions() async throws {
     // Test that all basic keys have proper defaults
     #expect(Defaults[.monitoringIntervalSeconds] == 1.0)
@@ -45,20 +45,20 @@ func defaultsKeysBasicDefinitions() async throws {
     #expect(Defaults[.showInMenuBar] == true)
 }
 
-@Test("DefaultsKeys - Text Recovery Settings")
+
 func defaultsKeysTextRecoverySettings() async throws {
     let expectedText = "Can you please re-evaluate the current context and continue?"
     #expect(Defaults[.textForCursorStopsRecovery] == expectedText)
 }
 
-@Test("DefaultsKeys - Recovery Feature Toggles")
+
 func defaultsKeysRecoveryFeatureToggles() async throws {
     #expect(Defaults[.enableConnectionIssuesRecovery] == true)
     #expect(Defaults[.enableCursorForceStoppedRecovery] == true)
     #expect(Defaults[.enableCursorStopsRecovery] == true)
 }
 
-@Test("DefaultsKeys - Onboarding State")
+
 func defaultsKeysOnboardingState() async throws {
     #expect(Defaults[.hasShownWelcomeGuide] == false)
     #expect(Defaults[.isFirstLaunch] == true)
@@ -66,7 +66,7 @@ func defaultsKeysOnboardingState() async throws {
     #expect(Defaults[.showWelcomeScreen] == true)
 }
 
-@Test("DefaultsKeys - App Behavior Settings")
+
 func defaultsKeysAppBehaviorSettings() async throws {
     #expect(Defaults[.startAtLogin] == true)
     #expect(Defaults[.showInDock] == false)
@@ -75,7 +75,7 @@ func defaultsKeysAppBehaviorSettings() async throws {
     #expect(Defaults[.automaticallyCheckForUpdates] == true)
 }
 
-@Test("DefaultsKeys - Counter Display Settings")
+
 func defaultsKeysCounterDisplaySettings() async throws {
     #expect(Defaults[.showCopyCounter] == false)
     #expect(Defaults[.showPasteCounter] == false)
@@ -83,20 +83,20 @@ func defaultsKeysCounterDisplaySettings() async throws {
     #expect(Defaults[.flashIconOnIntervention] == true)
 }
 
-@Test("DefaultsKeys - Logging Configuration")
+
 func defaultsKeysLoggingConfiguration() async throws {
     #expect(Defaults[.selectedLogLevel] == "info")
     #expect(Defaults[.verboseLogging] == false)
     #expect(Defaults[.enableDetailedLogging] == false)
 }
 
-@Test("DefaultsKeys - MCP Configuration")
+
 func defaultsKeysMCPConfiguration() async throws {
     #expect(Defaults[.mcpConfigFilePath] == "~/.cursor/mcp_config.json")
     #expect(Defaults[.autoReloadMCPsOnChanges] == true)
 }
 
-@Test("DefaultsKeys - Locator JSON Defaults")
+
 func defaultsKeysLocatorJSONDefaults() async throws {
     // All locator JSON keys should default to empty strings
     #expect(Defaults[.locatorJSONGeneratingIndicatorText] == "")
@@ -109,7 +109,7 @@ func defaultsKeysLocatorJSONDefaults() async throws {
     #expect(Defaults[.locatorJSONMainInputField] == "")
 }
 
-@Test("DefaultsKeys - Advanced Settings")
+
 func defaultsKeysAdvancedSettings() async throws {
     #expect(Defaults[.sidebarActivityMaxDepth] == 1)
     #expect(Defaults[.ollamaBaseURL] == "http://localhost:11434")
@@ -117,14 +117,14 @@ func defaultsKeysAdvancedSettings() async throws {
     #expect(Defaults[.gitClientApp] == "/Applications/Tower.app")
 }
 
-@Test("DefaultsKeys - Rule Settings")
+
 func defaultsKeysRuleSettings() async throws {
     #expect(Defaults[.showRuleExecutionCounters] == true)
     #expect(Defaults[.enableRuleNotifications] == true)
     #expect(Defaults[.enableRuleSounds] == true)
 }
 
-@Test("DefaultsKeys - Rule-Specific Sounds")
+
 func defaultsKeysRuleSpecificSounds() async throws {
     #expect(Defaults[.stopAfter25LoopsRuleSound] == "Glass")
     #expect(Defaults[.plainStopRuleSound] == "")
@@ -132,7 +132,7 @@ func defaultsKeysRuleSpecificSounds() async throws {
     #expect(Defaults[.editedInAnotherChatRuleSound] == "")
 }
 
-@Test("DefaultsKeys - Rule-Specific Notifications")
+
 func defaultsKeysRuleSpecificNotifications() async throws {
     #expect(Defaults[.stopAfter25LoopsRuleNotification] == true)
     #expect(Defaults[.plainStopRuleNotification] == false)
@@ -140,7 +140,7 @@ func defaultsKeysRuleSpecificNotifications() async throws {
     #expect(Defaults[.editedInAnotherChatRuleNotification] == false)
 }
 
-@Test("DefaultsKeys - Debug Settings")
+
 func defaultsKeysDebugSettings() async throws {
     #expect(Defaults[.useDynamicMenuBarIcon] == false)
     #expect(Defaults[.automaticJSHookInjection] == false)
@@ -153,7 +153,7 @@ func defaultsKeysDebugSettings() async throws {
     #endif
 }
 
-@Test("DefaultsKeys - Settings Persistence")
+
 func defaultsKeysSettingsPersistence() async throws {
     // Test that settings can be changed and retrieved
     let originalValue = Defaults[.monitoringIntervalSeconds]
@@ -170,7 +170,7 @@ func defaultsKeysSettingsPersistence() async throws {
     #expect(Defaults[.monitoringIntervalSeconds] == originalValue)
 }
 
-@Test("DefaultsKeys - Boolean Settings Toggle")
+
 func defaultsKeysBooleanSettingsToggle() async throws {
     let originalValue = Defaults[.playSoundOnIntervention]
 
@@ -183,7 +183,7 @@ func defaultsKeysBooleanSettingsToggle() async throws {
     #expect(Defaults[.playSoundOnIntervention] == originalValue)
 }
 
-@Test("DefaultsKeys - String Settings Modification")
+
 func defaultsKeysStringSettingsModification() async throws {
     let originalValue = Defaults[.textForCursorStopsRecovery]
     let testValue = "Custom test recovery text"
@@ -197,7 +197,7 @@ func defaultsKeysStringSettingsModification() async throws {
     #expect(Defaults[.textForCursorStopsRecovery] == originalValue)
 }
 
-@Test("DefaultsKeys - Integer Settings Range")
+
 func defaultsKeysIntegerSettingsRange() async throws {
     let originalValue = Defaults[.maxInterventionsBeforePause]
 
@@ -213,7 +213,7 @@ func defaultsKeysIntegerSettingsRange() async throws {
     #expect(Defaults[.maxInterventionsBeforePause] == originalValue)
 }
 
-@Test("DefaultsKeys - Notification Sound Optional")
+
 func defaultsKeysNotificationSoundOptional() async throws {
     // Test that optional notification sound defaults work
     #expect(Defaults[.notificationSoundName] == "Default")

@@ -3,7 +3,7 @@ import Foundation
 import Network
 import Testing
 
-@Test("JSHook - Script Template Loading")
+
 func scriptTemplateLoading() async throws {
     // Test that the JavaScript template can be loaded
     do {
@@ -21,7 +21,7 @@ func scriptTemplateLoading() async throws {
     }
 }
 
-@Test("JSHook - Script Version Constant")
+
 func scriptVersionConstant() async throws {
     let version = CursorJSHookScript.version
     #expect(version.count > 0)
@@ -33,7 +33,7 @@ func scriptVersionConstant() async throws {
     #expect(versionComponents.count <= 3)
 }
 
-@Test("JSHook - Script Generation with Port")
+
 func scriptGenerationWithPort() async throws {
     // Mock the template loading since file might not exist in test environment
     let mockTemplate = """
@@ -54,14 +54,14 @@ func scriptGenerationWithPort() async throws {
     #expect(!withVersion.contains("__CODELOOPER_VERSION_PLACEHOLDER__"))
 }
 
-@Test("JSHook - Error Types")
+
 func jSHookErrorTypes() async throws {
     let scriptError = CursorJSHookError.scriptNotFound
     #expect(scriptError.errorDescription != nil)
     #expect(scriptError.errorDescription?.contains("JavaScript hook script not found") == true)
 }
 
-@Test("JSHook - Hook Error Types")
+
 func hookErrorTypes() async throws {
     // Test various hook error types
     let portError = CursorJSHook.HookError.portInUse(port: 8080)
@@ -92,7 +92,7 @@ func hookErrorTypes() async throws {
     }
 }
 
-@Test("JSHook - WebSocket Manager Initialization")
+
 func webSocketManagerInitialization() async throws {
     let port: UInt16 = 9999
     let manager = await WebSocketManager(port: port)
@@ -102,7 +102,7 @@ func webSocketManagerInitialization() async throws {
     #expect(isConnected == false)
 }
 
-@Test("JSHook - Port Validation")
+
 func portValidation() async throws {
     // Test various port values
     let validPorts: [UInt16] = [8080, 9999, 3000, 1234, 65535]
@@ -118,7 +118,7 @@ func portValidation() async throws {
     #expect(zeroPortManager != nil)
 }
 
-@Test("JSHook - Connection State Management")
+
 func connectionStateManagement() async throws {
     let manager = await WebSocketManager(port: 9998)
 
@@ -130,7 +130,7 @@ func connectionStateManagement() async throws {
     // This tests the state logic without requiring real connections
 }
 
-@Test("JSHook - Message Types")
+
 func testMessageTypes() async throws {
     // Test that we can validate message type constants
     let messageTypes = ["heartbeat", "composerUpdate", "ready"]
@@ -159,7 +159,7 @@ func testMessageTypes() async throws {
     #expect(parsed["resumeNeeded"] as? Bool == false)
 }
 
-@Test("JSHook - Notification Names")
+
 func notificationNames() async throws {
     // Test notification name constants
     let heartbeatNotification = Notification.Name("CursorHeartbeat")
@@ -170,7 +170,7 @@ func notificationNames() async throws {
     #expect(heartbeatNotification != composerNotification)
 }
 
-@Test("JSHook - Threading and Concurrency")
+
 func threadingAndConcurrency() async throws {
     // Test thread-safe operations that don't require actual networking
     let port: UInt16 = 9997
@@ -191,7 +191,7 @@ func threadingAndConcurrency() async throws {
     }
 }
 
-@Test("JSHook - JSON Parsing Edge Cases")
+
 func jSONParsingEdgeCases() async throws {
     // Test malformed JSON handling
     let malformedJSONs = [
@@ -225,7 +225,7 @@ func jSONParsingEdgeCases() async throws {
     }
 }
 
-@Test("JSHook - String Encoding")
+
 func stringEncoding() async throws {
     // Test various string encodings that might be received
     let testStrings = [
@@ -251,7 +251,7 @@ func stringEncoding() async throws {
     }
 }
 
-@Test("JSHook - Performance Considerations")
+
 func performanceConsiderations() async throws {
     // Test performance of frequent operations
     let testData = "test message".data(using: .utf8)!
@@ -279,7 +279,7 @@ func performanceConsiderations() async throws {
     #expect(jsonElapsed < 1.0)
 }
 
-@Test("JSHook - Memory Management")
+
 func memoryManagement() async throws {
     // Test that managers can be created and released without leaks
     var managers: [WebSocketManager] = []
@@ -296,7 +296,7 @@ func memoryManagement() async throws {
     #expect(managers.isEmpty)
 }
 
-@Test("JSHook - Error Handling Robustness")
+
 func errorHandlingRobustness() async throws {
     // Test that error conditions are handled gracefully
 

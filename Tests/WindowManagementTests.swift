@@ -3,7 +3,8 @@ import AppKit
 import Foundation
 import Testing
 
-@Test("WindowManager - Initialization")
+
+@Test
 func windowManagerInitialization() async throws {
     let mockLoginItemManager = createMockLoginItemManager()
     let mockSessionLogger = createMockSessionLogger()
@@ -19,7 +20,8 @@ func windowManagerInitialization() async throws {
     #expect(windowManager.delegate != nil)
 }
 
-@Test("WindowManager - Window Controller Management")
+
+@Test
 func windowControllerManagement() async throws {
     let mockLoginItemManager = createMockLoginItemManager()
     let mockSessionLogger = createMockSessionLogger()
@@ -36,7 +38,8 @@ func windowControllerManagement() async throws {
     #expect(initialWelcomeController == nil)
 }
 
-@Test("WindowManager - Delegate Protocol")
+
+@Test
 func windowManagerDelegate() async throws {
     // Test delegate protocol methods exist and can be called
     let delegate = MockWindowManagerDelegate()
@@ -46,7 +49,8 @@ func windowManagerDelegate() async throws {
     #expect(delegate.didFinishOnboardingCalled == true)
 }
 
-@Test("WindowPositionManager - Singleton")
+
+@Test
 func windowPositionManagerSingleton() async throws {
     let manager1 = await WindowPositionManager.shared
     let manager2 = await WindowPositionManager.shared
@@ -55,7 +59,8 @@ func windowPositionManagerSingleton() async throws {
     #expect(manager1 === manager2)
 }
 
-@Test("WindowPositionManager - Window Position Operations")
+
+@Test
 func windowPositionOperations() async throws {
     let manager = await WindowPositionManager.shared
 
@@ -83,7 +88,8 @@ func windowPositionOperations() async throws {
     #expect(resizedFrame.size.height == 400)
 }
 
-@Test("WindowPositionManager - Position Saving and Restoration")
+
+@Test
 func positionSavingAndRestoration() async throws {
     let manager = await WindowPositionManager.shared
 
@@ -101,7 +107,8 @@ func positionSavingAndRestoration() async throws {
     #expect(identifier.contains("test-window"))
 }
 
-@Test("WindowPositionManager - AppleScript Support Methods")
+
+@Test
 func appleScriptSupportMethods() async throws {
     let manager = await WindowPositionManager.shared
 
@@ -122,7 +129,8 @@ func appleScriptSupportMethods() async throws {
     #expect(size.height == 600.0)
 }
 
-@Test("WindowPositionManager - UserDefaults Serialization")
+
+@Test
 func userDefaultsSerialization() async throws {
     // Test NSRect to Dictionary conversion (as used in saveToDisk)
     let testRect = NSRect(x: 100, y: 150, width: 400, height: 300)
@@ -155,7 +163,8 @@ func userDefaultsSerialization() async throws {
     }
 }
 
-@Test("WindowManagement - MonitoredWindowInfo")
+
+@Test
 func monitoredWindowInfo() async throws {
     // Test MonitoredWindowInfo creation and properties
     let windowId = "test-window-123"
@@ -177,7 +186,8 @@ func monitoredWindowInfo() async throws {
     #expect(windowInfo.isPaused == false)
 }
 
-@Test("WindowManagement - Window Title Parsing")
+
+@Test
 func windowTitleParsing() async throws {
     // Test various window title scenarios
     let windowTitles = [
@@ -201,7 +211,8 @@ func windowTitleParsing() async throws {
     }
 }
 
-@Test("WindowManagement - Document Path Processing")
+
+@Test
 func documentPathProcessing() async throws {
     // Test various document path formats
     let testPaths = [
@@ -224,7 +235,8 @@ func documentPathProcessing() async throws {
     }
 }
 
-@Test("WindowManagement - Display Text Extraction")
+
+@Test
 func displayTextExtraction() async throws {
     // Test the attribute keys used for text extraction
     let primaryAttributeKeys = [
@@ -272,7 +284,8 @@ func displayTextExtraction() async throws {
     }
 }
 
-@Test("WindowManagement - Async Operations")
+
+@Test
 func asyncOperations() async throws {
     // Test concurrent window processing simulation
     let appCount = 5
@@ -304,7 +317,8 @@ func asyncOperations() async throws {
     }
 }
 
-@Test("WindowManagement - Frame Calculations")
+
+@Test
 func frameCalculations() async throws {
     // Test various frame calculation scenarios
     let originalFrame = NSRect(x: 100, y: 100, width: 400, height: 300)
@@ -335,7 +349,8 @@ func frameCalculations() async throws {
     #expect(newFrame.size.height == 500)
 }
 
-@Test("WindowManagement - Thread Safety")
+
+@Test
 func windowManagementThreadSafety() async throws {
     // Test concurrent access to window operations
     let windowPositionManager = await WindowPositionManager.shared
@@ -361,7 +376,8 @@ func windowManagementThreadSafety() async throws {
     }
 }
 
-@Test("WindowManagement - Error Handling")
+
+@Test
 func errorHandling() async throws {
     // Test graceful handling of nil values
     let manager = await WindowPositionManager.shared
@@ -373,12 +389,12 @@ func errorHandling() async throws {
     await manager.centerWindow(nil)
 
     // Test position saving/restoring with nil window
-    manager.saveWindowPosition(nil, identifier: "test")
-    let restored = manager.restoreWindowPosition(nil, identifier: "test")
+    await manager.saveWindowPosition(nil, identifier: "test")
+    let restored = await manager.restoreWindowPosition(nil, identifier: "test")
     #expect(restored == false)
 
     // Test restoring non-existent position
-    let nonExistentRestored = manager.restoreWindowPosition(nil, identifier: "non-existent")
+    let nonExistentRestored = await manager.restoreWindowPosition(nil, identifier: "non-existent")
     #expect(nonExistentRestored == false)
 }
 
@@ -394,11 +410,11 @@ private class MockWindowManagerDelegate: WindowManagerDelegate {
 }
 
 private func createMockLoginItemManager() -> LoginItemManager {
-    LoginItemManager()
+    LoginItemManager.shared
 }
 
 private func createMockSessionLogger() -> SessionLogger {
-    SessionLogger()
+    SessionLogger.shared
 }
 
 private func createMockWindowManagerDelegate() -> MockWindowManagerDelegate {

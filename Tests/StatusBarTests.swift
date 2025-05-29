@@ -4,7 +4,7 @@ import Foundation
 import SwiftUI
 import Testing
 
-@Test("StatusIconState - All Cases")
+
 func statusIconStateAllCases() async throws {
     let states: [StatusIconState] = [
         .idle,
@@ -26,7 +26,7 @@ func statusIconStateAllCases() async throws {
     }
 }
 
-@Test("StatusIconState - Raw Values")
+
 func statusIconStateRawValues() async throws {
     #expect(StatusIconState.idle.rawValue == "idle")
     #expect(StatusIconState.syncing.rawValue == "syncing")
@@ -40,7 +40,7 @@ func statusIconStateRawValues() async throws {
     #expect(StatusIconState.aiStatus(working: 1, notWorking: 2, unknown: 3).rawValue == "aiStatus")
 }
 
-@Test("StatusIconState - Descriptions")
+
 func statusIconStateDescriptions() async throws {
     #expect(StatusIconState.idle.description == "Idle")
     #expect(StatusIconState.syncing.description == "Syncing")
@@ -56,7 +56,7 @@ func statusIconStateDescriptions() async throws {
     #expect(aiStatus.description == "AI Status: 2 working, 1 not working, 3 unknown")
 }
 
-@Test("StatusIconState - Tooltip Text")
+
 func statusIconStateTooltipText() async throws {
     #expect(StatusIconState.idle.tooltipText == "CodeLooper")
     #expect(StatusIconState.syncing.tooltipText == "CodeLooper - Syncing Contacts...")
@@ -72,7 +72,7 @@ func statusIconStateTooltipText() async throws {
     #expect(aiStatus.tooltipText == "CodeLooper: AI Analysis - 1 Working, 2 Not Working, 3 Unknown")
 }
 
-@Test("StatusIconState - Template Image Usage")
+
 func statusIconStateTemplateImageUsage() async throws {
     #expect(StatusIconState.idle.useTemplateImage == true)
     #expect(StatusIconState.syncing.useTemplateImage == true)
@@ -88,7 +88,7 @@ func statusIconStateTemplateImageUsage() async throws {
     #expect(StatusIconState.aiStatus(working: 1, notWorking: 2, unknown: 3).useTemplateImage == false)
 }
 
-@Test("StatusIconState - Hashable and Sendable")
+
 func statusIconStateHashableAndSendable() async throws {
     let state1 = StatusIconState.idle
     let state2 = StatusIconState.idle
@@ -117,7 +117,7 @@ func statusIconStateHashableAndSendable() async throws {
     #expect(aiStatus1 != aiStatus3)
 }
 
-@Test("StatusIconState - AI Status Edge Cases")
+
 func statusIconStateAIStatusEdgeCases() async throws {
     // Test zero counts
     let zeroStatus = StatusIconState.aiStatus(working: 0, notWorking: 0, unknown: 0)
@@ -133,7 +133,7 @@ func statusIconStateAIStatusEdgeCases() async throws {
     #expect(singleWorkingStatus.description == "AI Status: 1 working, 0 not working, 0 unknown")
 }
 
-@Test("MenuBarIconManager - Initialization")
+
 func menuBarIconManagerInitialization() async throws {
     let manager = await MenuBarIconManager()
 
@@ -144,7 +144,7 @@ func menuBarIconManagerInitialization() async throws {
     #expect(initialTooltip.contains("CodeLooper"))
 }
 
-@Test("MenuBarIconManager - State Changes")
+
 func menuBarIconManagerStateChanges() async throws {
     let manager = await MenuBarIconManager()
 
@@ -166,7 +166,7 @@ func menuBarIconManagerStateChanges() async throws {
     #expect(pausedTooltip == "CodeLooper: Supervision Paused")
 }
 
-@Test("MenuBarIconManager - Legacy Methods")
+
 func menuBarIconManagerLegacyMethods() async throws {
     let manager = await MenuBarIconManager()
 
@@ -188,7 +188,7 @@ func menuBarIconManagerLegacyMethods() async throws {
     #expect(normalTooltip == "CodeLooper")
 }
 
-@Test("MenuBarIconManager - AI Status Icon")
+
 func menuBarIconManagerAIStatusIcon() async throws {
     let manager = await MenuBarIconManager()
 
@@ -203,7 +203,7 @@ func menuBarIconManagerAIStatusIcon() async throws {
     #expect(zeroAITooltip == "CodeLooper: AI Analysis - 0 Working, 0 Not Working, 0 Unknown")
 }
 
-@Test("MenuBarIconManager - Attributed String Creation")
+
 func menuBarIconManagerAttributedStringCreation() async throws {
     let manager = await MenuBarIconManager()
 
@@ -221,7 +221,7 @@ func menuBarIconManagerAttributedStringCreation() async throws {
     #expect(aiString != nil)
 }
 
-@Test("MenuBarIconManager - Concurrent State Changes")
+
 func menuBarIconManagerConcurrentStateChanges() async throws {
     let manager = await MenuBarIconManager()
 
@@ -246,7 +246,7 @@ func menuBarIconManagerConcurrentStateChanges() async throws {
     #expect(finalTooltip.contains("CodeLooper"))
 }
 
-@Test("MenuBarIconManager - Cleanup Operations")
+
 func menuBarIconManagerCleanupOperations() async throws {
     let manager = await MenuBarIconManager()
 
@@ -259,7 +259,7 @@ func menuBarIconManagerCleanupOperations() async throws {
     #expect(tooltipAfterCleanup == "CodeLooper")
 }
 
-@Test("StatusBar - Appearance Handling")
+
 func statusBarAppearanceHandling() async throws {
     // Test appearance name constants
     let darkAppearance = NSAppearance.Name.darkAqua
@@ -270,14 +270,14 @@ func statusBarAppearanceHandling() async throws {
     #expect(darkAppearance != lightAppearance)
 }
 
-@Test("StatusBar - Notification Names")
+
 func statusBarNotificationNames() async throws {
     // Test system notification name
     let themeChangeNotification = NSNotification.Name("AppleInterfaceThemeChangedNotification")
     #expect(themeChangeNotification.rawValue == "AppleInterfaceThemeChangedNotification")
 }
 
-@Test("StatusBar - AttributedString Creation")
+
 func statusBarAttributedStringCreation() async throws {
     // Test creating attributed strings with different properties
     var attributes = AttributeContainer()
@@ -294,7 +294,7 @@ func statusBarAttributedStringCreation() async throws {
     #expect(result.characters.count == 2)
 }
 
-@Test("StatusBar - Color Definitions")
+
 func statusBarColorDefinitions() async throws {
     // Test that colors can be created and are distinct
     let workingColor = Color.green
@@ -306,7 +306,7 @@ func statusBarColorDefinitions() async throws {
     #expect(unknownColor != workingColor)
 }
 
-@Test("StatusBar - Memory Management")
+
 func statusBarMemoryManagement() async throws {
     // Test creating and releasing multiple managers
     var managers: [MenuBarIconManager] = []
@@ -328,7 +328,7 @@ func statusBarMemoryManagement() async throws {
     #expect(managers.isEmpty)
 }
 
-@Test("StatusBar - State Validation")
+
 func statusBarStateValidation() async throws {
     let manager = await MenuBarIconManager()
 
@@ -355,7 +355,7 @@ func statusBarStateValidation() async throws {
     }
 }
 
-@Test("StatusBar - Performance Characteristics")
+
 func statusBarPerformanceCharacteristics() async throws {
     let manager = await MenuBarIconManager()
 

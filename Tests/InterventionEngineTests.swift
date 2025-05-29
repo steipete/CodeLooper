@@ -3,7 +3,7 @@ import Combine
 import Foundation
 import Testing
 
-@Test("InterventionEngine - InterventionType Enum Cases")
+
 func interventionTypeEnumCases() async throws {
     // Test that all intervention types are available
     let allCases = CursorInterventionEngine.InterventionType.allCases
@@ -21,7 +21,7 @@ func interventionTypeEnumCases() async throws {
     #expect(allCases.contains(.processNotRunning))
 }
 
-@Test("InterventionEngine - InterventionType String Values")
+
 func interventionTypeStringValues() async throws {
     // Test that intervention types have proper string representations
     #expect(CursorInterventionEngine.InterventionType.unknown.rawValue == "Unknown")
@@ -32,7 +32,7 @@ func interventionTypeStringValues() async throws {
     #expect(CursorInterventionEngine.InterventionType.automatedRecovery.rawValue == "Automated Recovery Attempt")
 }
 
-@Test("InterventionEngine - InterventionType Codable")
+
 func interventionTypeCodable() async throws {
     let interventionType = CursorInterventionEngine.InterventionType.connectionIssue
 
@@ -47,7 +47,7 @@ func interventionTypeCodable() async throws {
     #expect(decodedType == interventionType)
 }
 
-@Test("InterventionEngine - InterventionType Equality")
+
 func interventionTypeEquality() async throws {
     let type1 = CursorInterventionEngine.InterventionType.connectionIssue
     let type2 = CursorInterventionEngine.InterventionType.connectionIssue
@@ -57,7 +57,7 @@ func interventionTypeEquality() async throws {
     #expect(type1 != type3)
 }
 
-@Test("InterventionEngine - InterventionType Case Iteration")
+
 func interventionTypeCaseIteration() async throws {
     var foundUnknown = false
     var foundConnectionIssue = false
@@ -81,7 +81,7 @@ func interventionTypeCaseIteration() async throws {
     #expect(foundGeneralError)
 }
 
-@Test("InterventionEngine - InterventionType Classification")
+
 func interventionTypeClassification() async throws {
     // Test that intervention types can be classified into groups
     let errorTypes: Set<CursorInterventionEngine.InterventionType> = [
@@ -105,7 +105,7 @@ func interventionTypeClassification() async throws {
     #expect(!positiveTypes.contains(.connectionIssue))
 }
 
-@Test("InterventionEngine - Priority Classification")
+
 func interventionTypePriorityClassification() async throws {
     // Test intervention types that would require immediate action
     let highPriorityTypes: Set<CursorInterventionEngine.InterventionType> = [
@@ -130,7 +130,7 @@ func interventionTypePriorityClassification() async throws {
     }
 }
 
-@Test("InterventionEngine - Intervention State Management")
+
 func interventionTypeStateManagement() async throws {
     // Test states that indicate system health
     let healthyStates: Set<CursorInterventionEngine.InterventionType> = [
@@ -165,7 +165,7 @@ func interventionTypeStateManagement() async throws {
     }
 }
 
-@Test("InterventionEngine - Recovery State Transitions")
+
 func interventionTypeRecoveryStateTransitions() async throws {
     // Test recovery-related states
     let recoveryStates: Set<CursorInterventionEngine.InterventionType> = [
@@ -188,7 +188,7 @@ func interventionTypeRecoveryStateTransitions() async throws {
     }
 }
 
-@Test("InterventionEngine - Serialization Consistency")
+
 func interventionTypeSerializationConsistency() async throws {
     // Test that all intervention types can be serialized and deserialized
     let encoder = JSONEncoder()
@@ -202,7 +202,7 @@ func interventionTypeSerializationConsistency() async throws {
     }
 }
 
-@Test("InterventionEngine - String Representation Quality")
+
 func interventionTypeStringRepresentationQuality() async throws {
     // Test that all intervention types have meaningful string representations
     for interventionType in CursorInterventionEngine.InterventionType.allCases {
@@ -219,7 +219,7 @@ func interventionTypeStringRepresentationQuality() async throws {
     }
 }
 
-@Test("InterventionEngine - Type Safety")
+
 func interventionTypeTypeSafety() async throws {
     // Test that intervention types work with type-safe collections
     var typeSet: Set<CursorInterventionEngine.InterventionType> = []

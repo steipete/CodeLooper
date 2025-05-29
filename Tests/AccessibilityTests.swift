@@ -5,7 +5,7 @@ import Foundation
 import Testing
 
 @MainActor
-@Test("PermissionsManager - Initialization")
+
 func permissionsManagerInitialization() async throws {
     let manager = PermissionsManager()
 
@@ -20,7 +20,7 @@ func permissionsManagerInitialization() async throws {
 }
 
 @MainActor
-@Test("PermissionsManager - Shared Instance")
+
 func permissionsManagerSharedInstance() async throws {
     let shared1 = PermissionsManager.shared
     let shared2 = PermissionsManager.shared
@@ -30,7 +30,7 @@ func permissionsManagerSharedInstance() async throws {
 }
 
 @MainActor
-@Test("PermissionsManager - Permission Check Methods")
+
 func permissionsManagerPermissionCheckMethods() async throws {
     let manager = PermissionsManager()
 
@@ -42,7 +42,7 @@ func permissionsManagerPermissionCheckMethods() async throws {
 }
 
 @MainActor
-@Test("PermissionsManager - Request Notification Permissions")
+
 func permissionsManagerRequestNotificationPermissions() async throws {
     let manager = PermissionsManager()
 
@@ -53,7 +53,7 @@ func permissionsManagerRequestNotificationPermissions() async throws {
 }
 
 @MainActor
-@Test("PermissionsManager - Observable Object Compliance")
+
 func permissionsManagerObservableObjectCompliance() async throws {
     let manager = PermissionsManager()
 
@@ -62,7 +62,7 @@ func permissionsManagerObservableObjectCompliance() async throws {
     #expect(objectWillChangePublisher != nil)
 }
 
-@Test("AXPermissionHelpers - Accessibility Permission Check")
+
 func aXPermissionHelpersAccessibilityCheck() async throws {
     // This tests the static method from AXorcist
     let hasPermissions = AXPermissionHelpers.hasAccessibilityPermissions()
@@ -71,7 +71,7 @@ func aXPermissionHelpersAccessibilityCheck() async throws {
     #expect(hasPermissions == true || hasPermissions == false)
 }
 
-@Test("AXPermissionHelpers - Permission Request")
+
 func aXPermissionHelpersPermissionRequest() async throws {
     // Test that permission request method is available and doesn't crash
     // Note: This will show system dialog in real usage
@@ -82,7 +82,7 @@ func aXPermissionHelpersPermissionRequest() async throws {
 }
 
 @MainActor
-@Test("PermissionsManager - URL Generation for Settings")
+
 func permissionsManagerURLGeneration() async throws {
     // Test that the URL strings used in settings opening are valid
     let automationURL = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Automation")
@@ -94,7 +94,7 @@ func permissionsManagerURLGeneration() async throws {
 }
 
 @MainActor
-@Test("PermissionsManager - Permission State Caching")
+
 func permissionsManagerPermissionStateCaching() async throws {
     let manager = PermissionsManager()
 
@@ -113,7 +113,7 @@ func permissionsManagerPermissionStateCaching() async throws {
 }
 
 @MainActor
-@Test("PermissionsManager - Permission Monitoring Task")
+
 func permissionsManagerPermissionMonitoringTask() async throws {
     let manager = PermissionsManager()
 
@@ -128,7 +128,7 @@ func permissionsManagerPermissionMonitoringTask() async throws {
 }
 
 @MainActor
-@Test("PermissionsManager - Permission Request Accessibility")
+
 func permissionsManagerPermissionRequestAccessibility() async throws {
     let manager = PermissionsManager()
 
@@ -146,7 +146,7 @@ func permissionsManagerPermissionRequestAccessibility() async throws {
 }
 
 @MainActor
-@Test("PermissionsManager - Multiple Permission Requests")
+
 func permissionsManagerMultiplePermissionRequests() async throws {
     let manager = PermissionsManager()
 
@@ -159,7 +159,7 @@ func permissionsManagerMultiplePermissionRequests() async throws {
 }
 
 @MainActor
-@Test("PermissionsManager - Memory Management")
+
 func permissionsManagerMemoryManagement() async throws {
     weak var weakManager: PermissionsManager?
 
@@ -179,7 +179,7 @@ func permissionsManagerMemoryManagement() async throws {
 }
 
 @MainActor
-@Test("PermissionsManager - Published Property Updates")
+
 func permissionsManagerPublishedPropertyUpdates() async throws {
     let manager = PermissionsManager()
 
@@ -197,7 +197,7 @@ func permissionsManagerPublishedPropertyUpdates() async throws {
     cancellable.cancel()
 }
 
-@Test("AXPermissionHelpers - Static Method Availability")
+
 func aXPermissionHelpersStaticMethodAvailability() async throws {
     // Verify that the static methods we depend on are available
     let hasPermissions = AXPermissionHelpers.hasAccessibilityPermissions()

@@ -2,35 +2,74 @@
 import Foundation
 import Testing
 
+// Helper actor for thread-safe counting
+actor TestCounter {
+    private var count = 0
+    private var lastValue = 0
+    private var results: [String] = []
+    
+    func increment() {
+        count += 1
+    }
+    
+    func increment(with value: Int) {
+        count += 1
+        lastValue = value
+    }
+    
+    func append(_ value: String) {
+        results.append(value)
+    }
+    
+    func getCount() -> Int {
+        count
+    }
+    
+    func getLastValue() -> Int {
+        lastValue
+    }
+    
+    func getResults() -> [String] {
+        results
+    }
+    
+    func getCountAndValue() -> (Int, Int) {
+        (count, lastValue)
+    }
+}
+
 @MainActor
 @Test("Debouncer - Single Call Execution")
 func debouncerSingleCall() async throws {
     let debouncer = Debouncer(delay: 0.1)
-    let callCount = OSAllocatedUnfairLock(initialState: 0)
+    let counter = TestCounter()
 
     debouncer.call {
-        callCount.withLock { $0 += 1 }
+        Task {
+            await counter.increment()
+        }
     }
 
     // Wait for debounce delay + some buffer
     try await Task.sleep(for: .milliseconds(150))
 
     // Should have been called exactly once
-    #expect(callCount.withLock { $0 } == 1)
+    let finalCount = await counter.getCount()
+    #expect(finalCount == 1)
 }
 
 @MainActor
 @Test("Debouncer - Multiple Rapid Calls")
 func debouncerMultipleRapidCalls() async throws {
     let debouncer = Debouncer(delay: 0.1)
-    let callCount = OSAllocatedUnfairLock(initialState: 0)
-    let lastValue = OSAllocatedUnfairLock(initialState: 0)
+    let counter = TestCounter()
 
     // Fire multiple calls rapidly
     for i in 1 ... 5 {
         debouncer.call {
-            callCount.withLock { $0 += 1 }
-            lastValue.withLock { $0 = i }
+            Task {
+                await counter.increment(with: i)
+            }
         }
         // Small delay between calls (much less than debounce delay)
         try await Task.sleep(for: .milliseconds(10))
@@ -40,18 +79,21 @@ func debouncerMultipleRapidCalls() async throws {
     try await Task.sleep(for: .milliseconds(150))
 
     // Should only have been called once with the last value
-    #expect(callCount.withLock { $0 } == 1)
-    #expect(lastValue.withLock { $0 } == 5)
+    let (finalCallCount, finalLastValue) = await counter.getCountAndValue()
+    #expect(finalCallCount == 1)
+    #expect(finalLastValue == 5)
 }
 
 @MainActor
 @Test("Debouncer - Cancellation Behavior")
 func debouncerCancellation() async throws {
     let debouncer = Debouncer(delay: 0.2)
-    let callCount = OSAllocatedUnfairLock(initialState: 0)
+    let counter = TestCounter()
 
     debouncer.call {
-        callCount.withLock { $0 += 1 }
+        Task {
+            await counter.increment()
+        }
     }
 
     // Wait less than debounce delay
@@ -59,14 +101,17 @@ func debouncerCancellation() async throws {
 
     // Make another call (should cancel the first one)
     debouncer.call {
-        callCount.withLock { $0 += 1 }
+        Task {
+            await counter.increment()
+        }
     }
 
     // Wait for full debounce delay + buffer
     try await Task.sleep(for: .milliseconds(250))
 
     // Should only have been called once (the second call)
-    #expect(callCount.withLock { $0 } == 1)
+    let finalCount = await counter.getCount()
+    #expect(finalCount == 1)
 }
 
 @MainActor
@@ -75,58 +120,71 @@ func debouncerDifferentDelays() async throws {
     let shortDebouncer = Debouncer(delay: 0.05)
     let longDebouncer = Debouncer(delay: 0.15)
 
-    let shortCallCount = OSAllocatedUnfairLock(initialState: 0)
-    let longCallCount = OSAllocatedUnfairLock(initialState: 0)
+    let shortCounter = TestCounter()
+    let longCounter = TestCounter()
 
     shortDebouncer.call {
-        shortCallCount.withLock { $0 += 1 }
+        Task {
+            await shortCounter.increment()
+        }
     }
 
     longDebouncer.call {
-        longCallCount.withLock { $0 += 1 }
+        Task {
+            await longCounter.increment()
+        }
     }
 
     // Wait for short debouncer to fire but not long
     try await Task.sleep(for: .milliseconds(80))
 
-    #expect(shortCallCount.withLock { $0 } == 1)
-    #expect(longCallCount.withLock { $0 } == 0)
+    let shortCount1 = await shortCounter.getCount()
+    let longCount1 = await longCounter.getCount()
+    #expect(shortCount1 == 1)
+    #expect(longCount1 == 0)
 
     // Wait for long debouncer to fire
     try await Task.sleep(for: .milliseconds(100))
 
-    #expect(shortCallCount.withLock { $0 } == 1)
-    #expect(longCallCount.withLock { $0 } == 1)
+    let shortCount2 = await shortCounter.getCount()
+    let longCount2 = await longCounter.getCount()
+    #expect(shortCount2 == 1)
+    #expect(longCount2 == 1)
 }
 
 @MainActor
 @Test("Debouncer - Action Captures Context")
 func debouncerActionCapturesContext() async throws {
     let debouncer = Debouncer(delay: 0.05)
-    let results = OSAllocatedUnfairLock(initialState: [String]())
+    let counter = TestCounter()
 
     let context = "test_context"
     debouncer.call {
-        results.withLock { $0.append(context) }
+        Task {
+            await counter.append(context)
+        }
     }
 
     try await Task.sleep(for: .milliseconds(80))
 
-    #expect(results.withLock { $0 } == ["test_context"])
+    let finalResults = await counter.getResults()
+    #expect(finalResults == ["test_context"])
 }
 
 @MainActor
 @Test("Debouncer - Concurrent Access Safety")
 func debouncerConcurrentAccess() async throws {
     let debouncer = Debouncer(delay: 0.05)
-    let callCount = OSAllocatedUnfairLock(initialState: 0)
+    let counter = TestCounter()
 
     // Simulate concurrent calls from different contexts
     await withTaskGroup(of: Void.self) { group in
         for _ in 1 ... 10 {
             group.addTask { @MainActor in
                 debouncer.call {
-                    callCount.withLock { $0 += 1 }
+                    Task {
+                        await counter.increment()
+                    }
                 }
             }
         }
@@ -136,23 +194,27 @@ func debouncerConcurrentAccess() async throws {
     try await Task.sleep(for: .milliseconds(80))
 
     // Should only have been called once despite multiple concurrent calls
-    #expect(callCount.withLock { $0 } == 1)
+    let finalCount = await counter.getCount()
+    #expect(finalCount == 1)
 }
 
 @MainActor
 @Test("Debouncer - Zero Delay Behavior")
 func debouncerZeroDelay() async throws {
     let debouncer = Debouncer(delay: 0.0)
-    let callCount = OSAllocatedUnfairLock(initialState: 0)
+    let counter = TestCounter()
 
     debouncer.call {
-        callCount.withLock { $0 += 1 }
+        Task {
+            await counter.increment()
+        }
     }
 
     // Even with zero delay, give time for async execution
     try await Task.sleep(for: .milliseconds(10))
 
-    #expect(callCount.withLock { $0 } == 1)
+    let finalCount = await counter.getCount()
+    #expect(finalCount == 1)
 }
 
 @MainActor
@@ -161,20 +223,26 @@ func debouncerMultipleInstancesIndependence() async throws {
     let debouncer1 = Debouncer(delay: 0.05)
     let debouncer2 = Debouncer(delay: 0.05)
 
-    let count1 = OSAllocatedUnfairLock(initialState: 0)
-    let count2 = OSAllocatedUnfairLock(initialState: 0)
+    let counter1 = TestCounter()
+    let counter2 = TestCounter()
 
     debouncer1.call {
-        count1.withLock { $0 += 1 }
+        Task {
+            await counter1.increment()
+        }
     }
 
     debouncer2.call {
-        count2.withLock { $0 += 1 }
+        Task {
+            await counter2.increment()
+        }
     }
 
     try await Task.sleep(for: .milliseconds(80))
 
     // Both should have fired independently
-    #expect(count1.withLock { $0 } == 1)
-    #expect(count2.withLock { $0 } == 1)
+    let finalCount1 = await counter1.getCount()
+    let finalCount2 = await counter2.getCount()
+    #expect(finalCount1 == 1)
+    #expect(finalCount2 == 1)
 }

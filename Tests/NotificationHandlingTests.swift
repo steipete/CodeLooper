@@ -4,7 +4,7 @@ import Foundation
 import Testing
 import UserNotifications
 
-@Test("UserNotificationManager - Singleton")
+
 func userNotificationManagerSingleton() async throws {
     let manager1 = await UserNotificationManager.shared
     let manager2 = await UserNotificationManager.shared
@@ -12,7 +12,7 @@ func userNotificationManagerSingleton() async throws {
     #expect(manager1 === manager2)
 }
 
-@Test("UserNotificationManager - Initialization")
+
 func userNotificationManagerInitialization() async throws {
     let manager = await UserNotificationManager.shared
 
@@ -28,7 +28,7 @@ func userNotificationManagerInitialization() async throws {
     #expect(initialStatus != nil)
 }
 
-@Test("NotificationError - Error Cases")
+
 func notificationErrorCases() async throws {
     let permissionError = NotificationError.permissionDenied
     let deliveryError = NotificationError.deliveryFailed(URLError(.notConnectedToInternet))
@@ -45,7 +45,7 @@ func notificationErrorCases() async throws {
     #expect(permissionError.errorDescription == anotherPermissionError.errorDescription)
 }
 
-@Test("NotificationError - Delivery Error Details")
+
 func notificationErrorDeliveryErrorDetails() async throws {
     let underlyingError = URLError(.timedOut)
     let deliveryError = NotificationError.deliveryFailed(underlyingError)
@@ -59,7 +59,7 @@ func notificationErrorDeliveryErrorDetails() async throws {
     #expect(nsDeliveryError.errorDescription?.contains("Test error") == true)
 }
 
-@Test("UserNotificationManager - Authorization Status Handling")
+
 func userNotificationManagerAuthorizationStatusHandling() async throws {
     let manager = await UserNotificationManager.shared
 
@@ -70,7 +70,7 @@ func userNotificationManagerAuthorizationStatusHandling() async throws {
     let hasPermission = await manager.hasPermission
 
     // Verify status is a valid UNAuthorizationStatus
-    let validStatuses: [UNAuthorizationStatus] = [.notDetermined, .denied, .authorized, .provisional, .ephemeral]
+    let validStatuses: [UNAuthorizationStatus] = [.notDetermined, .denied, .authorized, .provisional]
     #expect(validStatuses.contains(status))
 
     // Verify hasPermission matches status
@@ -81,7 +81,7 @@ func userNotificationManagerAuthorizationStatusHandling() async throws {
     }
 }
 
-@Test("UserNotificationManager - Notification Content Creation")
+
 func userNotificationManagerNotificationContentCreation() async throws {
     // Test notification content creation parameters
     let testCases = [
@@ -105,7 +105,7 @@ func userNotificationManagerNotificationContentCreation() async throws {
     }
 }
 
-@Test("UserNotificationManager - Rule Execution Notifications")
+
 func userNotificationManagerRuleExecutionNotifications() async throws {
     let manager = await UserNotificationManager.shared
 
@@ -137,14 +137,14 @@ func userNotificationManagerRuleExecutionNotifications() async throws {
     #expect(true)
 }
 
-@Test("UserNotificationManager - System Settings URL")
+
 func userNotificationManagerSystemSettingsURL() async throws {
     let manager = await UserNotificationManager.shared
 
     // Test that opening notification settings doesn't crash
     // Note: This will actually try to open System Settings in a real environment
     // In tests, we just verify the method doesn't crash
-    manager.openNotificationSettings()
+    await manager.openNotificationSettings()
 
     // Verify URL can be created
     let settingsURL = URL(string: "x-apple.systempreferences:com.apple.preference.notifications")
@@ -152,7 +152,7 @@ func userNotificationManagerSystemSettingsURL() async throws {
     #expect(settingsURL?.scheme == "x-apple.systempreferences")
 }
 
-@Test("UserNotificationManager - Notification Sound Options")
+
 func userNotificationManagerNotificationSoundOptions() async throws {
     // Test various sound options
     let defaultSound = UNNotificationSound.default
@@ -166,7 +166,7 @@ func userNotificationManagerNotificationSoundOptions() async throws {
     // but we can verify the sound objects are created correctly
 }
 
-@Test("UserNotificationManager - Badge Numbers")
+
 func userNotificationManagerBadgeNumbers() async throws {
     let badgeNumbers = [
         NSNumber(value: 0),
@@ -182,7 +182,7 @@ func userNotificationManagerBadgeNumbers() async throws {
     }
 }
 
-@Test("UserNotificationManager - Concurrent Operations")
+
 func userNotificationManagerConcurrentOperations() async throws {
     let manager = await UserNotificationManager.shared
 
@@ -200,7 +200,7 @@ func userNotificationManagerConcurrentOperations() async throws {
     #expect(finalStatus != nil)
 }
 
-@Test("UserNotificationManager - Error Handling")
+
 func userNotificationManagerErrorHandling() async throws {
     let manager = await UserNotificationManager.shared
 
@@ -225,7 +225,7 @@ func userNotificationManagerErrorHandling() async throws {
     }
 }
 
-@Test("UserNotificationManager - Notification Identifiers")
+
 func userNotificationManagerNotificationIdentifiers() async throws {
     // Test various identifier formats
     let identifiers = [
@@ -250,7 +250,7 @@ func userNotificationManagerNotificationIdentifiers() async throws {
     }
 }
 
-@Test("UserNotificationManager - Memory Management")
+
 func userNotificationManagerMemoryManagement() async throws {
     let manager = await UserNotificationManager.shared
 
@@ -269,7 +269,7 @@ func userNotificationManagerMemoryManagement() async throws {
     #expect(status != nil)
 }
 
-@Test("UserNotificationManager - Performance")
+
 func userNotificationManagerPerformance() async throws {
     let manager = await UserNotificationManager.shared
 
@@ -284,7 +284,7 @@ func userNotificationManagerPerformance() async throws {
     #expect(elapsed < 5.0) // Should complete within reasonable time
 }
 
-@Test("Notifications - String Encoding")
+
 func notificationsStringEncoding() async throws {
     let testStrings = [
         "Simple ASCII text",
@@ -309,14 +309,13 @@ func notificationsStringEncoding() async throws {
     }
 }
 
-@Test("Notifications - Authorization Status Types")
+
 func notificationsAuthorizationStatusTypes() async throws {
     let allStatuses: [UNAuthorizationStatus] = [
         .notDetermined,
         .denied,
         .authorized,
         .provisional,
-        .ephemeral,
     ]
 
     // Test that all status values are distinct

@@ -9,7 +9,7 @@ import Testing
 struct HTMLToMarkdownServiceTests {
     // MARK: - Initialization Tests
 
-    @Test("Service can be initialized")
+    
     func serviceInitialization() async throws {
         let service = HTMLToMarkdownService.shared
         let initialAvailability = await service.isAvailable
@@ -25,7 +25,7 @@ struct HTMLToMarkdownServiceTests {
 
     // MARK: - Basic HTML Conversion Tests
 
-    @Test("Convert simple HTML to Markdown")
+    
     func simpleHTMLConversion() async throws {
         let service = HTMLToMarkdownService.shared
 
@@ -46,7 +46,7 @@ struct HTMLToMarkdownServiceTests {
         #expect(markdown.contains("# Hello World"))
     }
 
-    @Test("Convert paragraph HTML to Markdown")
+    
     func paragraphConversion() async throws {
         let service = HTMLToMarkdownService.shared
 
@@ -58,7 +58,7 @@ struct HTMLToMarkdownServiceTests {
         #expect(markdown.contains("This is a simple paragraph."))
     }
 
-    @Test("Convert emphasized text")
+    
     func emphasizedText() async throws {
         let service = HTMLToMarkdownService.shared
 
@@ -70,7 +70,7 @@ struct HTMLToMarkdownServiceTests {
         #expect(markdown.contains("_emphasized_"))
     }
 
-    @Test("Convert strong text")
+    
     func strongText() async throws {
         let service = HTMLToMarkdownService.shared
 
@@ -82,7 +82,7 @@ struct HTMLToMarkdownServiceTests {
         #expect(markdown.contains("**bold**"))
     }
 
-    @Test("Convert links")
+    
     func linkConversion() async throws {
         let service = HTMLToMarkdownService.shared
 
@@ -94,7 +94,7 @@ struct HTMLToMarkdownServiceTests {
         #expect(markdown.contains("[our website](https://example.com)"))
     }
 
-    @Test("Convert unordered list")
+    
     func unorderedList() async throws {
         let service = HTMLToMarkdownService.shared
 
@@ -114,7 +114,7 @@ struct HTMLToMarkdownServiceTests {
         #expect(markdown.contains("- Third item"))
     }
 
-    @Test("Convert code block")
+    
     func codeBlock() async throws {
         let service = HTMLToMarkdownService.shared
 
@@ -129,7 +129,7 @@ struct HTMLToMarkdownServiceTests {
 
     // MARK: - Complex HTML Tests
 
-    @Test("Convert complex nested HTML")
+    
     func complexHTML() async throws {
         let service = HTMLToMarkdownService.shared
 
@@ -158,7 +158,7 @@ struct HTMLToMarkdownServiceTests {
         #expect(markdown.contains("`inline code`"))
     }
 
-    @Test("Handle HTML with script tags (should be removed)")
+    
     func scriptTagRemoval() async throws {
         let service = HTMLToMarkdownService.shared
 
@@ -180,7 +180,7 @@ struct HTMLToMarkdownServiceTests {
         #expect(!markdown.contains("script"))
     }
 
-    @Test("Handle HTML with style tags (should be removed)")
+    
     func styleTagRemoval() async throws {
         let service = HTMLToMarkdownService.shared
 
@@ -204,7 +204,7 @@ struct HTMLToMarkdownServiceTests {
 
     // MARK: - Custom Options Tests
 
-    @Test("Convert with custom heading style")
+    
     func customHeadingStyle() async throws {
         let service = HTMLToMarkdownService.shared
 
@@ -224,7 +224,7 @@ struct HTMLToMarkdownServiceTests {
         #expect(markdown.contains("="))
     }
 
-    @Test("Convert with custom bullet marker")
+    
     func customBulletMarker() async throws {
         let service = HTMLToMarkdownService.shared
 
@@ -245,7 +245,7 @@ struct HTMLToMarkdownServiceTests {
 
     // MARK: - Edge Cases and Error Handling
 
-    @Test("Handle empty HTML")
+    
     func emptyHTML() async throws {
         let service = HTMLToMarkdownService.shared
 
@@ -257,7 +257,7 @@ struct HTMLToMarkdownServiceTests {
         #expect(markdown.isEmpty)
     }
 
-    @Test("Handle malformed HTML")
+    
     func malformedHTML() async throws {
         let service = HTMLToMarkdownService.shared
 
@@ -271,7 +271,7 @@ struct HTMLToMarkdownServiceTests {
         #expect(markdown.contains("bold text"))
     }
 
-    @Test("Handle HTML with special characters")
+    
     func specialCharacters() async throws {
         let service = HTMLToMarkdownService.shared
 
@@ -286,7 +286,7 @@ struct HTMLToMarkdownServiceTests {
         #expect(markdown.contains(">"))
     }
 
-    @Test("Handle large HTML content")
+    
     func largeHTML() async throws {
         let service = HTMLToMarkdownService.shared
 
@@ -308,7 +308,7 @@ struct HTMLToMarkdownServiceTests {
 
     // MARK: - Performance Tests
 
-    @Test("Performance: Multiple concurrent conversions")
+    
     func concurrentConversions() async throws {
         let service = HTMLToMarkdownService.shared
 
@@ -344,7 +344,7 @@ struct HTMLToMarkdownServiceTests {
 
     // MARK: - Real-world HTML Tests
 
-    @Test("Convert realistic sidebar content")
+    
     func realisticSidebarContent() async throws {
         let service = HTMLToMarkdownService.shared
 

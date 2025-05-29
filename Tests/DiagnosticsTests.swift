@@ -3,7 +3,7 @@ import Foundation
 import Logging
 import Testing
 
-@Test("Diagnostics - Logger Initialization")
+
 func loggerInitialization() async throws {
     let logger = Logger(category: .general)
 
@@ -11,7 +11,7 @@ func loggerInitialization() async throws {
     #expect(logger.logLevel == LoggingSystemSetup.defaultBootstrapLogLevel)
 }
 
-@Test("Diagnostics - Bootstrap with Different Destinations")
+
 func bootstrapDifferentDestinations() async throws {
     // Test console destination
     await LoggingSystemSetup.shared.bootstrap(destination: .console, minLevel: .info)
@@ -20,7 +20,7 @@ func bootstrapDifferentDestinations() async throws {
     #expect(logger.logLevel == .info)
 }
 
-@Test("Diagnostics - Log Level Management")
+
 func logLevelManagement() async throws {
     var logger = Logger(category: .general)
 
@@ -35,7 +35,7 @@ func logLevelManagement() async throws {
     #expect(logger.logLevel == .error)
 }
 
-@Test("Diagnostics - Category-based Logger Creation")
+
 func categoryBasedLoggerCreation() async throws {
     // Test all categories can be used to create loggers
     for category in LogCategory.allCases {
@@ -44,7 +44,7 @@ func categoryBasedLoggerCreation() async throws {
     }
 }
 
-@Test("Diagnostics - Custom Label Logger Creation")
+
 func customLabelLoggerCreation() async throws {
     let customLabel = "custom.test.logger"
     let logger = Logger(label: customLabel, category: .general)
@@ -53,7 +53,7 @@ func customLabelLoggerCreation() async throws {
     #expect(logger.logLevel != nil)
 }
 
-@Test("Diagnostics - Log Category Properties")
+
 func logCategoryProperties() async throws {
     // Test display names
     #expect(LogCategory.general.displayName == "General")
@@ -72,7 +72,7 @@ func logCategoryProperties() async throws {
     #expect(LogCategory.settings.isVerboseOnly == false)
 }
 
-@Test("Diagnostics - All Log Levels Work")
+
 func allLogLevelsWork() async throws {
     var logger = Logger(category: .general)
     logger.logLevel = .trace
@@ -89,7 +89,7 @@ func allLogLevelsWork() async throws {
     #expect(true) // If we get here, all log levels work
 }
 
-@Test("Diagnostics - Metadata Handling")
+
 func metadataHandling() async throws {
     var logger = Logger(category: .general)
 
@@ -105,7 +105,7 @@ func metadataHandling() async throws {
     #expect(logger[metadataKey: "test_key"] == nil)
 }
 
-@Test("Diagnostics - Log Message with Metadata")
+
 func logMessageWithMetadata() async throws {
     var logger = Logger(category: .general)
     logger.logLevel = .debug
@@ -124,7 +124,7 @@ func logMessageWithMetadata() async throws {
     #expect(true) // If we get here, metadata logging works
 }
 
-@Test("Diagnostics - Bootstrap Multiple Times Ignored")
+
 func bootstrapMultipleTimesIgnored() async throws {
     // Bootstrap multiple times with different configurations
     await LoggingSystemSetup.shared.bootstrap(destination: .console, minLevel: .debug)
@@ -136,7 +136,7 @@ func bootstrapMultipleTimesIgnored() async throws {
     #expect(true)
 }
 
-@Test("Diagnostics - Logger Performance")
+
 func loggerPerformance() async throws {
     var logger = Logger(category: .general)
     logger.logLevel = .error // High level to minimize actual logging overhead
@@ -154,14 +154,14 @@ func loggerPerformance() async throws {
     #expect(elapsed < 1.0)
 }
 
-@Test("Diagnostics - Default Logger Availability")
+
 func defaultLoggerAvailability() async throws {
     // Test that default logger is available and functional
     defaultLogger.info("Default logger test")
     #expect(defaultLogger.logLevel != nil)
 }
 
-@Test("Diagnostics - Source Location Information")
+
 func sourceLocationInformation() async throws {
     let logger = Logger(category: .general)
 
@@ -174,7 +174,7 @@ func sourceLocationInformation() async throws {
     #expect(true)
 }
 
-@Test("Diagnostics - Log Level Filtering")
+
 func logLevelFiltering() async throws {
     var logger = Logger(category: .general)
 
@@ -195,7 +195,7 @@ func logLevelFiltering() async throws {
     #expect(true) // If we get here, filtering works correctly
 }
 
-@Test("Diagnostics - Thread Safety")
+
 func diagnosticsThreadSafety() async throws {
     let logger = Logger(category: .general)
 

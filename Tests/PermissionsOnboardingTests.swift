@@ -4,11 +4,10 @@ import SwiftUI
 import Testing
 
 /// Test suite for permissions onboarding flow functionality
-@Suite("Permissions Onboarding Tests")
 struct PermissionsOnboardingTests {
     // MARK: - OnboardingCoordinator Tests
 
-    @Test("OnboardingCoordinator manages flow state")
+    @Test
     func onboardingFlowManagement() async throws {
         let coordinator = OnboardingCoordinator()
 
@@ -30,7 +29,7 @@ struct PermissionsOnboardingTests {
         #expect(true)
     }
 
-    @Test("OnboardingCoordinator tracks completion state")
+    @Test
     func onboardingCompletion() async throws {
         let coordinator = OnboardingCoordinator()
 
@@ -54,7 +53,7 @@ struct PermissionsOnboardingTests {
         }
     }
 
-    @Test("OnboardingCoordinator handles step validation")
+    @Test
     func onboardingStepValidation() async throws {
         let coordinator = OnboardingCoordinator()
 
@@ -72,7 +71,7 @@ struct PermissionsOnboardingTests {
 
     // MARK: - Permission Step Tests
 
-    @Test("Accessibility permission step handles user interaction")
+    @Test
     func accessibilityPermissionStep() async throws {
         let stepView = AccessibilityStepView()
 
@@ -89,7 +88,7 @@ struct PermissionsOnboardingTests {
         #expect(true)
     }
 
-    @Test("Screen recording permission step works correctly")
+    @Test
     func screenRecordingPermissionStep() async throws {
         let stepView = ScreenRecordingPermissionsView()
 
@@ -107,7 +106,7 @@ struct PermissionsOnboardingTests {
         #expect(true)
     }
 
-    @Test("Notification permission step manages system integration")
+    @Test
     func notificationPermissionStep() async throws {
         let stepView = NotificationPermissionsView()
 
@@ -125,7 +124,7 @@ struct PermissionsOnboardingTests {
         #expect(true)
     }
 
-    @Test("Automation permission step integrates with system")
+    @Test
     func automationPermissionStep() async throws {
         let stepView = AutomationPermissionsView()
 
@@ -145,7 +144,7 @@ struct PermissionsOnboardingTests {
 
     // MARK: - UI Component Tests
 
-    @Test("WelcomeView displays correctly")
+    @Test
     func welcomeViewDisplay() async throws {
         let welcomeView = WelcomeView()
 
@@ -156,7 +155,7 @@ struct PermissionsOnboardingTests {
         #expect(true)
     }
 
-    @Test("PermissionCard renders permission information")
+    @Test
     func permissionCardRendering() async throws {
         let permissionCard = PermissionCard(
             title: "Test Permission",
@@ -179,7 +178,7 @@ struct PermissionsOnboardingTests {
         #expect(grantedCard != nil)
     }
 
-    @Test("ProgressBar shows onboarding progress")
+    @Test
     func progressBarDisplay() async throws {
         let progressBar = ProgressBar(currentStep: 2, totalSteps: 5)
 
@@ -200,7 +199,7 @@ struct PermissionsOnboardingTests {
 
     // MARK: - Welcome Flow Tests
 
-    @Test("WelcomeGuideView coordinates welcome experience")
+    @Test
     func welcomeGuideFlow() async throws {
         let welcomeGuide = WelcomeGuideView()
 
@@ -215,7 +214,7 @@ struct PermissionsOnboardingTests {
         #expect(true)
     }
 
-    @Test("WelcomeViewModel manages onboarding state")
+    @Test
     func welcomeViewModelState() async throws {
         let viewModel = WelcomeViewModel()
 
@@ -238,7 +237,7 @@ struct PermissionsOnboardingTests {
 
     // MARK: - Permission Integration Tests
 
-    @Test("AllPermissionsView coordinates all permission types")
+    @Test
     func allPermissionsIntegration() async throws {
         let allPermissionsView = AllPermissionsView()
 
@@ -255,7 +254,7 @@ struct PermissionsOnboardingTests {
         #expect(true)
     }
 
-    @Test("PermissionsView handles individual permission flows")
+    @Test
     func permissionsViewHandling() async throws {
         let permissionsView = PermissionsView()
 
@@ -272,7 +271,7 @@ struct PermissionsOnboardingTests {
 
     // MARK: - Concurrent Flow Tests
 
-    @Test("Onboarding handles concurrent user interactions")
+    @Test
     func concurrentOnboardingInteractions() async throws {
         let coordinator = OnboardingCoordinator()
 
@@ -293,7 +292,7 @@ struct PermissionsOnboardingTests {
         #expect(true)
     }
 
-    @Test("Permission checking handles concurrent requests")
+    @Test
     func concurrentPermissionChecking() async throws {
         // Test concurrent permission status checks
         async let accessibilityCheck = AccessibilityPermissions.hasAccessibilityPermissions()
@@ -316,7 +315,7 @@ struct PermissionsOnboardingTests {
 
     // MARK: - Edge Case Tests
 
-    @Test("Onboarding handles edge cases gracefully")
+    @Test
     func onboardingEdgeCases() async throws {
         let coordinator = OnboardingCoordinator()
 

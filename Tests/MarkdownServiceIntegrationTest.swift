@@ -1,3 +1,4 @@
+@testable import CodeLooper
 import Foundation
 import JavaScriptCore
 import Testing
@@ -6,7 +7,8 @@ import Testing
 /// This test verifies that the JavaScript libraries can be loaded and work correctly
 @MainActor
 struct MarkdownServiceIntegrationTest {
-    @Test("JavaScript libraries are available in bundle")
+    
+    @Test
     func javaScriptLibrariesExist() async throws {
         // Check that the required JavaScript files exist in the test bundle
         let bundle = Bundle.main
@@ -18,10 +20,10 @@ struct MarkdownServiceIntegrationTest {
         #expect(linkedomPath != nil, "linkedom.min.js should be available in bundle")
     }
 
-    @Test("TurndownService can be loaded and instantiated")
+    @Test
     func turndownServiceLoading() async throws {
         guard let turndownPath = Bundle.main.path(forResource: "turndown.min", ofType: "js") else {
-            throw TestError.resourceNotFound("turndown.min.js")
+            throw MarkdownTestError.resourceNotFound("turndown.min.js")
         }
 
         let context = JSContext()!
@@ -44,11 +46,11 @@ struct MarkdownServiceIntegrationTest {
             #expect(instance != nil, "Should be able to create TurndownService instance")
 
         } catch {
-            throw TestError.scriptLoadingFailed(error.localizedDescription)
+            throw MarkdownTestError.scriptLoadingFailed(error.localizedDescription)
         }
     }
 
-    @Test("Basic HTML to Markdown conversion concept")
+    @Test
     func basicConversionConcept() async throws {
         // This test verifies the basic concept works
         // In a real implementation, HTMLToMarkdownService handles the DOM complexity
@@ -81,32 +83,32 @@ struct MarkdownServiceIntegrationTest {
         }
     }
 
-    @Test("HTMLToMarkdownService options structure")
+    @Test
     func conversionOptionsStructure() async throws {
         // Test that the options structure is properly defined
         let options = HTMLToMarkdownService.ConversionOptions(
-            headingStyle: .atx,
+            headingStyle: HTMLMarkdownHeadingStyle.atx,
             bulletListMarker: "*",
-            codeBlockStyle: .fenced
+            codeBlockStyle: HTMLMarkdownCodeBlockStyle.fenced
         )
 
-        #expect(options.headingStyle == .atx)
+        #expect(options.headingStyle == HTMLMarkdownHeadingStyle.atx)
         #expect(options.bulletListMarker == "*")
-        #expect(options.codeBlockStyle == .fenced)
+        #expect(options.codeBlockStyle == HTMLMarkdownCodeBlockStyle.fenced)
 
         // Test setext heading style
         let setextOptions = HTMLToMarkdownService.ConversionOptions(
-            headingStyle: .setext,
+            headingStyle: HTMLMarkdownHeadingStyle.setext,
             bulletListMarker: "-",
-            codeBlockStyle: .indented
+            codeBlockStyle: HTMLMarkdownCodeBlockStyle.indented
         )
 
-        #expect(setextOptions.headingStyle == .setext)
+        #expect(setextOptions.headingStyle == HTMLMarkdownHeadingStyle.setext)
         #expect(setextOptions.bulletListMarker == "-")
-        #expect(setextOptions.codeBlockStyle == .indented)
+        #expect(setextOptions.codeBlockStyle == HTMLMarkdownCodeBlockStyle.indented)
     }
 
-    @Test("HTMLToMarkdownService error handling")
+    @Test
     func errorHandling() async throws {
         let service = HTMLToMarkdownService.shared
 
@@ -116,7 +118,7 @@ struct MarkdownServiceIntegrationTest {
             print("Handled malformed HTML: \(result)")
         } catch {
             // Expected to fail gracefully
-            #expect(error is HTMLToMarkdownService.ConversionError, "Should throw ConversionError for invalid input")
+            #expect(error is HTMLToMarkdownService.MarkdownConversionError, "Should throw MarkdownConversionError for invalid input")
         }
 
         // Test with empty string
@@ -131,7 +133,7 @@ struct MarkdownServiceIntegrationTest {
 
 // MARK: - Test Support
 
-enum TestError: Error {
+enum MarkdownTestError: Error {
     case resourceNotFound(String)
     case scriptLoadingFailed(String)
     case serviceNotReady

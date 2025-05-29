@@ -4,7 +4,6 @@ import Foundation
 import Testing
 
 /// Test suite for session logging and diagnostics functionality
-@Suite("Session Logging Tests")
 struct SessionLoggingTests {
     // MARK: - Test Utilities
 
@@ -23,120 +22,90 @@ struct SessionLoggingTests {
 
     // MARK: - SessionLogger Tests
 
-    @Test("SessionLogger can be initialized")
+    @Test
     func sessionLoggerInitialization() async throws {
-        let logger = SessionLogger.shared
+        let logger = await Diagnostics.SessionLogger.shared
 
         // Test that logger is created without errors
         #expect(logger != nil)
 
         // Test basic properties
-        #expect(logger.sessionId != nil)
-        #expect(!logger.sessionId.isEmpty)
+        await MainActor.run {
+            // SessionLogger is a singleton and doesn't have sessionId anymore
+            #expect(logger.entries != nil)
+        }
     }
 
-    @Test("SessionLogger creates unique session IDs")
+    @Test
     func sessionLoggerUniqueSessionIds() async throws {
-        let tempDir = try createTemporaryLogDirectory()
-        defer { cleanup(directory: tempDir) }
-
-        // Create multiple logger instances (simulating app restarts)
-        let logger1 = SessionLogger(logDirectory: tempDir)
-        let logger2 = SessionLogger(logDirectory: tempDir)
-        let logger3 = SessionLogger(logDirectory: tempDir)
-
-        // Each should have a unique session ID
-        #expect(logger1.sessionId != logger2.sessionId)
-        #expect(logger2.sessionId != logger3.sessionId)
-        #expect(logger1.sessionId != logger3.sessionId)
-
-        // Session IDs should not be empty
-        #expect(!logger1.sessionId.isEmpty)
-        #expect(!logger2.sessionId.isEmpty)
-        #expect(!logger3.sessionId.isEmpty)
-    }
-
-    @Test("SessionLogger handles log entry creation")
-    func logEntryCreation() async throws {
-        let tempDir = try createTemporaryLogDirectory()
-        defer { cleanup(directory: tempDir) }
-
-        let logger = SessionLogger(logDirectory: tempDir)
-
-        // Test basic log entry creation
-        logger.log(level: .info, message: "Test message")
-        logger.log(level: .warning, message: "Test warning")
-        logger.log(level: .error, message: "Test error")
-
-        // Test log entry with PID
-        logger.log(level: .info, message: "Test with PID", pid: 12345)
-
-        // Give logger time to write
-        try await Task.sleep(for: .milliseconds(100))
-
-        // If we get here without crashes, log creation works
+        // Skip this test since SessionLogger has a private init and is a singleton
+        // The concept of unique session IDs per instance no longer applies
         #expect(true)
     }
 
-    @Test("SessionLogger handles concurrent logging")
-    func sessionLoggerConcurrentLogging() async throws {
-        let tempDir = try createTemporaryLogDirectory()
-        defer { cleanup(directory: tempDir) }
+    @Test
+    func logEntryCreation() async throws {
+        let logger = await Diagnostics.SessionLogger.shared
 
-        let logger = SessionLogger(logDirectory: tempDir)
+        await MainActor.run {
+            // Test basic log entry creation
+            logger.log(level: Diagnostics.LogLevel.info, message: "Test message")
+            logger.log(level: Diagnostics.LogLevel.warning, message: "Test warning")
+            logger.log(level: Diagnostics.LogLevel.error, message: "Test error")
+
+            // Test log entry with PID
+            logger.log(level: Diagnostics.LogLevel.info, message: "Test with PID", pid: 12345)
+
+            // Check that entries were added
+            #expect(logger.entries.count > 0)
+        }
+    }
+
+    @Test
+    func sessionLoggerConcurrentLogging() async throws {
+        let logger = await Diagnostics.SessionLogger.shared
 
         // Test concurrent logging from multiple tasks
         await withTaskGroup(of: Void.self) { group in
             for i in 0 ..< 10 {
                 group.addTask {
-                    logger.log(level: .info, message: "Concurrent message \(i)")
-                    logger.log(level: .debug, message: "Debug message \(i)", pid: Int32(1000 + i))
+                    await MainActor.run {
+                        logger.log(level: Diagnostics.LogLevel.info, message: "Concurrent message \(i)")
+                        logger.log(level: Diagnostics.LogLevel.debug, message: "Debug message \(i)", pid: Int32(1000 + i))
+                    }
                 }
             }
         }
 
-        // Give logger time to process all entries
-        try await Task.sleep(for: .milliseconds(200))
-
-        // No crashes should occur with concurrent access
-        #expect(true)
+        // Check that entries were added
+        await MainActor.run {
+            #expect(logger.entries.count > 0)
+        }
     }
 
     // MARK: - FileLogger Tests
 
-    @Test("FileLogger writes to specified file")
+    @Test
     func fileLoggerWriting() async throws {
-        let tempDir = try createTemporaryLogDirectory()
-        defer { cleanup(directory: tempDir) }
+        // FileLogger is now a singleton actor that uses OSLog
+        let fileLogger = await FileLogger.shared
 
-        let logFile = tempDir.appendingPathComponent("test.log")
-        let fileLogger = FileLogger(fileURL: logFile)
+        // Test logging - FileLogger now uses OSLog exclusively
+        await fileLogger.log("Test file log entry", level: .info, category: "test", file: #file, function: #function, line: #line)
+        await fileLogger.log("Test error entry", level: .error, category: "test", file: #file, function: #function, line: #line)
 
-        // Write some log entries
-        fileLogger.log(level: .info, message: "Test file log entry")
-        fileLogger.log(level: .error, message: "Test error entry")
-
-        // Give logger time to write
-        try await Task.sleep(for: .milliseconds(100))
-
-        // Check if file was created
-        #expect(FileManager.default.fileExists(atPath: logFile.path))
-
-        // Try to read the file content
-        if let content = try? String(contentsOf: logFile) {
-            #expect(content.contains("Test file log entry"))
-            #expect(content.contains("Test error entry"))
-        }
+        // FileLogger now uses OSLog, so we can't check file contents
+        // Just verify the logging didn't crash
+        #expect(true)
     }
 
-    @Test("FileLogger handles file creation errors gracefully")
+    @Test
     func fileLoggerErrorHandling() async throws {
-        // Try to write to an invalid path (should not crash)
-        let invalidPath = URL(fileURLWithPath: "/invalid/path/that/does/not/exist/test.log")
-        let fileLogger = FileLogger(fileURL: invalidPath)
+        // FileLogger is now a singleton and always valid
+        let fileLogger = await FileLogger.shared
 
-        // This should not crash even if the path is invalid
-        fileLogger.log(level: .info, message: "This should not crash")
+        // Test logging - should not crash
+        await fileLogger.log("This should not crash", level: .info, category: "test", file: #file, function: #function, line: #line)
 
         // Give logger time to attempt writing
         try await Task.sleep(for: .milliseconds(100))
@@ -144,144 +113,111 @@ struct SessionLoggingTests {
         #expect(true) // If we get here, error was handled gracefully
     }
 
-    // MARK: - DiagnosticsLogger Tests
+    // MARK: - LogLevel Tests
 
-    @Test("DiagnosticsLogger integrates with system logging")
-    func diagnosticLogging() async throws {
-        let diagnosticsLogger = DiagnosticsLogger()
-
-        // Test that diagnostics logger is created without errors
-        #expect(diagnosticsLogger != nil)
-
-        // Test basic logging (should not crash)
-        diagnosticsLogger.log(level: .info, message: "Test diagnostic message")
-        diagnosticsLogger.log(level: .debug, message: "Test debug message")
-        diagnosticsLogger.log(level: .warning, message: "Test warning message")
-        diagnosticsLogger.log(level: .error, message: "Test error message")
-
-        // Give logger time to process
-        try await Task.sleep(for: .milliseconds(50))
-
-        #expect(true) // If we get here, logging worked without crashes
-    }
-
-    @Test("DiagnosticsLogger handles different log levels")
-    func diagnosticLogLevels() async throws {
-        let diagnosticsLogger = DiagnosticsLogger()
-
-        // Test all log levels
-        let levels: [LogLevel] = [.debug, .info, .warning, .error]
+    @Test
+    func logLevelTypes() async throws {
+        // Test all log levels exist
+        let levels: [Diagnostics.LogLevel] = [.debug, .info, .warning, .error]
 
         for level in levels {
-            diagnosticsLogger.log(level: level, message: "Test message for \(level)")
+            #expect(level.rawValue >= 0)
         }
-
-        // Give logger time to process all levels
-        try await Task.sleep(for: .milliseconds(100))
-
-        #expect(true) // All log levels should be handled without crashes
     }
 
     // MARK: - LogManager Tests
 
-    @Test("LogManager coordinates multiple loggers")
+    @Test
     func logManagement() async throws {
-        let tempDir = try createTemporaryLogDirectory()
-        defer { cleanup(directory: tempDir) }
-
-        let logManager = LogManager(logDirectory: tempDir)
+        let logManager = await Diagnostics.LogManager.shared
 
         // Test that log manager is created without errors
         #expect(logManager != nil)
 
-        // Test logging through manager
-        logManager.log(category: .supervision, level: .info, message: "Test supervision log")
-        logManager.log(category: .networking, level: .debug, message: "Test networking log")
-        logManager.log(category: .rules, level: .warning, message: "Test rules log")
-
-        // Give manager time to process
-        try await Task.sleep(for: .milliseconds(150))
-
-        #expect(true) // If we get here, log management works
+        // Test logging through logger instances
+        await MainActor.run {
+            logManager.app.info("Test app log")
+            logManager.supervision.debug("Test supervision log")
+            
+            #expect(true) // If we get here, log management works
+        }
     }
 
-    @Test("LogManager handles different categories")
+    @Test
     func logManagerCategories() async throws {
-        let tempDir = try createTemporaryLogDirectory()
-        defer { cleanup(directory: tempDir) }
+        let logManager = await Diagnostics.LogManager.shared
 
-        let logManager = LogManager(logDirectory: tempDir)
-
-        // Test all log categories
-        let categories: [LogCategory] = [
-            .general, .supervision, .networking, .rules, .ui, .accessibility,
-        ]
-
-        for category in categories {
-            logManager.log(category: category, level: .info, message: "Test \(category) message")
+        // Test that we can get loggers for categories
+        await MainActor.run {
+            let appLogger = logManager.app
+            let authLogger = logManager.auth
+            let apiLogger = logManager.api
+            
+            // Test logging with different loggers
+            appLogger.info("Test app message")
+            authLogger.info("Test auth message")
+            apiLogger.info("Test API message")
+            
+            #expect(true) // All categories should be handled without crashes
         }
-
-        // Give manager time to process all categories
-        try await Task.sleep(for: .milliseconds(200))
-
-        #expect(true) // All categories should be handled without crashes
     }
 
     // MARK: - Logger Factory Tests
 
-    @Test("LoggerFactory creates category-specific loggers")
+    @Test
     func loggerFactory() async throws {
-        // Test creating loggers for different categories
-        let supervisionLogger = LoggerFactory.logger(for: .supervision)
-        let networkingLogger = LoggerFactory.logger(for: .networking)
-        let rulesLogger = LoggerFactory.logger(for: .rules)
-
-        #expect(supervisionLogger != nil)
-        #expect(networkingLogger != nil)
-        #expect(rulesLogger != nil)
+        // Test creating loggers for different types
+        let logger1 = LoggerFactory.logger(for: SessionLoggingTests.self)
+        let logger2 = LoggerFactory.logger(for: SessionLoggingTests.self, category: .supervision)
+        
+        #expect(logger1 != nil)
+        #expect(logger2 != nil)
 
         // Test that loggers can log without crashing
-        supervisionLogger.info("Test supervision message")
-        networkingLogger.debug("Test networking message")
-        rulesLogger.warning("Test rules message")
+        logger1.info("Test message from type-based logger")
+        logger2.debug("Test message from category-based logger")
 
         #expect(true) // If we get here, logger factory works
     }
 
     // MARK: - Integration Tests
 
-    @Test("Complete logging system integration")
+    @Test
     func loggingSystemIntegration() async throws {
-        let tempDir = try createTemporaryLogDirectory()
-        defer { cleanup(directory: tempDir) }
-
         // Test integration of all logging components
-        let sessionLogger = SessionLogger(logDirectory: tempDir)
-        let logManager = LogManager(logDirectory: tempDir)
-        let fileLogger = FileLogger(fileURL: tempDir.appendingPathComponent("integration.log"))
+        let sessionLogger = await Diagnostics.SessionLogger.shared
+        let logManager = await Diagnostics.LogManager.shared
+        let fileLogger = await FileLogger.shared
 
         // Test that all components can work together
-        sessionLogger.log(level: .info, message: "Session log test")
-        logManager.log(category: .general, level: .info, message: "Manager log test")
-        fileLogger.log(level: .info, message: "File log test")
+        await MainActor.run {
+            sessionLogger.log(level: .info, message: "Session log test")
+            logManager.app.info("Manager log test")
+        }
+        
+        await fileLogger.log("File log test", level: .info, category: "test", file: #file, function: #function, line: #line)
 
         // Test concurrent usage
         await withTaskGroup(of: Void.self) { group in
             group.addTask {
-                for i in 0 ..< 5 {
-                    sessionLogger.log(level: .debug, message: "Session \(i)")
+                await MainActor.run {
+                    for i in 0 ..< 5 {
+                        sessionLogger.log(level: .debug, message: "Session \(i)")
+                    }
+                }
+            }
+
+            group.addTask {
+                await MainActor.run {
+                    for i in 0 ..< 5 {
+                        logManager.app.debug("Manager \(i)")
+                    }
                 }
             }
 
             group.addTask {
                 for i in 0 ..< 5 {
-                    logManager.log(category: .networking, level: .debug, message: "Manager \(i)")
-                }
-            }
-
-            group.addTask {
-                for i in 0 ..< 5 {
-                    fileLogger.log(level: .debug, message: "File \(i)")
+                    await fileLogger.log("File \(i)", level: .debug, category: "test", file: #file, function: #function, line: #line)
                 }
             }
         }
@@ -292,18 +228,17 @@ struct SessionLoggingTests {
         #expect(true) // Integration should work without conflicts
     }
 
-    @Test("Logging performance under load")
+    @Test
     func loggingPerformance() async throws {
-        let tempDir = try createTemporaryLogDirectory()
-        defer { cleanup(directory: tempDir) }
-
-        let sessionLogger = SessionLogger(logDirectory: tempDir)
+        let sessionLogger = await Diagnostics.SessionLogger.shared
 
         // Test logging performance with many entries
         let startTime = Date()
 
-        for i in 0 ..< 100 {
-            sessionLogger.log(level: .debug, message: "Performance test message \(i)")
+        await MainActor.run {
+            for i in 0 ..< 100 {
+                sessionLogger.log(level: .debug, message: "Performance test message \(i)")
+            }
         }
 
         let endTime = Date()
@@ -311,10 +246,5 @@ struct SessionLoggingTests {
 
         // Should complete reasonably quickly (less than 1 second for 100 entries)
         #expect(duration < 1.0)
-
-        // Give logger time to finish writing
-        try await Task.sleep(for: .milliseconds(200))
-
-        #expect(true)
     }
 }

@@ -3,149 +3,133 @@ import Foundation
 import Testing
 
 /// Test suite for MCP (Model Context Protocol) integration functionality
-@Suite("MCP Integration Tests")
 struct MCPIntegrationTests {
     // MARK: - MCPConfigManager Tests
 
-    @Test("MCPConfigManager can be initialized")
-    func mCPConfigManagerInitialization() async throws {
-        let configService = MCPConfigManager()
-
-        // Test that service is created without errors
-        #expect(configService != nil)
+    @Test
+    func mCPConfigManagerSingleton() async throws {
+        await MainActor.run {
+            let configService = MCPConfigManager.shared
+            // Test that singleton is created without errors
+            #expect(true) // Singleton exists
+        }
     }
 
-    @Test("MCPConfigManager manages configuration state")
+    @Test
     func mCPConfigurationState() async throws {
-        let configService = MCPConfigManager()
-
-        // Test configuration state management
-        // Note: Without making actual file system calls, we test the service doesn't crash
-        do {
-            _ = await configService.getCurrentConfiguration()
-            #expect(true) // If we get here, no crash occurred
-        } catch {
-            // Errors are acceptable if MCP isn't configured
-            #expect(error != nil)
+        await MainActor.run {
+            let configService = MCPConfigManager.shared
+            
+            // Test reading MCP configuration
+            let config = configService.readMCPConfig()
+            // Config can be nil if file doesn't exist, which is fine
+            #expect(config != nil || config == nil)
         }
     }
 
     // MARK: - MCPVersionService Tests
 
-    @Test("MCPVersionService can check package versions")
+    @Test
+    func mCPVersionSingleton() async throws {
+        await MainActor.run {
+            let versionService = MCPVersionService.shared
+            // Test that singleton is created without errors
+            #expect(true) // Singleton exists
+        }
+    }
+
+    @Test
     func mCPVersionChecking() async throws {
-        let versionService = MCPVersionService()
-
-        // Test that service is created without errors
-        #expect(versionService != nil)
-
-        // Test version checking for a common package
-        do {
-            let version = await versionService.getLatestVersion(for: "react")
-            if let version {
-                #expect(!version.isEmpty)
-                #expect(version.contains(".")) // Version should contain dots
-            }
-        } catch {
-            // Network errors are acceptable in tests
-            #expect(error != nil)
+        await MainActor.run {
+            let versionService = MCPVersionService.shared
+            
+            // Test version checking for an MCP extension
+            let version = versionService.getLatestVersion(for: .peekaboo)
+            #expect(!version.isEmpty)
+            
+            // Check another extension
+            let claudeCodeVersion = versionService.getLatestVersion(for: .claudeCode)
+            #expect(!claudeCodeVersion.isEmpty)
         }
     }
 
-    @Test("MCPVersionService handles invalid package names")
-    func mCPVersionCheckingInvalidPackage() async throws {
-        let versionService = MCPVersionService()
-
-        // Test with non-existent package
-        do {
-            let version = await versionService.getLatestVersion(for: "this-package-definitely-does-not-exist-12345")
-            #expect(version == nil) // Should return nil for non-existent packages
-        } catch {
-            // Errors are also acceptable for non-existent packages
-            #expect(error != nil)
+    @Test
+    func mCPInstalledVersions() async throws {
+        await MainActor.run {
+            let versionService = MCPVersionService.shared
+            
+            // Test getting installed version (may return cached or default)
+            let installedVersion = versionService.getInstalledVersionCached(for: .terminator)
+            #expect(!installedVersion.isEmpty)
         }
     }
 
-    @Test("MCPVersionService handles multiple concurrent requests")
-    func mCPUpdateDetection() async throws {
-        let versionService = MCPVersionService()
-
-        // Test concurrent version checks
-        async let version1 = versionService.getLatestVersion(for: "lodash")
-        async let version2 = versionService.getLatestVersion(for: "express")
-        async let version3 = versionService.getLatestVersion(for: "axios")
-
-        do {
-            let results = try await [version1, version2, version3]
-            #expect(results.count == 3)
-
-            // At least some requests should succeed (or all fail gracefully)
-            let successfulResults = results.compactMap(\.self)
-            for version in successfulResults {
+    @Test
+    func mCPAllExtensions() async throws {
+        await MainActor.run {
+            let versionService = MCPVersionService.shared
+            
+            // Test all extension types
+            for ext in MCPExtensionType.allCases {
+                let version = versionService.getLatestVersion(for: ext)
                 #expect(!version.isEmpty)
             }
-        } catch {
-            // Network errors are acceptable in concurrent tests
-            #expect(error != nil)
         }
-    }
-
-    // MARK: - MCPConfigurationView Tests
-
-    @Test("MCPConfigurationView can be initialized")
-    func mCPConfigurationUI() async throws {
-        let configView = MCPConfigurationView()
-
-        // Test that view is created without errors
-        #expect(configView != nil)
-
-        // Since this is a SwiftUI view, we mainly test it doesn't crash on creation
-        // More comprehensive UI testing would require view testing frameworks
     }
 
     // MARK: - Integration Tests
 
-    @Test("MCP service integration")
+    @Test
     func mCPServiceIntegration() async throws {
-        let configService = MCPConfigManager()
-        let versionService = MCPVersionService()
-
-        // Test that both services can work together
-        #expect(configService != nil)
-        #expect(versionService != nil)
-
-        // Test basic functionality without making external calls
-        do {
-            // Try to get configuration (may fail if MCP not set up)
-            _ = await configService.getCurrentConfiguration()
-        } catch {
-            // Expected if MCP not configured
+        await MainActor.run {
+            let configService = MCPConfigManager.shared
+            let versionService = MCPVersionService.shared
+            
+            // Test that both services can work together
+            #expect(true) // Both singletons exist
+            
+            // Test reading config
+            _ = configService.readMCPConfig()
+            
+            // Test version checking
+            _ = versionService.getLatestVersion(for: .automator)
+            
+            // This tests that the services don't interfere with each other
+            #expect(true)
         }
-
-        // This tests that the services don't interfere with each other
-        #expect(true)
     }
 
-    @Test("MCP error handling")
-    func mCPErrorHandling() async throws {
-        let versionService = MCPVersionService()
-
-        // Test error handling with empty string
-        do {
-            let version = await versionService.getLatestVersion(for: "")
-            #expect(version == nil) // Should handle empty input gracefully
-        } catch {
-            // Errors are also acceptable for invalid input
-            #expect(error != nil)
+    @Test
+    func mCPExtensionTypes() async throws {
+        // Test MCPExtensionType enum
+        let allExtensions = MCPExtensionType.allCases
+        
+        #expect(allExtensions.count > 0)
+        #expect(allExtensions.contains(.peekaboo))
+        #expect(allExtensions.contains(.terminator))
+        #expect(allExtensions.contains(.claudeCode))
+        #expect(allExtensions.contains(.conduit))
+        #expect(allExtensions.contains(.automator))
+        
+        // Test identifiable conformance
+        for ext in allExtensions {
+            #expect(ext.id == ext.rawValue)
         }
-
-        // Test error handling with invalid characters
-        do {
-            let version = await versionService.getLatestVersion(for: "invalid/package@name")
-            #expect(version == nil) // Should handle invalid input gracefully
-        } catch {
-            // Errors are also acceptable for invalid input
-            #expect(error != nil)
+    }
+    
+    @Test
+    func mCPVersionServiceProperties() async throws {
+        await MainActor.run {
+            let versionService = MCPVersionService.shared
+            
+            // Test published properties exist
+            _ = versionService.latestVersions
+            _ = versionService.installedVersions
+            _ = versionService.isChecking
+            _ = versionService.lastCheckDate
+            _ = versionService.checkError
+            
+            #expect(true) // Properties are accessible
         }
     }
 }

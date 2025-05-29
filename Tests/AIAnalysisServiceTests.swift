@@ -3,7 +3,7 @@ import AppKit
 import Foundation
 import Testing
 
-@Test("AIProvider - Enum Cases")
+
 func aIProviderEnumCases() async throws {
     let allCases = AIProvider.allCases
     #expect(allCases.count == 2)
@@ -23,7 +23,7 @@ func aIProviderEnumCases() async throws {
     #expect(AIProvider.ollama.id == "Ollama")
 }
 
-@Test("AIModel - OpenAI Models")
+
 func aIModelOpenAIModels() async throws {
     let openAIModels: [AIModel] = [.gpt4o, .gpt4TurboVision, .gpt4oMini, .o1, .clipVitL14]
 
@@ -46,7 +46,7 @@ func aIModelOpenAIModels() async throws {
     #expect(AIModel.o1.displayName == "o1")
 }
 
-@Test("AIModel - Ollama Models")
+
 func aIModelOllamaModels() async throws {
     let ollamaModels: [AIModel] = [.llava, .bakllava, .llava13b, .llava34b]
 
@@ -68,7 +68,7 @@ func aIModelOllamaModels() async throws {
     #expect(AIModel.llava34b.displayName == "LLaVA 34B")
 }
 
-@Test("ImageAnalysisRequest - Creation")
+
 func imageAnalysisRequestCreation() async throws {
     // Create a test image
     let image = NSImage(size: NSSize(width: 100, height: 100))
@@ -83,7 +83,7 @@ func imageAnalysisRequestCreation() async throws {
     #expect(request.model == .gpt4o)
 }
 
-@Test("ImageAnalysisResponse - Creation")
+
 func imageAnalysisResponseCreation() async throws {
     let response1 = ImageAnalysisResponse(text: "Test response", model: .gpt4o, tokensUsed: 100)
     #expect(response1.text == "Test response")
@@ -96,7 +96,7 @@ func imageAnalysisResponseCreation() async throws {
     #expect(response2.tokensUsed == nil)
 }
 
-@Test("AIServiceError - Error Cases")
+
 func aIServiceErrorCases() async throws {
     let errors: [AIServiceError] = [
         .apiKeyMissing,
@@ -117,7 +117,7 @@ func aIServiceErrorCases() async throws {
     }
 }
 
-@Test("AIServiceError - Specific Error Messages")
+
 func aIServiceErrorSpecificMessages() async throws {
     #expect(AIServiceError.apiKeyMissing.errorDescription?.contains("API key is missing") == true)
     #expect(AIServiceError.invalidImage.errorDescription?.contains("Invalid image") == true)
@@ -134,7 +134,7 @@ func aIServiceErrorSpecificMessages() async throws {
     #expect(modelNotFoundError.errorDescription?.contains("not found") == true)
 }
 
-@Test("AIServiceError - Network Error Handling")
+
 func aIServiceErrorNetworkErrorHandling() async throws {
     let noInternetError = AIServiceError.networkError(URLError(.notConnectedToInternet))
     #expect(noInternetError.errorDescription?.contains("No internet connection") == true)
@@ -152,7 +152,7 @@ func aIServiceErrorNetworkErrorHandling() async throws {
     #expect(nonURLError.errorDescription?.contains("Network error") == true)
 }
 
-@Test("AIServiceError - Recovery Suggestions")
+
 func aIServiceErrorRecoverySuggestions() async throws {
     #expect(AIServiceError.apiKeyMissing.recoverySuggestion?.contains("Settings") == true)
     #expect(AIServiceError.networkError(URLError(.notConnectedToInternet)).recoverySuggestion?
@@ -171,7 +171,7 @@ func aIServiceErrorRecoverySuggestions() async throws {
     #expect(AIServiceError.invalidResponse.recoverySuggestion == nil)
 }
 
-@Test("AIServiceManager - Singleton")
+
 func aIServiceManagerSingleton() async throws {
     let manager1 = await AIServiceManager.shared
     let manager2 = await AIServiceManager.shared
@@ -179,7 +179,7 @@ func aIServiceManagerSingleton() async throws {
     #expect(manager1 === manager2)
 }
 
-@Test("AIServiceManager - Provider Configuration")
+
 func aIServiceManagerProviderConfiguration() async throws {
     let manager = await AIServiceManager.shared
 
@@ -193,7 +193,7 @@ func aIServiceManagerProviderConfiguration() async throws {
     #expect(ollamaProvider == .ollama)
 }
 
-@Test("AIServiceManager - Supported Models")
+
 func aIServiceManagerSupportedModels() async throws {
     let manager = await AIServiceManager.shared
 
@@ -206,7 +206,7 @@ func aIServiceManagerSupportedModels() async throws {
     #expect(isAvailable == false) // Should be false without proper service configuration
 }
 
-@Test("AIAnalysis - Image Data Handling")
+
 func aIAnalysisImageDataHandling() async throws {
     // Test creating images of various sizes
     let sizes = [
@@ -225,7 +225,7 @@ func aIAnalysisImageDataHandling() async throws {
     }
 }
 
-@Test("AIAnalysis - Prompt Variations")
+
 func aIAnalysisPromptVariations() async throws {
     let prompts = [
         "Analyze this screenshot",
@@ -245,7 +245,7 @@ func aIAnalysisPromptVariations() async throws {
     }
 }
 
-@Test("AIAnalysis - Model Provider Mapping")
+
 func aIAnalysisModelProviderMapping() async throws {
     // Test that all models are properly mapped to providers
     let allModels = AIModel.allCases
@@ -263,7 +263,7 @@ func aIAnalysisModelProviderMapping() async throws {
     }
 }
 
-@Test("AIAnalysis - Concurrent Operations")
+
 func aIAnalysisConcurrentOperations() async throws {
     let manager = await AIServiceManager.shared
 
@@ -285,7 +285,7 @@ func aIAnalysisConcurrentOperations() async throws {
     #expect(finalProvider == .openAI || finalProvider == .ollama)
 }
 
-@Test("AIAnalysis - Error Equality")
+
 func aIAnalysisErrorEquality() async throws {
     // Test that same error types are handled consistently
     let error1 = AIServiceError.apiKeyMissing
@@ -301,7 +301,7 @@ func aIAnalysisErrorEquality() async throws {
     #expect(modelError1.recoverySuggestion == modelError2.recoverySuggestion)
 }
 
-@Test("AIAnalysis - Memory Management")
+
 func aIAnalysisMemoryManagement() async throws {
     // Test creating multiple requests and responses
     let image = NSImage(size: NSSize(width: 100, height: 100))

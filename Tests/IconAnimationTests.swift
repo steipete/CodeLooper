@@ -4,11 +4,10 @@ import Foundation
 import Testing
 
 /// Test suite for menu bar icon animation functionality
-@Suite("Icon Animation Tests")
 struct IconAnimationTests {
     // MARK: - IconAnimator Tests
 
-    @Test("IconAnimator can manage animation lifecycle")
+    @Test
     func iconAnimationStart() async throws {
         let animator = IconAnimator()
 
@@ -30,7 +29,7 @@ struct IconAnimationTests {
         #expect(isStoppedAnimating == false)
     }
 
-    @Test("IconAnimator handles animation state correctly")
+    @Test
     func iconAnimationStop() async throws {
         let animator = IconAnimator()
 
@@ -55,7 +54,7 @@ struct IconAnimationTests {
         #expect(isAnimating == false)
     }
 
-    @Test("IconAnimator manages animation state transitions")
+    @Test
     func iconAnimationStateManagement() async throws {
         let animator = IconAnimator()
 
@@ -89,7 +88,7 @@ struct IconAnimationTests {
 
     // MARK: - LottieMenuBarView Tests
 
-    @Test("LottieMenuBarView integrates with Lottie framework")
+    @Test
     func lottieMenuBarIntegration() async throws {
         // Test that LottieMenuBarView can be created
         let lottieView = LottieMenuBarView()
@@ -108,7 +107,7 @@ struct IconAnimationTests {
         #expect(true)
     }
 
-    @Test("LottieMenuBarView handles animation files")
+    @Test
     func lottieAnimationFileHandling() async throws {
         let lottieView = LottieMenuBarView()
 
@@ -128,7 +127,7 @@ struct IconAnimationTests {
 
     // MARK: - CustomChainLinkIcon Tests
 
-    @Test("CustomChainLinkIcon renders without errors")
+    @Test
     func customChainLinkIcon() async throws {
         let iconView = CustomChainLinkIcon()
 
@@ -147,7 +146,7 @@ struct IconAnimationTests {
         #expect(true)
     }
 
-    @Test("CustomChainLinkIcon handles different states")
+    @Test
     func customChainLinkIconStates() async throws {
         let iconView = CustomChainLinkIcon()
 
@@ -170,7 +169,7 @@ struct IconAnimationTests {
 
     // MARK: - MenuBarIconManager Tests
 
-    @Test("MenuBarIconManager coordinates icon updates")
+    @Test
     func menuBarIconManagerCoordination() async throws {
         let manager = MenuBarIconManager.shared
 
@@ -186,7 +185,7 @@ struct IconAnimationTests {
         #expect(true)
     }
 
-    @Test("MenuBarIconManager handles rapid state changes")
+    @Test
     func menuBarIconManagerRapidChanges() async throws {
         let manager = MenuBarIconManager.shared
 
@@ -215,7 +214,7 @@ struct IconAnimationTests {
 
     // MARK: - NSImage Resource Loading Tests
 
-    @Test("NSImage resource loading works correctly")
+    @Test
     func nSImageResourceLoading() async throws {
         // Test loading menu bar icon resources
         let menuBarIcon = NSImage.loadMenuBarIcon()
@@ -231,7 +230,7 @@ struct IconAnimationTests {
         #expect(true)
     }
 
-    @Test("NSImage handles missing resources gracefully")
+    @Test
     func nSImageMissingResourceHandling() async throws {
         // Test loading non-existent icon
         let nonExistentIcon = NSImage.loadTemplateIcon(named: "definitely_does_not_exist")
@@ -247,7 +246,7 @@ struct IconAnimationTests {
 
     // MARK: - Integration Tests
 
-    @Test("Complete icon animation system integration")
+    @Test
     func iconAnimationSystemIntegration() async throws {
         let animator = IconAnimator()
         let manager = MenuBarIconManager.shared
@@ -270,7 +269,7 @@ struct IconAnimationTests {
         #expect(true)
     }
 
-    @Test("Icon animation performance under load")
+    @Test
     func iconAnimationPerformance() async throws {
         let manager = MenuBarIconManager.shared
 

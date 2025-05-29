@@ -2,7 +2,7 @@
 import Foundation
 import Testing
 
-@Test("ThreadSafeBox - Basic Operations")
+@Test
 func threadSafeBoxBasicOperations() async throws {
     let box = ThreadSafeBox(42)
 
@@ -18,7 +18,8 @@ func threadSafeBoxBasicOperations() async throws {
     #expect(box.get() == 200)
 }
 
-@Test("ThreadSafeBox - Read Transform")
+
+@Test
 func threadSafeBoxReadTransform() async throws {
     let box = ThreadSafeBox("Hello")
 
@@ -33,7 +34,8 @@ func threadSafeBoxReadTransform() async throws {
     #expect(box.get() == "Hello")
 }
 
-@Test("ThreadSafeBox - Concurrent Access")
+
+@Test
 func threadSafeBoxConcurrentAccess() async throws {
     let box = ThreadSafeBox(0)
     let iterations = 1000
@@ -51,11 +53,22 @@ func threadSafeBoxConcurrentAccess() async throws {
     #expect(box.get() == iterations)
 }
 
-@Test("ThreadSafeBox - Concurrent Reads and Writes")
+
+@Test
 func threadSafeBoxConcurrentReadsAndWrites() async throws {
     let box = ThreadSafeBox(100)
-    var readResults: [Int] = []
-    let readResultsLock = NSLock()
+    // Use an actor to collect results safely
+    actor ResultCollector {
+        var results: [Int] = []
+        func append(_ value: Int) {
+            results.append(value)
+        }
+        func getResults() -> [Int] {
+            results
+        }
+    }
+    
+    let collector = ResultCollector()
 
     await withTaskGroup(of: Void.self) { group in
         // Add writers
@@ -69,12 +82,12 @@ func threadSafeBoxConcurrentReadsAndWrites() async throws {
         for _ in 1 ... 50 {
             group.addTask {
                 let value = box.get()
-                readResultsLock.lock()
-                readResults.append(value)
-                readResultsLock.unlock()
+                await collector.append(value)
             }
         }
     }
+    
+    let readResults = await collector.getResults()
 
     // Should have read some values
     #expect(readResults.count == 50)
@@ -86,7 +99,8 @@ func threadSafeBoxConcurrentReadsAndWrites() async throws {
     }
 }
 
-@Test("ThreadSafeBox - Boolean Extensions")
+
+@Test
 func threadSafeBoxBooleanExtensions() async throws {
     let box = ThreadSafeBox(false)
 
@@ -109,7 +123,8 @@ func threadSafeBoxBooleanExtensions() async throws {
     #expect(box.get() == false)
 }
 
-@Test("ThreadSafeBox - Numeric Extensions")
+
+@Test
 func threadSafeBoxNumericExtensions() async throws {
     let intBox = ThreadSafeBox(10)
 
@@ -136,7 +151,8 @@ func threadSafeBoxNumericExtensions() async throws {
     #expect(doubleBox.get() == 3.0)
 }
 
-@Test("ThreadSafeBox - Equatable Extensions")
+
+@Test
 func threadSafeBoxEquatableExtensions() async throws {
     let box = ThreadSafeBox("test")
 
@@ -149,7 +165,8 @@ func threadSafeBoxEquatableExtensions() async throws {
     #expect(box.equals("test") == false)
 }
 
-@Test("ThreadSafeBox - Complex Data Types")
+
+@Test
 func threadSafeBoxComplexDataTypes() async throws {
     struct TestData: Sendable, Equatable {
         let id: Int
@@ -176,7 +193,8 @@ func threadSafeBoxComplexDataTypes() async throws {
     #expect(optionalBox.get() == nil)
 }
 
-@Test("ThreadSafeBox - Performance")
+
+@Test
 func threadSafeBoxPerformance() async throws {
     let box = ThreadSafeBox(0)
     let startTime = Date()
@@ -194,7 +212,8 @@ func threadSafeBoxPerformance() async throws {
     #expect(elapsed < 1.0) // Should complete quickly
 }
 
-@Test("ThreadSafeBox - Memory Safety")
+
+@Test
 func threadSafeBoxMemorySafety() async throws {
     var boxes: [ThreadSafeBox<Int>] = []
 
@@ -224,7 +243,8 @@ func threadSafeBoxMemorySafety() async throws {
     #expect(boxes.isEmpty)
 }
 
-@Test("ThreadSafeBox - Thread Safety with Weak References")
+
+@Test
 func threadSafeBoxThreadSafetyWithWeakReferences() async throws {
     let box = ThreadSafeBox(false)
     let resumedBox = ThreadSafeBox(false)
@@ -243,7 +263,8 @@ func threadSafeBoxThreadSafetyWithWeakReferences() async throws {
     #expect(resumedBox.get() == true)
 }
 
-@Test("ThreadSafeBox - Error Conditions")
+
+@Test
 func threadSafeBoxErrorConditions() async throws {
     // Test with extreme values
     let maxIntBox = ThreadSafeBox(Int.max)
@@ -260,7 +281,8 @@ func threadSafeBoxErrorConditions() async throws {
     #expect(emptyStringBox.get() == "test")
 }
 
-@Test("ThreadSafeBox - Type Safety")
+
+@Test
 func threadSafeBoxTypeSafety() async throws {
     // Test that different types work correctly
     let stringBox = ThreadSafeBox("string")

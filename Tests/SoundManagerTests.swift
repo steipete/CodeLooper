@@ -3,7 +3,7 @@ import AudioToolbox
 import Foundation
 import Testing
 
-@Test("SoundEngine - SystemSound Enum Cases")
+
 func systemSoundEnumCases() async throws {
     // Test that SystemSound enum has the expected cases
     let userAlert = SystemSound.userAlert
@@ -14,7 +14,7 @@ func systemSoundEnumCases() async throws {
     #expect(namedSound != nil)
 }
 
-@Test("SoundEngine - SystemSound Named Sound Creation")
+
 func systemSoundNamedSoundCreation() async throws {
     // Test creating named sounds with different file names
     let boopSound = SystemSound.named("Boop.aiff")
@@ -27,7 +27,7 @@ func systemSoundNamedSoundCreation() async throws {
     #expect(funkSound != nil)
 }
 
-@Test("SoundEngine - SystemSound Named Sound Empty String")
+
 func systemSoundNamedSoundEmptyString() async throws {
     // Test creating a named sound with empty string
     let emptySound = SystemSound.named("")
@@ -36,7 +36,7 @@ func systemSoundNamedSoundEmptyString() async throws {
     #expect(emptySound != nil)
 }
 
-@Test("SoundEngine - SystemSound Named Sound Special Characters")
+
 func systemSoundNamedSoundSpecialCharacters() async throws {
     // Test creating named sounds with special characters
     let soundWithSpaces = SystemSound.named("Sound With Spaces.aiff")
@@ -48,7 +48,7 @@ func systemSoundNamedSoundSpecialCharacters() async throws {
     #expect(soundWithSymbols != nil)
 }
 
-@Test("SoundEngine - Play User Alert Sound")
+
 func soundEnginePlayUserAlertSound() async throws {
     // Test that playing user alert sound doesn't crash
     // Note: This may not produce audible sound in tests but should not crash
@@ -57,7 +57,7 @@ func soundEnginePlayUserAlertSound() async throws {
     #expect(true) // If we get here, the call didn't crash
 }
 
-@Test("SoundEngine - Play Named Sound")
+
 func soundEnginePlayNamedSound() async throws {
     // Test that playing a named sound doesn't crash
     SoundEngine.play(.named("Boop.aiff"))
@@ -67,7 +67,7 @@ func soundEnginePlayNamedSound() async throws {
     #expect(true) // If we get here, the calls didn't crash
 }
 
-@Test("SoundEngine - Play Invalid Named Sound")
+
 func soundEnginePlayInvalidNamedSound() async throws {
     // Test that playing an invalid named sound doesn't crash
     SoundEngine.play(.named("NonExistentSound.aiff"))
@@ -77,7 +77,7 @@ func soundEnginePlayInvalidNamedSound() async throws {
     #expect(true) // If we get here, the calls didn't crash
 }
 
-@Test("SoundEngine - Multiple Sound Playback")
+
 func soundEngineMultipleSoundPlayback() async throws {
     // Test playing multiple sounds in sequence
     SoundEngine.play(.userAlert)
@@ -88,7 +88,7 @@ func soundEngineMultipleSoundPlayback() async throws {
     #expect(true) // If we get here, multiple playback didn't crash
 }
 
-@Test("SoundEngine - Rapid Sound Playback")
+
 func soundEngineRapidSoundPlayback() async throws {
     // Test rapid sound playback doesn't cause issues
     for _ in 0 ..< 5 {
@@ -98,7 +98,7 @@ func soundEngineRapidSoundPlayback() async throws {
     #expect(true) // If we get here, rapid playback didn't crash
 }
 
-@Test("SoundEngine - Sound Playback With Mute State")
+
 func soundEnginePlaybackWithMuteState() async throws {
     // Test that sound playback respects mute state
     // Note: We can't control the actual mute state in tests,
@@ -109,7 +109,7 @@ func soundEnginePlaybackWithMuteState() async throws {
     #expect(true) // If we get here, playback with mute handling worked
 }
 
-@Test("SoundEngine - Common System Sounds")
+
 func soundEngineCommonSystemSounds() async throws {
     // Test common system sounds that are likely to exist
     let commonSounds = [
@@ -127,7 +127,7 @@ func soundEngineCommonSystemSounds() async throws {
     #expect(true) // If we get here, common sounds didn't crash
 }
 
-@Test("SoundEngine - Sound Caching Behavior")
+
 func soundEngineSoundCachingBehavior() async throws {
     // Test that playing the same sound multiple times works
     // (This exercises the internal caching mechanism)
@@ -140,7 +140,7 @@ func soundEngineSoundCachingBehavior() async throws {
     #expect(true) // If we get here, caching worked correctly
 }
 
-@Test("SoundEngine - Mixed Sound Types")
+
 func soundEngineMixedSoundTypes() async throws {
     // Test mixing user alert and named sounds
     SoundEngine.play(.userAlert)
@@ -152,7 +152,7 @@ func soundEngineMixedSoundTypes() async throws {
     #expect(true) // If we get here, mixed sound types worked
 }
 
-@Test("SoundEngine - Performance Test")
+
 func soundEnginePerformance() async throws {
     let startTime = Date()
 
@@ -171,7 +171,7 @@ func soundEnginePerformance() async throws {
     #expect(elapsed < 1.0)
 }
 
-@Test("SoundEngine - Thread Safety")
+
 func soundEngineThreadSafety() async throws {
     // Test concurrent sound playback from multiple tasks
     await withTaskGroup(of: Void.self) { group in

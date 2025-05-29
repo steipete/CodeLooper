@@ -5,7 +5,6 @@ import Foundation
 import Testing
 
 /// Test suite for rule execution functionality
-@Suite("Rule Execution Tests")
 struct RuleExecutionTests {
     // MARK: - Test Utilities
 
@@ -47,7 +46,7 @@ struct RuleExecutionTests {
 
     // MARK: - RuleExecutor Tests
 
-    @Test("RuleExecutor can be initialized")
+    @Test
     func ruleExecutorInitialization() async throws {
         let executor = await RuleExecutor()
 
@@ -55,7 +54,7 @@ struct RuleExecutionTests {
         #expect(executor != nil)
     }
 
-    @Test("RuleExecutor respects global monitoring setting")
+    @Test
     func ruleExecutorGlobalMonitoring() async throws {
         try withTemporaryDefaults {
             let executor = await RuleExecutor()
@@ -79,7 +78,7 @@ struct RuleExecutionTests {
         }
     }
 
-    @Test("RuleExecutor executes enabled rules")
+    @Test
     func ruleExecution() async throws {
         try withTemporaryDefaults {
             let executor = await RuleExecutor()
@@ -96,7 +95,7 @@ struct RuleExecutionTests {
         }
     }
 
-    @Test("RuleExecutor handles disabled rules")
+    @Test
     func disabledRuleHandling() async throws {
         try withTemporaryDefaults {
             let executor = await RuleExecutor()
@@ -115,7 +114,7 @@ struct RuleExecutionTests {
 
     // MARK: - StopAfter25LoopsRule Tests
 
-    @Test("StopAfter25LoopsRule initializes correctly")
+    @Test
     func stopAfter25LoopsRuleInitialization() async throws {
         let rule = await StopAfter25LoopsRule()
 
@@ -125,7 +124,7 @@ struct RuleExecutionTests {
         }
     }
 
-    @Test("StopAfter25LoopsRule stops execution after limit")
+    @Test
     func stopAfter25LoopsRuleLimit() async throws {
         try withTemporaryDefaults {
             let rule = await StopAfter25LoopsRule()
@@ -146,7 +145,7 @@ struct RuleExecutionTests {
         }
     }
 
-    @Test("StopAfter25LoopsRule executes when rule is needed")
+    @Test
     func stopAfter25LoopsRuleExecution() async throws {
         try withTemporaryDefaults {
             let rule = await StopAfter25LoopsRule()
@@ -171,7 +170,7 @@ struct RuleExecutionTests {
         }
     }
 
-    @Test("StopAfter25LoopsRule handles no action needed")
+    @Test
     func stopAfter25LoopsRuleNoAction() async throws {
         try withTemporaryDefaults {
             let rule = await StopAfter25LoopsRule()
@@ -195,7 +194,7 @@ struct RuleExecutionTests {
         }
     }
 
-    @Test("StopAfter25LoopsRule handles errors gracefully")
+    @Test
     func stopAfter25LoopsRuleErrorHandling() async throws {
         try withTemporaryDefaults {
             let rule = await StopAfter25LoopsRule()
@@ -221,7 +220,7 @@ struct RuleExecutionTests {
 
     // MARK: - RuleCounterManager Tests
 
-    @Test("RuleCounterManager initializes as singleton")
+    @Test
     func ruleCounterManagerSingleton() async throws {
         let manager1 = await RuleCounterManager.shared
         let manager2 = await RuleCounterManager.shared
@@ -230,7 +229,7 @@ struct RuleExecutionTests {
         #expect(manager1 === manager2)
     }
 
-    @Test("RuleCounterManager manages counters correctly")
+    @Test
     func ruleCounterManagement() async throws {
         let manager = await RuleCounterManager.shared
         let testRuleName = "TestRule_\(UUID().uuidString)"
@@ -261,7 +260,7 @@ struct RuleExecutionTests {
         #expect(countAfterReset == 0)
     }
 
-    @Test("RuleCounterManager calculates total executions")
+    @Test
     func ruleCounterManagerTotalExecutions() async throws {
         let manager = await RuleCounterManager.shared
         let testRule1 = "TestRule1_\(UUID().uuidString)"
@@ -286,7 +285,7 @@ struct RuleExecutionTests {
         #expect(executedNames.contains(testRule2))
     }
 
-    @Test("RuleCounterManager resets all counters")
+    @Test
     func ruleCounterManagerResetAll() async throws {
         let manager = await RuleCounterManager.shared
         let testRule1 = "TestRule1_\(UUID().uuidString)"
@@ -315,7 +314,7 @@ struct RuleExecutionTests {
         #expect(totalAfterReset == 0)
     }
 
-    @Test("RuleCounterManager sends notifications on counter updates")
+    @Test
     func ruleCounterManagerNotifications() async throws {
         let manager = await RuleCounterManager.shared
         let testRuleName = "TestRule_\(UUID().uuidString)"
@@ -355,7 +354,7 @@ struct RuleExecutionTests {
 
     // MARK: - Integration Tests
 
-    @Test("End-to-end rule execution flow")
+    @Test
     func endToEndRuleExecution() async throws {
         try withTemporaryDefaults {
             let executor = await RuleExecutor()

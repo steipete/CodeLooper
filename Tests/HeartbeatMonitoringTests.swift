@@ -3,7 +3,7 @@ import AppKit
 import Foundation
 import Testing
 
-@Test("HeartbeatMonitoring - Instance Info Construction")
+
 func instanceInfoConstruction() async throws {
     let mockApp = createMockRunningApplication(pid: 12345, bundleId: "com.test.app", name: "Test App")
     let status = CursorInstanceStatus.idle
@@ -26,7 +26,7 @@ func instanceInfoConstruction() async throws {
     #expect(instanceInfo.lastInterventionType == .connection)
 }
 
-@Test("HeartbeatMonitoring - Instance Info Equality")
+
 func instanceInfoEquality() async throws {
     let mockApp1 = createMockRunningApplication(pid: 12345, bundleId: "com.test.app", name: "Test App")
     let mockApp2 = createMockRunningApplication(pid: 12345, bundleId: "com.test.app", name: "Test App")
@@ -60,7 +60,7 @@ func instanceInfoEquality() async throws {
     #expect(instanceInfo1 != instanceInfo3)
 }
 
-@Test("HeartbeatMonitoring - Instance Info Hashable")
+
 func instanceInfoHashable() async throws {
     let mockApp1 = createMockRunningApplication(pid: 12345, bundleId: "com.test.app", name: "Test App")
     let mockApp2 = createMockRunningApplication(pid: 54321, bundleId: "com.test.app", name: "Test App")
@@ -89,7 +89,7 @@ func instanceInfoHashable() async throws {
     #expect(instanceSet.contains(instanceInfo2))
 }
 
-@Test("HeartbeatMonitoring - Instance Status Change Tracking")
+
 func instanceStatusChangeTracking() async throws {
     let mockApp = createMockRunningApplication(pid: 12345, bundleId: "com.test.app", name: "Test App")
 
@@ -118,7 +118,7 @@ func instanceStatusChangeTracking() async throws {
     #expect(instanceInfo.lastInterventionType == .connection)
 }
 
-@Test("HeartbeatMonitoring - Status Helper Methods")
+
 func statusHelperMethods() async throws {
     // Test isRecovering()
     let recoveringStatus = CursorInstanceStatus.recovering(type: .connection, attempt: 1)
@@ -148,7 +148,7 @@ func statusHelperMethods() async throws {
     #expect(forceStopRecovery.isRecovering(ofAnyType: recoveryTypes) == false)
 }
 
-@Test("HeartbeatMonitoring - String Stable Hash")
+
 func stringStableHash() async throws {
     let text1 = "Hello World"
     let text2 = "Hello World"
@@ -171,7 +171,7 @@ func stringStableHash() async throws {
     #expect(hash1 == hash2)
 }
 
-@Test("HeartbeatMonitoring - Bundle Identifier Edge Cases")
+
 func bundleIdentifierEdgeCases() async throws {
     // Test with nil bundle identifier
     let mockAppNilBundle = createMockRunningApplication(pid: 12345, bundleId: nil, name: "Test App")
@@ -187,7 +187,7 @@ func bundleIdentifierEdgeCases() async throws {
     #expect(instanceInfo.localizedName == "Test App")
 }
 
-@Test("HeartbeatMonitoring - Status Message Variations")
+
 func statusMessageVariations() async throws {
     let mockApp = createMockRunningApplication(pid: 12345, bundleId: "com.test.app", name: "Test App")
 
@@ -214,8 +214,9 @@ func statusMessageVariations() async throws {
     }
 }
 
-@Test("HeartbeatMonitoring - Recovery Attempt Progression")
-func recoveryAttemptProgression() async throws {
+
+@Test
+func recoveryAttemptProgressionInHeartbeat() async throws {
     let mockApp = createMockRunningApplication(pid: 12345, bundleId: "com.test.app", name: "Test App")
 
     // Simulate recovery attempt progression
@@ -244,7 +245,7 @@ func recoveryAttemptProgression() async throws {
     #expect(attempt1 != attempt2)
 }
 
-@Test("HeartbeatMonitoring - Intervention Type Tracking")
+
 func interventionTypeTracking() async throws {
     let mockApp = createMockRunningApplication(pid: 12345, bundleId: "com.test.app", name: "Test App")
 
@@ -269,7 +270,7 @@ func interventionTypeTracking() async throws {
     }
 }
 
-@Test("HeartbeatMonitoring - Instance Collection Operations")
+
 func instanceCollectionOperations() async throws {
     let mockApp1 = createMockRunningApplication(pid: 12345, bundleId: "com.test.app1", name: "App 1")
     let mockApp2 = createMockRunningApplication(pid: 54321, bundleId: "com.test.app2", name: "App 2")
@@ -311,7 +312,7 @@ func instanceCollectionOperations() async throws {
     #expect(targetInstance?.status == .recovering(type: .stuck, attempt: 2))
 }
 
-@Test("HeartbeatMonitoring - Status Transition Validation")
+
 func statusTransitionValidation() async throws {
     // Test logical status transitions
     let transitions = [
@@ -348,7 +349,7 @@ func statusTransitionValidation() async throws {
     }
 }
 
-@Test("HeartbeatMonitoring - Hash Consistency")
+
 func hashConsistency() async throws {
     let mockApp = createMockRunningApplication(pid: 12345, bundleId: "com.test.app", name: "Test App")
 
@@ -382,7 +383,7 @@ func hashConsistency() async throws {
     #expect(hasher1.finalize() != hasher2.finalize())
 }
 
-@Test("HeartbeatMonitoring - Thread Safety Considerations")
+
 func threadSafetyConsiderations() async throws {
     let mockApp = createMockRunningApplication(pid: 12345, bundleId: "com.test.app", name: "Test App")
 
@@ -422,7 +423,7 @@ func threadSafetyConsiderations() async throws {
     }
 }
 
-@Test("HeartbeatMonitoring - Memory and Performance")
+
 func memoryAndPerformance() async throws {
     // Test creating many instances to check for memory issues
     var instances: [CursorInstanceInfo] = []
