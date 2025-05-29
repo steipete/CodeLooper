@@ -57,6 +57,13 @@ struct CodeLooperApp: App {
         .defaultSize(width: 640, height: 950)
         .commandsRemoved()
         .handlesExternalEvents(matching: Set(arrayLiteral: "settings"))
+        .commands {
+            CommandGroup(replacing: .appInfo) {
+                Button("About CodeLooper") {
+                    appDelegate.windowManager?.showAboutWindow()
+                }
+            }
+        }
     }
 
     // MARK: Private
