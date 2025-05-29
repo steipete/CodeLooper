@@ -1,7 +1,7 @@
 import AppKit
-import SwiftUI
 import DesignSystem
 import Diagnostics
+import SwiftUI
 
 @MainActor
 private class MarkdownContentState: ObservableObject {

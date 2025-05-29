@@ -51,6 +51,10 @@ class JSHookManager {
         return try await hook.sendCommand(command)
     }
 
+    func getAllHookedWindowIds() -> [String] {
+        connectionManager.getAllHookedWindowIds()
+    }
+    
     @available(*, deprecated, message: "Use sendCommand instead")
     func runJavaScript(_ script: String, on windowId: String) async throws -> String {
         guard let hook = connectionManager.getHook(for: windowId) else {

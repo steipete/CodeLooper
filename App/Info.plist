@@ -46,6 +46,8 @@
 	<string>CodeLooper needs automation access to control Cursor and inject JavaScript for advanced monitoring features.</string>
 	<key>NSScreenCaptureUsageDescription</key>
 	<string>CodeLooper needs screen recording access to capture Cursor window screenshots for AI analysis without shadows.</string>
+	<key>NSUserNotificationsUsageDescription</key>
+	<string>CodeLooper sends notifications to inform you about automation rule executions and important events during Cursor supervision.</string>
 	<key>NSMainNibFile</key>
 	<string>MainMenu</string>
 	<key>NSMainStoryboardFile</key>

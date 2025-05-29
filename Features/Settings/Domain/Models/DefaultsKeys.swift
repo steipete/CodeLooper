@@ -115,6 +115,14 @@ extension Defaults.Keys {
     // --- Git Client Settings ---
     static let gitClientApp = Key<String>("gitClientApp", default: "/Applications/Tower.app")
 
+    // --- Rule Settings ---
+    static let showRuleExecutionCounters = Key<Bool>("showRuleExecutionCounters", default: true)
+    static let enableRuleNotifications = Key<Bool>("enableRuleNotifications", default: true)
+    static let enableRuleSounds = Key<Bool>("enableRuleSounds", default: true)
+    
+    // Rule-specific sound settings
+    static let stopAfter25LoopsRuleSound = Key<String>("stopAfter25LoopsRuleSound", default: "Glass")
+
     // --- Debug Settings ---
     static let debugMode = Key<Bool>("debugMode", default: {
         #if DEBUG

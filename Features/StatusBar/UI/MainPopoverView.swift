@@ -71,7 +71,10 @@ struct MainPopoverView: View {
 
             DSDivider()
 
-            // Session stats
+            // Rule execution stats
+            RuleExecutionStatsView()
+
+            // Session stats (legacy counter)
             HStack {
                 Image(systemName: "chart.bar.xaxis")
                     .font(.caption)

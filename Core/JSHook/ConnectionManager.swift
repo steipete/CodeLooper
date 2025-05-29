@@ -101,6 +101,10 @@ final class ConnectionManager {
         windowPorts[windowId]
     }
     
+    func getAllHookedWindowIds() -> [String] {
+        Array(hooks.keys)
+    }
+    
     // MARK: - Private Implementation
     
     private func probeAvailablePorts() async {

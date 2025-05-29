@@ -51,6 +51,7 @@ public enum LogCategory: String, CaseIterable {
     case appLifecycle
     case unknown
     case jshook = "JSHook"
+    case intervention = "Intervention"
 
     // MARK: Public
 

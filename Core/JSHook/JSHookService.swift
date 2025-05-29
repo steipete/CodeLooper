@@ -59,6 +59,10 @@ class JSHookService {
     func sendCommand(_ command: [String: Any], to windowId: String) async throws -> String {
         return try await jsHookManager.sendCommand(command, to: windowId)
     }
+    
+    func getAllHookedWindowIds() -> [String] {
+        return jsHookManager.getAllHookedWindowIds()
+    }
 
     // MARK: Private
 

@@ -4,6 +4,11 @@ import SwiftUI
 
 struct CursorRuleSetsSettingsView: View {
     // MARK: Internal
+    
+    @StateObject private var ruleCounter = RuleCounterManager.shared
+    @Default(.showRuleExecutionCounters) private var showCounters
+    @Default(.enableRuleNotifications) private var enableNotifications
+    @Default(.enableRuleSounds) private var enableSounds
 
     var body: some View {
         VStack(alignment: .leading, spacing: Spacing.large) {
@@ -15,6 +20,20 @@ struct CursorRuleSetsSettingsView: View {
                     .font(Typography.caption1())
                     .foregroundColor(ColorPalette.textSecondary)
             }
+            
+            // Rule Execution Stats - Prominent Display
+            if showCounters && ruleCounter.totalRuleExecutions > 0 {
+                RuleExecutionStatsView()
+            }
+            
+            // Global Rule Settings
+            DSSection("Rule Settings") {
+                VStack(alignment: .leading, spacing: Spacing.medium) {
+                    DSToggle("Show execution counters", isOn: $showCounters)
+                    DSToggle("Enable notifications", isOn: $enableNotifications)
+                    DSToggle("Enable sounds", isOn: $enableSounds)
+                }
+            }
 
             // Rules List
             ScrollView {
@@ -24,6 +43,12 @@ struct CursorRuleSetsSettingsView: View {
                             selectedRule = rule
                         } onToggle: {
                             toggleRule(rule)
+                        }
+                        
+                        // Sound picker for enabled "Stop after 25 loops" rule
+                        if rule.enabled && rule.name == "Stop after 25 loops" {
+                            RuleSoundPickerCard(ruleName: rule.name)
+                                .padding(.top, Spacing.small)
                         }
                     }
                 }
@@ -295,6 +320,47 @@ private struct AddRuleSheet: View {
     @State private var ruleDescription = ""
     @State private var selectedTrigger: RuleTrigger = .connectionError
     @State private var selectedAction: RuleAction = .clickResumeButton
+}
+
+// MARK: - Rule Sound Picker Card
+
+private struct RuleSoundPickerCard: View {
+    let ruleName: String
+    @Default(.stopAfter25LoopsRuleSound) private var selectedSound
+    @Default(.enableRuleSounds) private var soundsEnabled
+    
+    var body: some View {
+        DSCard(style: .outlined) {
+            VStack(alignment: .leading, spacing: Spacing.medium) {
+                HStack {
+                    Image(systemName: "speaker.wave.2")
+                        .foregroundColor(ColorPalette.accent)
+                        .font(.system(size: 16))
+                    
+                    Text("Sound Configuration")
+                        .font(Typography.callout(.semibold))
+                        .foregroundColor(ColorPalette.text)
+                    
+                    Spacer()
+                }
+                
+                if soundsEnabled {
+                    SoundPickerView(selectedSound: $selectedSound)
+                } else {
+                    VStack(alignment: .leading, spacing: Spacing.small) {
+                        Text("Sound is disabled")
+                            .font(Typography.body())
+                            .foregroundColor(ColorPalette.textSecondary)
+                        
+                        Text("Enable sounds in the global rule settings above to configure sounds for this rule.")
+                            .font(Typography.caption1())
+                            .foregroundColor(ColorPalette.textSecondary)
+                    }
+                }
+            }
+            .padding(Spacing.medium)
+        }
+    }
 }
 
 // MARK: - Models

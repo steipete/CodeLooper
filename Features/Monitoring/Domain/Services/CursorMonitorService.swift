@@ -172,6 +172,7 @@ public class CursorMonitor: ObservableObject {
 
     private var interventionEngine: CursorInterventionEngine!
     private var tickUseCases: [pid_t: ProcessMonitoringTickUseCase] = [:]
+    internal lazy var ruleExecutor = RuleExecutor()
 
     // MARK: - Subscription Setup
 
