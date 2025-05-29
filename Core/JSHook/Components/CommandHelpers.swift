@@ -51,9 +51,9 @@ public extension CursorJSHook {
         return try await sendCommand(command)
     }
 
-    /// Check if the "resume conversation" link is visible
-    func checkResumeNeeded() async throws -> String {
-        try await sendCommand(["type": "checkResumeNeeded"])
+    /// Check if a rule action is needed (if the "resume conversation" link is visible)
+    func checkRuleNeeded() async throws -> String {
+        try await sendCommand(["type": "checkRuleNeeded"])
     }
 
     /// Click the "resume conversation" link if it's available
@@ -61,16 +61,21 @@ public extension CursorJSHook {
         try await sendCommand(["type": "clickResume"])
     }
 
-    /// Check if resume is needed and return as a boolean
-    func isResumeNeeded() async throws -> Bool {
-        let result = try await checkResumeNeeded()
+    /// Check if a rule action is needed and return as a boolean
+    func isRuleNeeded() async throws -> Bool {
+        let result = try await checkRuleNeeded()
         guard let data = result.data(using: .utf8),
               let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-              let resumeNeeded = json["resumeNeeded"] as? Bool
+              let ruleNeeded = json["ruleNeeded"] as? Bool
         else {
             return false
         }
-        return resumeNeeded
+        return ruleNeeded
+    }
+
+    /// Perform a rule action (click the resume link)
+    func performRule() async throws -> String {
+        try await sendCommand(["type": "performRule"])
     }
 
     /// Attempt to resume Cursor if needed
