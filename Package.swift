@@ -34,6 +34,8 @@ let package = Package(
         .package(url: "https://github.com/loopwork-ai/ollama-swift", .upToNextMajor(from: "1.0.0")),
         // Animation library
         .package(url: "https://github.com/airbnb/lottie-ios", .upToNextMajor(from: "4.5.0")),
+        // Testing framework
+        .package(url: "https://github.com/apple/swift-testing.git", from: "0.8.0"),
         // Development-only dependencies
         .package(url: "https://github.com/cpisciotta/xcbeautify", from: "2.28.0")
     ],
@@ -44,7 +46,7 @@ let package = Package(
                 .product(name: "Logging", package: "swift-log"),
                 "Defaults"
             ],
-            path: "Sources/Diagnostics"
+            path: "Core/Diagnostics"
         ),
         .executableTarget(
             name: "CodeLooper",
@@ -83,6 +85,18 @@ let package = Package(
                   "-warn-concurrency",
                   "-enable-actor-data-race-checks"
                 ], .when(configuration: .debug))
+            ]
+        ),
+        .testTarget(
+            name: "CodeLooperTests",
+            dependencies: [
+                "CodeLooper",
+                "Diagnostics",
+                .product(name: "Testing", package: "swift-testing")
+            ],
+            path: "Tests",
+            resources: [
+                .copy("Resources")
             ]
         )
     ]
