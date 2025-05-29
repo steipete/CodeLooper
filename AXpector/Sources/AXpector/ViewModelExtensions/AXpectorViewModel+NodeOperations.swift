@@ -121,7 +121,8 @@ extension AXpectorViewModel {
             if !self.debouncedFilterText.isEmpty {
                 axInfoLog(
                     """
-                    Re-filtering \(fetchedPropertyNodeChildren.count) newly loaded children for node \(node.displayName) \
+                    Re-filtering \(fetchedPropertyNodeChildren.count) newly loaded children for node \(node
+                        .displayName) \
                     against filter: \(self.debouncedFilterText)
                     """
                 )
@@ -176,7 +177,8 @@ extension AXpectorViewModel {
             let childTitle = childAttributes[AXAttributeNames.kAXTitleAttribute]?.value as? String
             var childPathComponent = childRole ?? "UnknownRole"
             if let title = childTitle,
-               !title.isEmpty {
+               !title.isEmpty
+            {
                 childPathComponent += "[\"\(title.prefix(20))\"]"
             } else {
                 childPathComponent += "[EL:\(String(describing: childAX.underlyingElement).suffix(8))]"
@@ -340,7 +342,8 @@ extension AXpectorViewModel {
             pid: pid,
             role: role ?? "N/A",
             title: title ?? "",
-            descriptionText: axElementFromCollectAll.attributes?[AXAttributeNames.kAXDescriptionAttribute]?.value as? String ?? "",
+            descriptionText: axElementFromCollectAll.attributes?[AXAttributeNames.kAXDescriptionAttribute]?
+                .value as? String ?? "",
             value: axElementFromCollectAll.attributes?[AXAttributeNames.kAXValueAttribute]?.value as? String ?? "",
             fullPath: newPath, children: mappedChildren, attributes: axElementFromCollectAll.attributes ?? [:],
             actions: axElementFromCollectAll.actions ?? [],

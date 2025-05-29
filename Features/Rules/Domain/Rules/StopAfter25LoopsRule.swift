@@ -25,7 +25,7 @@ public class StopAfter25LoopsRule {
     func execute(windowId: String, jsHookService: JSHookService) async -> Bool {
         do {
             let currentCount = RuleCounterManager.shared.getCount(for: ruleName)
-            
+
             guard currentCount < 25 else {
                 await handleRuleLimit(currentCount: currentCount)
                 return false
@@ -115,7 +115,7 @@ public class StopAfter25LoopsRule {
 
     private let logger = Logger(category: .rules)
     private let sessionLogger = SessionLogger.shared
-    
+
     /// Handle when rule limit is reached
     private func handleRuleLimit(currentCount: Int) async {
         logger.info("🛑 Rule '\(displayName)' has reached 25 executions limit, stopping")

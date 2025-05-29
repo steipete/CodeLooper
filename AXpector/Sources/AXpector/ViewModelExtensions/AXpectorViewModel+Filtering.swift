@@ -50,7 +50,7 @@ extension AXpectorViewModel {
             .isEmpty
         {
             axDebugLog(
-                "Parsed criteria: \(criteria.map { 
+                "Parsed criteria: \(criteria.map {
                     "(\($0.isNegated ? "NOT " : "")\($0.key): \($0.isRegex ? "regex: " : "")\($0.value)"
                 })"
             )
@@ -122,30 +122,30 @@ extension AXpectorViewModel {
                 let targetValue = criterion.value
                 switch criterion.key {
                 case "role": specificFieldMatches = match(
-                    text: node.role.lowercased(),
-                    pattern: targetValue,
-                    isRegex: criterion.isRegex
-                )
+                        text: node.role.lowercased(),
+                        pattern: targetValue,
+                        isRegex: criterion.isRegex
+                    )
                 case "title": specificFieldMatches = match(
-                    text: node.title.lowercased(),
-                    pattern: targetValue,
-                    isRegex: criterion.isRegex
-                )
+                        text: node.title.lowercased(),
+                        pattern: targetValue,
+                        isRegex: criterion.isRegex
+                    )
                 case "value": specificFieldMatches = match(
-                    text: node.value.lowercased(),
-                    pattern: targetValue,
-                    isRegex: criterion.isRegex
-                )
+                        text: node.value.lowercased(),
+                        pattern: targetValue,
+                        isRegex: criterion.isRegex
+                    )
                 case "desc": specificFieldMatches = match(
-                    text: node.descriptionText.lowercased(),
-                    pattern: targetValue,
-                    isRegex: criterion.isRegex
-                )
+                        text: node.descriptionText.lowercased(),
+                        pattern: targetValue,
+                        isRegex: criterion.isRegex
+                    )
                 case "path": specificFieldMatches = match(
-                    text: node.fullPath.lowercased(),
-                    pattern: targetValue,
-                    isRegex: criterion.isRegex
-                )
+                        text: node.fullPath.lowercased(),
+                        pattern: targetValue,
+                        isRegex: criterion.isRegex
+                    )
                 case "id":
                     if let axIdentifier = node.attributes[AXAttributeNames.kAXIdentifierAttribute]?.value as? String {
                         specificFieldMatches = match(

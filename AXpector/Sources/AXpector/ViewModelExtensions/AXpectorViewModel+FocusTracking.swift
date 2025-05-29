@@ -37,7 +37,8 @@ extension AXpectorViewModel {
                     }
                     axInfoLog(
                         """
-                        App activated: \(activatedApp.localizedName ?? "unknown") with PID \(activatedApp.processIdentifier). \
+                        App activated: \(activatedApp.localizedName ?? "unknown") with PID \(activatedApp
+                            .processIdentifier). \
                         AXpector will update focus tracking.
                         """
                     ) // CHANGED
