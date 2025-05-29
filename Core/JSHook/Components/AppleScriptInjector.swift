@@ -20,7 +20,10 @@ final class AppleScriptInjector {
         logger.info("📍 Target window: \(targetWindowTitle ?? "front window")")
         logger.info("🔌 Port: \(port)")
 
-        let isConsoleOpen = JSHookDevConsoleDetector.isDevConsoleOpen(in: applicationName, targetWindowTitle: targetWindowTitle)
+        let isConsoleOpen = JSHookDevConsoleDetector.isDevConsoleOpen(
+            in: applicationName,
+            targetWindowTitle: targetWindowTitle
+        )
         logger.debug("🔍 Dev console already open: \(isConsoleOpen)")
 
         logger.info("📝 Generating JavaScript hook script...")

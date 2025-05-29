@@ -2,7 +2,7 @@ import AppKit
 import Diagnostics
 import Foundation
 import OSLog
-import UserNotifications
+@preconcurrency import UserNotifications
 
 /// Class for showing visual success feedback after a contact upload completes
 @MainActor

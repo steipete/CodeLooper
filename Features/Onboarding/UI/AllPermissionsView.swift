@@ -12,10 +12,10 @@ struct AllPermissionsView: View {
                 title: "Accessibility",
                 description: "Required to monitor and interact with Cursor",
                 hasPermission: permissionsManager.hasAccessibilityPermissions
-            )                {
-                    Task {
-                        await permissionsManager.requestAccessibilityPermissions()
-                    }
+            ) {
+                Task {
+                    await permissionsManager.requestAccessibilityPermissions()
+                }
             }
 
             DSDivider()
@@ -45,10 +45,10 @@ struct AllPermissionsView: View {
                 title: "Notifications",
                 description: "Notify you about important events and completion of tasks",
                 hasPermission: permissionsManager.hasNotificationPermissions
-            )                {
-                    Task {
-                        await permissionsManager.requestNotificationPermissions()
-                    }
+            ) {
+                Task {
+                    await permissionsManager.requestNotificationPermissions()
+                }
             }
         }
     }

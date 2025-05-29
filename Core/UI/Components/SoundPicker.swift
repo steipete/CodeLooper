@@ -4,10 +4,11 @@ import DesignSystem
 import SwiftUI
 
 /// Simple model for macOS alert sounds
-struct MacAlertSound: Identifiable, Hashable, Codable {
+struct MacAlertSound: Identifiable, Hashable {
     let id = UUID()
-    let name: String               // file name without extension
-    var displayName: String { name }  // tweak if you want prettified titles
+    let name: String // file name without extension
+
+    var displayName: String { name } // tweak if you want prettified titles
 }
 
 /// Curated list of available macOS system alert sounds
@@ -25,33 +26,35 @@ let popularSounds: [MacAlertSound] = [
     .init(name: "Purr"),
     .init(name: "Sosumi"),
     .init(name: "Submarine"),
-    .init(name: "Tink")
+    .init(name: "Tink"),
 ]
 
 /// Sound picker for rule configuration
 struct SoundPickerView: View {
+    // MARK: Internal
+
     @Binding var selectedSound: String
-    @State private var isShowingPicker = false
-    
+
     var body: some View {
         VStack(alignment: .leading, spacing: Spacing.small) {
             Text("Alert Sound")
                 .font(Typography.callout(.medium))
                 .foregroundColor(ColorPalette.text)
-            
+
             HStack {
-                DSButton(style: .secondary) {
-                    Text(selectedSound.isEmpty ? "Select Sound" : selectedSound)
-                        .foregroundColor(ColorPalette.text)
-                } action: {
+                DSButton(
+                    selectedSound.isEmpty ? "Select Sound" : selectedSound,
+                    style: .secondary
+                ) {
                     isShowingPicker.toggle()
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
-                
-                DSButton(style: .secondary) {
-                    Image(systemName: "play.fill")
-                        .foregroundColor(ColorPalette.accent)
-                } action: {
+
+                DSButton(
+                    "",
+                    icon: Image(systemName: "play.fill"),
+                    style: .secondary
+                ) {
                     playSound(selectedSound)
                 }
                 .disabled(selectedSound.isEmpty)
@@ -61,7 +64,11 @@ struct SoundPickerView: View {
             SoundPickerPopover(selectedSound: $selectedSound, isPresented: $isShowingPicker)
         }
     }
-    
+
+    // MARK: Private
+
+    @State private var isShowingPicker = false
+
     private func playSound(_ soundName: String) {
         guard !soundName.isEmpty else { return }
         SoundEngine.playSystemSound(named: soundName)
@@ -70,60 +77,60 @@ struct SoundPickerView: View {
 
 /// Popover content for sound selection
 private struct SoundPickerPopover: View {
-    @Binding var selectedSound: String
-    @Binding var isPresented: Bool
-    @State private var tempSelection: String
-    
+    // MARK: Lifecycle
+
     init(selectedSound: Binding<String>, isPresented: Binding<Bool>) {
         self._selectedSound = selectedSound
         self._isPresented = isPresented
         self._tempSelection = State(initialValue: selectedSound.wrappedValue)
     }
-    
+
+    // MARK: Internal
+
+    @Binding var selectedSound: String
+    @Binding var isPresented: Bool
+
     var body: some View {
         VStack(alignment: .leading, spacing: Spacing.medium) {
             HStack {
                 Text("Select Alert Sound")
                     .font(Typography.headline(.semibold))
                     .foregroundColor(ColorPalette.text)
-                
+
                 Spacer()
-                
-                DSButton(style: .tertiary) {
-                    Image(systemName: "xmark")
-                        .foregroundColor(ColorPalette.textSecondary)
-                } action: {
+
+                DSButton(
+                    "",
+                    icon: Image(systemName: "xmark"),
+                    style: .tertiary
+                ) {
                     isPresented = false
                 }
             }
-            
+
             ScrollView {
                 LazyVStack(spacing: Spacing.xxSmall) {
                     ForEach(popularSounds) { sound in
                         SoundRowView(
                             sound: sound,
                             isSelected: tempSelection == sound.name
-                        )                            {
-                                tempSelection = sound.name
-                                playSound(sound.name)
+                        ) {
+                            tempSelection = sound.name
+                            playSound(sound.name)
                         }
                     }
                 }
             }
             .frame(maxHeight: 300)
-            
+
             HStack {
-                DSButton(style: .secondary) {
-                    Text("Cancel")
-                } action: {
+                DSButton("Cancel", style: .secondary) {
                     isPresented = false
                 }
-                
+
                 Spacer()
-                
-                DSButton(style: .primary) {
-                    Text("Select")
-                } action: {
+
+                DSButton("Select", style: .primary) {
                     selectedSound = tempSelection
                     isPresented = false
                 }
@@ -133,7 +140,11 @@ private struct SoundPickerPopover: View {
         .padding(Spacing.medium)
         .frame(width: 280)
     }
-    
+
+    // MARK: Private
+
+    @State private var tempSelection: String
+
     private func playSound(_ soundName: String) {
         SoundEngine.playSystemSound(named: soundName)
     }
@@ -144,20 +155,20 @@ private struct SoundRowView: View {
     let sound: MacAlertSound
     let isSelected: Bool
     let onSelect: () -> Void
-    
+
     var body: some View {
-        DSButton(style: .tertiary) {
+        Button(action: onSelect) {
             HStack {
                 Image(systemName: "speaker.wave.2")
                     .foregroundColor(ColorPalette.accent)
                     .font(.system(size: 14))
-                
+
                 Text(sound.displayName)
                     .font(Typography.body())
                     .foregroundColor(ColorPalette.text)
-                
+
                 Spacer()
-                
+
                 if isSelected {
                     Image(systemName: "checkmark")
                         .foregroundColor(ColorPalette.accent)
@@ -166,9 +177,8 @@ private struct SoundRowView: View {
             }
             .padding(.horizontal, Spacing.small)
             .padding(.vertical, Spacing.xxSmall)
-        } action: {
-            onSelect()
         }
+        .buttonStyle(PlainButtonStyle())
         .background(
             RoundedRectangle(cornerRadius: 6)
                 .fill(isSelected ? ColorPalette.accent.opacity(0.1) : Color.clear)
@@ -179,22 +189,22 @@ private struct SoundRowView: View {
 // MARK: - Preview
 
 #if DEBUG
-struct SoundPickerView_Previews: PreviewProvider {
-    static var previews: some View {
-        Group {
-            SoundPickerView(selectedSound: .constant("Boop"))
-                .padding()
+    struct SoundPickerView_Previews: PreviewProvider {
+        static var previews: some View {
+            Group {
+                SoundPickerView(selectedSound: .constant("Boop"))
+                    .padding()
+                    .background(ColorPalette.background)
+                    .previewDisplayName("Sound Picker")
+
+                SoundPickerPopover(
+                    selectedSound: .constant("Boop"),
+                    isPresented: .constant(true)
+                )
                 .background(ColorPalette.background)
-                .previewDisplayName("Sound Picker")
-            
-            SoundPickerPopover(
-                selectedSound: .constant("Boop"),
-                isPresented: .constant(true)
-            )
-            .background(ColorPalette.background)
-            .previewDisplayName("Sound Picker Popover")
+                .previewDisplayName("Sound Picker Popover")
+            }
+            .withDesignSystem()
         }
-        .withDesignSystem()
     }
-}
 #endif

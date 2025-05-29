@@ -6,9 +6,6 @@ import Foundation
 class JSHookManager {
     // MARK: Internal
 
-    private let connectionManager = ConnectionManager()
-    private let logger = Logger(category: .jshook)
-    
     // MARK: - Public Methods
 
     func initialize() async {
@@ -28,11 +25,11 @@ class JSHookManager {
 
         let windowTitle = window.windowTitle ?? "Unknown"
         logger.info("🔨 Installing hook for window '\(windowTitle)'")
-        
+
         try await connectionManager.injectHook(for: window)
         logger.info("✅ Hook installed successfully for '\(windowTitle)'")
     }
-    
+
     func updateWindows(_ windows: [MonitoredWindowInfo]) async {
         await connectionManager.windowsChanged(windows: windows)
     }
@@ -41,7 +38,7 @@ class JSHookManager {
     func getPort(for windowId: String) -> UInt16? {
         connectionManager.getPort(for: windowId)
     }
-    
+
     /// Send a command to a specific window's hook
     func sendCommand(_ command: [String: Any], to windowId: String) async throws -> String {
         guard let hook = connectionManager.getHook(for: windowId) else {
@@ -54,7 +51,7 @@ class JSHookManager {
     func getAllHookedWindowIds() -> [String] {
         connectionManager.getAllHookedWindowIds()
     }
-    
+
     @available(*, deprecated, message: "Use sendCommand instead")
     func runJavaScript(_ script: String, on windowId: String) async throws -> String {
         guard let hook = connectionManager.getHook(for: windowId) else {
@@ -63,6 +60,11 @@ class JSHookManager {
 
         return try await hook.runJS(script)
     }
+
+    // MARK: Private
+
+    private let connectionManager = ConnectionManager()
+    private let logger = Logger(category: .jshook)
 }
 
 // MARK: - Errors

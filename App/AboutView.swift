@@ -42,7 +42,7 @@ struct AboutView: View {
                     .padding(.vertical, 4)
                     .background(Color.blue.opacity(0.1))
                     .cornerRadius(4)
-                
+
                 Text("Build \(buildNumber)")
                     .font(.caption)
                     .padding(.horizontal, 8)
@@ -51,12 +51,14 @@ struct AboutView: View {
                     .cornerRadius(4)
             }
 
-            Text("CodeLooper keeps your Cursor AI sessions running smoothly by automatically detecting and resolving connection issues, stuck states, and other common problems.")
-                .font(.footnote)
-                .foregroundColor(.gray)
-                .multilineTextAlignment(.center)
-                .padding(.horizontal, 30)
-                .padding(.vertical, 10)
+            Text(
+                "CodeLooper keeps your Cursor AI sessions running smoothly by automatically detecting and resolving connection issues, stuck states, and other common problems."
+            )
+            .font(.footnote)
+            .foregroundColor(.gray)
+            .multilineTextAlignment(.center)
+            .padding(.horizontal, 30)
+            .padding(.vertical, 10)
 
             Divider()
                 .padding(.horizontal, 50)

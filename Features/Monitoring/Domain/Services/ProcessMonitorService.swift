@@ -392,14 +392,15 @@ class ProcessMonitoringTickUseCase {
         )
 
         if Defaults[.sendNotificationOnMaxInterventions] {
-            await UserNotificationManager.shared.sendNotification(
-                identifier: "max_interventions_\(self.pid)",
-                title: "CodeLooper: Intervention Limit",
-                body: "Cursor instance (PID: \(self.pid)) has reached the maximum number of automated interventions and is now paused.",
-                soundName: Defaults[.notificationSoundName],
-                categoryIdentifier: nil,
-                userInfo: nil
-            )
+            do {
+                try await UserNotificationManager.shared.sendNotification(
+                    title: "CodeLooper: Intervention Limit",
+                    body: "Cursor instance (PID: \(self.pid)) has reached the maximum number of automated interventions and is now paused.",
+                    identifier: "max_interventions_\(self.pid)"
+                )
+            } catch {
+                logger.error("Failed to send max interventions notification: \(error)")
+            }
         }
 
         return (status: .paused, message: "Paused (Intervention Limit Reached)")
@@ -424,14 +425,15 @@ class ProcessMonitoringTickUseCase {
         )
 
         if true { // Always send notification on persistent error
-            await UserNotificationManager.shared.sendNotification(
-                identifier: "persistent_failure_\(self.pid)",
-                title: "CodeLooper: Persistent Failure",
-                body: "Cursor instance (PID: \(self.pid)) has encountered persistent recovery failures and is now marked unrecoverable.",
-                soundName: Defaults[.notificationSoundName],
-                categoryIdentifier: nil,
-                userInfo: nil
-            )
+            do {
+                try await UserNotificationManager.shared.sendNotification(
+                    title: "CodeLooper: Persistent Failure",
+                    body: "Cursor instance (PID: \(self.pid)) has encountered persistent recovery failures and is now marked unrecoverable.",
+                    identifier: "persistent_failure_\(self.pid)"
+                )
+            } catch {
+                logger.error("Failed to send persistent failure notification: \(error)")
+            }
         }
 
         return (

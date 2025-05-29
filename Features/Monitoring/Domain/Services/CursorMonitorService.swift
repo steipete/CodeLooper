@@ -166,13 +166,14 @@ public class CursorMonitor: ObservableObject {
     var monitoringCycleCount: Int = 0
     var cancellables = Set<AnyCancellable>()
 
+    lazy var ruleExecutor = RuleExecutor()
+
     // MARK: Private
 
     private var axApplicationObserver: AXApplicationObserver!
 
     private var interventionEngine: CursorInterventionEngine!
     private var tickUseCases: [pid_t: ProcessMonitoringTickUseCase] = [:]
-    internal lazy var ruleExecutor = RuleExecutor()
 
     // MARK: - Subscription Setup
 

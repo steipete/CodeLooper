@@ -16,11 +16,11 @@ private class MarkdownContentState: ObservableObject {
 struct MarkdownContentPopover: View {
     let window: MonitoredWindowInfo
     @ObservedObject var viewModel: CursorInputWatcherViewModel
-    
+
     @StateObject private var contentState = MarkdownContentState()
     private let markdownService = HTMLToMarkdownService.shared
     private let logger = Logger(category: .ui)
-    
+
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             // Header
@@ -28,14 +28,14 @@ struct MarkdownContentPopover: View {
                 VStack(alignment: .leading, spacing: 4) {
                     Text("Sidebar Content")
                         .font(.headline)
-                    
+
                     Text("Window: \(window.windowTitle ?? "Unknown")")
                         .font(.caption)
                         .foregroundColor(.secondary)
                 }
-                
+
                 Spacer()
-                
+
                 // Observer toggle
                 DSToggle(
                     contentState.isObserving ? "Observing" : "Observer Off",
@@ -52,9 +52,9 @@ struct MarkdownContentPopover: View {
                 }
             }
             .padding(.bottom, 4)
-            
+
             Divider()
-            
+
             // Status bar
             HStack {
                 if contentState.isLoading {
@@ -83,9 +83,9 @@ struct MarkdownContentPopover: View {
                         .font(.caption)
                         .foregroundColor(.secondary)
                 }
-                
+
                 Spacer()
-                
+
                 // Action buttons
                 HStack(spacing: 4) {
                     // Copy markdown button
@@ -96,7 +96,7 @@ struct MarkdownContentPopover: View {
                     .buttonStyle(.plain)
                     .disabled(contentState.markdownContent.isEmpty)
                     .help("Copy Markdown")
-                    
+
                     // Refresh button
                     Button(action: {
                         Task {
@@ -111,9 +111,9 @@ struct MarkdownContentPopover: View {
                     .help("Refresh")
                 }
             }
-            
+
             Divider()
-            
+
             // Content display with tabs
             TabView {
                 // Markdown tab
@@ -128,7 +128,7 @@ struct MarkdownContentPopover: View {
                 .tabItem {
                     Label("Markdown", systemImage: "doc.text")
                 }
-                
+
                 // HTML tab (for debugging)
                 ScrollView {
                     Text(contentState.htmlContent.isEmpty ? "No HTML content" : contentState.htmlContent)
@@ -159,34 +159,34 @@ struct MarkdownContentPopover: View {
             }
         }
     }
-    
+
     // MARK: - Private Methods
-    
+
     private func fetchContent() async {
         guard viewModel.checkHookStatus(for: window) else {
             contentState.error = "No active hook for this window"
             return
         }
-        
+
         contentState.isLoading = true
         contentState.error = nil
-        
+
         do {
             // Get composer content from the JS hook
             let result = try await viewModel.jsHookManager.sendCommand([
-                "type": "getComposerContent"
+                "type": "getComposerContent",
             ], to: window.id)
-            
+
             // Parse the result to extract HTML content
             if let data = result.data(using: .utf8),
                let json = try JSONSerialization.jsonObject(with: data) as? [String: Any],
-               let html = json["content"] as? String {
-                
+               let html = json["content"] as? String
+            {
                 contentState.htmlContent = html
-                
+
                 // Convert HTML to Markdown
                 let markdown = try await markdownService.convertToMarkdown(html)
-                
+
                 await MainActor.run {
                     contentState.markdownContent = markdown
                     contentState.lastUpdateTime = Date()
@@ -198,7 +198,7 @@ struct MarkdownContentPopover: View {
                     contentState.isLoading = false
                 }
             }
-            
+
         } catch {
             await MainActor.run {
                 contentState.error = error.localizedDescription
@@ -207,20 +207,20 @@ struct MarkdownContentPopover: View {
             logger.error("Failed to fetch content: \(error)")
         }
     }
-    
+
     private func startObserving() async {
         guard viewModel.checkHookStatus(for: window) else {
             contentState.error = "No active hook for this window"
             contentState.isObserving = false
             return
         }
-        
+
         do {
             // Start the composer observer
             _ = try await viewModel.jsHookManager.sendCommand([
-                "type": "startComposerObserver"
+                "type": "startComposerObserver",
             ], to: window.id)
-            
+
             // Start periodic updates
             Task {
                 while contentState.isObserving {
@@ -228,31 +228,31 @@ struct MarkdownContentPopover: View {
                     try? await Task.sleep(nanoseconds: 2_000_000_000) // 2 seconds
                 }
             }
-            
+
         } catch {
             contentState.error = error.localizedDescription
             contentState.isObserving = false
             logger.error("Failed to start observer: \(error)")
         }
     }
-    
+
     private func stopObserving() async {
         contentState.isObserving = false
-        
+
         guard viewModel.checkHookStatus(for: window) else {
             return
         }
-        
+
         do {
             // Stop the composer observer
             _ = try await viewModel.jsHookManager.sendCommand([
-                "type": "stopComposerObserver"
+                "type": "stopComposerObserver",
             ], to: window.id)
         } catch {
             logger.error("Failed to stop observer: \(error)")
         }
     }
-    
+
     private func copyMarkdown() {
         NSPasteboard.general.clearContents()
         NSPasteboard.general.setString(contentState.markdownContent, forType: .string)

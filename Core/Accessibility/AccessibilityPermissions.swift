@@ -2,7 +2,7 @@ import AXorcist
 import Diagnostics
 import Foundation
 @preconcurrency import ScreenCaptureKit
-import UserNotifications
+@preconcurrency import UserNotifications
 
 /// Centralized manager for handling all app permissions
 @MainActor

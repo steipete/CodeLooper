@@ -25,12 +25,12 @@ class HeartbeatMonitor {
         logger.info("Setting up heartbeat listener")
         startHeartbeatMonitoring()
     }
-    
+
     func registerWindowPort(_ windowId: String, port: UInt16) {
         windowPortMapping[port] = windowId
         logger.debug("Registered window \(windowId) on port \(port)")
     }
-    
+
     func unregisterWindowPort(_ port: UInt16) {
         if let windowId = windowPortMapping.removeValue(forKey: port) {
             lastHeartbeats.removeValue(forKey: windowId)
@@ -94,14 +94,15 @@ class HeartbeatMonitor {
             object: nil
         )
     }
-    
+
     @objc private func handleHeartbeatNotification(_ notification: Notification) {
         guard let userInfo = notification.userInfo,
-              let port = userInfo["port"] as? UInt16 else {
+              let port = userInfo["port"] as? UInt16
+        else {
             logger.warning("Received heartbeat without port information")
             return
         }
-        
+
         guard let windowId = windowPortMapping[port] else {
             // This can happen during initial setup - heartbeats arrive before port registration
             // Only log this message once every 10 seconds per port to reduce spam
@@ -109,29 +110,32 @@ class HeartbeatMonitor {
             if let lastLog = lastUnregisteredPortLogTime[port], now.timeIntervalSince(lastLog) < 10 {
                 // Skip logging
             } else {
-                logger.debug("Received heartbeat for port \(port) before window registration (this is normal during setup)")
+                logger
+                    .debug(
+                        "Received heartbeat for port \(port) before window registration (this is normal during setup)"
+                    )
                 lastUnregisteredPortLogTime[port] = now
             }
             return
         }
-        
+
         let version = userInfo["version"] as? String ?? "unknown"
         let location = userInfo["location"] as? String
         let resumeNeeded = userInfo["resumeNeeded"] as? Bool ?? false
-        
+
         let heartbeatData = HeartbeatData(
             version: version,
             timestamp: Date(),
             isPaused: resumeNeeded,
             location: location
         )
-        
+
         Task { @MainActor in
             processHeartbeat(from: windowId, data: heartbeatData)
             lastHeartbeats[windowId] = Date()
         }
     }
-    
+
     private func checkAllHeartbeats() {
         // Check for timed out heartbeats
         let now = Date()

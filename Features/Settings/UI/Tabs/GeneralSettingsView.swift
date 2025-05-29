@@ -116,15 +116,15 @@ struct GeneralSettingsView: View {
                 // Rule Execution Statistics
                 DSSettingsSection("Automation Statistics") {
                     RuleExecutionStatsView()
-                    
+
                     HStack {
                         DSButton("Reset All Counters", style: .secondary, size: .small) {
                             RuleCounterManager.shared.resetAllCounters()
                         }
                         .frame(width: 140)
-                        
+
                         Spacer()
-                        
+
                         DSToggle(
                             "Show Counters",
                             isOn: Binding<Bool>(

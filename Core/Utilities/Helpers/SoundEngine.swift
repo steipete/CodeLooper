@@ -5,13 +5,13 @@ import Foundation
 
 /// Built-in tones or the user's preferred alert
 enum SystemSound {
-    case userAlert                    // kSystemSoundID_UserPreferredAlert
-    case named(String)                // e.g. "Boop.aiff"
+    case userAlert // kSystemSoundID_UserPreferredAlert
+    case named(String) // e.g. "Boop.aiff"
 }
 
 /// One tiny helper that does everything
 enum SoundEngine {
-    private static var cache: [String: SystemSoundID] = [:]
+    // MARK: Internal
 
     /// Play a tone that obeys the user's sound settings
     static func play(_ sound: SystemSound) {
@@ -24,46 +24,15 @@ enum SoundEngine {
                 kSystemSoundID_UserPreferredAlert, nil
             )
 
-        case .named(let filename):
+        case let .named(filename):
             guard let id = id(for: filename) else { return }
             AudioServicesPlaySystemSoundWithCompletion(id, nil)
         }
     }
 
-    /// Build or reuse a SystemSoundID for a system .aiff/.caf
-    private static func id(for filename: String) -> SystemSoundID? {
-        if let existing = cache[filename] { return existing }
+    // MARK: Private
 
-        // 1. Try the classic /System/Library/Sounds location
-        let sysURL = URL(fileURLWithPath:
-            "/System/Library/Sounds/\(filename)")
-
-        // 2. Fall back to an app-bundled resource if present
-        let url = FileManager.default.fileExists(atPath: sysURL.path)
-            ? sysURL : Bundle.main.url(forResource: filename,
-                                       withExtension: nil)
-
-        guard let finalURL = url else { return nil }
-
-        var id: SystemSoundID = 0
-        if AudioServicesCreateSystemSoundID(finalURL as CFURL, &id)
-            == kAudioServicesNoError {
-
-            // Tag it as a UI sound → respects "Play user interface sounds"
-            var flag: UInt32 = 1
-            AudioServicesSetProperty(kAudioServicesPropertyIsUISound,
-                                     UInt32(MemoryLayout.size(ofValue: id)),
-                                     &id,
-                                     UInt32(MemoryLayout.size(ofValue: flag)),
-                                     &flag)
-            cache[filename] = id
-            return id
-        }
-
-        // Fallback: old-school NSSound (uses main volume, no UI-sound rules)
-        NSSound(named: .init(filename.dropLast(5)))?.play()
-        return nil
-    }
+    private static nonisolated(unsafe) var cache: [String: SystemSoundID] = [:]
 
     /// Quick test for master-output mute (works on Apple Silicon & Intel)
     private static var isOutputMuted: Bool {
@@ -72,12 +41,13 @@ enum SoundEngine {
         var address = AudioObjectPropertyAddress(
             mSelector: kAudioHardwarePropertyDefaultOutputDevice,
             mScope: kAudioObjectPropertyScopeGlobal,
-            mElement: kAudioObjectPropertyElementMaster
+            mElement: kAudioObjectPropertyElementMain
         )
 
         guard AudioObjectGetPropertyData(defaultDeviceID,
                                          &address, 0, nil,
-                                         &size, &defaultDeviceID) == noErr else {
+                                         &size, &defaultDeviceID) == noErr
+        else {
             return false
         }
 
@@ -98,10 +68,46 @@ enum SoundEngine {
         address.mSelector = kAudioDevicePropertyVolumeScalar
         if AudioObjectGetPropertyData(defaultDeviceID,
                                       &address, 0, nil,
-                                      &size, &vol) == noErr {
+                                      &size, &vol) == noErr
+        {
             return vol == 0
         }
         return false
+    }
+
+    /// Build or reuse a SystemSoundID for a system .aiff/.caf
+    private static func id(for filename: String) -> SystemSoundID? {
+        if let existing = cache[filename] { return existing }
+
+        // 1. Try the classic /System/Library/Sounds location
+        let sysURL = URL(fileURLWithPath:
+            "/System/Library/Sounds/\(filename)")
+
+        // 2. Fall back to an app-bundled resource if present
+        let url = FileManager.default.fileExists(atPath: sysURL.path)
+            ? sysURL : Bundle.main.url(forResource: filename,
+                                       withExtension: nil)
+
+        guard let finalURL = url else { return nil }
+
+        var id: SystemSoundID = 0
+        if AudioServicesCreateSystemSoundID(finalURL as CFURL, &id)
+            == kAudioServicesNoError
+        {
+            // Tag it as a UI sound → respects "Play user interface sounds"
+            var flag: UInt32 = 1
+            AudioServicesSetProperty(kAudioServicesPropertyIsUISound,
+                                     UInt32(MemoryLayout.size(ofValue: id)),
+                                     &id,
+                                     UInt32(MemoryLayout.size(ofValue: flag)),
+                                     &flag)
+            cache[filename] = id
+            return id
+        }
+
+        // Fallback: old-school NSSound (uses main volume, no UI-sound rules)
+        NSSound(named: .init(filename.dropLast(5)))?.play()
+        return nil
     }
 }
 
@@ -113,7 +119,7 @@ extension SoundEngine {
         let filename = name.hasSuffix(".aiff") ? name : "\(name).aiff"
         play(.named(filename))
     }
-    
+
     /// Play the user's preferred alert sound
     static func playUserAlert() {
         play(.userAlert)

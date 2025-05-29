@@ -1,6 +1,6 @@
 import DesignSystem
 import SwiftUI
-import UserNotifications
+@preconcurrency import UserNotifications
 
 /// A view that displays notification permission status and allows granting permissions
 public struct NotificationPermissionsView: View {
@@ -25,12 +25,14 @@ public struct NotificationPermissionsView: View {
                 // Icon
                 Image(systemName: "bell.badge.fill")
                     .font(.system(size: compact ? 24 : 28))
-                    .foregroundColor(permissionsManager.hasNotificationPermissions ? ColorPalette.success : ColorPalette.warning)
+                    .foregroundColor(permissionsManager.hasNotificationPermissions ? ColorPalette.success : ColorPalette
+                        .warning)
                     .symbolRenderingMode(.hierarchical)
 
                 // Text content
                 VStack(alignment: .leading, spacing: Spacing.xSmall) {
-                    Text(permissionsManager.hasNotificationPermissions ? "Notifications Enabled" : "Notifications Not Enabled")
+                    Text(permissionsManager
+                        .hasNotificationPermissions ? "Notifications Enabled" : "Notifications Not Enabled")
                         .font(Typography.body(.medium))
                         .foregroundColor(ColorPalette.text)
 
@@ -61,7 +63,7 @@ public struct NotificationPermissionsView: View {
                 }
             }
 
-            if !permissionsManager.hasNotificationPermissions && !compact {
+            if !permissionsManager.hasNotificationPermissions, !compact {
                 // Additional help text
                 DSCard(style: .filled) {
                     HStack(spacing: Spacing.small) {
@@ -82,6 +84,7 @@ public struct NotificationPermissionsView: View {
     // MARK: Private
 
     @StateObject private var permissionsManager = PermissionsManager.shared
+
     private let showTitle: Bool
     private let compact: Bool
 }

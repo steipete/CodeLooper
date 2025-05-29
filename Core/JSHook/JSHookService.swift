@@ -7,8 +7,6 @@ import Foundation
 class JSHookService {
     // MARK: Lifecycle
 
-    static let shared = JSHookService()
-    
     private init() {
         // Initialize with clean probe-once logic
         Task { @MainActor in
@@ -18,10 +16,12 @@ class JSHookService {
 
     // MARK: Internal
 
+    static let shared = JSHookService()
+
     func isWindowHooked(_ windowId: String) -> Bool {
         jsHookManager.hasHookForWindow(windowId)
     }
-    
+
     func getPort(for windowId: String) -> UInt16? {
         jsHookManager.getPort(for: windowId)
     }
@@ -35,14 +35,14 @@ class JSHookService {
             handleHookInstallationError(error, for: window)
         }
     }
-    
+
     func handleNewWindow(_ window: MonitoredWindowInfo) {
         // Just notify the manager about the new window - it will handle probing efficiently
         Task { @MainActor in
             await jsHookManager.updateWindows([window])
         }
     }
-    
+
     func installHook(for window: MonitoredWindowInfo) async throws {
         try await jsHookManager.installHook(for: window)
     }
@@ -55,13 +55,13 @@ class JSHookService {
         logger.info("🛑 Stopping all JS hooks")
         // Note: Individual hooks will be cleaned up when windows are removed
     }
-    
+
     func sendCommand(_ command: [String: Any], to windowId: String) async throws -> String {
-        return try await jsHookManager.sendCommand(command, to: windowId)
+        try await jsHookManager.sendCommand(command, to: windowId)
     }
-    
+
     func getAllHookedWindowIds() -> [String] {
-        return jsHookManager.getAllHookedWindowIds()
+        jsHookManager.getAllHookedWindowIds()
     }
 
     // MARK: Private

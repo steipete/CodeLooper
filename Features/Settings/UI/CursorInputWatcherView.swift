@@ -82,8 +82,6 @@ private struct WindowRow: View {
 
     let window: MonitoredWindowInfo
     let viewModel: CursorInputWatcherViewModel
-    
-    @State private var showDebugPopover = false
 
     var body: some View {
         HStack {
@@ -103,6 +101,8 @@ private struct WindowRow: View {
     }
 
     // MARK: Private
+
+    @State private var showDebugPopover = false
 
     @ViewBuilder
     private var windowStatus: some View {
@@ -125,7 +125,7 @@ private struct WindowRow: View {
                         DebugJSPopover(window: window, viewModel: viewModel)
                     }
                 }
-                
+
                 // Green heart when hooked and has heartbeat
                 if let heartbeat = viewModel.getHeartbeatStatus(for: window.id), heartbeat.isAlive {
                     Image(systemName: "heart.fill")

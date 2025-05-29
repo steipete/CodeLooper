@@ -48,7 +48,7 @@ final class MCPVersionService: ObservableObject {
                 }
             }
         }
-        
+
         // Check installed versions
         for mcpExtension in MCPExtensionType.allCases {
             if let installedVersion = self.getInstalledVersion(for: mcpExtension) {
@@ -65,12 +65,12 @@ final class MCPVersionService: ObservableObject {
 
     /// Get cached latest version for an extension, or return current version if not available
     func getLatestVersion(for mcpExtension: MCPExtensionType) -> String {
-        return latestVersions[mcpExtension] ?? getInstalledVersion(for: mcpExtension) ?? mcpExtension.currentVersion
+        latestVersions[mcpExtension] ?? getInstalledVersion(for: mcpExtension) ?? mcpExtension.currentVersion
     }
-    
+
     /// Get installed version for an extension
     func getInstalledVersionCached(for mcpExtension: MCPExtensionType) -> String {
-        return installedVersions[mcpExtension] ?? mcpExtension.currentVersion
+        installedVersions[mcpExtension] ?? mcpExtension.currentVersion
     }
 
     /// Check if cached version is newer than current version
@@ -79,19 +79,19 @@ final class MCPVersionService: ObservableObject {
         let installedVersion = installedVersions[mcpExtension] ?? mcpExtension.currentVersion
         return compareVersions(current: installedVersion, latest: latestVersion) == .needsUpdate
     }
-    
+
     /// Get the installed version for an MCP extension from mcp.json or package.json
     func getInstalledVersion(for mcpExtension: MCPExtensionType) -> String? {
         // Try to get version from MCP configuration first
         if let mcpVersion = getVersionFromMCPConfig(for: mcpExtension) {
             return mcpVersion
         }
-        
+
         // Try to get version from local package.json if it exists
         if let packageVersion = getVersionFromPackageJSON(for: mcpExtension) {
             return packageVersion
         }
-        
+
         return nil
     }
 
@@ -125,7 +125,7 @@ final class MCPVersionService: ObservableObject {
         // Normalize versions by removing "v" prefix if present
         let normalizedCurrent = current.hasPrefix("v") ? String(current.dropFirst()) : current
         let normalizedLatest = latest.hasPrefix("v") ? String(latest.dropFirst()) : latest
-        
+
         // Simple version comparison - this could be enhanced with proper semantic versioning
         if normalizedCurrent == normalizedLatest {
             return .upToDate
@@ -150,23 +150,23 @@ final class MCPVersionService: ObservableObject {
 
         return .upToDate
     }
-    
+
     /// Get version from MCP configuration
     private func getVersionFromMCPConfig(for mcpExtension: MCPExtensionType) -> String? {
         let mcpIdentifier = mcpExtension.mcpIdentifier
         let status = MCPConfigManager.shared.getMCPStatus(mcpIdentifier: mcpIdentifier)
         return status.version
     }
-    
+
     /// Get version from package.json file for installed npm packages
     private func getVersionFromPackageJSON(for mcpExtension: MCPExtensionType) -> String? {
         let homeDir = FileManager.default.homeDirectoryForCurrentUser
         let packagePath = homeDir.appendingPathComponent("node_modules/\(mcpExtension.npmPackageName)/package.json")
-        
+
         guard FileManager.default.fileExists(atPath: packagePath.path) else {
             return nil
         }
-        
+
         do {
             let data = try Data(contentsOf: packagePath)
             let json = try JSONSerialization.jsonObject(with: data) as? [String: Any]
@@ -193,54 +193,54 @@ enum MCPExtensionType: String, CaseIterable, Identifiable {
     var npmPackageName: String {
         switch self {
         case .peekaboo:
-            return "@steipete/peekaboo-mcp"
+            "@steipete/peekaboo-mcp"
         case .terminator:
-            return "@steipete/terminator-mcp"
+            "@steipete/terminator-mcp"
         case .claudeCode:
-            return "@steipete/claude-code-mcp"
+            "@steipete/claude-code-mcp"
         case .conduit:
-            return "@steipete/conduit-mcp"
+            "@steipete/conduit-mcp"
         case .automator:
-            return "@steipete/macos-automator-mcp"
+            "@steipete/macos-automator-mcp"
         }
     }
 
     var currentVersion: String {
         // Default to v1.0.0 - actual version will be fetched separately
-        return "v1.0.0"
+        "v1.0.0"
     }
 
     var displayName: String {
-        return rawValue
+        rawValue
     }
-    
+
     var mcpIdentifier: String {
         switch self {
         case .peekaboo:
-            return "peekaboo"
+            "peekaboo"
         case .terminator:
-            return "terminator"
+            "terminator"
         case .claudeCode:
-            return "claude-code"
+            "claude-code"
         case .conduit:
-            return "conduit"
+            "conduit"
         case .automator:
-            return "automator"
+            "automator"
         }
     }
 
     var iconName: String {
         switch self {
         case .peekaboo:
-            return "camera"
+            "camera"
         case .terminator:
-            return "terminal"
+            "terminal"
         case .claudeCode:
-            return "brain"
+            "brain"
         case .conduit:
-            return "pipe.and.drop"
+            "pipe.and.drop"
         case .automator:
-            return "gear"
+            "gear"
         }
     }
 }
@@ -259,9 +259,9 @@ enum MCPVersionError: Error, LocalizedError {
     var errorDescription: String? {
         switch self {
         case .networkError:
-            return "Failed to fetch version information from npm registry"
+            "Failed to fetch version information from npm registry"
         case .parseError:
-            return "Failed to parse version information"
+            "Failed to parse version information"
         }
     }
 }

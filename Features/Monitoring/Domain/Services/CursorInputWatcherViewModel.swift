@@ -60,6 +60,8 @@ class CursorInputWatcherViewModel: ObservableObject {
 
     @Published var windowInjectionStates: [String: InjectionState] = [:]
 
+    let jsHookManager: JSHookService
+
     var hookedWindows: Set<String> {
         Set(cursorWindows.compactMap { window in
             jsHookManager.isWindowHooked(window.id) ? window.id : nil
@@ -69,21 +71,21 @@ class CursorInputWatcherViewModel: ObservableObject {
     var isWatchingEnabled: Bool {
         Defaults[.isGlobalMonitoringEnabled]
     }
-    
+
     // MARK: - View Lifecycle
-    
+
     func handleViewAppear() {
         logger.info("CursorInputWatcher view appeared - refreshing connection states")
         // Refresh UI state to match actual connection status
         Task {
             // Update window list
             await updateWindows()
-            
+
             // Refresh hook statuses for all windows
             for window in cursorWindows {
                 if jsHookManager.isWindowHooked(window.id) {
                     windowInjectionStates[window.id] = .hooked
-                    
+
                     // Ensure heartbeat monitor knows about this window
                     if let port = jsHookManager.getPort(for: window.id) {
                         heartbeatMonitor.registerWindowPort(window.id, port: port)
@@ -92,12 +94,12 @@ class CursorInputWatcherViewModel: ObservableObject {
                     windowInjectionStates[window.id] = .idle
                 }
             }
-            
+
             updateHookStatuses()
             updateWatcherStatus()
         }
     }
-    
+
     func handleViewDisappear() {
         logger.info("CursorInputWatcher view disappearing - connections persist via singleton")
         // Connections are maintained by the singleton JSHookService
@@ -142,13 +144,13 @@ class CursorInputWatcherViewModel: ObservableObject {
             try await jsHookManager.installHook(for: window)
             logger.info("✅ Successfully injected hook for window: \(windowId)")
             windowInjectionStates[windowId] = .hooked
-            
+
             // Register the window port with HeartbeatMonitor
             if let port = jsHookManager.getPort(for: windowId) {
                 heartbeatMonitor.registerWindowPort(windowId, port: port)
                 logger.debug("Registered window \(windowId) with heartbeat monitor on port \(port)")
             }
-            
+
             // Force UI update by triggering objectWillChange
             Task { @MainActor in
                 self.objectWillChange.send()
@@ -193,18 +195,6 @@ class CursorInputWatcherViewModel: ObservableObject {
         }
     }
 
-    // MARK: - Window Management
-    
-    private func updateWindows() async {
-        // Force refresh of window list from CursorMonitor
-        let apps = CursorMonitor.shared.monitoredApps
-        let allWindows = apps.flatMap(\.windows)
-        self.cursorWindows = allWindows
-        
-        // Let JSHookManager know about current windows
-        await jsHookManager.updateWindows(allWindows)
-    }
-
     // MARK: - AI Analysis
 
     func analyzeWindowWithAI(window: MonitoredWindowInfo) async {
@@ -227,7 +217,6 @@ class CursorInputWatcherViewModel: ObservableObject {
 
     private let projectRoot: String
     private let queryManager: QueryManager
-    let jsHookManager: JSHookService
     private let portManager: PortManager
     private let heartbeatMonitor: HeartbeatMonitor
     private let aiAnalyzer: AIWindowAnalyzer
@@ -236,6 +225,18 @@ class CursorInputWatcherViewModel: ObservableObject {
     private var timerSubscription: AnyCancellable?
     private var windowsSubscription: AnyCancellable?
     private var cancellables = Set<AnyCancellable>()
+
+    // MARK: - Window Management
+
+    private func updateWindows() async {
+        // Force refresh of window list from CursorMonitor
+        let apps = CursorMonitor.shared.monitoredApps
+        let allWindows = apps.flatMap(\.windows)
+        self.cursorWindows = allWindows
+
+        // Let JSHookManager know about current windows
+        await jsHookManager.updateWindows(allWindows)
+    }
 
     private func setupWindowsSubscription() {
         windowsSubscription = CursorMonitor.shared.$monitoredApps
@@ -322,12 +323,12 @@ class CursorInputWatcherViewModel: ObservableObject {
             if jsHookManager.isWindowHooked(window.id) {
                 let port = getPort(for: window.id) ?? 0
                 watchedInputs[0].lastValue = "✅ Hooked (Port: \(port))"
-                
+
                 // Register the window port with HeartbeatMonitor if not already registered
                 if port > 0 {
                     heartbeatMonitor.registerWindowPort(window.id, port: port)
                 }
-                
+
                 // Update injection state to reflect current hook status
                 if case .hooked = windowInjectionStates[window.id] {
                     // Already hooked, no change needed
@@ -341,7 +342,7 @@ class CursorInputWatcherViewModel: ObservableObject {
                 }
             }
         }
-        
+
         // Trigger UI update
         objectWillChange.send()
     }

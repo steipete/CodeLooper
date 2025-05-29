@@ -60,12 +60,12 @@ public enum GitClientLauncher {
         do {
             logger.info("Launching Tower with repository: \(repositoryPath)")
             try process.run()
-            
+
             // Run in background to avoid blocking main thread
             Task.detached(priority: .background) {
                 process.waitUntilExit()
             }
-            
+
             return true
         } catch {
             logger.error("Failed to launch Tower: \(error.localizedDescription)")

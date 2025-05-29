@@ -18,7 +18,7 @@ struct WelcomeView: View {
             LinearGradient(
                 gradient: Gradient(colors: [
                     ColorPalette.background,
-                    ColorPalette.backgroundSecondary.opacity(0.3)
+                    ColorPalette.backgroundSecondary.opacity(0.3),
                 ]),
                 startPoint: .topLeading,
                 endPoint: .bottomTrailing
@@ -84,7 +84,7 @@ struct WelcomeStepView: View {
     var body: some View {
         VStack(spacing: Spacing.xLarge) {
             Spacer()
-            
+
             // Logo and header area
             VStack(spacing: Spacing.large) {
                 // Animated logo
@@ -94,7 +94,7 @@ struct WelcomeStepView: View {
                             LinearGradient(
                                 gradient: Gradient(colors: [
                                     ColorPalette.primary.opacity(0.2),
-                                    ColorPalette.primaryLight.opacity(0.1)
+                                    ColorPalette.primaryLight.opacity(0.1),
                                 ]),
                                 startPoint: .topLeading,
                                 endPoint: .bottomTrailing
@@ -102,7 +102,7 @@ struct WelcomeStepView: View {
                         )
                         .frame(width: 100, height: 100)
                         .blur(radius: 20)
-                    
+
                     Image("logo")
                         .resizable()
                         .aspectRatio(contentMode: .fit)
@@ -132,14 +132,14 @@ struct WelcomeStepView: View {
                     title: "AI-Powered Monitoring",
                     description: "Advanced detection and automatic recovery from stuck states"
                 )
-                
+
                 ModernFeatureCard(
                     icon: "wand.and.rays",
                     iconColor: ColorPalette.success,
                     title: "Intelligent Automation",
                     description: "Handles connection errors and UI conflicts automatically"
                 )
-                
+
                 ModernFeatureCard(
                     icon: "lock.shield.fill",
                     iconColor: ColorPalette.info,
@@ -150,13 +150,13 @@ struct WelcomeStepView: View {
             .padding(.horizontal, Spacing.medium)
 
             Spacer()
-            
+
             // Help link
             HStack(spacing: Spacing.xSmall) {
                 Image(systemName: "questionmark.circle")
                     .font(Typography.caption1())
                     .foregroundColor(ColorPalette.textTertiary)
-                
+
                 Link("Learn more", destination: URL(string: Constants.githubRepositoryURL)!)
                     .font(Typography.caption1())
                     .foregroundColor(ColorPalette.primary)
@@ -185,26 +185,26 @@ struct AccessibilityStepView: View {
                                 LinearGradient(
                                     gradient: Gradient(colors: [
                                         ColorPalette.primary.opacity(0.2),
-                                        ColorPalette.primaryLight.opacity(0.1)
+                                        ColorPalette.primaryLight.opacity(0.1),
                                     ]),
                                     startPoint: .topLeading,
                                     endPoint: .bottomTrailing
                                 )
                             )
                             .frame(width: 90, height: 90)
-                        
+
                         Image(systemName: "shield.checkered")
                             .font(.system(size: 45))
                             .foregroundColor(ColorPalette.primary)
                             .symbolRenderingMode(.hierarchical)
                     }
                     .shadow(color: ColorPalette.primary.opacity(0.2), radius: 15, y: 5)
-                    
+
                     VStack(spacing: Spacing.small) {
                         Text("Grant Required Permissions")
                             .font(Typography.title2(.bold))
                             .foregroundColor(ColorPalette.text)
-                        
+
                         Text("CodeLooper needs these permissions to monitor and assist with Cursor IDE")
                             .font(Typography.body())
                             .foregroundColor(ColorPalette.textSecondary)
@@ -223,59 +223,59 @@ struct AccessibilityStepView: View {
                         iconColor: ColorPalette.primary,
                         title: "Accessibility Access",
                         description: "Required to detect and interact with Cursor's UI elements"
-                    )                        {
-                            PermissionsView(showTitle: false, compact: false)
+                    ) {
+                        PermissionsView(showTitle: false, compact: false)
                     }
-                    
+
                     // Automation Permission
                     PermissionCard(
                         icon: "gearshape.2.fill",
                         iconColor: ColorPalette.success,
                         title: "Automation Permission",
                         description: "Enables JavaScript injection and advanced Cursor control"
-                    )                        {
-                            AutomationPermissionsView(showTitle: false, compact: false)
+                    ) {
+                        AutomationPermissionsView(showTitle: false, compact: false)
                     }
-                    
+
                     // Screen Recording Permission
                     PermissionCard(
                         icon: "rectangle.dashed.badge.record",
                         iconColor: ColorPalette.info,
                         title: "Screen Recording",
                         description: "Allows AI analysis of Cursor windows for intelligent assistance"
-                    )                        {
-                            ScreenRecordingPermissionsView(showTitle: false, compact: false)
+                    ) {
+                        ScreenRecordingPermissionsView(showTitle: false, compact: false)
                     }
-                    
+
                     // Notification Permission
                     PermissionCard(
                         icon: "bell.badge.fill",
                         iconColor: ColorPalette.warning,
                         title: "Notifications",
                         description: "Get notified about important events and task completions"
-                    )                        {
-                            NotificationPermissionsView(showTitle: false, compact: false)
+                    ) {
+                        NotificationPermissionsView(showTitle: false, compact: false)
                     }
                 }
                 .padding(.horizontal, Spacing.large)
-                
+
                 // Info box
                 DSCard(style: .filled) {
                     HStack(spacing: Spacing.medium) {
                         Image(systemName: "info.circle.fill")
                             .font(Typography.body())
                             .foregroundColor(ColorPalette.info)
-                        
+
                         VStack(alignment: .leading, spacing: Spacing.xSmall) {
                             Text("Privacy First")
                                 .font(Typography.caption1(.medium))
                                 .foregroundColor(ColorPalette.text)
-                            
+
                             Text("All permissions are used locally. No data leaves your Mac.")
                                 .font(Typography.caption2())
                                 .foregroundColor(ColorPalette.textSecondary)
                         }
-                        
+
                         Spacer()
                     }
                 }
@@ -295,7 +295,7 @@ struct SettingsStepView: View {
     var body: some View {
         VStack(spacing: Spacing.xLarge) {
             Spacer()
-            
+
             // Header
             VStack(spacing: Spacing.large) {
                 // Icon with gradient
@@ -305,26 +305,26 @@ struct SettingsStepView: View {
                             LinearGradient(
                                 gradient: Gradient(colors: [
                                     ColorPalette.success.opacity(0.2),
-                                    ColorPalette.success.opacity(0.1)
+                                    ColorPalette.success.opacity(0.1),
                                 ]),
                                 startPoint: .topLeading,
                                 endPoint: .bottomTrailing
                             )
                         )
                         .frame(width: 90, height: 90)
-                    
+
                     Image(systemName: "gearshape.fill")
                         .font(.system(size: 45))
                         .foregroundColor(ColorPalette.success)
                         .symbolRenderingMode(.hierarchical)
                 }
                 .shadow(color: ColorPalette.success.opacity(0.2), radius: 15, y: 5)
-                
+
                 VStack(spacing: Spacing.small) {
                     Text("Initial Setup")
                         .font(Typography.title2(.bold))
                         .foregroundColor(ColorPalette.text)
-                    
+
                     Text("Configure your preferences. You can change these anytime in settings.")
                         .font(Typography.body())
                         .foregroundColor(ColorPalette.textSecondary)
@@ -343,24 +343,24 @@ struct SettingsStepView: View {
                             RoundedRectangle(cornerRadius: Layout.CornerRadius.small)
                                 .fill(ColorPalette.primary.opacity(0.1))
                                 .frame(width: 40, height: 40)
-                            
+
                             Image(systemName: "power.circle.fill")
                                 .font(.system(size: 20))
                                 .foregroundColor(ColorPalette.primary)
                         }
-                        
+
                         VStack(alignment: .leading, spacing: Spacing.xSmall) {
                             Text("Launch at Login")
                                 .font(Typography.body(.medium))
                                 .foregroundColor(ColorPalette.text)
-                            
+
                             Text("Start CodeLooper automatically when you log in")
                                 .font(Typography.caption1())
                                 .foregroundColor(ColorPalette.textSecondary)
                         }
-                        
+
                         Spacer()
-                        
+
                         DSToggle(
                             "",
                             isOn: Binding(
@@ -370,7 +370,7 @@ struct SettingsStepView: View {
                         )
                     }
                 }
-                
+
                 // Menu bar icon
                 DSCard(style: .outlined) {
                     HStack(spacing: Spacing.medium) {
@@ -378,24 +378,24 @@ struct SettingsStepView: View {
                             RoundedRectangle(cornerRadius: Layout.CornerRadius.small)
                                 .fill(ColorPalette.info.opacity(0.1))
                                 .frame(width: 40, height: 40)
-                            
+
                             Image(systemName: "menubar.rectangle")
                                 .font(.system(size: 20))
                                 .foregroundColor(ColorPalette.info)
                         }
-                        
+
                         VStack(alignment: .leading, spacing: Spacing.xSmall) {
                             Text("Menu Bar Access")
                                 .font(Typography.body(.medium))
                                 .foregroundColor(ColorPalette.text)
-                            
+
                             Text("Access CodeLooper from your menu bar")
                                 .font(Typography.caption1())
                                 .foregroundColor(ColorPalette.textSecondary)
                         }
-                        
+
                         Spacer()
-                        
+
                         Image(systemName: "checkmark.circle.fill")
                             .font(.system(size: 20))
                             .foregroundColor(ColorPalette.success)
@@ -404,24 +404,24 @@ struct SettingsStepView: View {
             }
             .frame(maxWidth: 500)
             .padding(.horizontal, Spacing.large)
-            
+
             // Keyboard shortcut info
             DSCard(style: .filled) {
                 HStack(spacing: Spacing.medium) {
                     Image(systemName: "keyboard")
                         .font(Typography.body())
                         .foregroundColor(ColorPalette.primary)
-                    
+
                     Text("You can set up keyboard shortcuts in the settings after setup")
                         .font(Typography.caption1())
                         .foregroundColor(ColorPalette.textSecondary)
-                    
+
                     Spacer()
                 }
             }
             .frame(maxWidth: 500)
             .padding(.horizontal, Spacing.large)
-            
+
             Spacer()
         }
         .frame(maxWidth: 700)
@@ -435,7 +435,7 @@ struct ModernFeatureCard: View {
     let iconColor: Color
     let title: String
     let description: String
-    
+
     var body: some View {
         HStack(spacing: Spacing.medium) {
             ZStack {
@@ -444,31 +444,31 @@ struct ModernFeatureCard: View {
                         LinearGradient(
                             gradient: Gradient(colors: [
                                 iconColor.opacity(0.15),
-                                iconColor.opacity(0.05)
+                                iconColor.opacity(0.05),
                             ]),
                             startPoint: .topLeading,
                             endPoint: .bottomTrailing
                         )
                     )
                     .frame(width: 50, height: 50)
-                
+
                 Image(systemName: icon)
                     .font(.system(size: 24))
                     .foregroundColor(iconColor)
                     .symbolRenderingMode(.hierarchical)
             }
-            
+
             VStack(alignment: .leading, spacing: Spacing.xSmall) {
                 Text(title)
                     .font(Typography.body(.semibold))
                     .foregroundColor(ColorPalette.text)
-                
+
                 Text(description)
                     .font(Typography.caption1())
                     .foregroundColor(ColorPalette.textSecondary)
                     .lineLimit(2)
             }
-            
+
             Spacer()
         }
         .padding(Spacing.medium)
@@ -486,7 +486,7 @@ struct PermissionCard<Content: View>: View {
     let title: String
     let description: String
     let content: () -> Content
-    
+
     var body: some View {
         DSCard(style: .outlined) {
             VStack(alignment: .leading, spacing: Spacing.medium) {
@@ -495,25 +495,25 @@ struct PermissionCard<Content: View>: View {
                         RoundedRectangle(cornerRadius: Layout.CornerRadius.small)
                             .fill(iconColor.opacity(0.1))
                             .frame(width: 45, height: 45)
-                        
+
                         Image(systemName: icon)
                             .font(.system(size: 22))
                             .foregroundColor(iconColor)
                     }
-                    
+
                     VStack(alignment: .leading, spacing: Spacing.xSmall) {
                         Text(title)
                             .font(Typography.body(.semibold))
                             .foregroundColor(ColorPalette.text)
-                        
+
                         Text(description)
                             .font(Typography.caption1())
                             .foregroundColor(ColorPalette.textSecondary)
                     }
-                    
+
                     Spacer()
                 }
-                
+
                 content()
             }
         }
@@ -528,7 +528,7 @@ struct CompletionStepView: View {
     var body: some View {
         VStack(spacing: Spacing.xLarge) {
             Spacer()
-            
+
             // Success animation
             VStack(spacing: Spacing.large) {
                 ZStack {
@@ -538,26 +538,26 @@ struct CompletionStepView: View {
                         .frame(width: 150, height: 150)
                         .scaleEffect(1.2)
                         .animation(.easeInOut(duration: 2).repeatForever(autoreverses: true), value: true)
-                    
+
                     Circle()
                         .fill(ColorPalette.success.opacity(0.15))
                         .frame(width: 120, height: 120)
                         .scaleEffect(1.1)
                         .animation(.easeInOut(duration: 1.5).repeatForever(autoreverses: true), value: true)
-                    
+
                     Circle()
                         .fill(
                             LinearGradient(
                                 gradient: Gradient(colors: [
                                     ColorPalette.success,
-                                    ColorPalette.success.opacity(0.8)
+                                    ColorPalette.success.opacity(0.8),
                                 ]),
                                 startPoint: .topLeading,
                                 endPoint: .bottomTrailing
                             )
                         )
                         .frame(width: 90, height: 90)
-                    
+
                     Image(systemName: "checkmark")
                         .font(.system(size: 45, weight: .bold))
                         .foregroundColor(.white)
@@ -565,12 +565,12 @@ struct CompletionStepView: View {
                 .onAppear {
                     // Trigger animations
                 }
-                
+
                 VStack(spacing: Spacing.small) {
                     Text("You're All Set!")
                         .font(Typography.largeTitle(.bold))
                         .foregroundColor(ColorPalette.text)
-                    
+
                     Text("CodeLooper is ready to supercharge your Cursor experience")
                         .font(Typography.body())
                         .foregroundColor(ColorPalette.textSecondary)
@@ -578,7 +578,7 @@ struct CompletionStepView: View {
                         .padding(.horizontal, Spacing.large)
                 }
             }
-            
+
             // Summary cards
             VStack(spacing: Spacing.medium) {
                 // Permissions granted
@@ -586,62 +586,62 @@ struct CompletionStepView: View {
                     Image(systemName: "shield.checkered")
                         .font(.system(size: 20))
                         .foregroundColor(ColorPalette.success)
-                    
+
                     VStack(alignment: .leading, spacing: Spacing.xSmall) {
                         Text("All Permissions Granted")
                             .font(Typography.body(.medium))
                             .foregroundColor(ColorPalette.text)
-                        
+
                         Text("CodeLooper has the access it needs to assist you")
                             .font(Typography.caption1())
                             .foregroundColor(ColorPalette.textSecondary)
                     }
-                    
+
                     Spacer()
                 }
                 .padding(Spacing.medium)
                 .background(ColorPalette.success.opacity(0.1))
                 .cornerRadius(Layout.CornerRadius.medium)
-                
+
                 // Menu bar access
                 HStack(spacing: Spacing.medium) {
                     Image(systemName: "menubar.rectangle")
                         .font(.system(size: 20))
                         .foregroundColor(ColorPalette.primary)
-                    
+
                     VStack(alignment: .leading, spacing: Spacing.xSmall) {
                         Text("Access from Menu Bar")
                             .font(Typography.body(.medium))
                             .foregroundColor(ColorPalette.text)
-                        
+
                         Text("Click the chain link icon in your menu bar anytime")
                             .font(Typography.caption1())
                             .foregroundColor(ColorPalette.textSecondary)
                     }
-                    
+
                     Spacer()
                 }
                 .padding(Spacing.medium)
                 .background(ColorPalette.primary.opacity(0.1))
                 .cornerRadius(Layout.CornerRadius.medium)
-                
+
                 // Auto start reminder if enabled
                 if viewModel.startAtLogin {
                     HStack(spacing: Spacing.medium) {
                         Image(systemName: "power.circle.fill")
                             .font(.system(size: 20))
                             .foregroundColor(ColorPalette.info)
-                        
+
                         VStack(alignment: .leading, spacing: Spacing.xSmall) {
                             Text("Auto-Start Enabled")
                                 .font(Typography.body(.medium))
                                 .foregroundColor(ColorPalette.text)
-                            
+
                             Text("CodeLooper will start automatically at login")
                                 .font(Typography.caption1())
                                 .foregroundColor(ColorPalette.textSecondary)
                         }
-                        
+
                         Spacer()
                     }
                     .padding(Spacing.medium)
@@ -651,15 +651,15 @@ struct CompletionStepView: View {
             }
             .frame(maxWidth: 500)
             .padding(.horizontal, Spacing.large)
-            
+
             Spacer()
-            
+
             // Finish button
             DSButton("Start Using CodeLooper", style: .primary) {
                 viewModel.finishOnboarding()
             }
             .frame(width: 250)
-            
+
             // Pro tip
             Text("💡 Pro tip: Use ⌘+⇧+L to quickly toggle monitoring")
                 .font(Typography.caption1())
@@ -673,8 +673,10 @@ struct CompletionStepView: View {
 // MARK: - Progress Bar
 
 struct ProgressBar: View {
+    // MARK: Internal
+
     let currentStep: WelcomeStep
-    
+
     var body: some View {
         GeometryReader { geometry in
             ZStack(alignment: .leading) {
@@ -682,14 +684,14 @@ struct ProgressBar: View {
                 RoundedRectangle(cornerRadius: 4)
                     .fill(ColorPalette.backgroundSecondary)
                     .frame(height: 8)
-                
+
                 // Progress
                 RoundedRectangle(cornerRadius: 4)
                     .fill(
                         LinearGradient(
                             gradient: Gradient(colors: [
                                 ColorPalette.primary,
-                                ColorPalette.primaryLight
+                                ColorPalette.primaryLight,
                             ]),
                             startPoint: .leading,
                             endPoint: .trailing
@@ -701,7 +703,9 @@ struct ProgressBar: View {
         }
         .frame(height: 8)
     }
-    
+
+    // MARK: Private
+
     private func progressWidth(in totalWidth: CGFloat) -> CGFloat {
         let steps = WelcomeStep.allCases.count
         let currentIndex = CGFloat(currentStep.rawValue + 1)
@@ -712,19 +716,10 @@ struct ProgressBar: View {
 // MARK: - Modern Footer View
 
 struct ModernFooterView: View {
+    // MARK: Internal
+
     var viewModel: WelcomeViewModel
-    
-    private func continueButtonText() -> String {
-        switch viewModel.currentStep {
-        case .welcome:
-            return "Get Started"
-        case .settings:
-            return "Complete Setup"
-        default:
-            return "Continue"
-        }
-    }
-    
+
     var body: some View {
         HStack {
             // Back button
@@ -734,9 +729,9 @@ struct ModernFooterView: View {
                 }
                 .frame(width: 100)
             }
-            
+
             Spacer()
-            
+
             // Step indicator
             HStack(spacing: Spacing.small) {
                 ForEach(WelcomeStep.allCases, id: \.self) { step in
@@ -746,9 +741,9 @@ struct ModernFooterView: View {
                         .animation(.spring(response: 0.3), value: viewModel.currentStep)
                 }
             }
-            
+
             Spacer()
-            
+
             // Continue button
             DSButton(continueButtonText(), style: .primary) {
                 viewModel.goToNextStep()
@@ -756,6 +751,19 @@ struct ModernFooterView: View {
             .frame(width: viewModel.currentStep == .settings ? 150 : 130)
         }
         .frame(maxWidth: .infinity)
+    }
+
+    // MARK: Private
+
+    private func continueButtonText() -> String {
+        switch viewModel.currentStep {
+        case .welcome:
+            "Get Started"
+        case .settings:
+            "Complete Setup"
+        default:
+            "Continue"
+        }
     }
 }
 

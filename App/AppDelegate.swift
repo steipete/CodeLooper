@@ -136,6 +136,20 @@ public class AppDelegate: NSObject, NSApplicationDelegate,
         logger.info("Application termination cleanup completed")
     }
 
+    // MARK: - Dock Icon Handling
+
+    public func applicationShouldHandleReopen(_: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
+        logger.info("Dock icon clicked, hasVisibleWindows: \(flag)")
+
+        // Always open/focus the settings window when dock icon is clicked
+        Task { @MainActor in
+            SettingsService.openSettingsSubject.send()
+            logger.info("Requested settings window open/focus via dock icon click")
+        }
+
+        return true
+    }
+
     // MARK: Internal
 
     // MARK: - Logger
@@ -169,29 +183,15 @@ public class AppDelegate: NSObject, NSApplicationDelegate,
     }
 
     // MARK: - Menu Actions
-    
-    @IBAction func showAboutPanel(_ sender: Any?) {
+
+    @IBAction func showAboutPanel(_: Any?) {
         logger.info("About menu item selected, showing custom About window")
         windowManager?.showAboutWindow()
     }
-    
-    @IBAction func orderFrontStandardAboutPanel(_ sender: Any?) {
+
+    @IBAction func orderFrontStandardAboutPanel(_: Any?) {
         logger.info("Standard About panel requested, redirecting to custom About window")
         windowManager?.showAboutWindow()
-    }
-
-    // MARK: - Dock Icon Handling
-    
-    public func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
-        logger.info("Dock icon clicked, hasVisibleWindows: \(flag)")
-        
-        // Always open/focus the settings window when dock icon is clicked
-        Task { @MainActor in
-            SettingsService.openSettingsSubject.send()
-            logger.info("Requested settings window open/focus via dock icon click")
-        }
-        
-        return true
     }
 
     // MARK: - Update Handling (Sparkle)
@@ -388,7 +388,7 @@ public class AppDelegate: NSObject, NSApplicationDelegate,
             logger.info("Global monitoring is enabled, will start monitoring when Cursor instances are detected")
             // The monitoring loop will automatically start when monitored apps are detected
             // due to the subscription in CursorMonitor.setupMonitoringLoopSubscription()
-            
+
             // Enable AI live watching for all windows if supervision is already enabled at startup
             Task { @MainActor in
                 // Give the monitoring system a moment to detect existing windows
@@ -409,7 +409,7 @@ public class AppDelegate: NSObject, NSApplicationDelegate,
                     // If enabled and we have monitored apps, the monitoring loop will start automatically
                     self?.logger
                         .info("Global monitoring enabled - monitoring will start when Cursor instances are detected")
-                    
+
                     // Enable AI live watching for all existing windows when supervision is turned on
                     WindowAIDiagnosticsManager.shared.enableLiveWatchingForAllWindows()
                     self?.logger.info("Enabled AI live watching for all existing windows after supervision toggle")
@@ -418,7 +418,8 @@ public class AppDelegate: NSObject, NSApplicationDelegate,
                     CursorMonitor.shared.stopMonitoringLoop()
                     // Disable AI live watching for all windows when supervision is turned off
                     WindowAIDiagnosticsManager.shared.disableLiveWatchingForAllWindows()
-                    self?.logger.info("Global monitoring disabled - stopped monitoring loop and disabled AI live watching")
+                    self?.logger
+                        .info("Global monitoring disabled - stopped monitoring loop and disabled AI live watching")
                 }
             }
         }

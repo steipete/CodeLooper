@@ -36,35 +36,35 @@ public final class CursorJSHook {
 
         if !skipInjection {
             let logger = Logger(category: .jshook)
-            
+
             // Check if automatic injection is enabled
             if Defaults[.automaticJSHookInjection] {
                 logger.info("💉 Automatically injecting JavaScript hook...")
                 try injector.inject()
-                
+
                 logger.info("⏳ Waiting for JavaScript to start WebSocket client...")
                 // Give the browser time to parse and execute the injected JavaScript
                 try await Task.sleep(for: .seconds(2))
-                
+
                 logger.info("🤝 Waiting for handshake from browser...")
                 try await webSocketManager.waitForHandshake()
             } else {
                 logger.info("📋 Manual injection mode - preparing script...")
-                
+
                 // Generate the JavaScript hook script
                 let js = try CursorJSHookScript.generate(port: port)
-                
+
                 // Copy to clipboard
                 let pasteboard = NSPasteboard.general
                 pasteboard.clearContents()
                 pasteboard.setString(js, forType: .string)
-                
+
                 // Show alert with instructions FIRST
                 await showManualInjectionAlert(port: port, targetWindow: targetWindowTitle)
-                
+
                 // THEN prepare the window and console after user clicks OK
                 try prepareWindowAndConsole()
-                
+
                 logger.info("🤝 Waiting for manual injection and handshake from browser...")
                 try await webSocketManager.waitForHandshake()
             }
@@ -134,21 +134,24 @@ public final class CursorJSHook {
     private let port: UInt16
     private let webSocketManager: WebSocketManager
     private let injector: AppleScriptInjector
-    
+
     private func prepareWindowAndConsole() throws {
         let logger = Logger(category: .jshook)
         logger.info("🎯 Preparing Cursor window and console for manual injection")
-        
+
         // Build AppleScript to activate window and open console
         let windowTarget = if let targetTitle = targetWindowTitle {
             "(first window whose name is \"\(targetTitle)\")"
         } else {
             "front window"
         }
-        
-        let isConsoleOpen = JSHookDevConsoleDetector.isDevConsoleOpen(in: applicationName, targetWindowTitle: targetWindowTitle)
+
+        let isConsoleOpen = JSHookDevConsoleDetector.isDevConsoleOpen(
+            in: applicationName,
+            targetWindowTitle: targetWindowTitle
+        )
         logger.debug("🔍 Dev console already open: \(isConsoleOpen)")
-        
+
         let devToolsToggleScript = if !isConsoleOpen {
             """
                 # Use menu bar to open developer tools
@@ -162,49 +165,49 @@ public final class CursorJSHook {
                 delay 0.5
             """
         }
-        
+
         let script = """
         tell application "\(applicationName)"
             activate
             delay 0.5
         end tell
-        
+
         tell application "System Events"
             tell process "\(applicationName)"
                 # Target specific window by name if provided, otherwise use front window
                 set targetWindow to \(windowTarget)
-                
+
                 # Focus the window
                 set frontmost to true
                 set focused of targetWindow to true
                 delay 0.5
-                
+
                 \(devToolsToggleScript)
-                
+
                 # Focus on the console tab (if not already selected)
                 # Use escape key to ensure we're in the console
                 key code 53 # Escape
                 delay 0.2
-                
+
                 # Clear any existing content in console
                 keystroke "l" using {command down} # Cmd+L clears console
                 delay 0.5
             end tell
         end tell
         """
-        
+
         logger.info("🚀 Executing window preparation AppleScript...")
-        
+
         let appleScript = NSAppleScript(source: script)
         var errorDict: NSDictionary?
         let result = appleScript?.executeAndReturnError(&errorDict)
-        
+
         if result == nil || errorDict != nil {
             if let error = errorDict {
                 let errorMessage = error[NSAppleScript.errorMessage] as? String ?? "Unknown AppleScript error"
                 let errorNumber = error[NSAppleScript.errorNumber] as? Int ?? -1
                 logger.error("🍎 Window preparation failed: \(errorMessage) (Code: \(errorNumber))")
-                
+
                 // Don't throw - continue anyway as user can manually prepare
                 logger.info("⚠️ Continuing despite preparation error - user can manually prepare window")
             }
@@ -212,35 +215,35 @@ public final class CursorJSHook {
             logger.info("✅ Window and console prepared successfully")
         }
     }
-    
+
     private func showManualInjectionAlert(port: UInt16, targetWindow: String?) async {
         let logger = Logger(category: .jshook)
         logger.info("📢 Showing manual injection alert")
-        
+
         let alert = NSAlert()
         alert.messageText = "Ready to Connect CodeLooper"
         alert.informativeText = """
         The Cursor window and Developer Console have been prepared for you.
         The JavaScript hook is in your clipboard.
-        
+
         Simply paste (⌘V) and press Enter in the console to connect.
-        
+
         Connection Details:
         • Window: \(targetWindow ?? "Front Window")
         • Port: \(port)
         • Status: Waiting for connection...
-        
+
         Once connected, you'll see the status update in CodeLooper.
         """
         alert.alertStyle = .informational
         alert.addButton(withTitle: "OK, I'll paste it")
         alert.icon = NSImage(systemSymbolName: "doc.on.clipboard.fill", accessibilityDescription: "Clipboard Ready")
-        
+
         // Run modal on main thread
         await MainActor.run {
             _ = alert.runModal()
         }
-        
+
         logger.info("✅ User acknowledged manual injection instructions")
     }
 }

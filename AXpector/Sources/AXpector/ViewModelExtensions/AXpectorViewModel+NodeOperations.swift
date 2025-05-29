@@ -257,7 +257,7 @@ extension AXpectorViewModel {
             if let childrenArray = childrenAttr as? [Any] {
                 hasChildren = !childrenArray.isEmpty
             } else if let childrenNSArray = childrenAttr as? NSArray {
-                hasChildren = !childrenNSArray.isEmpty
+                hasChildren = childrenNSArray.count > 0
             }
             // Add more checks if children can be other types that indicate presence
         }

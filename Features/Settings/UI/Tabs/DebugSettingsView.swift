@@ -33,7 +33,7 @@ struct DebugSettingsView: View {
                     }
                 }
             }
-            
+
             // JS Hook Settings
             DSSettingsSection("JavaScript Hook Settings") {
                 VStack(alignment: .leading, spacing: Spacing.medium) {

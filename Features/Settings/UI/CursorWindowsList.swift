@@ -202,7 +202,7 @@ private struct WindowRow: View {
 
             if style == .settings {
                 let injectionState = inputWatcherViewModel.getInjectionState(for: windowState.id)
-                
+
                 if hasActiveHook {
                     // Show debug icon when hooked and debug mode is on
                     if Defaults[.showDebugTab] {
@@ -219,7 +219,7 @@ private struct WindowRow: View {
                             DebugJSPopover(window: windowState, viewModel: inputWatcherViewModel)
                         }
                     }
-                    
+
                     // Show markdown content viewer
                     Button(action: {
                         showMarkdownPopover = true

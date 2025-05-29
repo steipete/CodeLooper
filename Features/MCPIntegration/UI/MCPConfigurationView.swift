@@ -63,7 +63,7 @@ struct ExternalMCPsSettingsView: View {
     }
 
     // MARK: Private
-    
+
     @StateObject private var mcpVersionService = MCPVersionService.shared
 
     @State private var installedMCPs: [MCPExtension] = [
@@ -137,30 +137,31 @@ struct ExternalMCPsSettingsView: View {
             NSWorkspace.shared.open(url)
         }
     }
-    
+
     private func updateMCPVersions() {
         for (index, mcp) in installedMCPs.enumerated() {
             if let extensionType = mapMCPToExtensionType(mcp) {
                 let latestVersion = mcpVersionService.getLatestVersion(for: extensionType)
-                installedMCPs[index].version = latestVersion.hasPrefix("v") ? String(latestVersion.dropFirst()) : latestVersion
+                installedMCPs[index].version = latestVersion
+                    .hasPrefix("v") ? String(latestVersion.dropFirst()) : latestVersion
             }
         }
     }
-    
+
     private func mapMCPToExtensionType(_ mcp: MCPExtension) -> MCPExtensionType? {
         switch mcp.name {
         case let name where name.contains("Peekaboo"):
-            return .peekaboo
+            .peekaboo
         case let name where name.contains("Terminator"):
-            return .terminator
+            .terminator
         case let name where name.contains("Claude Code"):
-            return .claudeCode
+            .claudeCode
         case let name where name.contains("Conduit"):
-            return .conduit
+            .conduit
         case let name where name.contains("Automator"):
-            return .automator
+            .automator
         default:
-            return nil
+            nil
         }
     }
 }
@@ -175,8 +176,6 @@ private struct MCPCard: View {
     let onToggle: () -> Void
     let onConfigure: () -> Void
     let onRemove: () -> Void
-    
-    @StateObject private var mcpVersionService = MCPVersionService.shared
 
     var body: some View {
         Group {
@@ -197,8 +196,10 @@ private struct MCPCard: View {
 
     // MARK: Private
 
+    @StateObject private var mcpVersionService = MCPVersionService.shared
+
     @State private var isHovered = false
-    
+
     @ViewBuilder
     private var versionBadge: some View {
         if mcpVersionService.isChecking {
@@ -212,43 +213,9 @@ private struct MCPCard: View {
         } else {
             let displayVersion = getDisplayVersion()
             let hasUpdate = checkForUpdate()
-            
+
             DSBadge("v\(displayVersion)", style: hasUpdate ? .warning : .default)
                 .frame(minWidth: 85, alignment: .center)
-        }
-    }
-    
-    private func getDisplayVersion() -> String {
-        guard let extensionType = mapMCPToExtensionType(mcp) else {
-            return mcp.version
-        }
-        
-        let latestVersion = mcpVersionService.getLatestVersion(for: extensionType)
-        let cleanVersion = latestVersion.hasPrefix("v") ? String(latestVersion.dropFirst()) : latestVersion
-        return cleanVersion.isEmpty ? mcp.version : cleanVersion
-    }
-    
-    private func checkForUpdate() -> Bool {
-        guard let extensionType = mapMCPToExtensionType(mcp) else {
-            return false
-        }
-        return mcpVersionService.hasUpdate(for: extensionType)
-    }
-    
-    private func mapMCPToExtensionType(_ mcp: MCPExtension) -> MCPExtensionType? {
-        switch mcp.name {
-        case let name where name.contains("Peekaboo"):
-            return .peekaboo
-        case let name where name.contains("Terminator"):
-            return .terminator
-        case let name where name.contains("Claude Code"):
-            return .claudeCode
-        case let name where name.contains("Conduit"):
-            return .conduit
-        case let name where name.contains("Automator"):
-            return .automator
-        default:
-            return nil
         }
     }
 
@@ -317,6 +284,40 @@ private struct MCPCard: View {
                         .onTapGesture { onToggle() }
                 }
             }
+        }
+    }
+
+    private func getDisplayVersion() -> String {
+        guard let extensionType = mapMCPToExtensionType(mcp) else {
+            return mcp.version
+        }
+
+        let latestVersion = mcpVersionService.getLatestVersion(for: extensionType)
+        let cleanVersion = latestVersion.hasPrefix("v") ? String(latestVersion.dropFirst()) : latestVersion
+        return cleanVersion.isEmpty ? mcp.version : cleanVersion
+    }
+
+    private func checkForUpdate() -> Bool {
+        guard let extensionType = mapMCPToExtensionType(mcp) else {
+            return false
+        }
+        return mcpVersionService.hasUpdate(for: extensionType)
+    }
+
+    private func mapMCPToExtensionType(_ mcp: MCPExtension) -> MCPExtensionType? {
+        switch mcp.name {
+        case let name where name.contains("Peekaboo"):
+            .peekaboo
+        case let name where name.contains("Terminator"):
+            .terminator
+        case let name where name.contains("Claude Code"):
+            .claudeCode
+        case let name where name.contains("Conduit"):
+            .conduit
+        case let name where name.contains("Automator"):
+            .automator
+        default:
+            nil
         }
     }
 }

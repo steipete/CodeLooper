@@ -1,7 +1,7 @@
 import Diagnostics
 import Foundation
 import OSLog
-import UserNotifications
+@preconcurrency import UserNotifications
 
 /**
  Centralized manager for handling system notifications.

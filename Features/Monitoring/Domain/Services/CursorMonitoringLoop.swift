@@ -91,7 +91,7 @@ extension CursorMonitor {
         // Update total intervention count for display
         totalAutomaticInterventionsThisSessionDisplay = instanceStateManager
             .getTotalAutomaticInterventionsThisSession()
-            
+
         // Execute enabled automation rules
         await ruleExecutor.executeEnabledRules()
     }

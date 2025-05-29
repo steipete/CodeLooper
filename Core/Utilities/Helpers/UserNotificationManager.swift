@@ -1,24 +1,25 @@
+import AppKit
 import Diagnostics
 import Foundation
-import UserNotifications
+@preconcurrency import UserNotifications
 
 /// Manager for handling user notifications
 @MainActor
 public final class UserNotificationManager: ObservableObject {
     // MARK: Lifecycle
-    
+
     private init() {
         logger.info("UserNotificationManager initialized")
         requestNotificationPermissions()
     }
-    
+
     // MARK: Public
-    
+
     public static let shared = UserNotificationManager()
-    
+
     @Published public private(set) var hasPermission = false
     @Published public private(set) var authorizationStatus: UNAuthorizationStatus = .notDetermined
-    
+
     /// Request notification permissions
     public func requestNotificationPermissions() {
         Task {
@@ -26,29 +27,29 @@ public final class UserNotificationManager: ObservableObject {
                 let granted = try await UNUserNotificationCenter.current().requestAuthorization(
                     options: [.alert, .sound, .badge]
                 )
-                
+
                 await MainActor.run {
                     self.hasPermission = granted
                     logger.info("Notification permission \(granted ? "granted" : "denied")")
                 }
-                
+
                 await checkAuthorizationStatus()
             } catch {
                 logger.error("Failed to request notification permissions: \(error)")
             }
         }
     }
-    
+
     /// Check current authorization status
     public func checkAuthorizationStatus() async {
         let settings = await UNUserNotificationCenter.current().notificationSettings()
-        
+
         await MainActor.run {
             self.authorizationStatus = settings.authorizationStatus
             self.hasPermission = settings.authorizationStatus == .authorized
         }
     }
-    
+
     /// Send a notification
     public func sendNotification(
         title: String,
@@ -61,26 +62,26 @@ public final class UserNotificationManager: ObservableObject {
             logger.warning("Cannot send notification: permission not granted")
             throw NotificationError.permissionDenied
         }
-        
+
         let content = UNMutableNotificationContent()
         content.title = title
         content.body = body
-        
-        if let sound = sound {
+
+        if let sound {
             content.sound = sound
         }
-        
-        if let badge = badge {
+
+        if let badge {
             content.badge = badge
         }
-        
+
         let notificationId = identifier ?? UUID().uuidString
         let request = UNNotificationRequest(
             identifier: notificationId,
             content: content,
             trigger: nil // Immediate delivery
         )
-        
+
         do {
             try await UNUserNotificationCenter.current().add(request)
             logger.info("Sent notification: \(title)")
@@ -89,7 +90,7 @@ public final class UserNotificationManager: ObservableObject {
             throw NotificationError.deliveryFailed(error)
         }
     }
-    
+
     /// Send rule execution notification
     public func sendRuleExecutionNotification(
         ruleName: String,
@@ -98,10 +99,10 @@ public final class UserNotificationManager: ObservableObject {
         isWarning: Bool = false
     ) async {
         guard hasPermission else { return }
-        
+
         let title: String
         let body: String
-        
+
         if isWarning {
             title = "Rule Execution Warning"
             body = "\(displayName) has executed \(executionCount) times. Will stop at 25 executions."
@@ -112,7 +113,7 @@ public final class UserNotificationManager: ObservableObject {
             title = "Rule Executed"
             body = "\(displayName) executed successfully (execution #\(executionCount))"
         }
-        
+
         do {
             try await sendNotification(
                 title: title,
@@ -123,19 +124,19 @@ public final class UserNotificationManager: ObservableObject {
             logger.error("Failed to send rule execution notification: \(error)")
         }
     }
-    
+
     /// Open notification settings
     public func openNotificationSettings() {
         guard let settingsURL = URL(string: "x-apple.systempreferences:com.apple.preference.notifications") else {
             logger.error("Failed to create notification settings URL")
             return
         }
-        
+
         NSWorkspace.shared.open(settingsURL)
     }
-    
+
     // MARK: Private
-    
+
     private let logger = Logger(category: .utilities)
 }
 
@@ -144,13 +145,15 @@ public final class UserNotificationManager: ObservableObject {
 public enum NotificationError: LocalizedError {
     case permissionDenied
     case deliveryFailed(Error)
-    
+
+    // MARK: Public
+
     public var errorDescription: String? {
         switch self {
         case .permissionDenied:
-            return "Notification permission was denied"
-        case .deliveryFailed(let error):
-            return "Failed to deliver notification: \(error.localizedDescription)"
+            "Notification permission was denied"
+        case let .deliveryFailed(error):
+            "Failed to deliver notification: \(error.localizedDescription)"
         }
     }
 }

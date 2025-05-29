@@ -11,7 +11,7 @@ public enum CursorJSHookScript {
     /// Load the JavaScript hook template from resources
     public static func loadTemplate() throws -> String {
         let logger = Logger(category: .jshook)
-        
+
         // Try to load from bundle first
         if let bundlePath = Bundle.main.path(forResource: "cursor-hook", ofType: "js", inDirectory: "JavaScript"),
            let content = try? String(contentsOfFile: bundlePath)
@@ -38,17 +38,20 @@ public enum CursorJSHookScript {
     public static func generate(port: UInt16) throws -> String {
         let logger = Logger(category: .jshook)
         logger.debug("🔧 Generating JS hook script for port \(port)")
-        
+
         // Get CodeLooper version from bundle
         let codeLooperVersion = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "Unknown"
-        
+
         let template = try loadTemplate()
         let withPort = template.replacingOccurrences(of: "__CODELOOPER_PORT_PLACEHOLDER__", with: String(port))
         let generated = withPort.replacingOccurrences(of: "__CODELOOPER_VERSION_PLACEHOLDER__", with: codeLooperVersion)
-        
+
         logger.info("✅ Generated JS hook script v\(version) for port \(port) (CodeLooper v\(codeLooperVersion))")
-        logger.debug("📊 Script stats: \(generated.count) chars, \(generated.components(separatedBy: .newlines).count) lines")
-        
+        logger
+            .debug(
+                "📊 Script stats: \(generated.count) chars, \(generated.components(separatedBy: .newlines).count) lines"
+            )
+
         return generated
     }
 
@@ -65,7 +68,7 @@ public enum CursorJSHookScript {
 
         const HOOK_VERSION = '1.2.2';
         const HEARTBEAT_INTERVAL = 1000; // 1 second
-        
+
         // One-liner to disable hook: window.__codeLooperDisable && window.__codeLooperDisable()
         window.__codeLooperDisable = function() {
             console.log('🛑 CodeLooper: Disabling hook...');
@@ -171,11 +174,11 @@ public enum CursorJSHookScript {
             const elements = document.querySelectorAll('body *');
             for (const el of elements) {
                 if (!el || !el.textContent) continue;
-                
+
                 // Check if element contains rate limit text
                 if (el.textContent.includes('stop the agent after 25 tool calls') || 
                     el.textContent.includes('Note: we default stop')) {
-                    
+
                     // Find the resume link inside this element
                     const links = el.querySelectorAll('a, span.markdown-link, [role="link"], [data-link]');
                     for (const link of links) {
@@ -191,7 +194,7 @@ public enum CursorJSHookScript {
         function startComposerObserver(ws) {
             // Stop any existing observer
             stopComposerObserver();
-            
+
             // Find the composer bar
             const composerBar = document.querySelector('.composer-bar');
             if (!composerBar) {
@@ -204,9 +207,9 @@ public enum CursorJSHookScript {
                 }, 2000);
                 return false;
             }
-            
+
             hookLog('👁️ CodeLooper: Starting composer bar observation');
-            
+
             // Send initial state
             ws.send(JSON.stringify({
                 type: 'composerUpdate',
@@ -214,14 +217,14 @@ public enum CursorJSHookScript {
                 timestamp: new Date().toISOString(),
                 initial: true
             }));
-            
+
             // Create mutation observer
             composerObserver = new MutationObserver((mutations) => {
                 // Debounce updates to avoid flooding
                 if (composerObserver.timeout) {
                     clearTimeout(composerObserver.timeout);
                 }
-                
+
                 composerObserver.timeout = setTimeout(() => {
                     if (ws.readyState === WebSocket.OPEN) {
                         ws.send(JSON.stringify({
@@ -233,7 +236,7 @@ public enum CursorJSHookScript {
                     }
                 }, 100); // 100ms debounce
             });
-            
+
             // Start observing
             composerObserver.observe(composerBar, {
                 childList: true,
@@ -243,10 +246,10 @@ public enum CursorJSHookScript {
                 attributeOldValue: true,
                 characterDataOldValue: true
             });
-            
+
             return true;
         }
-        
+
         function stopComposerObserver() {
             if (composerObserver) {
                 composerObserver.disconnect();
@@ -257,7 +260,7 @@ public enum CursorJSHookScript {
                 hookLog('🛑 CodeLooper: Stopped composer bar observation');
             }
         }
-        
+
         function getComposerContent() {
             const composerBar = document.querySelector('.composer-bar');
             return composerBar ? composerBar.innerHTML : null;
@@ -400,25 +403,25 @@ public enum CursorJSHookScript {
                 case 'ping':
                     result = { pong: true, timestamp: new Date().toISOString() };
                     break;
-                    
+
                 case 'checkResumeNeeded':
                     result = { 
                         resumeNeeded: detectResumeNeeded(),
                         timestamp: new Date().toISOString()
                     };
                     break;
-                    
+
                 case 'clickResume':
                     // Find and click the resume link
                     let clicked = false;
                     const elements = document.querySelectorAll('body *');
                     for (const el of elements) {
                         if (!el || !el.textContent) continue;
-                        
+
                         // Check if element contains rate limit text
                         if (el.textContent.includes('stop the agent after 25 tool calls') || 
                             el.textContent.includes('Note: we default stop')) {
-                            
+
                             // Find the resume link inside this element
                             const links = el.querySelectorAll('a, span.markdown-link, [role="link"], [data-link]');
                             for (const link of links) {
@@ -438,7 +441,7 @@ public enum CursorJSHookScript {
                         timestamp: new Date().toISOString()
                     };
                     break;
-                    
+
                 case 'startComposerObserver':
                     // Pass the WebSocket from the global reference
                     if (window.__codeLooperHook) {
@@ -456,7 +459,7 @@ public enum CursorJSHookScript {
                         };
                     }
                     break;
-                    
+
                 case 'stopComposerObserver':
                     stopComposerObserver();
                     result = {
@@ -465,7 +468,7 @@ public enum CursorJSHookScript {
                         timestamp: new Date().toISOString()
                     };
                     break;
-                    
+
                 case 'getComposerContent':
                     const content = getComposerContent();
                     result = {
@@ -502,13 +505,13 @@ public enum CursorJSHookScript {
 
                 ws.onopen = () => {
                     hookLog('🔄 CodeLooper: Connected to ' + url);
-                    
+
                     // Stop waiting log
                     if (window.__codeLooperWaitingLog) {
                         clearInterval(window.__codeLooperWaitingLog);
                         window.__codeLooperWaitingLog = null;
                     }
-                    
+
                     ws.send('ready');
                     reconnectAttempts = 0; // Reset on successful connection
 
@@ -517,7 +520,7 @@ public enum CursorJSHookScript {
 
                     // Start heartbeat
                     startHeartbeat(ws);
-                    
+
                     // Auto-start composer observer after a short delay to ensure DOM is ready
                     setTimeout(() => {
                         hookLog('🚀 CodeLooper: Auto-starting composer observer...');
@@ -540,13 +543,13 @@ public enum CursorJSHookScript {
                         clearInterval(window.__codeLooperHeartbeat);
                         window.__codeLooperHeartbeat = null;
                     }
-                    
+
                     // Stop waiting log
                     if (window.__codeLooperWaitingLog) {
                         clearInterval(window.__codeLooperWaitingLog);
                         window.__codeLooperWaitingLog = null;
                     }
-                    
+
                     // Stop composer observer
                     stopComposerObserver();
 
@@ -603,7 +606,7 @@ public enum CursorJSHookScript {
                 hookLog('⏳ CodeLooper: Waiting for connection on port ' + port + '... (disable with: clearInterval(window.__codeLooperWaitingLog))');
             }
         }, 5000);
-        
+
         // Start connection
         connect();
 
