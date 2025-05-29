@@ -34,7 +34,6 @@ struct GeneralSettingsView: View {
     }()
 
     var body: some View {
-        ScrollView {
             VStack(alignment: .leading, spacing: Spacing.xLarge) {
                 // App Section (using design system)
                 DSSettingsSection("App") {
@@ -195,13 +194,7 @@ struct GeneralSettingsView: View {
                         }
                     }
                 }
-
-
             }
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .windowBackground() // Use proper material background
-        .withDesignSystem()
         .onAppear {
             loadAppIcon(for: gitClientApp)
         }

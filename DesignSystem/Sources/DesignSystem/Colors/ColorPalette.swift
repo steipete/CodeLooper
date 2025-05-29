@@ -18,7 +18,6 @@ public enum ColorPalette {
     public static let loopBlue = Color(red: 0.3, green: 0.5, blue: 0.9)      // Main loop color
     public static let loopPurple = Color(red: 0.5, green: 0.3, blue: 0.9)    // Secondary loop color
     public static let loopTint = Color(red: 0.4, green: 0.35, blue: 0.85)    // Darker, more purple tint
-    
 
     // MARK: - Semantic Colors
 
@@ -37,7 +36,6 @@ public enum ColorPalette {
     public static let sectionHeader = Color.secondary
 
     public static let backgroundTertiary = Color(NSColor.underPageBackgroundColor)
-    
 
     public static let border = Color(NSColor.separatorColor)
     public static let borderLight = Color(NSColor.separatorColor).opacity(0.5)

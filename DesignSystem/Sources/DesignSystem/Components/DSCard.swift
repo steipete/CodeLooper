@@ -58,8 +58,7 @@ public struct DSCard<Content: View>: View {
         case .elevated, .outlined:
             Color.clear.background(MaterialPalette.windowBackground)
         case .filled:
-            // Use clear background to avoid layering with window background
-            Color.clear
+            Color.clear.background(MaterialPalette.cardBackground)
         }
     }
 
