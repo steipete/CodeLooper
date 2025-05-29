@@ -1,5 +1,6 @@
 import Diagnostics
 import Foundation
+import Utilities
 
 /// Manages network port allocation for JavaScript hook WebSocket connections.
 ///
@@ -15,7 +16,7 @@ import Foundation
 /// The manager ensures ports are reused for the same windows and 
 /// prevents port conflicts with other applications.
 @MainActor
-class PortManager {
+class PortManager: Loggable {
     // MARK: Lifecycle
 
     init() {
@@ -60,7 +61,6 @@ class PortManager {
 
     // MARK: Private
 
-    private let logger = Logger(category: .supervision)
     private let basePort: UInt16 = 4545
     private let maxPorts: UInt16 = 20
 

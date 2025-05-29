@@ -5,6 +5,7 @@ import Diagnostics
 import Foundation
 @preconcurrency import ScreenCaptureKit
 import SwiftUI // For ObservableObject
+import Utilities
 
 /// Manages AI-powered diagnostics and analysis of Cursor windows for intelligent interventions.
 ///
@@ -20,7 +21,7 @@ import SwiftUI // For ObservableObject
 /// accessible through standard APIs, and suggest appropriate interventions.
 /// This enables handling of complex scenarios that require visual context.
 @MainActor
-class WindowAIDiagnosticsManager: ObservableObject {
+class WindowAIDiagnosticsManager: ObservableObject, Loggable {
     // MARK: Lifecycle
 
     private init() { // Make init private for singleton
@@ -122,7 +123,6 @@ class WindowAIDiagnosticsManager: ObservableObject {
     private let gitRepositoryMonitor = GitRepositoryMonitor()
     private let documentPathTracker: DocumentPathTracker
     private var cancellables = Set<AnyCancellable>()
-    private let logger = Logger(category: .supervision)
     private var previousScreenshots: [String: Data] = [:] // Store previous screenshot data for comparison
 
     // Notification handler

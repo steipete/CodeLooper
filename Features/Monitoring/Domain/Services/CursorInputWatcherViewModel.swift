@@ -5,6 +5,7 @@ import Defaults
 import Diagnostics
 @preconcurrency import Foundation
 import SwiftUI
+import Utilities
 
 /// Central coordinator for Cursor input monitoring and JavaScript hook management.
 ///
@@ -20,7 +21,7 @@ import SwiftUI
 /// capabilities, coordinating between multiple services to provide comprehensive
 /// Cursor supervision and automated intervention.
 @MainActor
-class CursorInputWatcherViewModel: ObservableObject {
+class CursorInputWatcherViewModel: ObservableObject, Loggable {
     // MARK: Lifecycle
 
     init(projectRoot: String = "/Users/steipete/Projects/CodeLooper") {
@@ -233,7 +234,6 @@ class CursorInputWatcherViewModel: ObservableObject {
     private let portManager: PortManager
     private let heartbeatMonitor: HeartbeatMonitor
     private let aiAnalyzer: AIWindowAnalyzer
-    private let logger = Logger(category: .supervision)
 
     private var timerSubscription: AnyCancellable?
     private var windowsSubscription: AnyCancellable?
@@ -283,7 +283,7 @@ class CursorInputWatcherViewModel: ObservableObject {
 
                     // Check probe results after a short delay
                     Task {
-                        try? await Task.sleep(nanoseconds: 2_000_000_000) // 2 seconds
+                        try? await Task.sleep(seconds: TimingConfiguration.probeDelay)
                         if self.jsHookService.isWindowHooked(newWindow.id) {
                             self.windowInjectionStates[newWindow.id] = .hooked
                         } else {

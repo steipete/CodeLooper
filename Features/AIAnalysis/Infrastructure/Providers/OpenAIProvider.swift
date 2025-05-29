@@ -2,9 +2,10 @@ import AppKit
 import Diagnostics
 import Foundation
 import OpenAI
+import Utilities
 
 @MainActor
-final class OpenAIService: AIService {
+final class OpenAIService: AIService, Loggable {
     // MARK: Lifecycle
 
     init(apiKey: String) {
@@ -16,14 +17,12 @@ final class OpenAIService: AIService {
     let provider: AIProvider = .openAI
 
     func analyzeImage(_ request: ImageAnalysisRequest) async throws -> ImageAnalysisResponse {
-        guard let imageData = request.image.tiffRepresentation,
-              let bitmap = NSBitmapImageRep(data: imageData),
-              let jpegData = bitmap.representation(using: .jpeg, properties: [.compressionFactor: 0.8])
-        else {
-            throw AIServiceError.invalidImage
-        }
-
-        let base64Image = jpegData.base64EncodedString()
+        let base64Image = try await ErrorHandlingUtility.handle(
+            operation: { try ImageProcessor.convertToBase64(request.image) },
+            context: "Converting image to base64 for OpenAI",
+            logger: logger,
+            recoverableError: { _ in throw AIServiceError.invalidImage }
+        )
 
         let textContent = ChatQuery.ChatCompletionMessageParam.UserMessageParam.Content.VisionContent
             .ChatCompletionContentPartTextParam(text: request.prompt)
@@ -47,61 +46,26 @@ final class OpenAIService: AIService {
             maxTokens: 1000
         )
 
-        do {
-            let response = try await client.chats(query: query)
-
-            guard let content = response.choices.first?.message.content else {
-                throw AIServiceError.invalidResponse
-            }
-
-            return ImageAnalysisResponse(
-                text: content,
-                model: request.model,
-                tokensUsed: response.usage?.totalTokens
-            )
-        } catch let openAIError as APIError {
-            // Handle specific OpenAI APIErrors
-            switch openAIError.type {
-            case "invalid_request_error":
-                if openAIError.message.lowercased().contains("api key") {
-                    throw AIServiceError.apiKeyMissing
-                } else if openAIError.message.lowercased().contains("model not found") {
-                    throw AIServiceError.unsupportedModel // Or modelNotFound if we want to pass the name
+        return try await ErrorHandlingUtility.handle(
+            operation: {
+                let response = try await client.chats(query: query)
+                
+                guard let content = response.choices.first?.message.content else {
+                    throw AIServiceError.invalidResponse
                 }
-                throw AIServiceError.invalidResponse // Or a more specific one based on message
-            case "authentication_error", "permission_error":
-                throw AIServiceError.apiKeyMissing // Typically API key related
-            case "api_error", "internal_error":
-                throw AIServiceError.serviceUnavailable // General server-side issue
-            case "rate_limit_error":
-                throw AIServiceError.serviceUnavailable // Or a specific rate limit error if defined
-            case "insufficient_quota":
-                throw AIServiceError.serviceUnavailable // Or a specific quota error
-            default:
-                // Fallback for other OpenAI APIErrors
-                logger.warning("Unhandled OpenAI APIError type: \(openAIError.type). Message: \(openAIError.message)")
-                throw AIServiceError.networkError(openAIError)
+                
+                return ImageAnalysisResponse(
+                    text: content,
+                    model: request.model,
+                    tokensUsed: response.usage?.totalTokens
+                )
+            },
+            context: "OpenAI chat completion",
+            logger: logger,
+            recoverableError: { error in
+                throw AIErrorMapper.mapError(error, from: .openAI)
             }
-        } catch let urlError as URLError {
-            // Handle URLErrors specifically for better network messages
-            throw AIServiceError.networkError(urlError) // AIServiceError.networkError has specific URLError handling
-        } catch {
-            // General catch-all, try to interpret based on message if possible
-            let errorMessage = error.localizedDescription.lowercased()
-            if errorMessage.contains("api key") || errorMessage.contains("unauthorized") || errorMessage
-                .contains("bearer auth")
-            {
-                throw AIServiceError.apiKeyMissing
-            }
-            if errorMessage.contains("rate_limit") || errorMessage.contains("rate limit") {
-                throw AIServiceError.serviceUnavailable // Rate limit
-            }
-            if errorMessage.contains("insufficient_quota") {
-                throw AIServiceError.serviceUnavailable // Quota issue
-            }
-            logger.error("Unhandled error during OpenAI request: \(error)")
-            throw AIServiceError.networkError(error) // Fallback to generic network error
-        }
+        )
     }
 
     func isAvailable() async -> Bool {
@@ -117,6 +81,4 @@ final class OpenAIService: AIService {
     // MARK: Private
 
     private let client: OpenAI
-
-    private let logger = Logger(category: .api)
 }

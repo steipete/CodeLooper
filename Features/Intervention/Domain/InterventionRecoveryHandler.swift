@@ -2,6 +2,7 @@ import AppKit
 import AXorcist
 import Diagnostics
 import Foundation
+import Utilities
 
 /// Executes recovery actions for stuck or unresponsive Cursor instances.
 ///
@@ -16,7 +17,7 @@ import Foundation
 /// nudging, forced stops, and connection restoration to bring Cursor
 /// instances back to a functional state.
 @MainActor
-class InterventionRecoveryHandler {
+class InterventionRecoveryHandler: Loggable {
     // MARK: Lifecycle
 
     init(
@@ -44,7 +45,7 @@ class InterventionRecoveryHandler {
         }
 
         // Wait a moment
-        try? await Task.sleep(nanoseconds: UInt64(InterventionConstants.interventionActionDelay * 1_000_000_000))
+        try? await Task.sleep(seconds: InterventionConstants.interventionActionDelay)
 
         // Step 2: Click resume button
         guard await clickResumeButton(for: pid) else {
@@ -160,7 +161,7 @@ class InterventionRecoveryHandler {
         self.logger.info("PID \(String(describing: pid)): Successfully focused/clicked main input field.")
 
         // Wait a moment before typing
-        try? await Task.sleep(nanoseconds: UInt64(1.0 * 1_000_000_000))
+        try? await Task.sleep(seconds: TimingConfiguration.typeDelay)
 
         // Type a space and backspace to trigger activity
         let typeSpaceAction = PerformActionCommand(
@@ -172,7 +173,7 @@ class InterventionRecoveryHandler {
         )
         _ = self.axorcist.handlePerformAction(command: typeSpaceAction)
 
-        try? await Task.sleep(nanoseconds: UInt64(0.5 * 1_000_000_000))
+        try? await Task.sleep(seconds: TimingConfiguration.shortDelay)
 
         // Clear the space
         let clearAction = PerformActionCommand(
@@ -220,7 +221,6 @@ class InterventionRecoveryHandler {
     private let sessionLogger: SessionLogger
     private let locatorManager: LocatorManager
     private let instanceStateManager: CursorInstanceStateManager
-    private let logger = Logger(category: .interventionEngine)
 
     private func clickStopButton(for pid: pid_t) async -> Bool {
         guard let stopButtonLocator = await self.locatorManager.getLocator(for: .stopGeneratingButton, pid: pid) else {

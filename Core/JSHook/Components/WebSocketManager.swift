@@ -143,12 +143,9 @@ final class WebSocketManager: Loggable {
         await withCheckedContinuation { continuation in
             let resumedBox = ThreadSafeBox(false)
             
-            // Cache logger to avoid repeated initialization
-            let logger = Logger(category: .jshook)
-            
             listener?.stateUpdateHandler = { state in
                 // Already on main queue, no need for Task creation
-                logger.debug("🌀 Listener state updated: \(state)")
+                self.logger.debug("🌀 Listener state updated: \(state)")
 
                 switch state {
                 case .ready:

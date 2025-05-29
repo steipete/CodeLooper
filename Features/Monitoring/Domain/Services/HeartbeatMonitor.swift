@@ -1,5 +1,6 @@
 import Diagnostics
 import Foundation
+import Utilities
 
 /// Delegate protocol for heartbeat status updates from monitored JavaScript hooks.
 protocol HeartbeatMonitorDelegate: AnyObject {
@@ -18,7 +19,7 @@ protocol HeartbeatMonitorDelegate: AnyObject {
 /// The monitor listens for periodic heartbeat signals sent by injected
 /// JavaScript code to verify that hooks remain active and responsive.
 @MainActor
-class HeartbeatMonitor {
+class HeartbeatMonitor: Loggable {
     // MARK: Lifecycle
 
     init() {
@@ -78,9 +79,8 @@ class HeartbeatMonitor {
 
     // MARK: Private
 
-    private let logger = Logger(category: .supervision)
     private var heartbeatListenerTask: Task<Void, Never>?
-    private let heartbeatTimeout: TimeInterval = 10.0
+    private let heartbeatTimeout: TimeInterval = TimingConfiguration.heartbeatTimeout
     private var windowPortMapping: [UInt16: String] = [:] // port -> windowId
     private var lastHeartbeats: [String: Date] = [:]
     // Track when we last logged the "before registration" message for each port
@@ -93,7 +93,7 @@ class HeartbeatMonitor {
             while !Task.isCancelled {
                 checkAllHeartbeats()
 
-                try? await Task.sleep(nanoseconds: 2_000_000_000) // 2 seconds
+                try? await Task.sleep(seconds: TimingConfiguration.heartbeatCheckInterval)
             }
         }
     }

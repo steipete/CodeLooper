@@ -5,16 +5,17 @@ import Foundation
 import OpenAI
 @preconcurrency import ScreenCaptureKit
 import Vision
+import Utilities
 
 @MainActor
-public final class CursorScreenshotAnalyzer: ObservableObject {
+public final class CursorScreenshotAnalyzer: ObservableObject, Loggable {
     @Published public private(set) var isAnalyzing = false
     @Published public var lastAnalysis: ImageAnalysisResponse?
     @Published public var lastError: Error?
     
     private let imageScaleFactor: CGFloat = 1.0
     private static let maxAnalysisRetries = 2
-    private static let retryDelaySeconds: TimeInterval = 2
+    private static let retryDelaySeconds: TimeInterval = TimingConfiguration.retryDelay
     
     public init() {
         // AIServiceManager.shared will be used directly. It should be configured elsewhere (e.g., AppDelegate or when settings change)
@@ -63,9 +64,8 @@ public final class CursorScreenshotAnalyzer: ObservableObject {
                         throw error // Rethrow after max retries
                     }
                     // Wait before retrying
-                    let delay = UInt64(CursorScreenshotAnalyzer.retryDelaySeconds * 1_000_000_000) // Nanoseconds
                     logger.info("Retrying AI analysis in \(CursorScreenshotAnalyzer.retryDelaySeconds) seconds...")
-                    try? await Task.sleep(nanoseconds: delay)
+                    try? await Task.sleep(seconds: CursorScreenshotAnalyzer.retryDelaySeconds)
                     continue // Next attempt
                 default:
                     throw error // Non-retryable AIServiceError, rethrow immediately
@@ -146,8 +146,6 @@ public final class CursorScreenshotAnalyzer: ObservableObject {
         
         return nsImage
     }
-    
-    private let logger = Logger(category: .api)
 }
 
 public extension CursorScreenshotAnalyzer {
