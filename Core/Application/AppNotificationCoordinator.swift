@@ -43,6 +43,12 @@ final class AppNotificationCoordinator {
         }
         notificationObservers.removeAll()
         
+        // Cancel all tasks
+        for task in notificationTasks {
+            task.cancel()
+        }
+        notificationTasks.removeAll()
+        
         // Remove workspace observers
         NSWorkspace.shared.notificationCenter.removeObserver(self)
         
@@ -60,6 +66,7 @@ final class AppNotificationCoordinator {
     
     private let logger = Logger(category: .appDelegate)
     private var notificationObservers: [NSObjectProtocol] = []
+    private var notificationTasks: [Task<Void, Never>] = []
     private weak var windowManager: WindowManager?
     
     /// Setup menu bar highlight notification observer
@@ -69,8 +76,11 @@ final class AppNotificationCoordinator {
             object: nil,
             queue: .main
         ) { [weak self] notification in
-            Task { @MainActor in
-                self?.handleMenuBarHighlight(notification)
+            let duration = notification.userInfo?["duration"] as? TimeInterval ?? 2.0
+            Task { @MainActor [weak self] in
+                guard let self = self else { return }
+                self.logger.info("📍 Menu bar highlight requested for \(duration) seconds")
+                // TODO: Implement menu bar highlighting animation
             }
         }
         notificationObservers.append(observer)
@@ -118,20 +128,22 @@ final class AppNotificationCoordinator {
     /// Setup preference change observers
     private func setupPreferenceObservers() {
         // Global monitoring preference observer
-        Defaults.observe(.isGlobalMonitoringEnabled) { [weak self] change in
-            Task { @MainActor in
-                self?.handleMonitoringPreferenceChange(enabled: change.newValue)
+        let task = Task { @MainActor in
+            for await value in Defaults.updates(.isGlobalMonitoringEnabled) {
+                handleMonitoringPreferenceChange(enabled: value)
             }
         }
-        .tieToLifetime(of: self)
+        // Store task to cancel on deinit
+        notificationTasks.append(task)
         
         // Dock visibility preference observer
-        Defaults.observe(.showInDock) { [weak self] change in
-            Task { @MainActor in
-                self?.handleDockVisibilityChange(visible: change.newValue)
+        let dockTask = Task { @MainActor in
+            for await value in Defaults.updates(.showInDock) {
+                handleDockVisibilityChange(visible: value)
             }
         }
-        .tieToLifetime(of: self)
+        // Store task to cancel on deinit
+        notificationTasks.append(dockTask)
     }
     
     /// Setup global exception handling
@@ -148,15 +160,6 @@ final class AppNotificationCoordinator {
     
     // MARK: - Event Handlers
     
-    private func handleMenuBarHighlight(_ notification: Notification) {
-        guard let duration = notification.userInfo?["duration"] as? TimeInterval else {
-            logger.warning("Menu bar highlight notification missing duration")
-            return
-        }
-        
-        logger.info("📍 Menu bar highlight requested for \(duration) seconds")
-        // TODO: Implement menu bar highlighting animation
-    }
     
     private func handleShowAXpectorWindow() {
         logger.info("🔍 Request to show AXpector window")
