@@ -84,7 +84,7 @@ final class WebSocketManager {
         logger.info("🌀 Listening on ws://127.0.0.1:\(port) - ready for connections")
     }
 
-    func waitForHandshake(timeout: TimeInterval = 120) async throws {
+    func waitForHandshake(timeout: TimeInterval = 120.0) async throws {
         let logger = Logger(category: .jshook)
         logger.info("⏳ Waiting for browser to connect...")
 
@@ -97,7 +97,7 @@ final class WebSocketManager {
                 return
             }
 
-            try await Task.sleep(for: .milliseconds(200))
+            try await Task.sleep(for: .seconds(0.2))
         }
 
         logger.error("❌ Handshake timeout after \(timeout)s")
@@ -142,25 +142,28 @@ final class WebSocketManager {
 
     private func startListenerAndWait() async -> Bool {
         await withCheckedContinuation { continuation in
-            var resumed = false
+            let resumedBox = ThreadSafeBox(false)
+            
+            // Cache logger to avoid repeated initialization
+            let logger = Logger(category: .jshook)
+            
             listener?.stateUpdateHandler = { state in
-                Task { @MainActor in
-                    Logger(category: .jshook).debug("🌀 Listener state updated: \(state)")
+                // Already on main queue, no need for Task creation
+                logger.debug("🌀 Listener state updated: \(state)")
 
-                    switch state {
-                    case .ready:
-                        if !resumed {
-                            resumed = true
-                            continuation.resume(returning: true)
-                        }
-                    case .failed:
-                        if !resumed {
-                            resumed = true
-                            continuation.resume(returning: false)
-                        }
-                    default:
-                        break
+                switch state {
+                case .ready:
+                    if !resumedBox.get() {
+                        resumedBox.set(true)
+                        continuation.resume(returning: true)
                     }
+                case .failed:
+                    if !resumedBox.get() {
+                        resumedBox.set(true)
+                        continuation.resume(returning: false)
+                    }
+                default:
+                    break
                 }
             }
             listener?.start(queue: .main)
