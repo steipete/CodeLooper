@@ -49,7 +49,10 @@ func windowManagerDelegate() async throws {
 
     // Test that delegate methods can be called without errors
     await delegate.windowManagerDidFinishOnboarding()
-    #expect(delegate.didFinishOnboardingCalled == true)
+    
+    // Use a simple boolean to avoid reflection issues
+    let wasCalled = delegate.didFinishOnboardingCalled
+    #expect(wasCalled == true)
 }
 
 

@@ -2,10 +2,10 @@
 import Combine
 import Foundation
 import Network
-import Testing
+import XCTest
 
-/// Test suite for networking components
-struct NetworkingTests {
+
+class NetworkingTests: XCTestCase {
     // MARK: - Test Utilities
 
     /// Protocol for mocking URLSession
@@ -40,42 +40,38 @@ struct NetworkingTests {
 
     // MARK: - HTTP Request Tests
 
-    @Test
-    func httpRequestConstruction() async throws {
+    func testHttpRequestConstruction() async throws {
         let url = URL(string: "https://api.example.com/test")!
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
 
-        #expect(request.url == url)
-        #expect(request.httpMethod == "POST")
-        #expect(request.value(forHTTPHeaderField: "Content-Type") == "application/json")
+        XCTAssertEqual(request.url, url)
+        XCTAssertEqual(request.httpMethod, "POST")
+        XCTAssertEqual(request.value(forHTTPHeaderField: "Content-Type"), "application/json")
     }
 
-    @Test
-    func httpRequestTimeout() async throws {
+    func testHttpRequestTimeout() async throws {
         let url = URL(string: "https://api.example.com/test")!
         var request = URLRequest(url: url)
         request.timeoutInterval = 5.0
 
-        #expect(request.timeoutInterval == 5.0)
+        XCTAssertEqual(request.timeoutInterval, 5.0)
     }
 
     // MARK: - WebSocketManager Tests
 
-    @Test
-    func webSocketManagerInitialization() async throws {
+    func testWebSocketManagerInitialization() async throws {
         let port: UInt16 = 9876
         let manager = await WebSocketManager(port: port)
 
         await MainActor.run {
-            #expect(manager != nil)
-            #expect(manager.isConnected == false)
+            XCTAssertNotNil(manager)
+            XCTAssertEqual(manager.isConnected, false)
         }
     }
 
-    @Test
-    func webSocketManagerLifecycle() async throws {
+    func testWebSocketManagerLifecycle() async throws {
         let port: UInt16 = 9877
         let manager = await WebSocketManager(port: port)
 
@@ -84,21 +80,20 @@ struct NetworkingTests {
             try await manager.startListener()
         } catch {
             // Port might be in use, which is OK for testing
-            #expect(error != nil)
+            XCTAssertNotNil(error)
         }
 
         // Should handle lifecycle without crashes
-        #expect(true)
+        XCTAssertTrue(true)
     }
 
-    @Test
-    func webSocketConnectionHandling() async throws {
+    func testWebSocketConnectionHandling() async throws {
         let port: UInt16 = 9878
         let manager = await WebSocketManager(port: port)
 
         // Test connection state
         await MainActor.run {
-            #expect(manager.isConnected == false)
+            XCTAssertEqual(manager.isConnected, false)
         }
 
         // Note: Full connection testing would require a real WebSocket client
@@ -106,25 +101,22 @@ struct NetworkingTests {
 
     // MARK: - API Key Service Tests
 
-    @Test
-    func apiKeyServiceInitialization() async throws {
+    func testApiKeyServiceInitialization() async throws {
         // Create API key service
         let apiKeyService = await APIKeyService.shared
         
         // Test that service can be created
-        #expect(apiKeyService != nil)
+        XCTAssertNotNil(apiKeyService)
     }
 
     // MARK: - MCP Version Service Tests
 
-    @Test
-    func mcpVersionServiceInitialization() async throws {
+    func testMcpVersionServiceInitialization() async throws {
         let service = await MCPVersionService.shared
-        #expect(service != nil)
+        XCTAssertNotNil(service)
     }
 
-    @Test
-    func mcpVersionServiceRetrieval() async throws {
+    func testMcpVersionServiceRetrieval() async throws {
         let service = await MCPVersionService.shared
 
         // Test version checking
@@ -135,102 +127,94 @@ struct NetworkingTests {
         
         // Check if we have versions (may be empty in test environment)
         await MainActor.run {
-            #expect(service.latestVersions != nil)
+            XCTAssertNotNil(service.latestVersions)
         }
     }
 
     // MARK: - AI Error Mapping Tests
 
-    @Test
-    func aiErrorMappingNetworkError() async throws {
+    func testAiErrorMappingNetworkError() async throws {
         let urlError = URLError(.notConnectedToInternet)
         let mappedError = AIErrorMapper.mapError(urlError, from: .openAI)
 
         switch mappedError {
         case .networkError:
-            #expect(true)
+            XCTAssertTrue(true)
         default:
-            #expect(false)
+            XCTFail()
         }
     }
 
-    @Test
-    func aiErrorMappingInvalidResponse() async throws {
+    func testAiErrorMappingInvalidResponse() async throws {
         let error = NSError(domain: "TestDomain", code: 400, userInfo: nil)
         let mappedError = AIErrorMapper.mapError(error, from: .openAI)
 
         switch mappedError {
         case .invalidResponse:
-            #expect(true)
+            XCTAssertTrue(true)
         default:
-            #expect(false)
+            XCTFail()
         }
     }
 
-    @Test
-    func aiErrorMappingAPIKeyError() async throws {
+    func testAiErrorMappingAPIKeyError() async throws {
         // Test that mapper handles authentication errors
         let error = NSError(domain: "TestDomain", code: 401, userInfo: nil)
         let mappedError = AIErrorMapper.mapError(error, from: .openAI)
 
         // Error should be mapped to something
-        #expect(mappedError != nil)
+        XCTAssertNotNil(mappedError)
     }
 
-    @Test
-    func aiErrorMappingServiceUnavailable() async throws {
+    func testAiErrorMappingServiceUnavailable() async throws {
         let error = NSError(domain: "TestDomain", code: 503, userInfo: nil)
         let mappedError = AIErrorMapper.mapError(error, from: .openAI)
 
         switch mappedError {
         case .serviceUnavailable:
-            #expect(true)
+            XCTAssertTrue(true)
         default:
             // Might be mapped to different error
-            #expect(mappedError != nil)
+            XCTAssertNotNil(mappedError)
         }
     }
 
-    @Test
-    func aiErrorMappingModelNotFound() async throws {
+    func testAiErrorMappingModelNotFound() async throws {
         // Test model not found handling
         let modelName = "non-existent-model"
         let mappedError = AIServiceError.modelNotFound(modelName)
 
         switch mappedError {
         case .modelNotFound(let name):
-            #expect(name == modelName)
+            XCTAssertEqual(name, modelName)
         default:
-            #expect(false)
+            XCTFail()
         }
     }
 
-    @Test
-    func aiErrorMappingOllamaNotRunning() async throws {
+    func testAiErrorMappingOllamaNotRunning() async throws {
         // Test Ollama-specific error
         let mappedError = AIServiceError.ollamaNotRunning
 
         switch mappedError {
         case .ollamaNotRunning:
-            #expect(true)
+            XCTAssertTrue(true)
         default:
-            #expect(false)
+            XCTFail()
         }
     }
 
-    @Test
-    func aiErrorMappingUnknownError() async throws {
+    func testAiErrorMappingUnknownError() async throws {
         let error = NSError(domain: "TestDomain", code: 999, userInfo: nil)
         let mappedError = AIErrorMapper.mapError(error, from: .openAI)
 
         // Any error should be mapped to something
-        #expect(mappedError != nil)
+        XCTAssertNotNil(mappedError)
     }
 
     // MARK: - URL Building Tests
 
-    @Test
-    func urlComponentsConstruction() async throws {
+    func testUrlComponentsConstruction() async throws {
         var components = URLComponents()
         components.scheme = "https"
         components.host = "api.example.com"
@@ -241,13 +225,12 @@ struct NetworkingTests {
         ]
 
         let url = components.url
-        #expect(url != nil)
-        #expect(url?.absoluteString.contains("key=value") == true)
-        #expect(url?.absoluteString.contains("limit=10") == true)
+        XCTAssertNotNil(url)
+        XCTAssertTrue(url?.absoluteString.contains("key=value") == true)
+        XCTAssertTrue(url?.absoluteString.contains("limit=10") == true)
     }
 
-    @Test
-    func urlEncodingSpecialCharacters() async throws {
+    func testUrlEncodingSpecialCharacters() async throws {
         var components = URLComponents()
         components.scheme = "https"
         components.host = "api.example.com"
@@ -257,14 +240,13 @@ struct NetworkingTests {
         ]
 
         let url = components.url
-        #expect(url != nil)
-        #expect(url?.absoluteString.contains("%20") == true || url?.absoluteString.contains("+") == true)
+        XCTAssertNotNil(url)
+        XCTAssertEqual(url?.absoluteString.contains("%20"), true || url?.absoluteString.contains("+") == true)
     }
 
     // MARK: - Mock Testing
 
-    @Test
-    func mockURLSessionSuccess() async throws {
+    func testMockURLSessionSuccess() async throws {
         let session = MockURLSession()
         let expectedData = "Test response".data(using: .utf8)!
         let expectedResponse = HTTPURLResponse(
@@ -280,12 +262,11 @@ struct NetworkingTests {
         let request = URLRequest(url: URL(string: "https://api.example.com")!)
         let (data, response) = try await session.data(for: request)
 
-        #expect(data == expectedData)
-        #expect((response as? HTTPURLResponse)?.statusCode == 200)
+        XCTAssertEqual(data, expectedData)
+        XCTAssertEqual((response as? HTTPURLResponse)?.statusCode, 200)
     }
 
-    @Test
-    func mockURLSessionError() async throws {
+    func testMockURLSessionError() async throws {
         let session = MockURLSession()
         session.mockError = URLError(.notConnectedToInternet)
 
@@ -293,14 +274,13 @@ struct NetworkingTests {
 
         do {
             _ = try await session.data(for: request)
-            #expect(Bool(false)) // Should not reach here
+            XCTAssertTrue(Bool(false)) // Should not reach here
         } catch {
-            #expect(error is URLError)
+            XCTAssertTrue(error is URLError)
         }
     }
 
-    @Test
-    func mockURLSessionTimeout() async throws {
+    func testMockURLSessionTimeout() async throws {
         let session = MockURLSession()
         session.shouldTimeout = true
 
@@ -310,53 +290,49 @@ struct NetworkingTests {
             _ = try await Task.withTimeout(seconds: 0.2) {
                 try await session.data(for: request)
             }
-            #expect(Bool(false)) // Should timeout
+            XCTAssertTrue(Bool(false)) // Should timeout
         } catch {
             // Expected to timeout or error
-            #expect(error != nil)
+            XCTAssertNotNil(error)
         }
 
         // Task should be cancelled due to timeout simulation
-        #expect(true)
+        XCTAssertTrue(true)
     }
 
     // MARK: - Port Management Tests
 
-    @Test
-    func portManagerAllocation() async throws {
+    func testPortManagerAllocation() async throws {
         let portManager = await PortManager()
         let port = await portManager.getOrAssignPort(for: "test-window")
 
-        #expect(port > 0)
-        #expect(port <= 65535)
+        XCTAssertGreaterThan(port, 0)
+        XCTAssertLessThanOrEqual(port, 65535)
     }
 
-    @Test
-    func portManagerDuplication() async throws {
+    func testPortManagerDuplication() async throws {
         let portManager = await PortManager()
         
         let port1 = await portManager.getOrAssignPort(for: "window1")
         let port2 = await portManager.getOrAssignPort(for: "window2")
 
-        #expect(port1 != port2)
+        XCTAssertNotEqual(port1, port2)
     }
 
     // MARK: - Network Monitoring Tests
 
-    @Test
-    func networkReachability() async throws {
+    func testNetworkReachability() async throws {
         // Test basic network path monitoring setup
         let monitor = NWPathMonitor()
         
         // Monitor should be created without errors
-        #expect(monitor != nil)
+        XCTAssertNotNil(monitor)
         
         // Note: Actual network testing would require real network conditions
         monitor.cancel()
     }
 
-    @Test
-    func networkPathStatus() async throws {
+    func testNetworkPathStatus() async throws {
         let monitor = NWPathMonitor()
         let queue = DispatchQueue(label: "test.network.monitor")
         
@@ -386,61 +362,56 @@ struct NetworkingTests {
         
         // Should have received at least one path update
         let wasUpdated = await tracker.pathUpdated
-        #expect(wasUpdated)
+        XCTAssertTrue(wasUpdated)
     }
 
     // MARK: - WebSocket Communication Tests
 
-    @Test
-    func webSocketMessageEncoding() async throws {
+    func testWebSocketMessageEncoding() async throws {
         let message = ["command": "test", "data": "value"]
         let data = try JSONSerialization.data(withJSONObject: message)
         let string = String(data: data, encoding: .utf8)
 
-        #expect(string != nil)
-        #expect(string?.contains("command") == true)
+        XCTAssertNotNil(string)
+        XCTAssertEqual(string?.contains("command"), true)
     }
 
-    @Test
-    func webSocketMessageDecoding() async throws {
+    func testWebSocketMessageDecoding() async throws {
         let jsonString = """
         {"status": "success", "result": "test"}
         """
         let data = jsonString.data(using: .utf8)!
         let decoded = try JSONSerialization.jsonObject(with: data) as? [String: Any]
 
-        #expect(decoded?["status"] as? String == "success")
-        #expect(decoded?["result"] as? String == "test")
+        XCTAssertEqual(decoded?["status"] as? String, "success")
+        XCTAssertEqual(decoded?["result"] as? String, "test")
     }
 
-    @Test
-    func webSocketReconnection() async throws {
+    func testWebSocketReconnection() async throws {
         let manager = await WebSocketManager(port: 9880)
         
         // Test reconnection capability
         await MainActor.run {
-            #expect(manager != nil)
-            #expect(manager.isConnected == false)
+            XCTAssertNotNil(manager)
+            XCTAssertEqual(manager.isConnected, false)
         }
     }
 
     // MARK: - Integration Tests
 
-    @Test
-    func networkingStackIntegration() async throws {
+    func testNetworkingStackIntegration() async throws {
         // Test that all networking components can work together
         let webSocketManager = await WebSocketManager(port: 9881)
         let apiKeyService = await APIKeyService.shared
         let mcpVersionService = await MCPVersionService.shared
 
         // All components should initialize without conflicts
-        #expect(webSocketManager != nil)
-        #expect(apiKeyService != nil)
-        #expect(mcpVersionService != nil)
+        XCTAssertNotNil(webSocketManager)
+        XCTAssertNotNil(apiKeyService)
+        XCTAssertNotNil(mcpVersionService)
     }
 
-    @Test
-    func concurrentNetworkOperations() async throws {
+    func testConcurrentNetworkOperations() async throws {
         // Test concurrent network operations
         await withTaskGroup(of: Void.self) { group in
             // Simulate multiple network operations
@@ -459,13 +430,12 @@ struct NetworkingTests {
         }
 
         // Should handle concurrent operations without crashes
-        #expect(true)
+        XCTAssertTrue(true)
     }
 
     // MARK: - Performance Tests
 
-    @Test
-    func networkingPerformance() async throws {
+    func testNetworkingPerformance() async throws {
         let startTime = Date()
 
         // Test creating multiple WebSocket managers
@@ -477,6 +447,6 @@ struct NetworkingTests {
         let duration = endTime.timeIntervalSince(startTime)
 
         // Should complete reasonably quickly (less than 1 second for 10 instances)
-        #expect(duration < 1.0)
+        XCTAssertLessThan(duration, 1.0)
     }
 }

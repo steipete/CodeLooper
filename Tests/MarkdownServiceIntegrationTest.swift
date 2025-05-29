@@ -1,27 +1,28 @@
 @testable import CodeLooper
 import Foundation
 import JavaScriptCore
-import Testing
+import XCTest
 
+
+@MainActor
+class MarkdownServiceIntegrationTest: XCTestCase {
 /// Integration test for HTMLToMarkdownService functionality
 /// This test verifies that the JavaScript libraries can be loaded and work correctly
 @MainActor
 struct MarkdownServiceIntegrationTest {
     
-    @Test
-    func javaScriptLibrariesExist() async throws {
+    func testJavaScriptLibrariesExist() async throws {
         // Check that the required JavaScript files exist in the test bundle
         let bundle = Bundle.main
 
         let turndownPath = bundle.path(forResource: "turndown.min", ofType: "js")
-        #expect(turndownPath != nil, "turndown.min.js should be available in bundle")
+        XCTAssertNotNil(turndownPath, "turndown.min.js should be available in bundle")
 
         let linkedomPath = bundle.path(forResource: "linkedom.min", ofType: "js")
-        #expect(linkedomPath != nil, "linkedom.min.js should be available in bundle")
+        XCTAssertNotNil(linkedomPath, "linkedom.min.js should be available in bundle")
     }
 
-    @Test
-    func turndownServiceLoading() async throws {
+    func testTurndownServiceLoading() async throws {
         guard let turndownPath = Bundle.main.path(forResource: "turndown.min", ofType: "js") else {
             throw MarkdownTestError.resourceNotFound("turndown.min.js")
         }
@@ -39,19 +40,18 @@ struct MarkdownServiceIntegrationTest {
 
             // Verify TurndownService is available
             let turndownService = context.objectForKeyedSubscript("TurndownService")
-            #expect(turndownService != nil, "TurndownService should be available after loading script")
+            XCTAssertNotNil(turndownService, "TurndownService should be available after loading script")
 
             // Try to instantiate TurndownService
             let instance = turndownService?.construct(withArguments: [])
-            #expect(instance != nil, "Should be able to create TurndownService instance")
+            XCTAssertNotNil(instance, "Should be able to create TurndownService instance")
 
         } catch {
             throw MarkdownTestError.scriptLoadingFailed(error.localizedDescription)
         }
     }
 
-    @Test
-    func basicConversionConcept() async throws {
+    func testBasicConversionConcept() async throws {
         // This test verifies the basic concept works
         // In a real implementation, HTMLToMarkdownService handles the DOM complexity
 
@@ -65,14 +65,14 @@ struct MarkdownServiceIntegrationTest {
 
         // The service might not be available in test environment due to bundle resource paths
         // but we can verify the class structure is correct
-        #expect(service != nil, "HTMLToMarkdownService should be instantiable")
+        XCTAssertNotNil(service, "HTMLToMarkdownService should be instantiable")
 
         // If the service is available, test a basic conversion
         if isAvailable {
             do {
                 let html = "<p>Test</p>"
                 let markdown = try await service.convertToMarkdown(html)
-                #expect(!markdown.isEmpty, "Conversion should produce non-empty result")
+                XCTAssertTrue(!markdown.isEmpty, "Conversion should produce non-empty result")
                 print("✅ Conversion test successful: \(markdown)")
             } catch {
                 print("⚠️  Conversion failed (expected in test environment): \(error)")
@@ -83,8 +83,7 @@ struct MarkdownServiceIntegrationTest {
         }
     }
 
-    @Test
-    func conversionOptionsStructure() async throws {
+    func testConversionOptionsStructure() async throws {
         // Test that the options structure is properly defined
         let options = HTMLToMarkdownService.ConversionOptions(
             headingStyle: HTMLMarkdownHeadingStyle.atx,
@@ -92,9 +91,9 @@ struct MarkdownServiceIntegrationTest {
             codeBlockStyle: HTMLMarkdownCodeBlockStyle.fenced
         )
 
-        #expect(options.headingStyle == HTMLMarkdownHeadingStyle.atx)
-        #expect(options.bulletListMarker == "*")
-        #expect(options.codeBlockStyle == HTMLMarkdownCodeBlockStyle.fenced)
+        XCTAssertEqual(options.headingStyle, HTMLMarkdownHeadingStyle.atx)
+        XCTAssertEqual(options.bulletListMarker, "*")
+        XCTAssertEqual(options.codeBlockStyle, HTMLMarkdownCodeBlockStyle.fenced)
 
         // Test setext heading style
         let setextOptions = HTMLToMarkdownService.ConversionOptions(
@@ -103,13 +102,12 @@ struct MarkdownServiceIntegrationTest {
             codeBlockStyle: HTMLMarkdownCodeBlockStyle.indented
         )
 
-        #expect(setextOptions.headingStyle == HTMLMarkdownHeadingStyle.setext)
-        #expect(setextOptions.bulletListMarker == "-")
-        #expect(setextOptions.codeBlockStyle == HTMLMarkdownCodeBlockStyle.indented)
+        XCTAssertEqual(setextOptions.headingStyle, HTMLMarkdownHeadingStyle.setext)
+        XCTAssertEqual(setextOptions.bulletListMarker, "-")
+        XCTAssertEqual(setextOptions.codeBlockStyle, HTMLMarkdownCodeBlockStyle.indented)
     }
 
-    @Test
-    func errorHandling() async throws {
+    func testErrorHandling() async throws {
         let service = HTMLToMarkdownService.shared
 
         // Test with invalid HTML - should not crash
@@ -118,13 +116,13 @@ struct MarkdownServiceIntegrationTest {
             print("Handled malformed HTML: \(result)")
         } catch {
             // Expected to fail gracefully
-            #expect(error is HTMLToMarkdownService.MarkdownConversionError, "Should throw MarkdownConversionError for invalid input")
+            XCTAssertTrue(error is HTMLToMarkdownService.MarkdownConversionError, "Should throw MarkdownConversionError for invalid input")
         }
 
         // Test with empty string
         do {
             let result = try await service.convertToMarkdown("")
-            #expect(result.isEmpty, "Empty input should produce empty output")
+            XCTAssertTrue(result.isEmpty, "Empty input should produce empty output")
         } catch {
             print("Empty string handling: \(error)")
         }
@@ -151,4 +149,5 @@ private class MockHTMLToMarkdownService {
             .replacingOccurrences(of: "<strong>", with: "**")
             .replacingOccurrences(of: "</strong>", with: "**")
     }
+}
 }

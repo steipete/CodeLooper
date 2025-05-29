@@ -1,66 +1,68 @@
 import AppKit
 @testable import CodeLooper
 import Foundation
-import Testing
+import XCTest
 import UserNotifications
 
 
-func userNotificationManagerSingleton() async throws {
+
+class NotificationHandlingTests: XCTestCase {
+    func testUserNotificationManagerSingleton() async throws {
     let manager1 = await UserNotificationManager.shared
     let manager2 = await UserNotificationManager.shared
 
-    #expect(manager1 === manager2)
+    XCTAssertTrue(manager1 === manager2)
 }
 
 
-func userNotificationManagerInitialization() async throws {
+    func testUserNotificationManagerInitialization() async throws {
     let manager = await UserNotificationManager.shared
 
     // Test initial state
-    #expect(manager != nil)
+    XCTAssertNotNil(manager)
 
     // Test initial published values
     let initialPermission = await manager.hasPermission
     let initialStatus = await manager.authorizationStatus
 
     // Values should be initialized (though actual values depend on system state)
-    #expect(initialPermission == true || initialPermission == false)
-    #expect(initialStatus != nil)
+    XCTAssertEqual(initialPermission, true || initialPermission == false)
+    XCTAssertNotNil(initialStatus)
 }
 
 
-func notificationErrorCases() async throws {
+    func testNotificationErrorCases() async throws {
     let permissionError = NotificationError.permissionDenied
     let deliveryError = NotificationError.deliveryFailed(URLError(.notConnectedToInternet))
 
     // Test error descriptions
-    #expect(permissionError.errorDescription != nil)
-    #expect(permissionError.errorDescription?.contains("permission") == true)
+    XCTAssertNotNil(permissionError.errorDescription)
+    XCTAssertEqual(permissionError.errorDescription?.contains("permission"), true)
 
-    #expect(deliveryError.errorDescription != nil)
-    #expect(deliveryError.errorDescription?.contains("deliver") == true)
+    XCTAssertNotNil(deliveryError.errorDescription)
+    XCTAssertEqual(deliveryError.errorDescription?.contains("deliver"), true)
 
     // Test error equality
     let anotherPermissionError = NotificationError.permissionDenied
-    #expect(permissionError.errorDescription == anotherPermissionError.errorDescription)
+    XCTAssertEqual(permissionError.errorDescription, anotherPermissionError.errorDescription)
 }
 
 
-func notificationErrorDeliveryErrorDetails() async throws {
+    func testNotificationErrorDeliveryErrorDetails() async throws {
     let underlyingError = URLError(.timedOut)
     let deliveryError = NotificationError.deliveryFailed(underlyingError)
 
-    #expect(deliveryError.errorDescription?.contains("timed out") == true)
-    #expect(deliveryError.errorDescription?.contains("Failed to deliver") == true)
+    XCTAssertEqual(deliveryError.errorDescription?.contains("timed out"), true)
+    XCTAssertEqual(deliveryError.errorDescription?.contains("Failed to deliver"), true)
 
     let nsError = NSError(domain: "TestDomain", code: 123, userInfo: [NSLocalizedDescriptionKey: "Test error"])
     let nsDeliveryError = NotificationError.deliveryFailed(nsError)
 
-    #expect(nsDeliveryError.errorDescription?.contains("Test error") == true)
+    XCTAssertEqual(nsDeliveryError.errorDescription?.contains("Test error"), true)
 }
 
 
-func userNotificationManagerAuthorizationStatusHandling() async throws {
+    func testUserNotificationManagerAuthorizationStatusHandling() async throws {
     let manager = await UserNotificationManager.shared
 
     // Test that authorization status check doesn't crash
@@ -71,18 +73,18 @@ func userNotificationManagerAuthorizationStatusHandling() async throws {
 
     // Verify status is a valid UNAuthorizationStatus
     let validStatuses: [UNAuthorizationStatus] = [.notDetermined, .denied, .authorized, .provisional]
-    #expect(validStatuses.contains(status))
+    XCTAssertTrue(validStatuses.contains(status))
 
     // Verify hasPermission matches status
     if status == .authorized {
-        #expect(hasPermission == true)
+        XCTAssertEqual(hasPermission, true)
     } else if status == .denied {
-        #expect(hasPermission == false)
+        XCTAssertEqual(hasPermission, false)
     }
 }
 
 
-func userNotificationManagerNotificationContentCreation() async throws {
+    func testUserNotificationManagerNotificationContentCreation() async throws {
     // Test notification content creation parameters
     let testCases = [
         (title: "Test Title", body: "Test Body", id: "test-id"),
@@ -99,14 +101,14 @@ func userNotificationManagerNotificationContentCreation() async throws {
 
     for testCase in testCases {
         // Verify that the test case parameters are valid strings
-        #expect(testCase.title.count >= 0)
-        #expect(testCase.body.count >= 0)
-        #expect(testCase.id.count > 0)
+        XCTAssertGreaterThanOrEqual(testCase.title.count, 0)
+        XCTAssertGreaterThanOrEqual(testCase.body.count, 0)
+        XCTAssertGreaterThan(testCase.id.count, 0)
     }
 }
 
 
-func userNotificationManagerRuleExecutionNotifications() async throws {
+    func testUserNotificationManagerRuleExecutionNotifications() async throws {
     let manager = await UserNotificationManager.shared
 
     // Test rule execution notification without permission (should not crash)
@@ -134,11 +136,11 @@ func userNotificationManagerRuleExecutionNotifications() async throws {
     )
 
     // These calls should not crash even without permissions
-    #expect(true)
+    XCTAssertTrue(true)
 }
 
 
-func userNotificationManagerSystemSettingsURL() async throws {
+    func testUserNotificationManagerSystemSettingsURL() async throws {
     let manager = await UserNotificationManager.shared
 
     // Test that opening notification settings doesn't crash
@@ -148,18 +150,18 @@ func userNotificationManagerSystemSettingsURL() async throws {
 
     // Verify URL can be created
     let settingsURL = URL(string: "x-apple.systempreferences:com.apple.preference.notifications")
-    #expect(settingsURL != nil)
-    #expect(settingsURL?.scheme == "x-apple.systempreferences")
+    XCTAssertNotNil(settingsURL)
+    XCTAssertEqual(settingsURL?.scheme, "x-apple.systempreferences")
 }
 
 
-func userNotificationManagerNotificationSoundOptions() async throws {
+    func testUserNotificationManagerNotificationSoundOptions() async throws {
     // Test various sound options
     let defaultSound = UNNotificationSound.default
     let customSound = UNNotificationSound(named: UNNotificationSoundName("custom.wav"))
 
-    #expect(defaultSound != nil)
-    #expect(customSound != nil)
+    XCTAssertNotNil(defaultSound)
+    XCTAssertNotNil(customSound)
 
     // Test that sounds can be used in notification parameters
     // We can't actually send notifications in tests without permissions,
@@ -167,7 +169,7 @@ func userNotificationManagerNotificationSoundOptions() async throws {
 }
 
 
-func userNotificationManagerBadgeNumbers() async throws {
+    func testUserNotificationManagerBadgeNumbers() async throws {
     let badgeNumbers = [
         NSNumber(value: 0),
         NSNumber(value: 1),
@@ -178,12 +180,12 @@ func userNotificationManagerBadgeNumbers() async throws {
 
     for badgeNumber in badgeNumbers {
         // Verify badge numbers can be created
-        #expect(badgeNumber != nil)
+        XCTAssertNotNil(badgeNumber)
     }
 }
 
 
-func userNotificationManagerConcurrentOperations() async throws {
+    func testUserNotificationManagerConcurrentOperations() async throws {
     let manager = await UserNotificationManager.shared
 
     // Test concurrent authorization status checks
@@ -197,11 +199,11 @@ func userNotificationManagerConcurrentOperations() async throws {
 
     // Manager should still be in a valid state
     let finalStatus = await manager.authorizationStatus
-    #expect(finalStatus != nil)
+    XCTAssertNotNil(finalStatus)
 }
 
 
-func userNotificationManagerErrorHandling() async throws {
+    func testUserNotificationManagerErrorHandling() async throws {
     let manager = await UserNotificationManager.shared
 
     // Test sending notification without permission
@@ -217,16 +219,16 @@ func userNotificationManagerErrorHandling() async throws {
         if let notificationError = error as? NotificationError {
             switch notificationError {
             case .permissionDenied:
-                #expect(true) // Expected error
+                XCTAssertTrue(true) // Expected error
             case .deliveryFailed:
-                #expect(true) // Also valid error type
+                XCTAssertTrue(true) // Also valid error type
             }
         }
     }
 }
 
 
-func userNotificationManagerNotificationIdentifiers() async throws {
+    func testUserNotificationManagerNotificationIdentifiers() async throws {
     // Test various identifier formats
     let identifiers = [
         "simple-id",
@@ -242,16 +244,16 @@ func userNotificationManagerNotificationIdentifiers() async throws {
 
     for identifier in identifiers {
         // Test that identifiers are valid strings
-        #expect(identifier.count >= 0)
+        XCTAssertGreaterThanOrEqual(identifier.count, 0)
 
         // Empty identifier should generate UUID
         let finalId = identifier.isEmpty ? UUID().uuidString : identifier
-        #expect(finalId.count > 0)
+        XCTAssertGreaterThan(finalId.count, 0)
     }
 }
 
 
-func userNotificationManagerMemoryManagement() async throws {
+    func testUserNotificationManagerMemoryManagement() async throws {
     let manager = await UserNotificationManager.shared
 
     // Test multiple rule execution notifications
@@ -266,11 +268,11 @@ func userNotificationManagerMemoryManagement() async throws {
 
     // Manager should still be functional
     let status = await manager.authorizationStatus
-    #expect(status != nil)
+    XCTAssertNotNil(status)
 }
 
 
-func userNotificationManagerPerformance() async throws {
+    func testUserNotificationManagerPerformance() async throws {
     let manager = await UserNotificationManager.shared
 
     let startTime = Date()
@@ -281,11 +283,11 @@ func userNotificationManagerPerformance() async throws {
     }
 
     let elapsed = Date().timeIntervalSince(startTime)
-    #expect(elapsed < 5.0) // Should complete within reasonable time
+    XCTAssertLessThan(elapsed, 5.0) // Should complete within reasonable time
 }
 
 
-func notificationsStringEncoding() async throws {
+    func testNotificationsStringEncoding() async throws {
     let testStrings = [
         "Simple ASCII text",
         "Text with émojis 🚀🎉📱",
@@ -299,18 +301,18 @@ func notificationsStringEncoding() async throws {
     for testString in testStrings {
         // Test that strings can be encoded to UTF-8
         let data = testString.data(using: .utf8)
-        #expect(data != nil)
+        XCTAssertNotNil(data)
 
         // Test round-trip encoding
         if let data {
             let decoded = String(data: data, encoding: .utf8)
-            #expect(decoded == testString)
+            XCTAssertEqual(decoded, testString)
         }
     }
 }
 
 
-func notificationsAuthorizationStatusTypes() async throws {
+    func testNotificationsAuthorizationStatusTypes() async throws {
     let allStatuses: [UNAuthorizationStatus] = [
         .notDetermined,
         .denied,
@@ -321,7 +323,7 @@ func notificationsAuthorizationStatusTypes() async throws {
     // Test that all status values are distinct
     for i in 0 ..< allStatuses.count {
         for j in (i + 1) ..< allStatuses.count {
-            #expect(allStatuses[i] != allStatuses[j])
+            XCTAssertNotEqual(allStatuses[i], allStatuses[j])
         }
     }
 
@@ -329,6 +331,8 @@ func notificationsAuthorizationStatusTypes() async throws {
     for status in allStatuses {
         let shouldHavePermission = (status == .authorized)
         // This is the logic used in UserNotificationManager
-        #expect((status == .authorized) == shouldHavePermission)
+        XCTAssertEqual((status == .authorized), shouldHavePermission)
     }
+}
+
 }

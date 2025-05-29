@@ -2,10 +2,10 @@
 @testable import Diagnostics
 import Foundation
 import OSLog
-import Testing
+import XCTest
 
-/// Test suite for session logging and diagnostics functionality
-struct SessionLoggingTests {
+
+class SessionLoggingTests: XCTestCase {
     // MARK: - Test Utilities
 
     /// Helper to create temporary log directory
@@ -23,29 +23,26 @@ struct SessionLoggingTests {
 
     // MARK: - SessionLogger Tests
 
-    @Test
-    func sessionLoggerInitialization() async throws {
+    func testSessionLoggerInitialization() async throws {
         let logger = await Diagnostics.SessionLogger.shared
 
         // Test that logger is created without errors
-        #expect(logger != nil)
+        XCTAssertNotNil(logger)
 
         // Test basic properties
         await MainActor.run {
             // SessionLogger is a singleton and doesn't have sessionId anymore
-            #expect(logger.entries != nil)
+            XCTAssertNotNil(logger.entries)
         }
     }
 
-    @Test
-    func sessionLoggerUniqueSessionIds() async throws {
+    func testSessionLoggerUniqueSessionIds() async throws {
         // Skip this test since SessionLogger has a private init and is a singleton
         // The concept of unique session IDs per instance no longer applies
-        #expect(true)
+        XCTAssertTrue(true)
     }
 
-    @Test
-    func logEntryCreation() async throws {
+    func testLogEntryCreation() async throws {
         let logger = await Diagnostics.SessionLogger.shared
 
         await MainActor.run {
@@ -58,12 +55,11 @@ struct SessionLoggingTests {
             logger.log(level: Diagnostics.LogLevel.info, message: "Test with PID", pid: 12345)
 
             // Check that entries were added
-            #expect(logger.entries.count > 0)
+            XCTAssertGreaterThan(logger.entries.count, 0)
         }
     }
 
-    @Test
-    func sessionLoggerConcurrentLogging() async throws {
+    func testSessionLoggerConcurrentLogging() async throws {
         let logger = await Diagnostics.SessionLogger.shared
 
         // Test concurrent logging from multiple tasks
@@ -80,14 +76,13 @@ struct SessionLoggingTests {
 
         // Check that entries were added
         await MainActor.run {
-            #expect(logger.entries.count > 0)
+            XCTAssertGreaterThan(logger.entries.count, 0)
         }
     }
 
     // MARK: - FileLogger Tests
 
-    @Test
-    func fileLoggerWriting() async throws {
+    func testFileLoggerWriting() async throws {
         // FileLogger is now a singleton actor that uses OSLog
         let fileLogger = await Diagnostics.FileLogger.shared
 
@@ -97,11 +92,10 @@ struct SessionLoggingTests {
 
         // FileLogger now uses OSLog, so we can't check file contents
         // Just verify the logging didn't crash
-        #expect(true)
+        XCTAssertTrue(true)
     }
 
-    @Test
-    func fileLoggerErrorHandling() async throws {
+    func testFileLoggerErrorHandling() async throws {
         // FileLogger is now a singleton and always valid
         let fileLogger = await Diagnostics.FileLogger.shared
 
@@ -111,29 +105,27 @@ struct SessionLoggingTests {
         // Give logger time to attempt writing
         try await Task.sleep(for: .milliseconds(100))
 
-        #expect(true) // If we get here, error was handled gracefully
+        XCTAssertTrue(true) // If we get here, error was handled gracefully
     }
 
     // MARK: - LogLevel Tests
 
-    @Test
-    func logLevelTypes() async throws {
+    func testLogLevelTypes() async throws {
         // Test all log levels exist
         let levels: [Diagnostics.LogLevel] = [.debug, .info, .warning, .error]
 
         for level in levels {
-            #expect(level.rawValue >= 0)
+            XCTAssertGreaterThanOrEqual(level.rawValue, 0)
         }
     }
 
     // MARK: - LogManager Tests
 
-    @Test
-    func logManagement() async throws {
+    func testLogManagement() async throws {
         let logManager = await Diagnostics.LogManager.shared
 
         // Test that log manager is created without errors
-        #expect(logManager != nil)
+        XCTAssertNotNil(logManager)
 
         // Test logging through logger instances
         await MainActor.run {
@@ -141,12 +133,11 @@ struct SessionLoggingTests {
             let supervisionLogger = logManager.getLogger(for: .supervision)
             supervisionLogger.debug("Test supervision log")
             
-            #expect(true) // If we get here, log management works
+            XCTAssertTrue(true) // If we get here, log management works
         }
     }
 
-    @Test
-    func logManagerCategories() async throws {
+    func testLogManagerCategories() async throws {
         let logManager = await Diagnostics.LogManager.shared
 
         // Test that we can get loggers for categories
@@ -160,32 +151,30 @@ struct SessionLoggingTests {
             authLogger.info("Test auth message")
             apiLogger.info("Test API message")
             
-            #expect(true) // All categories should be handled without crashes
+            XCTAssertTrue(true) // All categories should be handled without crashes
         }
     }
 
     // MARK: - Logger Factory Tests
 
-    @Test
-    func loggerFactory() async throws {
+    func testLoggerFactory() async throws {
         // Test creating loggers for different types
         let logger1 = LoggerFactory.logger(for: SessionLoggingTests.self)
         let logger2 = LoggerFactory.logger(for: SessionLoggingTests.self, category: .supervision)
         
-        #expect(logger1 != nil)
-        #expect(logger2 != nil)
+        XCTAssertNotNil(logger1)
+        XCTAssertNotNil(logger2)
 
         // Test that loggers can log without crashing
         logger1.info("Test message from type-based logger")
         logger2.debug("Test message from category-based logger")
 
-        #expect(true) // If we get here, logger factory works
+        XCTAssertTrue(true) // If we get here, logger factory works
     }
 
     // MARK: - Integration Tests
 
-    @Test
-    func loggingSystemIntegration() async throws {
+    func testLoggingSystemIntegration() async throws {
         // Test integration of all logging components
         let sessionLogger = await Diagnostics.SessionLogger.shared
         let logManager = await Diagnostics.LogManager.shared
@@ -227,11 +216,10 @@ struct SessionLoggingTests {
         // Give all loggers time to complete
         try await Task.sleep(for: .milliseconds(300))
 
-        #expect(true) // Integration should work without conflicts
+        XCTAssertTrue(true) // Integration should work without conflicts
     }
 
-    @Test
-    func loggingPerformance() async throws {
+    func testLoggingPerformance() async throws {
         let sessionLogger = await Diagnostics.SessionLogger.shared
 
         // Test logging performance with many entries
@@ -247,6 +235,6 @@ struct SessionLoggingTests {
         let duration = endTime.timeIntervalSince(startTime)
 
         // Should complete reasonably quickly (less than 1 second for 100 entries)
-        #expect(duration < 1.0)
+        XCTAssertLessThan(duration, 1.0)
     }
 }

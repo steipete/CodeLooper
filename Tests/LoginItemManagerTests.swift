@@ -1,63 +1,60 @@
 @testable import CodeLooper
 import Foundation
 import LaunchAtLogin
-import Testing
+import XCTest
 
+
+class LoginItemManagerTests: XCTestCase {
 /// Test suite for LoginItemManager functionality
-@Test("Login Item Manager Tests")
-func loginItemManagerInitialization() async throws {
+    func testLoginItemManagerInitialization() async throws {
     let manager = await LoginItemManager.shared
 
     // Test that manager is created without errors
-    #expect(true) // Manager exists as singleton
+    XCTAssertTrue(true) // Manager exists as singleton
 }
 
-@Test("Enable Login Item")
-func enableLoginItem() async throws {
+    func testEnableLoginItem() async throws {
     let manager = await LoginItemManager.shared
 
     // Get current state
     let initialState = await manager.startsAtLogin()
 
     // Test that we can read the state (true or false, both are valid)
-    #expect(initialState == true || initialState == false)
+    XCTAssertEqual(initialState, true || initialState == false)
 
     // Test enabling (this is a test, so we won't actually change system settings)
     // Instead, we test that the method doesn't crash
     let result = await manager.setStartAtLogin(enabled: true)
-    #expect(result == true || result == false) // Should return a boolean result
+    XCTAssertEqual(result, true || result == false) // Should return a boolean result
 }
 
-@Test("Disable Login Item")
-func disableLoginItem() async throws {
+    func testDisableLoginItem() async throws {
     let manager = await LoginItemManager.shared
 
     // Test disabling (this is a test, so we won't actually change system settings)
     // Instead, we test that the method doesn't crash
     let result = await manager.setStartAtLogin(enabled: false)
-    #expect(result == true || result == false) // Should return a boolean result
+    XCTAssertEqual(result, true || result == false) // Should return a boolean result
 }
 
-@Test("Login Item Status")
-func loginItemStatus() async throws {
+    func testLoginItemStatus() async throws {
     let manager = await LoginItemManager.shared
 
     // Test that status can be checked without errors
     let status = await manager.startsAtLogin()
 
     // Status should be either true or false
-    #expect(status == true || status == false)
+    XCTAssertEqual(status, true || status == false)
 
     // Test multiple status checks don't crash
     let status2 = await manager.startsAtLogin()
     let status3 = await manager.startsAtLogin()
 
-    #expect(status2 == true || status2 == false)
-    #expect(status3 == true || status3 == false)
+    XCTAssertEqual(status2, true || status2 == false)
+    XCTAssertEqual(status3, true || status3 == false)
 }
 
-@Test("Login Item State Changes")
-func loginItemStateChanges() async throws {
+    func testLoginItemStateChanges() async throws {
     let manager = await LoginItemManager.shared
 
     // Get initial state
@@ -78,24 +75,22 @@ func loginItemStateChanges() async throws {
 
     // Note: We don't verify the final state matches initial state
     // because system restrictions might prevent changes in test environment
-    #expect(true) // If we get here, no crashes occurred
+    XCTAssertTrue(true) // If we get here, no crashes occurred
 }
 
-@Test("LaunchAtLogin Integration")
-func launchAtLoginIntegration() async throws {
+    func testLaunchAtLoginIntegration() async throws {
     // Test that LaunchAtLogin framework is available and functional
     let initialStatus = LaunchAtLogin.isEnabled
 
     // Status should be either true or false
-    #expect(initialStatus == true || initialStatus == false)
+    XCTAssertEqual(initialStatus, true || initialStatus == false)
 
     // Test that observable is available (for SwiftUI integration)
     let observable = LaunchAtLogin.observable
-    #expect(true) // observable exists
+    XCTAssertTrue(true) // observable exists
 }
 
-@Test("Login Item Error Handling")
-func loginItemErrorHandling() async throws {
+    func testLoginItemErrorHandling() async throws {
     let manager = await LoginItemManager.shared
 
     // Test that manager handles edge cases gracefully
@@ -109,11 +104,10 @@ func loginItemErrorHandling() async throws {
     await manager.setStartAtLogin(enabled: !currentState)
     await manager.setStartAtLogin(enabled: currentState) // Restore
 
-    #expect(true) // If we get here, no crashes occurred
+    XCTAssertTrue(true) // If we get here, no crashes occurred
 }
 
-@Test("Login Item Settings Integration")
-func loginItemSettingsIntegration() async throws {
+    func testLoginItemSettingsIntegration() async throws {
     let manager = await LoginItemManager.shared
 
     // Test that manager can work with settings system
@@ -126,13 +120,12 @@ func loginItemSettingsIntegration() async throws {
 
     // Test sync functionality
     let syncResult = await manager.syncLoginItemWithPreference()
-    #expect(syncResult == true || syncResult == false) // Should return a boolean
+    XCTAssertEqual(syncResult, true || syncResult == false) // Should return a boolean
 
-    #expect(true) // If we get here, no crashes occurred
+    XCTAssertTrue(true) // If we get here, no crashes occurred
 }
 
-@Test("Login Item Thread Safety")
-func loginItemThreadSafety() async throws {
+    func testLoginItemThreadSafety() async throws {
     let manager = await LoginItemManager.shared
 
     // Test concurrent access doesn't crash
@@ -144,12 +137,11 @@ func loginItemThreadSafety() async throws {
 
     // All results should be valid boolean values
     for result in results {
-        #expect(result == true || result == false)
+        XCTAssertEqual(result, true || result == false)
     }
 }
 
-@Test("Toggle Login Item")
-func toggleLoginItem() async throws {
+    func testToggleLoginItem() async throws {
     let manager = await LoginItemManager.shared
 
     // Get initial state
@@ -159,10 +151,11 @@ func toggleLoginItem() async throws {
     let newState = await manager.toggleStartAtLogin()
 
     // New state should be opposite of initial (or same if system restrictions prevent change)
-    #expect(newState == true || newState == false)
+    XCTAssertEqual(newState, true || newState == false)
 
     // Restore original state
     await manager.setStartAtLogin(enabled: initialState)
 
-    #expect(true) // If we get here, no crashes occurred
+    XCTAssertTrue(true) // If we get here, no crashes occurred
+}
 }

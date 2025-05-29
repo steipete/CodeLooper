@@ -1,17 +1,18 @@
 @testable import CodeLooper
 import Foundation
-import Testing
+import XCTest
 
 
-@Test
-func gitRepositoryInitialization() async throws {
+
+class GitTrackingTests: XCTestCase {
+    func testGitRepositoryInitialization() async throws {
     let repo1 = GitRepository(path: "/Users/test/project")
-    #expect(repo1.path == "/Users/test/project")
-    #expect(repo1.dirtyFileCount == 0)
-    #expect(repo1.untrackedFileCount == 0)
-    #expect(repo1.currentBranch == nil)
-    #expect(repo1.hasChanges == false)
-    #expect(repo1.totalChangedFiles == 0)
+    XCTAssertEqual(repo1.path, "/Users/test/project")
+    XCTAssertEqual(repo1.dirtyFileCount, 0)
+    XCTAssertEqual(repo1.untrackedFileCount, 0)
+    XCTAssertEqual(repo1.currentBranch, nil)
+    XCTAssertEqual(repo1.hasChanges, false)
+    XCTAssertEqual(repo1.totalChangedFiles, 0)
 
     // Test repository with changes
     let repo2 = GitRepository(
@@ -20,41 +21,39 @@ func gitRepositoryInitialization() async throws {
         untrackedFileCount: 2,
         currentBranch: "main"
     )
-    #expect(repo2.path == "/test/repo")
-    #expect(repo2.dirtyFileCount == 3)
-    #expect(repo2.untrackedFileCount == 2)
-    #expect(repo2.currentBranch == "main")
-    #expect(repo2.hasChanges == true)
-    #expect(repo2.totalChangedFiles == 5)
+    XCTAssertEqual(repo2.path, "/test/repo")
+    XCTAssertEqual(repo2.dirtyFileCount, 3)
+    XCTAssertEqual(repo2.untrackedFileCount, 2)
+    XCTAssertEqual(repo2.currentBranch, "main")
+    XCTAssertEqual(repo2.hasChanges, true)
+    XCTAssertEqual(repo2.totalChangedFiles, 5)
 }
 
 
-@Test
-func gitRepositoryChangeDetection() async throws {
+    func testGitRepositoryChangeDetection() async throws {
     // Test repository without changes
     let cleanRepo = GitRepository(path: "/test", dirtyFileCount: 0, untrackedFileCount: 0)
-    #expect(cleanRepo.hasChanges == false)
-    #expect(cleanRepo.totalChangedFiles == 0)
+    XCTAssertEqual(cleanRepo.hasChanges, false)
+    XCTAssertEqual(cleanRepo.totalChangedFiles, 0)
 
     // Test repository with dirty files only
     let dirtyRepo = GitRepository(path: "/test", dirtyFileCount: 5, untrackedFileCount: 0)
-    #expect(dirtyRepo.hasChanges == true)
-    #expect(dirtyRepo.totalChangedFiles == 5)
+    XCTAssertEqual(dirtyRepo.hasChanges, true)
+    XCTAssertEqual(dirtyRepo.totalChangedFiles, 5)
 
     // Test repository with untracked files only
     let untrackedRepo = GitRepository(path: "/test", dirtyFileCount: 0, untrackedFileCount: 3)
-    #expect(untrackedRepo.hasChanges == true)
-    #expect(untrackedRepo.totalChangedFiles == 3)
+    XCTAssertEqual(untrackedRepo.hasChanges, true)
+    XCTAssertEqual(untrackedRepo.totalChangedFiles, 3)
 
     // Test repository with both types of changes
     let mixedRepo = GitRepository(path: "/test", dirtyFileCount: 4, untrackedFileCount: 2)
-    #expect(mixedRepo.hasChanges == true)
-    #expect(mixedRepo.totalChangedFiles == 6)
+    XCTAssertEqual(mixedRepo.hasChanges, true)
+    XCTAssertEqual(mixedRepo.totalChangedFiles, 6)
 }
 
 
-@Test
-func gitRepositoryBranchNames() async throws {
+    func testGitRepositoryBranchNames() async throws {
     let branchNames = [
         "main",
         "master",
@@ -67,24 +66,22 @@ func gitRepositoryBranchNames() async throws {
 
     for branchName in branchNames {
         let repo = GitRepository(path: "/test", currentBranch: branchName)
-        #expect(repo.currentBranch == branchName)
+        XCTAssertEqual(repo.currentBranch, branchName)
     }
 
     // Test repository without branch
     let noBranchRepo = GitRepository(path: "/test", currentBranch: nil)
-    #expect(noBranchRepo.currentBranch == nil)
+    XCTAssertEqual(noBranchRepo.currentBranch, nil)
 }
 
 
-@Test
-func gitRepositoryMonitorInitialization() async throws {
+    func testGitRepositoryMonitorInitialization() async throws {
     let monitor = await GitRepositoryMonitor()
-    #expect(true) // Monitor created
+    XCTAssertTrue(true) // Monitor created
 }
 
 
-@Test
-func gitRepositoryMonitorCacheOperations() async throws {
+    func testGitRepositoryMonitorCacheOperations() async throws {
     let monitor = await GitRepositoryMonitor()
 
     // Test cache clearing
@@ -92,12 +89,11 @@ func gitRepositoryMonitorCacheOperations() async throws {
 
     // Since we can't easily test internal cache state without exposing internals,
     // we verify that clearCache doesn't crash and the monitor remains functional
-    #expect(true) // Cache cleared without crash
+    XCTAssertTrue(true) // Cache cleared without crash
 }
 
 
-@Test
-func gitRepositoryPathHandling() async throws {
+    func testGitRepositoryPathHandling() async throws {
     let paths = [
         "/Users/test/project",
         "/home/user/workspace/myproject",
@@ -110,13 +106,12 @@ func gitRepositoryPathHandling() async throws {
 
     for path in paths {
         let repo = GitRepository(path: path)
-        #expect(repo.path == path)
+        XCTAssertEqual(repo.path, path)
     }
 }
 
 
-@Test
-func gitRepositoryFileCountVariations() async throws {
+    func testGitRepositoryFileCountVariations() async throws {
     let testCases = [
         (dirty: 0, untracked: 0, expectedTotal: 0, expectedHasChanges: false),
         (dirty: 1, untracked: 0, expectedTotal: 1, expectedHasChanges: true),
@@ -133,14 +128,13 @@ func gitRepositoryFileCountVariations() async throws {
             untrackedFileCount: testCase.untracked
         )
 
-        #expect(repo.totalChangedFiles == testCase.expectedTotal)
-        #expect(repo.hasChanges == testCase.expectedHasChanges)
+        XCTAssertEqual(repo.totalChangedFiles, testCase.expectedTotal)
+        XCTAssertEqual(repo.hasChanges, testCase.expectedHasChanges)
     }
 }
 
 
-@Test
-func gitRepositorySendableCompliance() async throws {
+    func testGitRepositorySendableCompliance() async throws {
     // Test that GitRepository can be used across concurrency boundaries
     let repo = GitRepository(
         path: "/test",
@@ -172,14 +166,13 @@ func gitRepositorySendableCompliance() async throws {
         }
 
         for await result in group {
-            #expect(result == true)
+            XCTAssertEqual(result, true)
         }
     }
 }
 
 
-@Test
-func gitRepositoryMemoryAndPerformance() async throws {
+    func testGitRepositoryMemoryAndPerformance() async throws {
     // Test creating many repository objects
     var repositories: [GitRepository] = []
 
@@ -198,24 +191,23 @@ func gitRepositoryMemoryAndPerformance() async throws {
     let duration = endTime.timeIntervalSince(startTime)
 
     // Should complete quickly (less than 1 second for 1000 objects)
-    #expect(duration < 1.0)
+    XCTAssertLessThan(duration, 1.0)
 
     // Verify all repositories were created
-    #expect(repositories.count == 1000)
+    XCTAssertEqual(repositories.count, 1000)
 
     // Spot check some repositories
     for i in stride(from: 0, to: 1000, by: 100) {
-        #expect(repositories[i].path == "/test/repo\(i)")
+        XCTAssertEqual(repositories[i].path, "/test/repo\(i)")
     }
 
     // Clear references
     repositories.removeAll()
-    #expect(repositories.isEmpty)
+    XCTAssertTrue(repositories.isEmpty)
 }
 
 
-@Test
-func gitRepositoryEquality() async throws {
+    func testGitRepositoryEquality() async throws {
     // Test that repositories with same data are equal
     let repo1 = GitRepository(
         path: "/test",
@@ -231,7 +223,7 @@ func gitRepositoryEquality() async throws {
         currentBranch: "main"
     )
     
-    #expect(repo1 == repo2)
+    XCTAssertEqual(repo1, repo2)
     
     // Test that repositories with different data are not equal
     let repo3 = GitRepository(
@@ -241,12 +233,11 @@ func gitRepositoryEquality() async throws {
         currentBranch: "main"
     )
     
-    #expect(repo1 != repo3)
+    XCTAssertNotEqual(repo1, repo3)
 }
 
 
-@Test
-func gitRepositoryHashable() async throws {
+    func testGitRepositoryHashable() async throws {
     let repo1 = GitRepository(path: "/test", dirtyFileCount: 1, untrackedFileCount: 2)
     let repo2 = GitRepository(path: "/test", dirtyFileCount: 1, untrackedFileCount: 2)
     let repo3 = GitRepository(path: "/other", dirtyFileCount: 1, untrackedFileCount: 2)
@@ -256,14 +247,13 @@ func gitRepositoryHashable() async throws {
     set.insert(repo2) // Should not increase count (same as repo1)
     set.insert(repo3) // Should increase count (different path)
     
-    #expect(set.count == 2)
-    #expect(set.contains(repo1))
-    #expect(set.contains(repo3))
+    XCTAssertEqual(set.count, 2)
+    XCTAssertTrue(set.contains(repo1))
+    XCTAssertTrue(set.contains(repo3))
 }
 
 
-@Test
-func gitRepositoryMonitorIntegration() async throws {
+    func testGitRepositoryMonitorIntegration() async throws {
     let monitor = await GitRepositoryMonitor()
     
     // Test that monitor can handle various repository paths
@@ -280,12 +270,11 @@ func gitRepositoryMonitorIntegration() async throws {
         let _ = await monitor.findRepository(for: path)
     }
     
-    #expect(true) // Monitor handled all paths without crashing
+    XCTAssertTrue(true) // Monitor handled all paths without crashing
 }
 
 
-@Test
-func gitRepositoryGitHubURLHandling() async throws {
+    func testGitRepositoryGitHubURLHandling() async throws {
     // Since parseGitHubURL is private, we can only test the public interface
     // Test that GitRepository can be created with GitHub URLs in mind
     let repos = [
@@ -295,14 +284,13 @@ func gitRepositoryGitHubURLHandling() async throws {
     ]
     
     for repo in repos {
-        #expect(repo.path.isEmpty == false)
-        #expect(repo.currentBranch != nil)
+        XCTAssertEqual(repo.path.isEmpty, false)
+        XCTAssertNotNil(repo.currentBranch)
     }
 }
 
 
-@Test
-func gitRepositoryDocumentPathIntegration() async throws {
+    func testGitRepositoryDocumentPathIntegration() async throws {
     let monitor = await GitRepositoryMonitor()
     
     // Test document path scenarios
@@ -320,12 +308,11 @@ func gitRepositoryDocumentPathIntegration() async throws {
         let _ = await monitor.findRepository(for: dirPath)
     }
     
-    #expect(true) // Document paths handled without crash
+    XCTAssertTrue(true) // Document paths handled without crash
 }
 
 
-@Test
-func gitRepositoryConcurrentAccess() async throws {
+    func testGitRepositoryConcurrentAccess() async throws {
     let monitor = await GitRepositoryMonitor()
     
     // Test concurrent access to the monitor
@@ -346,5 +333,6 @@ func gitRepositoryConcurrentAccess() async throws {
         }
     }
     
-    #expect(true) // Concurrent operations completed without crash
+    XCTAssertTrue(true) // Concurrent operations completed without crash
+}
 }

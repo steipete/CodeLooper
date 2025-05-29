@@ -1,14 +1,13 @@
 @testable import CodeLooper
 import AXorcist
 import Foundation
-import Testing
+import XCTest
 
-/// Test suite for locator pattern and dynamic discovery functionality
-struct LocatorPatternTests {
+
+class LocatorPatternTests: XCTestCase {
     // MARK: - LocatorManager Tests
 
-    @Test
-    func locatorManagerInitialization() async throws {
+    func testLocatorManagerInitialization() async throws {
         let manager = await LocatorManager.shared
 
         // Manager is always created successfully
@@ -16,19 +15,17 @@ struct LocatorPatternTests {
         // Test getting a locator for a known type
         _ = await manager.getLocator(for: .mainInputField)
         // Locator might be nil if not found, which is valid
-        #expect(true)
+        XCTAssertTrue(true)
     }
 
-    @Test
-    func locatorTypes() async throws {
+    func testLocatorTypes() async throws {
         // Test all locator types have default locators
         for type in LocatorType.allCases {
-            #expect(type.defaultLocator != nil)
+            XCTAssertNotNil(type.defaultLocator)
         }
     }
 
-    @Test
-    func locatorManagerGetLocator() async throws {
+    func testLocatorManagerGetLocator() async throws {
         let manager = await LocatorManager.shared
 
         // Test getting locators for different types
@@ -36,45 +33,42 @@ struct LocatorPatternTests {
         _ = await manager.getLocator(for: .stopGeneratingButton)
         
         // These might be nil, which is valid behavior
-        #expect(true)
+        XCTAssertTrue(true)
     }
 
     // MARK: - DynamicLocatorDiscoverer Tests
 
-    @Test
-    func dynamicLocatorDiscoverer() async throws {
+    func testDynamicLocatorDiscoverer() async throws {
         let discoverer = await DynamicLocatorDiscoverer()
 
         // Discoverer is always created successfully
-        #expect(true)
+        XCTAssertTrue(true)
     }
 
     // MARK: - LocatorType Tests
 
-    @Test
-    func locatorTypeDefaultLocators() async throws {
+    func testLocatorTypeDefaultLocators() async throws {
         // Test that each locator type has a valid default locator
         let allTypes = LocatorType.allCases
         
         for type in allTypes {
             let locator = type.defaultLocator
-            #expect(locator != nil)
+            XCTAssertNotNil(locator)
             
             // Check that locator exists (defaultLocator should never be nil)
             if let loc = locator {
-                #expect(loc.criteria != nil)
+                XCTAssertNotNil(loc.criteria)
             }
         }
     }
 
-    @Test
-    func locatorTypeRawValues() async throws {
+    func testLocatorTypeRawValues() async throws {
         // Test that each locator type has a raw value
         let allTypes = LocatorType.allCases
         
         for type in allTypes {
             let rawValue = type.rawValue
-            #expect(!rawValue.isEmpty)
+            XCTAssertTrue(!rawValue.isEmpty)
         }
     }
 }

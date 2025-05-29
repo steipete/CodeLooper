@@ -2,100 +2,103 @@ import AppKit
 @testable import AXorcist
 @testable import CodeLooper
 import Foundation
-import Testing
+import XCTest
+
 
 @MainActor
+class AccessibilityTests: XCTestCase {
+@MainActor
 
-func permissionsManagerInitialization() async throws {
+    func testPermissionsManagerInitialization() async throws {
     let manager = PermissionsManager()
 
     // Verify manager initializes properly
-    #expect(manager != nil)
+    XCTAssertNotNil(manager)
 
     // Verify properties are available
-    #expect(manager.hasAccessibilityPermissions != nil)
-    #expect(manager.hasAutomationPermissions != nil)
-    #expect(manager.hasScreenRecordingPermissions != nil)
-    #expect(manager.hasNotificationPermissions != nil)
+    XCTAssertNotNil(manager.hasAccessibilityPermissions)
+    XCTAssertNotNil(manager.hasAutomationPermissions)
+    XCTAssertNotNil(manager.hasScreenRecordingPermissions)
+    XCTAssertNotNil(manager.hasNotificationPermissions)
 }
 
 @MainActor
 
-func permissionsManagerSharedInstance() async throws {
+    func testPermissionsManagerSharedInstance() async throws {
     let shared1 = PermissionsManager.shared
     let shared2 = PermissionsManager.shared
 
     // Verify shared instance is the same object
-    #expect(shared1 === shared2)
+    XCTAssertTrue(shared1 === shared2)
 }
 
 @MainActor
 
-func permissionsManagerPermissionCheckMethods() async throws {
+    func testPermissionsManagerPermissionCheckMethods() async throws {
     let manager = PermissionsManager()
 
     // These methods should not crash when called
     manager.openAutomationSettings()
     manager.openScreenRecordingSettings()
 
-    #expect(true) // If we get here, methods didn't crash
+    XCTAssertTrue(true) // If we get here, methods didn't crash
 }
 
 @MainActor
 
-func permissionsManagerRequestNotificationPermissions() async throws {
+    func testPermissionsManagerRequestNotificationPermissions() async throws {
     let manager = PermissionsManager()
 
     // This should not crash, even if permissions are denied
     await manager.requestNotificationPermissions()
 
-    #expect(true) // If we get here, request didn't crash
+    XCTAssertTrue(true) // If we get here, request didn't crash
 }
 
 @MainActor
 
-func permissionsManagerObservableObjectCompliance() async throws {
+    func testPermissionsManagerObservableObjectCompliance() async throws {
     let manager = PermissionsManager()
 
     // Test that it's properly marked as @MainActor and ObservableObject
     let objectWillChangePublisher = manager.objectWillChange
-    #expect(objectWillChangePublisher != nil)
+    XCTAssertNotNil(objectWillChangePublisher)
 }
 
 
-func aXPermissionHelpersAccessibilityCheck() async throws {
+    func testAXPermissionHelpersAccessibilityCheck() async throws {
     // This tests the static method from AXorcist
     let hasPermissions = AXPermissionHelpers.hasAccessibilityPermissions()
 
     // Should return a boolean value (either true or false)
-    #expect(hasPermissions == true || hasPermissions == false)
+    XCTAssertEqual(hasPermissions, true || hasPermissions == false)
 }
 
 
-func aXPermissionHelpersPermissionRequest() async throws {
+    func testAXPermissionHelpersPermissionRequest() async throws {
     // Test that permission request method is available and doesn't crash
     // Note: This will show system dialog in real usage
     let result = await AXPermissionHelpers.requestPermissions()
 
     // Should return a boolean result
-    #expect(result == true || result == false)
+    XCTAssertEqual(result, true || result == false)
 }
 
 @MainActor
 
-func permissionsManagerURLGeneration() async throws {
+    func testPermissionsManagerURLGeneration() async throws {
     // Test that the URL strings used in settings opening are valid
     let automationURL = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Automation")
     let screenRecordingURL =
         URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_ScreenCapture")
 
-    #expect(automationURL != nil)
-    #expect(screenRecordingURL != nil)
+    XCTAssertNotNil(automationURL)
+    XCTAssertNotNil(screenRecordingURL)
 }
 
 @MainActor
 
-func permissionsManagerPermissionStateCaching() async throws {
+    func testPermissionsManagerPermissionStateCaching() async throws {
     let manager = PermissionsManager()
 
     // Check that initial permissions are loaded (from cache or checked)
@@ -106,30 +109,30 @@ func permissionsManagerPermissionStateCaching() async throws {
     let initialNotifications = manager.hasNotificationPermissions
 
     // These should be boolean values, not nil
-    #expect(initialAccessibility == true || initialAccessibility == false)
-    #expect(initialAutomation == true || initialAutomation == false)
-    #expect(initialScreenRecording == true || initialScreenRecording == false)
-    #expect(initialNotifications == true || initialNotifications == false)
+    XCTAssertEqual(initialAccessibility, true || initialAccessibility == false)
+    XCTAssertEqual(initialAutomation, true || initialAutomation == false)
+    XCTAssertEqual(initialScreenRecording, true || initialScreenRecording == false)
+    XCTAssertEqual(initialNotifications, true || initialNotifications == false)
 }
 
 @MainActor
 
-func permissionsManagerPermissionMonitoringTask() async throws {
+    func testPermissionsManagerPermissionMonitoringTask() async throws {
     let manager = PermissionsManager()
 
     // Wait a short time to let monitoring start
     try await Task.sleep(for: .milliseconds(100)) // 100ms
 
     // Verify that permission properties remain accessible
-    #expect(manager.hasAccessibilityPermissions != nil)
-    #expect(manager.hasAutomationPermissions != nil)
-    #expect(manager.hasScreenRecordingPermissions != nil)
-    #expect(manager.hasNotificationPermissions != nil)
+    XCTAssertNotNil(manager.hasAccessibilityPermissions)
+    XCTAssertNotNil(manager.hasAutomationPermissions)
+    XCTAssertNotNil(manager.hasScreenRecordingPermissions)
+    XCTAssertNotNil(manager.hasNotificationPermissions)
 }
 
 @MainActor
 
-func permissionsManagerPermissionRequestAccessibility() async throws {
+    func testPermissionsManagerPermissionRequestAccessibility() async throws {
     let manager = PermissionsManager()
 
     let initialState = manager.hasAccessibilityPermissions
@@ -139,7 +142,7 @@ func permissionsManagerPermissionRequestAccessibility() async throws {
 
     // The permission state should be updated (may be same or different)
     let finalState = manager.hasAccessibilityPermissions
-    #expect(finalState == true || finalState == false)
+    XCTAssertEqual(finalState, true || finalState == false)
 
     // Note: In tests, this likely won't change unless running with permissions
     // But the method should complete without crashing
@@ -147,7 +150,7 @@ func permissionsManagerPermissionRequestAccessibility() async throws {
 
 @MainActor
 
-func permissionsManagerMultiplePermissionRequests() async throws {
+    func testPermissionsManagerMultiplePermissionRequests() async throws {
     let manager = PermissionsManager()
 
     // Request multiple times - should not crash
@@ -155,19 +158,19 @@ func permissionsManagerMultiplePermissionRequests() async throws {
     await manager.requestNotificationPermissions()
     await manager.requestAccessibilityPermissions()
 
-    #expect(true) // If we get here, multiple requests didn't crash
+    XCTAssertTrue(true) // If we get here, multiple requests didn't crash
 }
 
 @MainActor
 
-func permissionsManagerMemoryManagement() async throws {
+    func testPermissionsManagerMemoryManagement() async throws {
     weak var weakManager: PermissionsManager?
 
     // Create manager in isolated scope
     autoreleasepool {
         let manager = PermissionsManager()
         weakManager = manager
-        #expect(weakManager != nil)
+        XCTAssertNotNil(weakManager)
     }
 
     // Wait a bit for deallocation
@@ -175,12 +178,12 @@ func permissionsManagerMemoryManagement() async throws {
 
     // Note: The manager may not be deallocated immediately due to the monitoring task
     // This test mainly ensures we can create and reference it properly
-    #expect(true)
+    XCTAssertTrue(true)
 }
 
 @MainActor
 
-func permissionsManagerPublishedPropertyUpdates() async throws {
+    func testPermissionsManagerPublishedPropertyUpdates() async throws {
     let manager = PermissionsManager()
 
     var updateCount = 0
@@ -192,17 +195,19 @@ func permissionsManagerPublishedPropertyUpdates() async throws {
     try await Task.sleep(for: .milliseconds(200)) // 200ms
 
     // The objectWillChange should have fired at least once during initialization
-    #expect(updateCount >= 0) // May be 0 if no changes occurred
+    XCTAssertGreaterThanOrEqual(updateCount, 0) // May be 0 if no changes occurred
 
     cancellable.cancel()
 }
 
 
-func aXPermissionHelpersStaticMethodAvailability() async throws {
+    func testAXPermissionHelpersStaticMethodAvailability() async throws {
     // Verify that the static methods we depend on are available
     let hasPermissions = AXPermissionHelpers.hasAccessibilityPermissions()
-    #expect(hasPermissions != nil)
+    XCTAssertNotNil(hasPermissions)
 
     let requestResult = await AXPermissionHelpers.requestPermissions()
-    #expect(requestResult != nil)
+    XCTAssertNotNil(requestResult)
+}
+
 }

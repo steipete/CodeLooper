@@ -1,10 +1,13 @@
 import AppKit
 @testable import CodeLooper
 import Foundation
-import Testing
+import XCTest
 
 
-func instanceInfoConstruction() async throws {
+
+@MainActor
+class HeartbeatMonitoringTests: XCTestCase {
+    func testInstanceInfoConstruction() async throws {
     let mockApp = createMockRunningApplication(pid: 12345, bundleId: "com.test.app", name: "Test App")
     let status = CursorInstanceStatus.idle
     let statusMessage = "Test status"
@@ -16,18 +19,18 @@ func instanceInfoConstruction() async throws {
         lastInterventionType: .connection
     )
 
-    #expect(instanceInfo.id == 12345)
-    #expect(instanceInfo.processIdentifier == 12345)
-    #expect(instanceInfo.pid == 12345)
-    #expect(instanceInfo.bundleIdentifier == "com.test.app")
-    #expect(instanceInfo.localizedName == "Test App")
-    #expect(instanceInfo.status == .idle)
-    #expect(instanceInfo.statusMessage == "Test status")
-    #expect(instanceInfo.lastInterventionType == .connection)
+    XCTAssertEqual(instanceInfo.id, 12345)
+    XCTAssertEqual(instanceInfo.processIdentifier, 12345)
+    XCTAssertEqual(instanceInfo.pid, 12345)
+    XCTAssertEqual(instanceInfo.bundleIdentifier, "com.test.app")
+    XCTAssertEqual(instanceInfo.localizedName, "Test App")
+    XCTAssertEqual(instanceInfo.status, .idle)
+    XCTAssertEqual(instanceInfo.statusMessage, "Test status")
+    XCTAssertEqual(instanceInfo.lastInterventionType, .connection)
 }
 
 
-func instanceInfoEquality() async throws {
+    func testInstanceInfoEquality() async throws {
     let mockApp1 = createMockRunningApplication(pid: 12345, bundleId: "com.test.app", name: "Test App")
     let mockApp2 = createMockRunningApplication(pid: 12345, bundleId: "com.test.app", name: "Test App")
     let mockApp3 = createMockRunningApplication(pid: 54321, bundleId: "com.test.app", name: "Test App")
@@ -54,14 +57,14 @@ func instanceInfoEquality() async throws {
     )
 
     // Same PID and properties should be equal
-    #expect(instanceInfo1 == instanceInfo2)
+    XCTAssertEqual(instanceInfo1, instanceInfo2)
 
     // Different PID should not be equal
-    #expect(instanceInfo1 != instanceInfo3)
+    XCTAssertNotEqual(instanceInfo1, instanceInfo3)
 }
 
 
-func instanceInfoHashable() async throws {
+    func testInstanceInfoHashable() async throws {
     let mockApp1 = createMockRunningApplication(pid: 12345, bundleId: "com.test.app", name: "Test App")
     let mockApp2 = createMockRunningApplication(pid: 54321, bundleId: "com.test.app", name: "Test App")
 
@@ -84,13 +87,13 @@ func instanceInfoHashable() async throws {
     instanceSet.insert(instanceInfo2)
     instanceSet.insert(instanceInfo1) // Duplicate
 
-    #expect(instanceSet.count == 2) // Should contain only unique instances
-    #expect(instanceSet.contains(instanceInfo1))
-    #expect(instanceSet.contains(instanceInfo2))
+    XCTAssertEqual(instanceSet.count, 2) // Should contain only unique instances
+    XCTAssertTrue(instanceSet.contains(instanceInfo1))
+    XCTAssertTrue(instanceSet.contains(instanceInfo2))
 }
 
 
-func instanceStatusChangeTracking() async throws {
+    func testInstanceStatusChangeTracking() async throws {
     let mockApp = createMockRunningApplication(pid: 12345, bundleId: "com.test.app", name: "Test App")
 
     var instanceInfo = CursorInstanceInfo(
@@ -103,76 +106,76 @@ func instanceStatusChangeTracking() async throws {
     // Test status progression
     instanceInfo.status = .idle
     instanceInfo.statusMessage = "Now idle"
-    #expect(instanceInfo.status == .idle)
-    #expect(instanceInfo.statusMessage == "Now idle")
+    XCTAssertEqual(instanceInfo.status, .idle)
+    XCTAssertEqual(instanceInfo.statusMessage, "Now idle")
 
     instanceInfo.status = .working(detail: "Processing")
     instanceInfo.statusMessage = "Working on task"
-    #expect(instanceInfo.status == .working(detail: "Processing"))
-    #expect(instanceInfo.statusMessage == "Working on task")
+    XCTAssertEqual(instanceInfo.status, .working(detail: "Processing"))
+    XCTAssertEqual(instanceInfo.statusMessage, "Working on task")
 
     instanceInfo.status = .recovering(type: .connection, attempt: 1)
     instanceInfo.statusMessage = "Attempting recovery"
     instanceInfo.lastInterventionType = .connection
-    #expect(instanceInfo.status == .recovering(type: .connection, attempt: 1))
-    #expect(instanceInfo.lastInterventionType == .connection)
+    XCTAssertEqual(instanceInfo.status, .recovering(type: .connection, attempt: 1))
+    XCTAssertEqual(instanceInfo.lastInterventionType, .connection)
 }
 
 
-func statusHelperMethods() async throws {
+    func testStatusHelperMethods() async throws {
     // Test isRecovering()
     let recoveringStatus = CursorInstanceStatus.recovering(type: .connection, attempt: 1)
     let idleStatus = CursorInstanceStatus.idle
     let workingStatus = CursorInstanceStatus.working(detail: "test")
 
-    #expect(recoveringStatus.isRecovering() == true)
-    #expect(idleStatus.isRecovering() == false)
-    #expect(workingStatus.isRecovering() == false)
+    XCTAssertEqual(recoveringStatus.isRecovering(), true)
+    XCTAssertEqual(idleStatus.isRecovering(), false)
+    XCTAssertEqual(workingStatus.isRecovering(), false)
 
     // Test isRecovering(ofType:)
     let connectionRecovery = CursorInstanceStatus.recovering(type: .connection, attempt: 1)
     let stuckRecovery = CursorInstanceStatus.recovering(type: .stuck, attempt: 1)
 
-    #expect(connectionRecovery.isRecovering(ofType: .connection) == true)
-    #expect(connectionRecovery.isRecovering(ofType: .stuck) == false)
-    #expect(stuckRecovery.isRecovering(ofType: .stuck) == true)
-    #expect(idleStatus.isRecovering(ofType: .connection) == false)
+    XCTAssertEqual(connectionRecovery.isRecovering(ofType: .connection), true)
+    XCTAssertEqual(connectionRecovery.isRecovering(ofType: .stuck), false)
+    XCTAssertEqual(stuckRecovery.isRecovering(ofType: .stuck), true)
+    XCTAssertEqual(idleStatus.isRecovering(ofType: .connection), false)
 
     // Test isRecovering(ofAnyType:)
     let recoveryTypes: [RecoveryType] = [.connection, .stuck]
-    #expect(connectionRecovery.isRecovering(ofAnyType: recoveryTypes) == true)
-    #expect(stuckRecovery.isRecovering(ofAnyType: recoveryTypes) == true)
-    #expect(idleStatus.isRecovering(ofAnyType: recoveryTypes) == false)
+    XCTAssertEqual(connectionRecovery.isRecovering(ofAnyType: recoveryTypes), true)
+    XCTAssertEqual(stuckRecovery.isRecovering(ofAnyType: recoveryTypes), true)
+    XCTAssertEqual(idleStatus.isRecovering(ofAnyType: recoveryTypes), false)
 
     let forceStopRecovery = CursorInstanceStatus.recovering(type: .forceStop, attempt: 1)
-    #expect(forceStopRecovery.isRecovering(ofAnyType: recoveryTypes) == false)
+    XCTAssertEqual(forceStopRecovery.isRecovering(ofAnyType: recoveryTypes), false)
 }
 
 
-func stringStableHash() async throws {
+    func testStringStableHash() async throws {
     let text1 = "Hello World"
     let text2 = "Hello World"
     let text3 = "Hello World!"
     let emptyText = ""
 
     // Same strings should have same hash
-    #expect(text1.stableHash() == text2.stableHash())
+    XCTAssertEqual(text1.stableHash(), text2.stableHash())
 
     // Different strings should have different hashes
-    #expect(text1.stableHash() != text3.stableHash())
+    XCTAssertNotEqual(text1.stableHash(), text3.stableHash())
 
     // Empty string should work
     let emptyHash = emptyText.stableHash()
-    #expect(emptyHash == 0)
+    XCTAssertEqual(emptyHash, 0)
 
     // Hash should be deterministic
     let hash1 = text1.stableHash()
     let hash2 = text1.stableHash()
-    #expect(hash1 == hash2)
+    XCTAssertEqual(hash1, hash2)
 }
 
 
-func bundleIdentifierEdgeCases() async throws {
+    func testBundleIdentifierEdgeCases() async throws {
     // Test with nil bundle identifier
     let mockAppNilBundle = createMockRunningApplication(pid: 12345, bundleId: nil, name: "Test App")
     let instanceInfo = CursorInstanceInfo(
@@ -182,13 +185,13 @@ func bundleIdentifierEdgeCases() async throws {
         lastInterventionType: nil
     )
 
-    #expect(instanceInfo.bundleIdentifier == nil)
-    #expect(instanceInfo.id == 12345)
-    #expect(instanceInfo.localizedName == "Test App")
+    XCTAssertEqual(instanceInfo.bundleIdentifier, nil)
+    XCTAssertEqual(instanceInfo.id, 12345)
+    XCTAssertEqual(instanceInfo.localizedName, "Test App")
 }
 
 
-func statusMessageVariations() async throws {
+    func testStatusMessageVariations() async throws {
     let mockApp = createMockRunningApplication(pid: 12345, bundleId: "com.test.app", name: "Test App")
 
     let statusMessages = [
@@ -209,14 +212,13 @@ func statusMessageVariations() async throws {
             lastInterventionType: nil
         )
 
-        #expect(instanceInfo.statusMessage == message)
-        #expect(instanceInfo.id == 12345)
+        XCTAssertEqual(instanceInfo.statusMessage, message)
+        XCTAssertEqual(instanceInfo.id, 12345)
     }
 }
 
 
-@Test
-func recoveryAttemptProgressionInHeartbeat() async throws {
+    func testRecoveryAttemptProgressionInHeartbeat() async throws {
     let mockApp = createMockRunningApplication(pid: 12345, bundleId: "com.test.app", name: "Test App")
 
     // Simulate recovery attempt progression
@@ -227,26 +229,26 @@ func recoveryAttemptProgressionInHeartbeat() async throws {
         lastInterventionType: .connection
     )
 
-    #expect(instanceInfo.status == .recovering(type: .connection, attempt: 1))
+    XCTAssertEqual(instanceInfo.status, .recovering(type: .connection, attempt: 1))
 
     // Progress to second attempt
     instanceInfo.status = .recovering(type: .connection, attempt: 2)
     instanceInfo.statusMessage = "Second attempt"
-    #expect(instanceInfo.status == .recovering(type: .connection, attempt: 2))
+    XCTAssertEqual(instanceInfo.status, .recovering(type: .connection, attempt: 2))
 
     // Progress to third attempt
     instanceInfo.status = .recovering(type: .connection, attempt: 3)
     instanceInfo.statusMessage = "Third attempt"
-    #expect(instanceInfo.status == .recovering(type: .connection, attempt: 3))
+    XCTAssertEqual(instanceInfo.status, .recovering(type: .connection, attempt: 3))
 
     // Different attempts should not be equal
     let attempt1 = CursorInstanceStatus.recovering(type: .connection, attempt: 1)
     let attempt2 = CursorInstanceStatus.recovering(type: .connection, attempt: 2)
-    #expect(attempt1 != attempt2)
+    XCTAssertNotEqual(attempt1, attempt2)
 }
 
 
-func interventionTypeTracking() async throws {
+    func testInterventionTypeTracking() async throws {
     let mockApp = createMockRunningApplication(pid: 12345, bundleId: "com.test.app", name: "Test App")
 
     // Test all intervention types
@@ -266,12 +268,12 @@ func interventionTypeTracking() async throws {
             lastInterventionType: interventionType
         )
 
-        #expect(instanceInfo.lastInterventionType == interventionType)
+        XCTAssertEqual(instanceInfo.lastInterventionType, interventionType)
     }
 }
 
 
-func instanceCollectionOperations() async throws {
+    func testInstanceCollectionOperations() async throws {
     let mockApp1 = createMockRunningApplication(pid: 12345, bundleId: "com.test.app1", name: "App 1")
     let mockApp2 = createMockRunningApplication(pid: 54321, bundleId: "com.test.app2", name: "App 2")
     let mockApp3 = createMockRunningApplication(pid: 67890, bundleId: "com.test.app3", name: "App 3")
@@ -292,28 +294,28 @@ func instanceCollectionOperations() async throws {
         ),
     ]
 
-    #expect(instances.count == 3)
+    XCTAssertEqual(instances.count, 3)
 
     // Test filtering by status
     let workingInstances = instances.filter { instance in
         if case .working = instance.status { return true }
         return false
     }
-    #expect(workingInstances.count == 1)
-    #expect(workingInstances.first?.pid == 54321)
+    XCTAssertEqual(workingInstances.count, 1)
+    XCTAssertEqual(workingInstances.first?.pid, 54321)
 
     // Test filtering by intervention type
     let instancesWithInterventions = instances.filter { $0.lastInterventionType != nil }
-    #expect(instancesWithInterventions.count == 2)
+    XCTAssertEqual(instancesWithInterventions.count, 2)
 
     // Test finding by PID
     let targetInstance = instances.first { $0.pid == 67890 }
-    #expect(targetInstance != nil)
-    #expect(targetInstance?.status == .recovering(type: .stuck, attempt: 2))
+    XCTAssertNotNil(targetInstance)
+    XCTAssertEqual(targetInstance?.status, .recovering(type: .stuck, attempt: 2))
 }
 
 
-func statusTransitionValidation() async throws {
+    func testStatusTransitionValidation() async throws {
     // Test logical status transitions
     let transitions = [
         (from: CursorInstanceStatus.unknown, to: CursorInstanceStatus.idle),
@@ -340,17 +342,17 @@ func statusTransitionValidation() async throws {
 
     for transition in transitions {
         // All transitions should result in different statuses
-        #expect(transition.from != transition.to)
+        XCTAssertNotEqual(transition.from, transition.to)
 
         // Verify each status can be compared properly
         let sameFrom1 = transition.from
         let sameFrom2 = transition.from
-        #expect(sameFrom1 == sameFrom2)
+        XCTAssertEqual(sameFrom1, sameFrom2)
     }
 }
 
 
-func hashConsistency() async throws {
+    func testHashConsistency() async throws {
     let mockApp = createMockRunningApplication(pid: 12345, bundleId: "com.test.app", name: "Test App")
 
     let instanceInfo1 = CursorInstanceInfo(
@@ -368,7 +370,7 @@ func hashConsistency() async throws {
     )
 
     // Same properties should produce same hash
-    #expect(instanceInfo1.hashValue == instanceInfo2.hashValue)
+    XCTAssertEqual(instanceInfo1.hashValue, instanceInfo2.hashValue)
 
     // Different recovery attempts should produce different hashes
     let status1 = CursorInstanceStatus.recovering(type: .connection, attempt: 1)
@@ -380,13 +382,10 @@ func hashConsistency() async throws {
     var hasher2 = Hasher()
     status2.hash(into: &hasher2)
 
-    #expect(hasher1.finalize() != hasher2.finalize())
+    XCTAssertNotEqual(hasher1.finalize(), hasher2.finalize())
 }
 
-
-@Test
-@MainActor
-func threadSafetyConsiderations() async throws {
+    func testThreadSafetyConsiderations() async throws {
     let mockApp = createMockRunningApplication(pid: 12345, bundleId: "com.test.app", name: "Test App")
 
     // Test concurrent access to instance info (read-only operations)
@@ -406,19 +405,19 @@ func threadSafetyConsiderations() async throws {
     let message = instanceInfo.statusMessage
     let intervention = instanceInfo.lastInterventionType
 
-    #expect(pid == id)
-    #expect(bundle != nil)
-    #expect(name != nil)
-    #expect(status == .idle)
-    #expect(message == "Test")
-    #expect(intervention == nil)
+    XCTAssertEqual(pid, id)
+    XCTAssertNotNil(bundle)
+    XCTAssertNotNil(name)
+    XCTAssertEqual(status, .idle)
+    XCTAssertEqual(message, "Test")
+    XCTAssertEqual(intervention, nil)
     
     // CursorInstanceInfo being Sendable means it should be safe for concurrent access
     // We've verified the properties work correctly
 }
 
 
-func memoryAndPerformance() async throws {
+    func testMemoryAndPerformance() async throws {
     // Test creating many instances to check for memory issues
     var instances: [CursorInstanceInfo] = []
 
@@ -433,11 +432,11 @@ func memoryAndPerformance() async throws {
         instances.append(instance)
     }
 
-    #expect(instances.count == 1000)
+    XCTAssertEqual(instances.count, 1000)
 
     // Test that instances are properly distinct
     let uniquePIDs = Set(instances.map(\.pid))
-    #expect(uniquePIDs.count == 1000)
+    XCTAssertEqual(uniquePIDs.count, 1000)
 
     // Test performance of hash operations
     let startTime = Date()
@@ -447,8 +446,8 @@ func memoryAndPerformance() async throws {
     }
     let endTime = Date()
 
-    #expect(instanceSet.count == 1000)
-    #expect(endTime.timeIntervalSince(startTime) < 1.0) // Should complete in under 1 second
+    XCTAssertEqual(instanceSet.count, 1000)
+    XCTAssertLessThan(endTime.timeIntervalSince(startTime), 1.0) // Should complete in under 1 second
 }
 
 // MARK: - Helper Functions
@@ -458,4 +457,6 @@ private func createMockRunningApplication(pid _: pid_t, bundleId _: String?, nam
     // For now, we'll use the current running application as a placeholder
     // In actual implementation, you'd want to create a MockNSRunningApplication
     NSRunningApplication.current
+}
+
 }
