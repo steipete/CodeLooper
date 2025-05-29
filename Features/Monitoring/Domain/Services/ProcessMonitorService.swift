@@ -113,8 +113,7 @@ class ProcessMonitoringTickUseCase {
             let currentInterventionCount = self.instanceStateManager.getAutomaticInterventions(for: self.pid)
 
             if currentInterventionCount > 0,
-               currentInterventionCount >= observationInfo.initialInterventionCountWhenObservationStarted
-            {
+               currentInterventionCount >= observationInfo.initialInterventionCountWhenObservationStarted {
                 self.instanceStateManager.incrementConsecutiveRecoveryFailures(for: self.pid)
 
                 let consecutiveFailures = self.instanceStateManager.getConsecutiveRecoveryFailures(for: self.pid)
@@ -143,8 +142,7 @@ class ProcessMonitoringTickUseCase {
         }
 
         if currentStatus == .paused,
-           self.currentInfo.statusMessage.contains("Intervention Limit Reached")
-        {
+           self.currentInfo.statusMessage.contains("Intervention Limit Reached") {
             self.logger.info("PID \(self.pid) is paused (intervention limit). Skipping further checks this tick.")
             currentStatus = .paused
             statusMessage = "Paused (Intervention Limit Reached)"
@@ -274,7 +272,8 @@ class ProcessMonitoringTickUseCase {
     }
 
     private func logInterventionType(_ interventionType: CursorInterventionEngine.InterventionType) {
-        self.logger.info("PID \(self.pid): Determined intervention type: \(String(describing: interventionType.rawValue))")
+        self.logger
+            .info("PID \(self.pid): Determined intervention type: \(String(describing: interventionType.rawValue))")
         self.sessionLogger.log(
             level: .info,
             message: "PID \(self.pid): Determined intervention type: \(String(describing: interventionType.rawValue))",
@@ -299,7 +298,11 @@ class ProcessMonitoringTickUseCase {
 
         case .unknown, .positiveWorkingState, .sidebarActivityDetected, .unrecoverableError, .manualPause,
              .interventionLimitReached, .awaitingAction, .monitoringPaused, .processNotRunning, .noInterventionNeeded:
-            handleNonActionableIntervention(interventionType, currentStatus: currentStatus, statusMessage: statusMessage)
+            handleNonActionableIntervention(
+                interventionType,
+                currentStatus: currentStatus,
+                statusMessage: statusMessage
+            )
         }
     }
 
@@ -322,7 +325,9 @@ class ProcessMonitoringTickUseCase {
 
     private func handleGeneralError() async -> (CursorInstanceStatus, String) {
         let currentAttempts = self.instanceStateManager.getAutomaticInterventions(for: self.pid)
-        self.logger.warning("PID \(self.pid) encountered general error (intervention type). Attempting generic stuck recovery.")
+        self.logger
+            .warning("PID \(self.pid) encountered general error (intervention type). Attempting generic stuck recovery."
+            )
 
         let newStatus = CursorInstanceStatus.recovering(type: .stuck, attempt: currentAttempts)
         let newStatusMessage = "Attempting to recover from general error."
@@ -390,7 +395,8 @@ class ProcessMonitoringTickUseCase {
         status: CursorInstanceStatus,
         message: String
     )? {
-        guard self.instanceStateManager.getAutomaticInterventions(for: self.pid) >= Defaults[.maxInterventionsBeforePause] else {
+        guard self.instanceStateManager
+            .getAutomaticInterventions(for: self.pid) >= Defaults[.maxInterventionsBeforePause] else {
             return nil
         }
 
@@ -424,13 +430,15 @@ class ProcessMonitoringTickUseCase {
         message: String
     )? {
         guard self.instanceStateManager.getConsecutiveRecoveryFailures(for: self.pid) >= 
-              InterventionConstants.maxConsecutiveRecoveryFailures else {
+            InterventionConstants.maxConsecutiveRecoveryFailures else {
             return nil
         }
 
         self.logger.error(
             """
-            PID \(self.pid) has reached max consecutive recovery failures (\(InterventionConstants.maxConsecutiveRecoveryFailures)). \
+            PID \(self.pid) has reached max consecutive recovery failures (\(InterventionConstants
+                .maxConsecutiveRecoveryFailures
+            )). \
             Marking as unrecoverable.
             """
         )
@@ -445,8 +453,10 @@ class ProcessMonitoringTickUseCase {
                 try await UserNotificationManager.shared.sendNotification(
                     title: "CodeLooper: Persistent Failure",
                     body: """
-                          Cursor instance (PID: \(self.pid)) has encountered persistent recovery failures and is now marked unrecoverable.
-                          """,
+                    Cursor instance (PID: \(self
+                        .pid
+                    )) has encountered persistent recovery failures and is now marked unrecoverable.
+                    """,
                     identifier: "persistent_failure_\(self.pid)"
                 )
             } catch {

@@ -378,7 +378,7 @@ class CursorInputWatcherViewModel: ObservableObject, Loggable {
             return
         }
 
-        // Use first window for query 
+        // Use first window for query
         // swiftlint:disable:next todo
         // TODO: Implement proper window selection
         // swiftlint:disable:next todo

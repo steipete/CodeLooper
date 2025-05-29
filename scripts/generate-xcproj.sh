@@ -222,6 +222,99 @@ fi
 # Project configuration is handled by Tuist
 echo "Project configuration complete"
 
-echo "Project generation and Sendable fixes complete!"
+echo "Fixing SwiftFormat issues in generated files..."
+
+# Fix TuistBundle files missing final newlines
+for file in "./Derived/Sources/TuistBundle+CodeLooper.swift" "./Derived/Sources/TuistBundle+CodeLooperTests.swift"; do
+    if [ -f "$file" ]; then
+        echo "Fixing formatting in $file"
+        # Simple approach: just add a newline if file doesn't end with one
+        if [ -n "$(tail -c 1 "$file")" ]; then
+            echo >> "$file"
+        fi
+    fi
+done
+
+# Fix brace formatting in SoundEngine.swift  
+SOUND_ENGINE_FILE="./Core/Utilities/Helpers/SoundEngine.swift"
+if [ -f "$SOUND_ENGINE_FILE" ]; then
+    echo "Fixing brace formatting in $SOUND_ENGINE_FILE"
+    # Fix the specific brace issue at line 103 - move opening brace to previous line
+    sed -i '' '/== noErr$/{
+        N
+        s/== noErr\n        {/== noErr {/
+    }' "$SOUND_ENGINE_FILE"
+fi
+
+# Fix indentation issues in other files by running swiftformat on specific problem files
+# Skip WindowAIDiagnosticsManager.swift since it has issues with indent/wrap rules
+SWIFTFORMAT_FILES=(
+    "./Features/AIAnalysis/Domain/Services/ScreenshotAnalyzer.swift"
+    "./Features/Monitoring/Domain/Services/ProcessMonitorService.swift" 
+    "./Features/Monitoring/Domain/Models/MonitoredInstanceInfo.swift"
+)
+
+for file in "${SWIFTFORMAT_FILES[@]}"; do
+    if [ -f "$file" ]; then
+        echo "Running SwiftFormat on $file to fix indentation"
+        # Run swiftformat with specific rules that commonly cause issues
+        if command -v swiftformat &> /dev/null; then
+            swiftformat "$file" --rules indent,braces --quiet
+        else
+            echo "SwiftFormat not available, skipping formatting fix for $file"
+        fi
+    fi
+done
+
+# Handle WindowAIDiagnosticsManager.swift separately with safer rules
+WINDOWAI_FILE="./Features/AIAnalysis/Domain/Services/WindowAIDiagnosticsManager.swift"
+if [ -f "$WINDOWAI_FILE" ]; then
+    echo "Running SwiftFormat on $WINDOWAI_FILE with safe rules"
+    if command -v swiftformat &> /dev/null; then
+        # Only apply braces rule to avoid the infinite loop issue with indent/wrap
+        swiftformat "$WINDOWAI_FILE" --rules braces --quiet
+    fi
+fi
+
+# Fix specific SwiftFormat issues in other files
+echo "Fixing specific SwiftFormat issues in AXpector files..."
+
+# Fix AXpectorViewModel+Filtering.swift indentation issues
+FILTERING_FILE="./AXpector/Sources/AXpector/ViewModelExtensions/AXpectorViewModel+Filtering.swift"
+if [ -f "$FILTERING_FILE" ]; then
+    echo "Running SwiftFormat on $FILTERING_FILE with conservative rules"
+    if command -v swiftformat &> /dev/null; then
+        swiftformat "$FILTERING_FILE" --rules braces,trailingSpace,wrapMultilineStatementBraces --quiet
+    fi
+fi
+
+# Fix AXpectorViewModel+FocusTracking.swift brace issues
+FOCUS_FILE="./AXpector/Sources/AXpector/ViewModelExtensions/AXpectorViewModel+FocusTracking.swift"
+if [ -f "$FOCUS_FILE" ]; then
+    echo "Running SwiftFormat on $FOCUS_FILE with conservative rules"
+    if command -v swiftformat &> /dev/null; then
+        swiftformat "$FOCUS_FILE" --rules braces,trailingSpace,wrapMultilineStatementBraces --quiet
+    fi
+fi
+
+# Fix AXpectorViewModel+Highlighting.swift trailing space
+HIGHLIGHTING_FILE="./AXpector/Sources/AXpector/ViewModelExtensions/AXpectorViewModel+Highlighting.swift"
+if [ -f "$HIGHLIGHTING_FILE" ]; then
+    echo "Running SwiftFormat on $HIGHLIGHTING_FILE with conservative rules"
+    if command -v swiftformat &> /dev/null; then
+        swiftformat "$HIGHLIGHTING_FILE" --rules trailingSpace --quiet
+    fi
+fi
+
+# Fix CursorInputWatcherViewModel.swift trailing space
+WATCHER_FILE="./Features/Monitoring/Domain/Services/CursorInputWatcherViewModel.swift"
+if [ -f "$WATCHER_FILE" ]; then
+    echo "Running SwiftFormat on $WATCHER_FILE with conservative rules"
+    if command -v swiftformat &> /dev/null; then
+        swiftformat "$WATCHER_FILE" --rules trailingSpace --quiet
+    fi
+fi
+
+echo "Project generation, Sendable fixes, and SwiftFormat fixes complete!"
 echo "You can now open the Xcode project:"
 echo "open CodeLooper.xcworkspace"

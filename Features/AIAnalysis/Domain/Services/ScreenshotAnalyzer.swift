@@ -24,7 +24,10 @@ public final class CursorScreenshotAnalyzer: ObservableObject, Loggable {
         // This should ideally happen once at app startup, and then upon settings changes.
     }
     
-    public func analyzeSpecificWindow(_ window: SCWindow?, customPrompt: String? = nil) async throws -> ImageAnalysisResponse {
+    public func analyzeSpecificWindow(
+        _ window: SCWindow?,
+        customPrompt: String? = nil
+    ) async throws -> ImageAnalysisResponse {
         isAnalyzing = true
         lastError = nil
         defer { isAnalyzing = false }
@@ -57,7 +60,8 @@ public final class CursorScreenshotAnalyzer: ObservableObject, Loggable {
                 
                 // Decide if we should retry
                 switch error {
-                case .networkError, .serviceUnavailable, .invalidResponse: // Added .invalidResponse as potentially transient
+                case .networkError, .serviceUnavailable,
+                     .invalidResponse: // Added .invalidResponse as potentially transient
                     if attempts > CursorScreenshotAnalyzer.maxAnalysisRetries {
                         logger.error("Max retries reached for AI analysis. Error: \(error.localizedDescription)")
                         throw error // Rethrow after max retries
@@ -72,7 +76,9 @@ public final class CursorScreenshotAnalyzer: ObservableObject, Loggable {
             } catch {
                 // Catch any other non-AIServiceError
                 lastCaughtError = error
-                logger.error("AI analysis attempt \(attempts) failed with unexpected error: \(error.localizedDescription)")
+                logger
+                    .error("AI analysis attempt \(attempts) failed with unexpected error: \(error.localizedDescription)"
+                    )
                 throw error // Rethrow immediately, typically not transient
             }
         }
@@ -113,7 +119,7 @@ public final class CursorScreenshotAnalyzer: ObservableObject, Loggable {
         if windowToCapture == nil {
             windowToCapture = content.windows.first { window in
                 window.owningApplication?.bundleIdentifier == "com.todesktop.230313mzl4w4u92" ||
-                window.owningApplication?.applicationName == "Cursor"
+                    window.owningApplication?.applicationName == "Cursor"
             }
         }
 
@@ -169,25 +175,25 @@ public extension CursorScreenshotAnalyzer {
         """
         
         public static let working = """
-            You will receive a screenshot of a VS Code-like window that may include a chat sidebar.
+        You will receive a screenshot of a VS Code-like window that may include a chat sidebar.
 
-            Your task is to determine if the AI is currently "Generating" content.
+        Your task is to determine if the AI is currently "Generating" content.
 
-            1.  Scan the **entire image** carefully.
-            2.  Look for the exact word **"Generating"** (case-insensitive). This word might be followed by ellipses \\
-                (e.g., "Generating..."). It can appear anywhere in a chat or output section.
-            3.  Based on your finding:
-                *   If "Generating" (or "Generating...") is present, respond with the following JSON object:
-                    `{"status": "working", "reason": "AI is actively generating content."}`
-                *   If "Generating" (or "Generating...") is **not** present, respond with the following JSON object:
-                    `{"status": "not_working", "reason": "Not currently generating content."}`
-            4.  **Important Rules:**
-                *   Your entire response must be **only** the single JSON object specified above.
-                *   Ignore all other elements in the screenshot (code, other sidebars, buttons, icons, \\
-                    timestamps, etc.). Your focus is solely on the "Generating" status.
-                *   If you are uncertain whether "Generating" is present, default to "not_working". \\
-                    A false negative is preferred over a false positive.
-            """
+        1.  Scan the **entire image** carefully.
+        2.  Look for the exact word **"Generating"** (case-insensitive). This word might be followed by ellipses \\
+            (e.g., "Generating..."). It can appear anywhere in a chat or output section.
+        3.  Based on your finding:
+            *   If "Generating" (or "Generating...") is present, respond with the following JSON object:
+                `{"status": "working", "reason": "AI is actively generating content."}`
+            *   If "Generating" (or "Generating...") is **not** present, respond with the following JSON object:
+                `{"status": "not_working", "reason": "Not currently generating content."}`
+        4.  **Important Rules:**
+            *   Your entire response must be **only** the single JSON object specified above.
+            *   Ignore all other elements in the screenshot (code, other sidebars, buttons, icons, \\
+                timestamps, etc.). Your focus is solely on the "Generating" status.
+            *   If you are uncertain whether "Generating" is present, default to "not_working". \\
+                A false negative is preferred over a false positive.
+        """
         
         public static let codeEditing = "Is the user actively editing code in this screenshot? Answer yes or no."
     }

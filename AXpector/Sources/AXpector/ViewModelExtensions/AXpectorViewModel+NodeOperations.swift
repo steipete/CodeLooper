@@ -101,7 +101,7 @@ extension AXpectorViewModel {
                 pathOfElementToFetchChildrenFor: node.fullPath
             )
 
-            if Defaults[.verboseLogging_axpector] {
+            if Defaults[.verboseLoggingAxpector] {
                 let collectedLogs = axGetLogEntries()
                 for logEntry in collectedLogs { // Iterate and log
                     axDebugLog(
@@ -326,7 +326,10 @@ extension AXpectorViewModel {
         } ?? []
 
         let node = AXPropertyNode(
-            id: UUID(), axElementRef: axElementFromCollectAll.underlyingElement, pid: pid, role: role ?? "N/A",
+            id: UUID(),
+            axElementRef: axElementFromCollectAll.underlyingElement,
+            pid: pid,
+            role: role ?? "N/A",
             title: title ?? "",
             descriptionText: axElementFromCollectAll.attributes?[AXAttributeNames.kAXDescriptionAttribute]?
                 .value as? String ?? "",

@@ -36,7 +36,10 @@ extension AXpectorViewModel {
                         return
                     }
                     axInfoLog(
-                        "App activated: \(activatedApp.localizedName ?? "unknown") with PID \(activatedApp.processIdentifier). AXpector will update focus tracking."
+                        """
+                        App activated: \(activatedApp.localizedName ?? "unknown") with PID \(activatedApp.processIdentifier). \
+                        AXpector will update focus tracking.
+                        """
                     ) // CHANGED
 
                     let pidToObserve = self.selectedApplicationPID ?? activatedApp.processIdentifier
@@ -102,10 +105,12 @@ extension AXpectorViewModel {
         focusedElement: Element,
         pid: pid_t,
         notification: AXNotification
-    )
-    {
+    ) {
         axDebugLog(
-            "AXpectorVM.handleFocusNotification: Element: \(focusedElement.briefDescription()), PID: \(pid), Notification: \(notification.rawValue)"
+            """
+            AXpectorVM.handleFocusNotification: Element: \(focusedElement.briefDescription()), \
+            PID: \(pid), Notification: \(notification.rawValue)
+            """
         )
 
         Task { // WRAP async work in Task

@@ -99,8 +99,7 @@ enum SoundEngine {
             nil,
             &size,
             &vol
-        ) == noErr
-        {
+        ) == noErr {
             return vol == 0
         }
         return false

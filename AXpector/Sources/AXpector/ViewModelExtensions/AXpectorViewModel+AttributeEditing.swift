@@ -61,7 +61,7 @@ extension AXpectorViewModel {
             let settable = axElement.isAttributeSettable(named: attributeKey) // Added named: label
             self.attributeIsCurrentlySettable = settable
 
-            if Defaults[.verboseLogging_axpector] {
+            if Defaults[.verboseLoggingAxpector] {
                 let collectedLogs = axGetLogEntries()
                 for logEntry in collectedLogs {
                     axDebugLog(
@@ -102,6 +102,7 @@ extension AXpectorViewModel {
         }
     }
 
+    // swiftlint:disable:next function_body_length
     func commitAttributeEdit(node: AXPropertyNode?, originalAttributeKey: String?) {
         guard let node, let key = originalAttributeKey ?? editingAttributeKey else {
             attributeUpdateStatusMessage = "Error: Node or attribute key missing for commit."
@@ -160,7 +161,7 @@ extension AXpectorViewModel {
             )
             let response = axorcist.handlePerformAction(command: command)
 
-            if Defaults[.verboseLogging_axpector] {
+            if Defaults[.verboseLoggingAxpector] {
                 let collectedLogs = axGetLogEntries()
                 for logEntry in collectedLogs {
                     axDebugLog(
@@ -237,7 +238,7 @@ extension AXpectorViewModel {
         )
         let response = axorcist.handleQuery(command: queryCommand, maxDepth: 0)
 
-        if Defaults[.verboseLogging_axpector] {
+        if Defaults[.verboseLoggingAxpector] {
             let collectedLogs = axGetLogEntries()
             for logEntry in collectedLogs {
                 axDebugLog(
@@ -288,7 +289,7 @@ extension AXpectorViewModel {
         let axElement = Element(node.axElementRef)
         let settable = axElement.isAttributeSettable(named: attributeKey) // Added named: label
 
-        if Defaults[.verboseLogging_axpector] {
+        if Defaults[.verboseLoggingAxpector] {
             let collectedLogs = axGetLogEntries()
             for logEntry in collectedLogs {
                 axDebugLog(
@@ -332,6 +333,7 @@ extension AXpectorViewModel {
             // Highlight for selection is handled by selectedNode.didSet calling updateHighlightForNode
         } else {
             axWarningLog("Element \(axElementRef) not found in current tree for PID \(currentAppPID).")
+            // swiftlint:disable:next todo
             // TODO: Consider targeted fetch for this element if not found, then select.
             // For now, just log. User might need to expand tree or refresh.
             self.actionStatusMessage = "Navigation target not found in current tree view."

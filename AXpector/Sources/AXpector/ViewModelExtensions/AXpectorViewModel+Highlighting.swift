@@ -66,7 +66,8 @@ extension AXpectorViewModel {
             )
             return nil
         }
-        let posAxValue = posValUnwrapped as! AXValue // Force cast after type check
+        // swiftlint:disable:next force_cast
+        let posAxValue = posValUnwrapped as! AXValue // Safe after CFGetTypeID check
 
         guard AXValueGetType(posAxValue) == .cgPoint else {
             axDebugLog("Position AXValue is not of type CGPoint. Type: \(AXValueGetType(posAxValue).rawValue)")
@@ -83,7 +84,8 @@ extension AXpectorViewModel {
             )
             return nil
         }
-        let sizeAxValue = sizeValUnwrapped as! AXValue // Force cast after type check
+        // swiftlint:disable:next force_cast
+        let sizeAxValue = sizeValUnwrapped as! AXValue // Safe after CFGetTypeID check
 
         guard AXValueGetType(sizeAxValue) == .cgSize else {
             axDebugLog("Size AXValue is not of type CGSize. Type: \(AXValueGetType(sizeAxValue).rawValue)")

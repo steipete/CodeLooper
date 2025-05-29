@@ -133,8 +133,7 @@ class WindowAIDiagnosticsManager: ObservableObject, Loggable {
                     if windowInfo.lastAIAnalysisStatus == .error,
                        let message = windowInfo.lastAIAnalysisResponseMessage,
                        message.lowercased().contains("api key") || message.lowercased()
-                       .contains("configure it in settings")
-                    {
+                       .contains("configure it in settings") {
                         logger
                             .info(
                                 "Window \(id) previously had API key error. Resetting to pending and re-triggering analysis."
@@ -236,8 +235,7 @@ class WindowAIDiagnosticsManager: ObservableObject, Loggable {
                     // For windows without document paths, try to get the most frequent repository for this window
                     Task {
                         if let gitRepo = await self.documentPathTracker
-                            .getMostFrequentRepository(forWindow: window.id)
-                        {
+                            .getMostFrequentRepository(forWindow: window.id) {
                             DispatchQueue.main.async {
                                 if var updatedWindowInfo = self.windowStates[window.id] {
                                     updatedWindowInfo.gitRepository = gitRepo
@@ -299,8 +297,7 @@ class WindowAIDiagnosticsManager: ObservableObject, Loggable {
             // Perform initial analysis immediately if status is pending and no recent analysis
             if windowInfo.lastAIAnalysisStatus == .pending,
                windowInfo.lastAIAnalysisTimestamp == nil || windowInfo.lastAIAnalysisTimestamp!
-               .addingTimeInterval(globalInterval * 2) < Date()
-            {
+               .addingTimeInterval(globalInterval * 2) < Date() {
                 Task {
                     await self.performAIAnalysis(for: windowInfo.id)
                 }
@@ -589,8 +586,7 @@ class WindowAIDiagnosticsManager: ObservableObject, Loggable {
 
                             // Basic validation for JSON object or array
                             if (jsonString.hasPrefix("{") && jsonString.hasSuffix("}")) ||
-                                (jsonString.hasPrefix("[") && jsonString.hasSuffix("]"))
-                            {
+                                (jsonString.hasPrefix("[") && jsonString.hasSuffix("]")) {
                                 if let data = jsonString.data(using: String.Encoding.utf8) {
                                     logger
                                         .info(
@@ -620,8 +616,7 @@ class WindowAIDiagnosticsManager: ObservableObject, Loggable {
         // Fallback: If not in a code block, try to parse the whole string directly after trimming.
         let trimmedText = text.trimmingCharacters(in: .whitespacesAndNewlines)
         if (trimmedText.hasPrefix("{") && trimmedText.hasSuffix("}")) ||
-            (trimmedText.hasPrefix("[") && trimmedText.hasSuffix("]"))
-        {
+            (trimmedText.hasPrefix("[") && trimmedText.hasSuffix("]")) {
             logger.debug("No code block matched. Trying trimmed full text as JSON: '\(trimmedText)'")
             if let data = trimmedText.data(using: String.Encoding.utf8) {
                 logger.info("Successfully validated trimmed full text as JSON.")

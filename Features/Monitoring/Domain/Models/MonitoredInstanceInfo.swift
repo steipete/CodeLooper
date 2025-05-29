@@ -38,14 +38,14 @@ public struct MonitoredAppInfo: Identifiable { // Made Sendable
 @MainActor
 public struct MonitoredWindowInfo: Identifiable {
     public let id: String // Unique ID for the window. Runtime identifier.
-                         // NOTE: Current generation relies on PID, title, and index.
-                         // Persisted settings using this ID might not be stable across app restarts
-                         // if window titles or order change significantly.
+    // NOTE: Current generation relies on PID, title, and index.
+    // Persisted settings using this ID might not be stable across app restarts
+    // if window titles or order change significantly.
     public var windowTitle: String?
     public var windowAXElement: Element?
     public var documentPath: String?
     public var isPaused: Bool = false
-    
+
     // Window state properties
     public var isMinimized: Bool = false
     public var isHidden: Bool = false
@@ -57,7 +57,7 @@ public struct MonitoredWindowInfo: Identifiable {
     public var lastAIAnalysisStatus: AIAnalysisStatus = .off
     public var lastAIAnalysisTimestamp: Date?
     public var lastAIAnalysisResponseMessage: String?
-    
+
     // Git repository information
     public var gitRepository: GitRepository?
 
@@ -70,7 +70,7 @@ public struct MonitoredWindowInfo: Identifiable {
             // Try to extract PID from the original id string, assuming format "<PID>-window-..."
             let components = self.id.split(separator: "-")
             if let pidString = components.first, let pid = Int32(pidString) {
-                 // Use a combination of PID and a hash of the document path for stability
+                // Use a combination of PID and a hash of the document path for stability
                 return "windowsettings_pid\(pid)_docHash\(docPath.hashValue)"
             } else {
                 // Fallback if PID cannot be extracted from id (should not happen with current id format)
@@ -92,7 +92,7 @@ public struct MonitoredWindowInfo: Identifiable {
         self.windowAXElement = axElement
         self.documentPath = documentPath
         self.isPaused = isPaused
-        
+
         // Initialize window state properties from the AX element if available
         if let element = axElement {
             self.isMinimized = element.isMinimized() ?? false
@@ -104,7 +104,7 @@ public struct MonitoredWindowInfo: Identifiable {
         let settingsKeyPrefix = getPersistentSettingsKeyPrefix()
         let liveWatchingKey = Defaults.Key<Bool>("\(settingsKeyPrefix)_live_watching", default: false)
         let aiIntervalKey = Defaults.Key<Int>("\(settingsKeyPrefix)_ai_interval", default: 10)
-        
+
         self.isLiveWatchingEnabled = Defaults[liveWatchingKey]
         self.aiAnalysisIntervalSeconds = Defaults[aiIntervalKey]
 
@@ -119,28 +119,28 @@ public struct MonitoredWindowInfo: Identifiable {
         let settingsKeyPrefix = getPersistentSettingsKeyPrefix()
         let liveWatchingKey = Defaults.Key<Bool>("\(settingsKeyPrefix)_live_watching", default: false)
         let aiIntervalKey = Defaults.Key<Int>("\(settingsKeyPrefix)_ai_interval", default: 10)
-        
+
         Defaults[liveWatchingKey] = self.isLiveWatchingEnabled
         Defaults[aiIntervalKey] = self.aiAnalysisIntervalSeconds
     }
-    
+
     // MARK: - Window State Utilities
-    
+
     /// Updates the window state properties from the current AX element
     public mutating func updateWindowState() {
         guard let element = windowAXElement else { return }
-        
+
         self.isMinimized = element.isMinimized() ?? false
         self.isHidden = element.isWindowHidden() ?? false
         self.screenNumber = element.windowScreenNumber()
         self.frame = element.frame()
     }
-    
+
     /// Checks if the window is visible (not minimized, not hidden, and has a screen)
     public var isVisible: Bool {
         return !isMinimized && !isHidden && screenNumber != nil
     }
-    
+
     /// Gets a human-readable description of the window's screen location
     public var screenDescription: String {
         if isMinimized {

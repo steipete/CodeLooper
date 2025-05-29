@@ -50,7 +50,9 @@ extension AXpectorViewModel {
             .isEmpty
         {
             axDebugLog(
-                "Parsed criteria: \(criteria.map { "(\($0.isNegated ? "NOT " : "")\($0.key):(\($0.isRegex ? "regex:" : "")\($0.value))" }) )"
+                "Parsed criteria: \(criteria.map { 
+                    "(\($0.isNegated ? "NOT " : "")\($0.key): (\($0.isRegex ? "regex: " : "")\($0.value))" 
+                })"
             )
         }
         if !generalTerms
@@ -107,9 +109,11 @@ extension AXpectorViewModel {
     }
 
     // swiftlint:disable:next function_body_length
-    func filterNodes(_ nodes: [AXPropertyNode], criteria: [FilterCriterion],
-                     generalTerms: [GeneralTermCriterion]) -> [AXPropertyNode]
-    {
+    func filterNodes(
+        _ nodes: [AXPropertyNode],
+        criteria: [FilterCriterion],
+        generalTerms: [GeneralTermCriterion]
+    ) -> [AXPropertyNode] {
         var matchedNodes: [AXPropertyNode] = []
         for node in nodes {
             var matchesAllCriteria = true

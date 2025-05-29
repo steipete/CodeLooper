@@ -6,7 +6,7 @@ import SwiftUI
 
 // Define the key locally if not accessible from main app target's DefaultsKeys
 extension Defaults.Keys {
-    static let verboseLogging_axpector = Key<Bool>("verboseLogging", default: false)
+    static let verboseLoggingAxpector = Key<Bool>("verboseLogging", default: false)
     static let selectTreeOnFocusChange = Key<Bool>("selectTreeOnFocusChange", default: true)
 }
 
@@ -276,6 +276,7 @@ class AXpectorViewModel: ObservableObject {
 
     // MARK: - Element Interaction
 
+    // swiftlint:disable:next function_body_length
     func performAction(_ actionName: String, on node: AXPropertyNode?) {
         guard let targetNode = node else {
             axWarningLog("PerformAction: Nil node."); actionStatusMessage = "Error: No node selected."; return
@@ -296,8 +297,7 @@ class AXpectorViewModel: ObservableObject {
                    role == AXRoleNames.kAXStaticTextRole as String
                 {
                     if let value = targetNode.attributes[AXAttributeNames.kAXValueAttribute]?.value as? String,
-                       !value.isEmpty { stringCriteria[AXAttributeNames.kAXValueAttribute] = value }
-                    else { stringCriteria[AXAttributeNames.kAXTitleAttribute] = targetNode.displayName }
+                       !value.isEmpty { stringCriteria[AXAttributeNames.kAXValueAttribute] = value } else { stringCriteria[AXAttributeNames.kAXTitleAttribute] = targetNode.displayName }
                 } else { stringCriteria[AXAttributeNames.kAXTitleAttribute] = targetNode.displayName }
             }
 
@@ -317,7 +317,7 @@ class AXpectorViewModel: ObservableObject {
                 maxDepthForSearch: AXMiscConstants.defaultMaxDepthSearch
             )
             let response = axorcist.handlePerformAction(command: performActionCommand)
-            if Defaults[.verboseLogging_axpector] {
+            if Defaults[.verboseLoggingAxpector] {
                 let collectedLogs = axGetLogEntries()
                 for logEntry in collectedLogs {
                     axDebugLog(
@@ -448,8 +448,12 @@ class AXpectorViewModel: ObservableObject {
               let posVal = positionRef, CFGetTypeID(posVal) == AXValueGetTypeID(),
               let sizeVal = sizeRef, CFGetTypeID(sizeVal) == AXValueGetTypeID() else { return nil }
         var position = CGPoint.zero; var size = CGSize.zero
-        AXValueGetValue(posVal as! AXValue, .cgPoint, &position)
-        AXValueGetValue(sizeVal as! AXValue, .cgSize, &size)
+        // swiftlint:disable:next force_cast
+        let posAxValue = posVal as! AXValue // Safe after CFGetTypeID check
+        // swiftlint:disable:next force_cast
+        let sizeAxValue = sizeVal as! AXValue // Safe after CFGetTypeID check
+        AXValueGetValue(posAxValue, .cgPoint, &position)
+        AXValueGetValue(sizeAxValue, .cgSize, &size)
         return NSRect(origin: position, size: size)
     }
 
