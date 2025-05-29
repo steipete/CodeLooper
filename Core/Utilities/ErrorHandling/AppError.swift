@@ -288,11 +288,15 @@ extension AppError {
             logger.debug("\(message)")
         case .info:
             logger.info("\(message)")
+        case .notice:
+            logger.info("\(message)")
         case .warning:
             logger.warning("\(message)")
         case .error:
             logger.error("\(message)")
         case .critical:
+            logger.critical("\(message)")
+        case .fault:
             logger.critical("\(message)")
         @unknown default:
             logger.error("\(message)")
