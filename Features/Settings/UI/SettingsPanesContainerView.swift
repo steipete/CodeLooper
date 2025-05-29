@@ -35,7 +35,7 @@ struct SettingsPanesContainerView: View {
 
     @EnvironmentObject var mainSettingsViewModel: MainSettingsViewModel
     @EnvironmentObject var sessionLogger: SessionLogger // Assuming SessionLogger is provided higher up
-    @Default(.showDebugTab) private var showDebugTab
+    @Default(.debugMode) private var debugMode
 
     var body: some View {
         VStack(spacing: 0) { // Use VStack to manage TabView and Footer
@@ -94,7 +94,7 @@ struct SettingsPanesContainerView: View {
                     .focusable()
                     .focused($focusedTab, equals: .advanced)
 
-                if showDebugTab {
+                if debugMode {
                     DebugSettingsView()
                         .readHeight() // Apply readHeight
                         .tabItem {

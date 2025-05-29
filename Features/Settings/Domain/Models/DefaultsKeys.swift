@@ -50,6 +50,7 @@ extension Defaults.Keys {
     static let showInDock = Key<Bool>("showInDock", default: false) // "Show CodeLooper in Dock"
     static let showDebugMenu = Key<Bool>("showDebugMenu", default: false) // For debug menu in status bar
     static let debugModeEnabled = Key<Bool>("debugModeEnabled", default: false)
+    static let showDebugTab = Key<Bool>("showDebugTab", default: false) // For debug tab in settings
     static let showCopyCounter = Key<Bool>("showCopyCounter", default: false)
     static let showPasteCounter = Key<Bool>("showPasteCounter", default: false)
     static let showTotalInterventions = Key<Bool>("showTotalInterventions", default: true)
@@ -115,7 +116,7 @@ extension Defaults.Keys {
     static let gitClientApp = Key<String>("gitClientApp", default: "/Applications/Tower.app")
 
     // --- Debug Settings ---
-    static let showDebugTab = Key<Bool>("showDebugTab", default: {
+    static let debugMode = Key<Bool>("debugMode", default: {
         #if DEBUG
             return true
         #else
@@ -123,4 +124,5 @@ extension Defaults.Keys {
         #endif
     }())
     static let useDynamicMenuBarIcon = Key<Bool>("useDynamicMenuBarIcon", default: false)
+    static let automaticJSHookInjection = Key<Bool>("automaticJSHookInjection", default: false)
 }

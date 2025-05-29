@@ -33,6 +33,29 @@ struct DebugSettingsView: View {
                     }
                 }
             }
+            
+            // JS Hook Settings
+            DSSettingsSection("JavaScript Hook Settings") {
+                VStack(alignment: .leading, spacing: Spacing.medium) {
+                    DSToggle(
+                        "Automatic Hook Injection",
+                        isOn: $automaticJSHookInjection,
+                        description: "Automatically open debug console and inject hook script. When disabled, script is copied to clipboard for manual injection."
+                    )
+
+                    HStack {
+                        Text("Current mode:")
+                            .font(Typography.caption1())
+                            .foregroundColor(ColorPalette.textSecondary)
+
+                        Spacer()
+
+                        Text(automaticJSHookInjection ? "Automatic" : "Manual (Clipboard)")
+                            .font(Typography.caption1(.medium))
+                            .foregroundColor(automaticJSHookInjection ? ColorPalette.warning : ColorPalette.success)
+                    }
+                }
+            }
 
             // Lottie Animation Test Section
             DSSettingsSection("Lottie Animation Test") {
@@ -115,6 +138,7 @@ struct DebugSettingsView: View {
     // MARK: Private
 
     @Default(.useDynamicMenuBarIcon) private var useDynamicMenuBarIcon
+    @Default(.automaticJSHookInjection) private var automaticJSHookInjection
 
     private var appVersion: String {
         Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "Unknown"
@@ -491,8 +515,6 @@ private struct LogViewerContent: View {
                 }
             }
         }
-        .background(ColorPalette.backgroundSecondary)
-        .cornerRadius(8)
         .onAppear {
             updateLogEntries()
         }

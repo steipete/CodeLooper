@@ -281,9 +281,9 @@ private class SettingsToolbarDelegate: NSObject, NSToolbarDelegate {
         updateTabItems()
 
         // Observe debug tab changes
-        Defaults.publisher(.showDebugTab)
+        Defaults.publisher(.debugMode)
             .sink { [weak self] change in
-                self?.showDebugTab = change.newValue
+                self?.debugMode = change.newValue
                 self?.updateTabItems()
                 // Force toolbar to reload
                 self?.reloadToolbar()
@@ -464,13 +464,13 @@ private class SettingsToolbarDelegate: NSObject, NSToolbarDelegate {
     // MARK: Private
 
     private var tabItems: [SettingsTab] = []
-    private var showDebugTab = Defaults[.showDebugTab]
+    private var debugMode = Defaults[.debugMode]
     private var cancellables = Set<AnyCancellable>()
     private weak var toolbar: NSToolbar?
 
     private func updateTabItems() {
         tabItems = [.general, .supervision, .ruleSets, .externalMCPs, .ai, .advanced]
-        if showDebugTab {
+        if debugMode {
             tabItems.append(.debug)
         }
     }
@@ -663,7 +663,7 @@ private struct SettingsContentView: View {
         .withDesignSystem()
         .environmentObject(viewModel)
         .environmentObject(SessionLogger.shared)
-        .onChange(of: showDebugTab) { _, newValue in
+        .onChange(of: debugMode) { _, newValue in
             if !newValue, currentTab == .debug {
                 currentTab = .general
                 selectedTab.send(.general)
@@ -681,7 +681,7 @@ private struct SettingsContentView: View {
 
     @State private var currentTab: SettingsTab = .general
 
-    @Default(.showDebugTab) private var showDebugTab
+    @Default(.debugMode) private var debugMode
 
     @ViewBuilder
     private var tabContent: some View {

@@ -7,7 +7,7 @@ struct AdvancedSettingsView: View {
     // MARK: Internal
 
     @Default(.showDebugMenu) var showDebugMenu
-    @Default(.showDebugTab) var showDebugTab
+    @Default(.debugMode) var debugMode
 
     var body: some View {
         VStack(alignment: .leading, spacing: Spacing.xLarge) {
@@ -19,8 +19,8 @@ struct AdvancedSettingsView: View {
             // Developer Options
             DSSettingsSection("Developer Options") {
                 DSToggle(
-                    "Show Debug Tab",
-                    isOn: $showDebugTab,
+                    "Debug Mode",
+                    isOn: $debugMode,
                     description: "Show the Debug tab in settings with Lottie animation tests and debugging tools",
                     descriptionLineSpacing: 3
                 )
@@ -138,7 +138,7 @@ struct AdvancedSettingsView: View {
             .textForCursorStopsRecovery,
             .showDebugMenu,
             .gitClientApp,
-            .showDebugTab,
+            .debugMode,
             .useDynamicMenuBarIcon
         )
 

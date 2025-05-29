@@ -6,14 +6,14 @@ struct SettingsContainerView: View {
     // MARK: Internal
 
     @EnvironmentObject var viewModel: MainSettingsViewModel
-    @Default(.showDebugTab) private var showDebugTab
+    @Default(.debugMode) private var debugMode
 
     var body: some View {
         GeometryReader { _ in
             VStack(spacing: 0) {
                 // Title bar area with integrated header and tabs
                 TitleBarView(selectedTab: $selectedTab, tabs: tabs)
-                    .onChange(of: showDebugTab) { _, newValue in
+                    .onChange(of: debugMode) { _, newValue in
                         // If debug tab is disabled and currently selected, switch to general tab
                         if !newValue, selectedTab == .debug {
                             selectedTab = .general
@@ -51,7 +51,7 @@ struct SettingsContainerView: View {
             (.advanced, "Advanced", "wrench.and.screwdriver"),
         ]
 
-        if showDebugTab {
+        if debugMode {
             baseTabs.append((.debug, "Debug", "ladybug"))
         }
 
