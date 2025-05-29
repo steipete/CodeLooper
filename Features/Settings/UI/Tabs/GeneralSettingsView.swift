@@ -13,6 +13,9 @@ struct GeneralSettingsView: View {
     @Default(.gitClientApp) var gitClientApp
     @ObservedObject var updaterViewModel: UpdaterViewModel
 
+    @State private var appIcon: NSImage?
+    @State private var isValidApp = false
+
     private var appVersion: String {
         Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "N/A"
     }
@@ -76,13 +79,31 @@ struct GeneralSettingsView: View {
                 DSSettingsSection("Git Integration") {
                     VStack(alignment: .leading, spacing: Spacing.small) {
                         HStack(spacing: Spacing.small) {
-                            Text("Git Client App:")
-                                .font(Typography.body())
-                                .foregroundColor(ColorPalette.text)
-                                .frame(width: 120, alignment: .leading)
+                            HStack(spacing: Spacing.small) {
+                                // App icon (fixed size to prevent jumping)
+                                Group {
+                                    if let appIcon {
+                                        Image(nsImage: appIcon)
+                                            .resizable()
+                                            .aspectRatio(contentMode: .fit)
+                                    } else {
+                                        Image(systemName: "app.dashed")
+                                            .foregroundColor(ColorPalette.textTertiary)
+                                    }
+                                }
+                                .frame(width: 20, height: 20)
+
+                                Text("Git Client App:")
+                                    .font(Typography.body())
+                                    .foregroundColor(ColorPalette.text)
+                            }
+                            .frame(width: 160, alignment: .leading)
 
                             DSTextField("", text: $gitClientApp)
                                 .frame(maxWidth: .infinity)
+                                .onChange(of: gitClientApp) { _, newValue in
+                                    loadAppIcon(for: newValue)
+                                }
 
                             DSButton("Browse...", style: .secondary, size: .small) {
                                 selectGitClientApp()
@@ -91,10 +112,19 @@ struct GeneralSettingsView: View {
                             .fixedSize()
                         }
 
-                        Text("Path to your Git client application (e.g., Tower, SourceTree, GitKraken)")
-                            .font(Typography.caption1())
-                            .foregroundColor(ColorPalette.textSecondary)
-                            .lineSpacing(3)
+                        HStack {
+                            Text("Path to your Git client application (e.g., Tower, SourceTree, GitKraken)")
+                                .font(Typography.caption1())
+                                .foregroundColor(ColorPalette.textSecondary)
+                                .lineSpacing(3)
+
+                            if !gitClientApp.isEmpty {
+                                Spacer()
+                                Image(systemName: isValidApp ? "checkmark.circle.fill" : "xmark.circle.fill")
+                                    .foregroundColor(isValidApp ? ColorPalette.success : ColorPalette.error)
+                                    .font(.system(size: 12))
+                            }
+                        }
                     }
                 }
 
@@ -113,7 +143,6 @@ struct GeneralSettingsView: View {
                     .disabled(updaterViewModel.isUpdateInProgress)
                 }
 
-
                 // Version info
                 HStack {
                     Spacer()
@@ -127,6 +156,53 @@ struct GeneralSettingsView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(ColorPalette.background)
         .withDesignSystem()
+        .onAppear {
+            loadAppIcon(for: gitClientApp)
+        }
+    }
+
+    private func loadAppIcon(for appPath: String) {
+        Task { @MainActor in
+            guard !appPath.isEmpty else {
+                appIcon = nil
+                isValidApp = false
+                return
+            }
+
+            let url = URL(fileURLWithPath: appPath)
+
+            // Check if the app exists and is a valid application
+            var isDirectory: ObjCBool = false
+            let exists = FileManager.default.fileExists(atPath: appPath, isDirectory: &isDirectory)
+
+            guard exists else {
+                appIcon = nil
+                isValidApp = false
+                return
+            }
+
+            // Check if it's an application bundle
+            let isApp = url.pathExtension.lowercased() == "app" || isDirectory.boolValue
+
+            guard isApp else {
+                appIcon = nil
+                isValidApp = false
+                return
+            }
+
+            // Try to load the app icon
+            let workspace = NSWorkspace.shared
+            let icon = workspace.icon(forFile: appPath)
+
+            // Resize icon to consistent size
+            let resizedIcon = NSImage(size: NSSize(width: 20, height: 20))
+            resizedIcon.lockFocus()
+            icon.draw(in: NSRect(x: 0, y: 0, width: 20, height: 20))
+            resizedIcon.unlockFocus()
+
+            appIcon = resizedIcon
+            isValidApp = true
+        }
     }
 
     private func selectGitClientApp() {
@@ -141,6 +217,7 @@ struct GeneralSettingsView: View {
 
         if openPanel.runModal() == .OK, let url = openPanel.url {
             gitClientApp = url.path
+            loadAppIcon(for: url.path)
         }
     }
 }
