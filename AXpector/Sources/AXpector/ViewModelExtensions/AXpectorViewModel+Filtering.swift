@@ -49,11 +49,10 @@ extension AXpectorViewModel {
         if !criteria
             .isEmpty
         {
-            axDebugLog(
-                "Parsed criteria: \(criteria.map {
-                    "(\($0.isNegated ? "NOT " : "")\($0.key): \($0.isRegex ? "regex: " : "")\($0.value)"
-                })"
-            )
+            let criteriaDescription = criteria.map {
+                "(\($0.isNegated ? "NOT " : "")\($0.key): \($0.isRegex ? "regex: " : "")\($0.value))"
+            }.joined(separator: ", ")
+            axDebugLog("Parsed criteria: \(criteriaDescription)")
         }
         if !generalTerms
             .isEmpty
