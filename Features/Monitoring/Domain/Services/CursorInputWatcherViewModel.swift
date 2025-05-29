@@ -109,6 +109,12 @@ class CursorInputWatcherViewModel: ObservableObject {
             logger.info("✅ Successfully injected hook for window: \(windowId)")
             windowInjectionStates[windowId] = .hooked
             
+            // Register the window port with HeartbeatMonitor
+            if let port = jsHookManager.getPort(for: windowId) {
+                heartbeatMonitor.registerWindowPort(windowId, port: port)
+                logger.debug("Registered window \(windowId) with heartbeat monitor on port \(port)")
+            }
+            
             // Force UI update by triggering objectWillChange
             Task { @MainActor in
                 self.objectWillChange.send()
@@ -133,7 +139,12 @@ class CursorInputWatcherViewModel: ObservableObject {
     }
 
     func getPort(for windowId: String) -> UInt16? {
-        portManager.getPort(for: windowId)
+        // First check if we have a hook with a port from ConnectionManager
+        if let port = jsHookManager.getPort(for: windowId) {
+            return port
+        }
+        // Fallback to old port manager (for backward compatibility)
+        return portManager.getPort(for: windowId)
     }
 
     // MARK: - Query Management
@@ -197,6 +208,10 @@ class CursorInputWatcherViewModel: ObservableObject {
                 // Clean up injection states for removed windows
                 for removedId in removedWindowIds {
                     self.windowInjectionStates.removeValue(forKey: removedId)
+                    // Unregister port from heartbeat monitor
+                    if let port = self.getPort(for: removedId) {
+                        self.heartbeatMonitor.unregisterWindowPort(port)
+                    }
                 }
 
                 // Handle new windows with fast probing
@@ -259,8 +274,13 @@ class CursorInputWatcherViewModel: ObservableObject {
     private func updateHookStatuses() {
         for window in cursorWindows {
             if jsHookManager.isWindowHooked(window.id) {
-                let port = portManager.getPort(for: window.id) ?? 0
+                let port = getPort(for: window.id) ?? 0
                 watchedInputs[0].lastValue = "✅ Hooked (Port: \(port))"
+                
+                // Register the window port with HeartbeatMonitor if not already registered
+                if port > 0 {
+                    heartbeatMonitor.registerWindowPort(window.id, port: port)
+                }
                 
                 // Update injection state to reflect current hook status
                 if case .hooked = windowInjectionStates[window.id] {
