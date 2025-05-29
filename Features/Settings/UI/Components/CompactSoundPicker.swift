@@ -143,7 +143,8 @@ private struct SoundOptionRow: View {
                 }
                 
                 Button(action: {
-                    SoundEngine.playSystemSound(named: sound.identifier)
+                    // Preview sound playback
+                    NSSound(named: sound.identifier)?.play()
                 }) {
                     Image(systemName: "play.circle")
                         .font(.caption)
