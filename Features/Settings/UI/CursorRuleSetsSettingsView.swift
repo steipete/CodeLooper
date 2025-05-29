@@ -121,7 +121,8 @@ private extension CursorRuleSetsSettingsView {
                 description: "It automatically presses resume. Note: By default, we stop the agent after 25 tool calls.",
                 trigger: .generationTimeout,
                 action: .clickResumeButton,
-                technicalDetails: "Monitors tool call count and automatically intervenes when the limit is reached to prevent infinite loops."
+                technicalDetails: "Monitors tool call count and automatically intervenes when the limit is reached " +
+                    "to prevent infinite loops."
             ),
             InterventionRule(
                 id: UUID(),

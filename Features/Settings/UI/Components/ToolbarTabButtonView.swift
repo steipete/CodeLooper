@@ -11,7 +11,7 @@ struct ToolbarTabButtonView: View {
     var body: some View {
         Button(action: {
             selectedTab.send(tab)
-        }) {
+        }, label: {
             VStack(spacing: 2) {
                 Image(systemName: tab.icon)
                     .font(.system(size: 16, weight: .medium))
@@ -36,7 +36,7 @@ struct ToolbarTabButtonView: View {
                     .fill(Color.clear)
                     .contentShape(Rectangle())
             )
-        }
+        })
         .buttonStyle(.plain)
         .opacity(isWindowKey ? 1.0 : 0.6)
         .onHover { hovering in

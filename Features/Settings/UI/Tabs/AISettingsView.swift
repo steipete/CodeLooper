@@ -122,7 +122,8 @@ struct AISettingsView: View {
             DSSettingsSection("AI Analysis") {
                 VStack(alignment: .leading, spacing: Spacing.medium) {
                     Text(
-                        "The AI service will be used to analyze screenshots of Cursor windows and provide insights about what the application is currently doing."
+                        "The AI service will be used to analyze screenshots of Cursor windows and provide insights " +
+                            "about what the application is currently doing."
                     )
                     .font(Typography.caption1())
                     .foregroundColor(ColorPalette.textSecondary)
@@ -184,9 +185,9 @@ struct AISettingsView: View {
                             }
                     }
 
-                    Button(action: { showAPIKey.toggle() }) {
+                    Button(action: { showAPIKey.toggle() }, label: {
                         Image(systemName: showAPIKey ? "eye.slash" : "eye")
-                    }
+                    })
                     .buttonStyle(.borderless)
                 }
             }

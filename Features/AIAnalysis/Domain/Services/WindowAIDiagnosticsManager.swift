@@ -315,6 +315,7 @@ class WindowAIDiagnosticsManager: ObservableObject, Loggable {
         objectWillChange.send()
     }
 
+    // swiftlint:disable:next function_body_length
     private func performAIAnalysis(for windowId: String) async {
         guard Defaults[.isGlobalMonitoringEnabled] else {
             logger.info("Global monitoring disabled, AI Analysis skipped for window \(windowId).")
@@ -367,15 +368,15 @@ class WindowAIDiagnosticsManager: ObservableObject, Loggable {
                     let content = try await SCShareableContent.excludingDesktopWindows(false, onScreenWindowsOnly: true)
                     targetSCWindow = content.windows.first { $0.windowID == cgWindowID }
                     if targetSCWindow == nil {
-                        logger
-                            .warning(
-                                "Could not find SCWindow matching CGWindowID \(cgWindowID) for window '\(windowInfo.windowTitle ?? windowId)'. Will attempt capture of first Cursor window."
-                            )
+                        logger.warning(
+                            "Could not find SCWindow matching CGWindowID \(cgWindowID) for window " +
+                            "'\(windowInfo.windowTitle ?? windowId)'. Will attempt capture of first Cursor window."
+                        )
                     } else {
-                        logger
-                            .info(
-                                "Successfully found SCWindow with ID \(cgWindowID) for targeted analysis of window '\(windowInfo.windowTitle ?? windowId)'."
-                            )
+                        logger.info(
+                            "Successfully found SCWindow with ID \(cgWindowID) for targeted analysis of window " +
+                            "'\(windowInfo.windowTitle ?? windowId)'."
+                        )
                     }
                 } catch {
                     ErrorHandlingUtility.handleAndLog(
@@ -385,16 +386,16 @@ class WindowAIDiagnosticsManager: ObservableObject, Loggable {
                     )
                 }
             } else {
-                logger
-                    .warning(
-                        "Could not retrieve kAXWindowIDAttribute for window '\(windowInfo.windowTitle ?? windowId)'. Will attempt capture of first Cursor window."
-                    )
+                logger.warning(
+                    "Could not retrieve kAXWindowIDAttribute for window '\(windowInfo.windowTitle ?? windowId)'. " +
+                    "Will attempt capture of first Cursor window."
+                )
             }
         } else {
-            logger
-                .warning(
-                    "No AXElement available for window '\(windowInfo.windowTitle ?? windowId)' to get specific CGWindowID. Will attempt capture of first Cursor window."
-                )
+            logger.warning(
+                "No AXElement available for window '\(windowInfo.windowTitle ?? windowId)' to get specific CGWindowID. " +
+                "Will attempt capture of first Cursor window."
+            )
         }
 
         // Capture screenshot first to check if it has changed

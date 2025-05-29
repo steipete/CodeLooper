@@ -19,7 +19,8 @@ struct CursorSupervisionSettingsView: View {
                 DSToggle(
                     "Enable Cursor Supervision",
                     isOn: $isGlobalMonitoringEnabled,
-                    description: "Master switch to enable/disable all CodeLooper supervision features for Cursor, including JS hooks and AI diagnostics.",
+                    description: "Master switch to enable/disable all CodeLooper supervision features for Cursor, " +
+                        "including JS hooks and AI diagnostics.",
                     descriptionLineSpacing: 4
                 )
                 .onChange(of: isGlobalMonitoringEnabled) { _, newValue in

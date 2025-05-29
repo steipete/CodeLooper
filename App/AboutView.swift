@@ -63,7 +63,8 @@ struct AboutView: View {
             }
 
             Text(
-                "CodeLooper keeps your Cursor AI sessions running smoothly by automatically detecting and resolving connection issues, stuck states, and other common problems."
+                "CodeLooper keeps your Cursor AI sessions running smoothly by automatically detecting and " +
+                    "resolving connection issues, stuck states, and other common problems."
             )
             .font(.footnote)
             .foregroundColor(.gray)

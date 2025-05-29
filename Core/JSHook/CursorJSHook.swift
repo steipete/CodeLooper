@@ -268,7 +268,7 @@ public final class CursorJSHook {
         let script = buildWindowPreparationScript()
         executeWindowPreparationScript(script, logger: logger)
     }
-    
+
     private func buildWindowPreparationScript() -> String {
         let windowTarget = if let targetTitle = targetWindowTitle {
             "(first window whose name is \"\(targetTitle)\")"
@@ -313,23 +313,23 @@ public final class CursorJSHook {
         end tell
         """
     }
-    
+
     private func buildDevToolsToggleScript(isConsoleOpen: Bool) -> String {
         if !isConsoleOpen {
-            return """
+            """
                 # Use menu bar to open developer tools
                 # Access Help menu and click Toggle Developer Tools
                 click menu item "Toggle Developer Tools" of menu 1 of menu bar item "Help" of menu bar 1
                 delay 3.0
             """
         } else {
-            return """
+            """
                 # Dev console already open, skipping toggle
                 delay 0.5
             """
         }
     }
-    
+
     private func executeWindowPreparationScript(_ script: String, logger: Logger) {
         logger.info("🚀 Executing window preparation AppleScript...")
 

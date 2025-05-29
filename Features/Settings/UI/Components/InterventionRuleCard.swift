@@ -81,11 +81,11 @@ struct InterventionRuleCard: View {
                         if isHovered {
                             Button(action: {
                                 showPopover = true
-                            }) {
+                            }, label: {
                                 Image(systemName: "info.circle")
                                     .foregroundColor(ColorPalette.textSecondary)
                                     .frame(width: 20, height: 20)
-                            }
+                            })
                             .buttonStyle(.plain)
                             .popover(isPresented: $showPopover) {
                                 RuleInfoPopover(rule: rule)

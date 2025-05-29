@@ -292,6 +292,7 @@ private struct WindowRow: View {
     }
 
     @ViewBuilder
+    // swiftlint:disable:next function_body_length
     private func gitRepositoryInfo(_ gitRepo: GitRepository) -> some View {
         let repoPathExists = diagnosticsManager.documentPathExists(gitRepo.path)
 

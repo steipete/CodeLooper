@@ -115,7 +115,7 @@ public enum AIErrorMapper {
         switch nsError.domain {
         case NSURLErrorDomain:
             // Convert NSError to URLError and map
-            let urlError = URLError(URLError.Code(rawValue: nsError.code) ?? .unknown)
+            let urlError = URLError(URLError.Code(rawValue: nsError.code) ?? URLError.Code.unknown)
             return mapURLError(urlError)
 
         case "NSPOSIXErrorDomain":

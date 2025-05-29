@@ -89,7 +89,8 @@ struct ExternalMCPsSettingsView: View {
             id: UUID(),
             name: "🧠 Claude Code",
             version: "1.0.0",
-            description: "A buddy for your IDE that your agent can ask if he's stuck. Can do coding task and offer \"a pair of fresh eyes\" that often un-stucks the loop",
+            description: "A buddy for your IDE that your agent can ask if he's stuck. Can do coding task and offer " +
+                "\"a pair of fresh eyes\" that often un-stucks the loop",
             enabled: true,
             icon: "brain",
             githubURL: "https://github.com/steipete/claude-code-mcp"

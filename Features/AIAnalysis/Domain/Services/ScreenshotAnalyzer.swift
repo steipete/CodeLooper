@@ -174,7 +174,8 @@ public extension CursorScreenshotAnalyzer {
             Your task is to determine if the AI is currently "Generating" content.
 
             1.  Scan the **entire image** carefully.
-            2.  Look for the exact word **"Generating"** (case-insensitive). This word might be followed by ellipses (e.g., "Generating..."). It can appear anywhere in a chat or output section.
+            2.  Look for the exact word **"Generating"** (case-insensitive). This word might be followed by ellipses \\
+                (e.g., "Generating..."). It can appear anywhere in a chat or output section.
             3.  Based on your finding:
                 *   If "Generating" (or "Generating...") is present, respond with the following JSON object:
                     `{"status": "working", "reason": "AI is actively generating content."}`
@@ -182,8 +183,10 @@ public extension CursorScreenshotAnalyzer {
                     `{"status": "not_working", "reason": "Not currently generating content."}`
             4.  **Important Rules:**
                 *   Your entire response must be **only** the single JSON object specified above.
-                *   Ignore all other elements in the screenshot (code, other sidebars, buttons, icons, timestamps, etc.). Your focus is solely on the "Generating" status.
-                *   If you are uncertain whether "Generating" is present, default to "not_working". A false negative is preferred over a false positive.
+                *   Ignore all other elements in the screenshot (code, other sidebars, buttons, icons, \\
+                    timestamps, etc.). Your focus is solely on the "Generating" status.
+                *   If you are uncertain whether "Generating" is present, default to "not_working". \\
+                    A false negative is preferred over a false positive.
             """
         
         public static let codeEditing = "Is the user actively editing code in this screenshot? Answer yes or no."

@@ -19,19 +19,19 @@ extension Color {
         // This is a simplified conversion just returning system colors
         switch self {
         case .green:
-            return NSColor.systemGreen
+            NSColor.systemGreen
         case .red:
-            return NSColor.systemRed
+            NSColor.systemRed
         case .blue:
-            return NSColor.systemBlue
+            NSColor.systemBlue
         case .orange:
-            return NSColor.systemOrange
+            NSColor.systemOrange
         case .primary:
-            return NSColor.labelColor
+            NSColor.labelColor
         case .secondary:
-            return NSColor.secondaryLabelColor
+            NSColor.secondaryLabelColor
         default:
-            return NSColor.controlAccentColor
+            NSColor.controlAccentColor
         }
     }
 }

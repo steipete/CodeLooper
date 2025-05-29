@@ -35,7 +35,7 @@ struct ApplicationPickerView: View {
                 ForEach(viewModel.runningApplications, id: \.processIdentifier) { app in
                     Button(action: {
                         viewModel.selectedApplicationPID = app.processIdentifier
-                    }) {
+                    }, label: {
                         HStack {
                             if let icon = app.icon {
                                 Image(nsImage: icon)
@@ -47,7 +47,7 @@ struct ApplicationPickerView: View {
                                 Image(systemName: "checkmark")
                             }
                         }
-                    }
+                    })
                 }
             } label: {
                 HStack(spacing: Spacing.xSmall) {

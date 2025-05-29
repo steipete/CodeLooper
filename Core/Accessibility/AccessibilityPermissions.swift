@@ -300,7 +300,7 @@ public final class PermissionsManager: ObservableObject, Loggable {
     private func showPermissionDeniedAlert() {
         let alert = NSAlert()
         alert.messageText = "Notification Permission Denied"
-        alert.informativeText = 
+        alert.informativeText =
             "You denied notification permissions. CodeLooper uses notifications to inform you about " +
             "automation events and important updates."
         alert.alertStyle = .warning

@@ -9,6 +9,7 @@ public enum WindowTextExtractor {
     public enum ExtractionError: Error, LocalizedError {
         case noFrontmostApp
         case noFrontWindow
+        case invalidWindowElement
         case accessibilityError(String)
 
         // MARK: Public
@@ -19,6 +20,8 @@ public enum WindowTextExtractor {
                 "No frontmost application found"
             case .noFrontWindow:
                 "No front window found"
+            case .invalidWindowElement:
+                "Invalid window element type"
             case let .accessibilityError(message):
                 "Accessibility error: \(message)"
             }
@@ -51,8 +54,11 @@ public enum WindowTextExtractor {
             throw ExtractionError.noFrontWindow
         }
 
-        // Extract text from window  
-        let windowElement = window as! AXUIElement
+        // Extract text from window
+        guard CFGetTypeID(window) == AXUIElementGetTypeID() else {
+            throw ExtractionError.invalidWindowElement
+        }
+        let windowElement = unsafeBitCast(window, to: AXUIElement.self)
         return extractTextFromElement(windowElement)
     }
 
@@ -86,8 +92,11 @@ public enum WindowTextExtractor {
             throw ExtractionError.noFrontWindow
         }
 
-        // Extract text from window  
-        let windowElement = window as! AXUIElement
+        // Extract text from window
+        guard CFGetTypeID(window) == AXUIElementGetTypeID() else {
+            throw ExtractionError.invalidWindowElement
+        }
+        let windowElement = unsafeBitCast(window, to: AXUIElement.self)
         return extractTextFromElement(windowElement)
     }
 

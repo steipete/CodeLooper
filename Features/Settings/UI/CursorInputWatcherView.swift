@@ -112,9 +112,9 @@ private struct WindowRow: View {
                 if Defaults[.showDebugTab] {
                     Button(action: {
                         showDebugPopover = true
-                    }) {
+                    }, label: {
                         Image(systemName: "ladybug")
-                    }
+                    })
                     .buttonStyle(.borderless)
                     .controlSize(.small)
                     .help("Debug JavaScript Functions")
@@ -161,7 +161,7 @@ private struct WindowRow: View {
                         Task {
                             await viewModel.injectJSHook(into: window)
                         }
-                    }) {
+                    }, label: {
                         switch injectionState {
                         case .idle:
                             Text("Inject JS")
@@ -170,7 +170,7 @@ private struct WindowRow: View {
                         default:
                             Text("Working...")
                         }
-                    }
+                    })
                     .buttonStyle(.bordered)
                     .controlSize(.small)
                     .disabled(injectionState.isWorking)
