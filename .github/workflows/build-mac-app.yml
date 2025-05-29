@@ -181,13 +181,18 @@ jobs:
           tuist --help | head -5
 
       - name: Generate Xcode project with Tuist
+        env:
+          TOOLCHAINS: swift
         run: |
+          # Ensure xcodebuild uses Swift 6.0 toolchain
+          export TOOLCHAINS=swift
           ./scripts/generate-xcproj.sh
 
       - name: Build, Sign, and Optionally Notarize macOS App
         id: build_sign_notarize_step
         continue-on-error: true
         env:
+          TOOLCHAINS: swift
           MACOS_SIGNING_P12_FILE_PATH: ${{ steps.prepare_p12_cert.outputs.p12_file_path }}
           MACOS_SIGNING_CERTIFICATE_PASSWORD: ${{ secrets.MACOS_SIGNING_CERTIFICATE_PASSWORD }}
           APP_STORE_CONNECT_P8_FILE_PATH: ${{ steps.prepare_p8_key.outputs.p8_file_path }}
@@ -197,12 +202,14 @@ jobs:
         run: |
           echo "Starting Xcode-based build, sign, optional notarization, and DMG creation..."
           
-          # Build with xcodebuild instead of SPM
-          echo "Building with Xcode..."
+          # Build with xcodebuild instead of SPM  
+          echo "Building with Xcode using Swift 6.0 toolchain..."
+          export TOOLCHAINS=swift
           xcodebuild -workspace CodeLooper.xcworkspace \
             -scheme CodeLooper \
             -configuration Release \
             -destination "generic/platform=macOS" \
+            SWIFT_VERSION=6.0 \
             build
           
           # Find the built app
