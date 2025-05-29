@@ -310,11 +310,16 @@ public final class PermissionsManager: ObservableObject {
     @MainActor
     private func showPermissionErrorAlert(error: Error) {
         let alert = NSAlert()
-        alert.messageText = "Permission Request Failed"
-        alert.informativeText = "Failed to request notification permissions: \(error.localizedDescription)"
-        alert.alertStyle = .critical
-        alert.addButton(withTitle: "OK")
-        alert.runModal()
+        alert.messageText = "Notification Permission Request Failed"
+        alert.informativeText = "Notifications are not allowed for this application. You can enable them in System Settings."
+        alert.alertStyle = .warning
+        alert.addButton(withTitle: "Open System Settings")
+        alert.addButton(withTitle: "Skip")
+        
+        let response = alert.runModal()
+        if response == .alertFirstButtonReturn {
+            openNotificationSettings()
+        }
     }
     
     @MainActor
