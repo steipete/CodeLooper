@@ -27,6 +27,7 @@ let project = Project(
         .remote(url: "https://github.com/MacPaw/OpenAI", requirement: .upToNextMajor(from: "0.3.0")),
         .remote(url: "https://github.com/loopwork-ai/ollama-swift", requirement: .upToNextMajor(from: "1.0.0")),
         .remote(url: "https://github.com/airbnb/lottie-ios", requirement: .upToNextMajor(from: "4.5.0")),
+        .remote(url: "https://github.com/apple/swift-testing.git", requirement: .upToNextMajor(from: "0.8.0")),
         .local(path: "AXorcist"),
         .local(path: "AXpector"),
         .local(path: "DesignSystem"),
@@ -139,13 +140,45 @@ let project = Project(
                 ]
             )
         ),
+        .target(
+            name: "CodeLooperTests",
+            destinations: [.mac],
+            product: .unitTests,
+            bundleId: "me.steipete.codelooper.tests",
+            deploymentTargets: .macOS("14.0"),
+            sources: ["Tests/**"],
+            resources: [
+                "Tests/Resources/**",
+            ],
+            dependencies: [
+                .target(name: "CodeLooper"),
+                .target(name: "Diagnostics"),
+                .package(product: "Testing"),
+            ],
+            settings: .settings(
+                base: [
+                    "SWIFT_VERSION": "6.0",
+                    "MACOSX_DEPLOYMENT_TARGET": "14.0",
+                    "OTHER_SWIFT_FLAGS": "-strict-concurrency=complete",
+                    "ENABLE_STRICT_CONCURRENCY_CHECKS": "YES",
+                    "ENABLE_TESTING": "YES",
+                ]
+            )
+        ),
     ],
     schemes: [
         .scheme(
             name: "CodeLooper",
             shared: true,
             buildAction: .buildAction(targets: ["CodeLooper"]),
-            testAction: nil,
+            testAction: TestAction.targets(
+                ["CodeLooperTests"],
+                configuration: "Debug",
+                options: TestActionOptions.options(
+                    coverage: true,
+                    codeCoverageTargets: ["CodeLooper"]
+                )
+            ),
             runAction: .runAction(executable: "CodeLooper"),
             archiveAction: .archiveAction(configuration: "Release"),
             profileAction: .profileAction(configuration: "Release", executable: "CodeLooper"),
