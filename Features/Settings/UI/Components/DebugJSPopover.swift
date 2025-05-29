@@ -48,12 +48,16 @@ struct DebugJSPopover: View {
                     await executeCommand(["type": "getActiveElement"])
                 }
 
-                DebugButton("Check Resume", "play.circle") {
-                    await executeCommand(["type": "checkResumeNeeded"])
+                DebugButton("Check Rule Needed", "play.circle") {
+                    await executeCommand(["type": "checkRuleNeeded"])
                 }
 
                 DebugButton("Click Resume", "play.fill") {
                     await executeCommand(["type": "clickResume"])
+                }
+
+                DebugButton("Perform Rule", "gearshape.fill") {
+                    await executeCommand(["type": "performRule"])
                 }
 
                 DebugButton("Start Composer Observer", "eye") {
