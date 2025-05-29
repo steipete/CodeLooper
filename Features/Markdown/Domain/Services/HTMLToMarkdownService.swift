@@ -175,14 +175,36 @@ actor HTMLToMarkdownService {
     }
 
     private func loadLibrariesAndPrepareInstances(in context: JSContext) {
-        // Load linkedom first for DOM support
-        guard let linkedomPath = Bundle.main.path(forResource: "linkedom.min", ofType: "js") else {
-            logger.error("Failed to find linkedom.min.js in bundle")
+        // Try to find the JavaScript files in multiple possible bundles
+        let possibleBundles = [
+            Bundle.main,
+            Bundle(for: HTMLToMarkdownService.self),
+            Bundle.module,
+        ].compactMap { $0 }
+        
+        var linkedomPath: String?
+        var turndownPath: String?
+        
+        // Try each bundle to find the JavaScript files
+        for bundle in possibleBundles {
+            if linkedomPath == nil {
+                linkedomPath = bundle.path(forResource: "linkedom.min", ofType: "js")
+            }
+            if turndownPath == nil {
+                turndownPath = bundle.path(forResource: "turndown.min", ofType: "js")
+            }
+            if linkedomPath != nil && turndownPath != nil {
+                break
+            }
+        }
+        
+        guard let linkedomPath = linkedomPath else {
+            logger.error("Failed to find linkedom.min.js in any bundle")
             return
         }
 
-        guard let turndownPath = Bundle.main.path(forResource: "turndown.min", ofType: "js") else {
-            logger.error("Failed to find turndown.min.js in bundle")
+        guard let turndownPath = turndownPath else {
+            logger.error("Failed to find turndown.min.js in any bundle")
             return
         }
 
