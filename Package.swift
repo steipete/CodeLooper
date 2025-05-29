@@ -1,4 +1,4 @@
-// swift-tools-version:5.10
+// swift-tools-version:6.0
 import PackageDescription
 
 let package = Package(
@@ -70,8 +70,18 @@ let package = Package(
             exclude: ["Core/Diagnostics"],
             sources: ["App", "Core", "Features"],
             swiftSettings: [
-                // Enable experimental strict concurrency checking for compatibility
-                .enableExperimentalFeature("StrictConcurrency"),
+                // Using complete concurrency checking for Swift 6 compatibility.
+                // Ensure that all code complies with Swift 6 concurrency rules, including:
+                // - Proper use of actors, async/await, and other concurrency primitives.
+                // - Avoiding data races and unsynchronized access to shared mutable state.
+                // - Updating dependencies to their latest versions for compatibility.
+                .unsafeFlags(["-strict-concurrency=complete"]),
+
+                // Extra runtime checking in Debug builds only
+                .unsafeFlags([
+                    "-warn-concurrency",
+                    "-enable-actor-data-race-checks",
+                ], .when(configuration: .debug)),
             ]
         ),
         .testTarget(
