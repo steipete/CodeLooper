@@ -25,6 +25,12 @@ public struct CursorAnalysisView: View {
 
             if let analysis = analyzer.lastAnalysis {
                 analysisResultView(analysis)
+                
+                DSButton("Clear", style: .secondary) {
+                    analyzer.lastAnalysis = nil
+                    analyzer.lastError = nil
+                }
+                .padding(.top, Spacing.small)
             }
 
             Spacer()
@@ -91,12 +97,14 @@ public struct CursorAnalysisView: View {
             HStack {
                 Text("🏢")
                     .font(Typography.caption1())
+                    .grayscale(1.0)
                 Text("Provider: \(aiProvider.displayName)")
                     .font(Typography.caption1())
                     .foregroundColor(ColorPalette.textSecondary)
 
                 Text("🧠")
                     .font(Typography.caption1())
+                    .grayscale(1.0)
                 Text("Model: \(aiModel.displayName)")
                     .font(Typography.caption1())
                     .foregroundColor(ColorPalette.textSecondary)
@@ -144,11 +152,6 @@ public struct CursorAnalysisView: View {
                 .tint(.blue)
                 .disabled(analyzer.isAnalyzing || (selectedPromptType == .custom && customPrompt.isEmpty))
 
-                DSButton("Clear", style: .secondary) {
-                    analyzer.lastAnalysis = nil
-                    analyzer.lastError = nil
-                }
-                .disabled(analyzer.lastAnalysis == nil && analyzer.lastError == nil)
             }
 
             if selectedPromptType == .custom {

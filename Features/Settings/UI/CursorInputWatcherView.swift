@@ -38,10 +38,6 @@ struct CursorInputWatcherView: View {
                     Defaults[.isGlobalMonitoringEnabled] = newValue
                 }
             ))
-
-            Text(viewModel.statusMessage)
-                .font(.caption)
-                .foregroundColor(.secondary)
         }
     }
 
