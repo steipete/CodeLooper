@@ -50,7 +50,7 @@ concurrency:
 jobs:
   build_and_process_mac_app:
     name: Build, Sign & Optionally Notarize macOS CodeLooper App
-    runs-on: ghcr.io/cirruslabs/macos-runner:sequoia
+    runs-on: ghcr.io/cirruslabs/macos-runner:sequoia-xxl
     timeout-minutes: 60
 
     outputs:
