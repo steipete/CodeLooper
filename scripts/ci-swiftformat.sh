@@ -53,8 +53,8 @@ if [ ! -x "/opt/homebrew/bin/swiftformat" ]; then
     echo "" >> "$FORMAT_SUMMARY_FILE"
     echo "Using Homebrew version significantly improves build times." >> "$FORMAT_SUMMARY_FILE"
     
-    # Exit with success to allow CI to continue
-    exit 0
+    # Exit with error since SwiftFormat is not available
+    exit 1
 fi
 
 log "Running SwiftFormat and generating CI compatible output..."
@@ -115,3 +115,12 @@ if [ ! -f "$FORMAT_SUMMARY_FILE" ]; then
 fi
 
 log "SwiftFormat summary generated at: $FORMAT_SUMMARY_FILE"
+
+# Exit with appropriate code based on SwiftFormat results
+if [ "${FORMAT_EXIT_CODE:-0}" -ne 0 ]; then
+    log "SwiftFormat found formatting issues (exit code: $FORMAT_EXIT_CODE)"
+    exit "$FORMAT_EXIT_CODE"
+else
+    log "SwiftFormat completed successfully"
+    exit 0
+fi

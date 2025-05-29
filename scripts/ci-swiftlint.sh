@@ -68,8 +68,8 @@ if [ ! -x "/opt/homebrew/bin/swiftlint" ]; then
     echo "" >> "$LINT_SUMMARY_FILE"
     echo "Using Homebrew version significantly improves build times." >> "$LINT_SUMMARY_FILE"
     
-    # Exit with success to allow CI to continue
-    exit 0
+    # Exit with error since SwiftLint is not available
+    exit 1
 fi
 
 log "Running SwiftLint and generating CI compatible output..."
@@ -167,3 +167,12 @@ if [ ! -f "$LINT_SUMMARY_FILE" ]; then
 fi
 
 log "SwiftLint summary generated at: $LINT_SUMMARY_FILE"
+
+# Exit with appropriate code based on SwiftLint results
+if [ "${LINT_EXIT_CODE:-0}" -ne 0 ]; then
+    log "SwiftLint found issues (exit code: $LINT_EXIT_CODE)"
+    exit "$LINT_EXIT_CODE"
+else
+    log "SwiftLint completed successfully"
+    exit 0
+fi
