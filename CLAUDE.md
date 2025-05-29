@@ -6,6 +6,10 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 CodeLooper is a macOS menubar application that monitors Cursor IDE instances and automatically handles stuck states, connection errors, and other interruptions to maintain productive AI-assisted coding sessions. The project uses Swift 6 with strict concurrency checking, SwiftUI/AppKit hybrid architecture, and integrates with the AXorcist accessibility framework for UI automation.
 
+- This project uses Swift 6 with strict concurrency.
+- It supports macOS 15+.
+- Refactor properly, do not care about backwards compatibility.
+
 ## Essential Commands
 
 ### Building and Running
