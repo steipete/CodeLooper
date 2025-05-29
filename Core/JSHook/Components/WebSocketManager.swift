@@ -59,7 +59,7 @@ final class WebSocketManager {
         logger.info("🌀 Listening on ws://127.0.0.1:\(port) - ready for connections")
     }
 
-    func waitForHandshake(timeout: TimeInterval = 10) async throws {
+    func waitForHandshake(timeout: TimeInterval = 120) async throws {
         let logger = Logger(category: .jshook)
         logger.info("⏳ Waiting for browser to connect...")
 
