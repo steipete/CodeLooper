@@ -2,6 +2,17 @@ import Diagnostics
 import Foundation
 import JavaScriptCore
 
+/// Service for converting HTML content to Markdown format using JavaScript.
+///
+/// HTMLToMarkdownService provides:
+/// - Asynchronous HTML to Markdown conversion
+/// - JavaScript-based conversion engine
+/// - Thread-safe operation through actor isolation
+/// - Lazy initialization for performance
+///
+/// The service uses a JavaScript library loaded from resources to perform
+/// the conversion, providing accurate HTML to Markdown transformation
+/// for displaying formatted content in the UI.
 actor HTMLToMarkdownService {
     // MARK: Lifecycle
 

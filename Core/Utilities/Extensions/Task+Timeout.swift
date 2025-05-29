@@ -43,7 +43,12 @@ extension Task where Success == Never, Failure == Never {
     }
 }
 
-/// Error thrown when a task times out
+/// Error thrown when a task exceeds its allotted execution time.
+///
+/// TimeoutError provides:
+/// - The timeout duration that was exceeded
+/// - User-friendly error message for display
+/// - Sendable compliance for safe concurrent usage
 struct TimeoutError: Error, LocalizedError, Sendable {
     let seconds: TimeInterval
 
