@@ -9,6 +9,17 @@ import Foundation
 
 // MARK: - LocatorManager
 
+/// Manages accessibility element locators for finding UI elements in Cursor IDE.
+///
+/// LocatorManager provides:
+/// - Centralized management of element locators (selectors) for different UI components
+/// - Dynamic discovery of locators when defaults fail
+/// - Persistence of discovered locators for future use
+/// - Thread-safe access to locator configurations
+///
+/// The manager maintains both default locators and dynamically discovered ones,
+/// automatically falling back to discovery when elements cannot be found with
+/// existing locators. This ensures robustness against Cursor UI changes.
 @MainActor // Changed from actor to @MainActor class
 public class LocatorManager {
     // MARK: Lifecycle

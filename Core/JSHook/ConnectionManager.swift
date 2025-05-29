@@ -129,6 +129,12 @@ final class ConnectionManager {
 
 // MARK: - Errors
 
+/// Errors that can occur during JavaScript hook connection management.
+///
+/// ConnectionError represents failures in:
+/// - Port allocation and availability
+/// - Connection state management
+/// - Resource contention scenarios
 enum ConnectionError: Error, LocalizedError {
     case noAvailablePorts
     case probingInProgress

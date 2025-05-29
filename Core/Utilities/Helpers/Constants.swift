@@ -3,7 +3,10 @@ import AppKit
 import Foundation
 import SwiftUI
 
-// Protocol for UI dimensions that can be implemented by any UI constant provider
+/// Protocol defining standard UI dimensions and constants for consistent application design.
+///
+/// UIConstantsProvider ensures all UI components use standardized dimensions,
+/// animation durations, and layout parameters for a cohesive user experience.
 public protocol UIConstantsProvider {
     /// Standard window size for settings
     static var settingsWindowSize: NSSize { get }
@@ -24,7 +27,18 @@ public protocol UIConstantsProvider {
     static var fastAnimationDuration: Double { get }
 }
 
-/// Constants provides central configuration for the application
+/// Central configuration hub for application-wide constants and settings.
+///
+/// Constants provides:
+/// - UI dimensions and layout parameters
+/// - External URLs and links
+/// - App metadata and identifiers
+/// - File paths and resources
+/// - Animation timings
+/// - Default configuration values
+///
+/// This enum serves as a single source of truth for all static configuration,
+/// making it easy to maintain consistency and update values across the app.
 public enum Constants: UIConstantsProvider {
     // MARK: - External Links & Info
 

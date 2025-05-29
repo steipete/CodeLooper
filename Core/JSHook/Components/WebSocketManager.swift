@@ -2,6 +2,18 @@ import Diagnostics
 import Foundation
 import Network
 
+/// Manages WebSocket connections for JavaScript hook communication with Cursor.
+///
+/// WebSocketManager provides:
+/// - WebSocket server functionality listening on a specified port
+/// - Bidirectional communication channel between CodeLooper and injected JavaScript
+/// - Message handling for commands and responses
+/// - Connection state management and heartbeat monitoring
+/// - Automatic reconnection handling
+///
+/// This is a core component of the JavaScript injection system, enabling
+/// real-time control and monitoring of Cursor's web-based UI through
+/// injected JavaScript code.
 @MainActor
 final class WebSocketManager {
     // MARK: Lifecycle

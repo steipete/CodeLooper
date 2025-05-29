@@ -6,6 +6,17 @@ import Diagnostics
 import Foundation
 import SwiftUI // For potential future UI-related models if necessary, but primarily for @MainActor
 
+/// Handles a single monitoring tick for a Cursor process, checking its state and triggering interventions.
+///
+/// This use case class encapsulates the logic for:
+/// - Checking if a Cursor process is still alive and responsive
+/// - Querying the current state through accessibility APIs
+/// - Detecting various error conditions and stuck states
+/// - Triggering appropriate interventions when issues are detected
+/// - Updating instance state and statistics
+///
+/// Each tick represents one monitoring cycle for a specific Cursor instance,
+/// designed to be executed periodically by the monitoring service.
 @MainActor
 class ProcessMonitoringTickUseCase {
     // MARK: Lifecycle

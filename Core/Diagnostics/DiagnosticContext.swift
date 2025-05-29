@@ -1,7 +1,16 @@
 import Foundation
 
-/// A Sendable-safe context structure for diagnostic operations
-/// This replaces dictionaries with type-safe Sendable context values
+/// Thread-safe context structure for capturing diagnostic information.
+///
+/// DiagnosticContext provides:
+/// - Type-safe storage of diagnostic metadata
+/// - Sendable compliance for concurrent access
+/// - Structured fields for common diagnostic scenarios
+/// - Default values instead of optionals for simpler usage
+///
+/// Use this struct to pass contextual information to logging and
+/// diagnostic functions in a thread-safe manner. All fields use
+/// non-optional types with sensible defaults to ensure Sendable compliance.
 struct DiagnosticContext: Sendable {
     // MARK: Internal
 

@@ -33,6 +33,18 @@ public func == (lhs: LogEntry, rhs: LogEntry) -> Bool {
     lhs.id == rhs.id
 }
 
+/// In-memory session logger that maintains a circular buffer of log entries for debugging and diagnostics.
+///
+/// SessionLogger provides:
+/// - Real-time log collection from various subsystems
+/// - Filterable log viewing in the debug interface
+/// - Process-specific log tracking for multi-instance scenarios
+/// - Memory-efficient circular buffer implementation
+/// - Integration with the debug settings view
+///
+/// The logger is designed for interactive debugging and troubleshooting,
+/// maintaining recent log entries in memory for quick access without
+/// the overhead of file-based logging.
 @MainActor // Ensure this class runs on the main thread as its @Published properties drive UI
 public final class SessionLogger: ObservableObject {
     // MARK: Lifecycle

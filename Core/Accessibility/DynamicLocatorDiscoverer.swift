@@ -2,6 +2,16 @@
 import Diagnostics
 import Foundation
 
+/// Dynamically discovers accessibility locators for UI elements when default locators fail.
+///
+/// This class implements a heuristic-based approach to finding UI elements in Cursor:
+/// - Maintains a collection of element-specific heuristics for different UI components
+/// - Attempts discovery using multiple strategies per element type
+/// - Returns the most appropriate locator when an element is found
+/// - Designed to adapt to UI changes in Cursor without code modifications
+///
+/// The discoverer is crucial for maintaining functionality when Cursor updates
+/// change the accessibility hierarchy or element properties.
 @MainActor
 class DynamicLocatorDiscoverer {
     // MARK: Lifecycle

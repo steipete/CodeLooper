@@ -1,7 +1,15 @@
 import Foundation
 
-/// LogCategory defines the different categories of logs in the application
-/// This provides a type-safe way to categorize logs
+/// Defines hierarchical log categories for organized diagnostic output.
+///
+/// LogCategory enables:
+/// - Structured logging with semantic categorization
+/// - Filtering logs by functional area
+/// - Consistent log organization across the codebase
+/// - Easy identification of log sources
+///
+/// Categories are organized by functional area (app lifecycle, core features,
+/// UI components, utilities) to make debugging and log analysis more efficient.
 public enum LogCategory: String, CaseIterable {
     // Application lifecycle and general app events
     case app = "App"

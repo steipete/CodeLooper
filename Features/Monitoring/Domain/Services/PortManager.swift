@@ -1,6 +1,19 @@
 import Diagnostics
 import Foundation
 
+/// Manages network port allocation for JavaScript hook WebSocket connections.
+///
+/// PortManager provides:
+/// - Dynamic port allocation for each Cursor window
+/// - Persistent port assignments across app restarts
+/// - Port availability checking to avoid conflicts
+/// - Cleanup of unused port assignments
+/// - Thread-safe port management operations
+///
+/// Each Cursor window gets a unique port for its WebSocket connection,
+/// enabling isolated communication channels for JavaScript injection.
+/// The manager ensures ports are reused for the same windows and 
+/// prevents port conflicts with other applications.
 @MainActor
 class PortManager {
     // MARK: Lifecycle

@@ -1,5 +1,15 @@
 import Foundation
 
+/// Configuration constants for the intervention system.
+///
+/// InterventionConstants centralizes all tunable parameters for:
+/// - Keyword detection for various states (working, error, stuck)
+/// - Timing thresholds for interventions
+/// - Rate limiting and cooldown periods
+/// - Maximum retry attempts
+///
+/// These constants are carefully tuned to balance between
+/// helpful interventions and avoiding disruption to user workflow.
 enum InterventionConstants {
     // MARK: - Keywords
 

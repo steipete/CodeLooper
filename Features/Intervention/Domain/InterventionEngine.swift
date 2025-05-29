@@ -7,6 +7,23 @@ import Diagnostics // Add this import
 import Foundation
 import SwiftUI // For ObservableObject
 
+/// Core engine that detects and resolves various stuck states in Cursor IDE.
+///
+/// The InterventionEngine is responsible for:
+/// - Monitoring Cursor instances for stuck states and errors
+/// - Detecting specific UI conditions that require intervention
+/// - Executing appropriate recovery strategies
+/// - Tracking intervention history and success rates
+/// - Coordinating with the monitoring system for state updates
+///
+/// It uses a heuristic-based approach with multiple detection strategies:
+/// - Connection errors and network issues
+/// - Stuck generation states
+/// - UI freezes and unresponsive states
+/// - Rate limiting and quota issues
+///
+/// The engine maintains a careful balance between being helpful and avoiding
+/// disruptive interventions, with configurable thresholds and cooldown periods.
 @MainActor
 public class CursorInterventionEngine: ObservableObject {
     // MARK: Lifecycle

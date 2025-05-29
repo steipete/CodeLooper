@@ -1,6 +1,16 @@
 import Foundation
 import SwiftUI
 
+/// Defines the available tabs in the settings window.
+///
+/// Each tab represents a distinct configuration area:
+/// - general: Basic app preferences and behavior
+/// - supervision: Cursor monitoring configuration
+/// - ruleSets: Intervention rule management
+/// - externalMCPs: Model Context Protocol integrations
+/// - ai: AI provider settings
+/// - advanced: Power user options
+/// - debug: Diagnostic tools and logs
 public enum SettingsTab: String, CaseIterable, Identifiable, Sendable {
     case general = "General"
     case supervision = "Supervision"

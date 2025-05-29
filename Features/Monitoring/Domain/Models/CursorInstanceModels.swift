@@ -1,6 +1,13 @@
 import AppKit // For NSRunningApplication
 import Foundation // For pid_t if not covered by AppKit
 
+/// Types of recovery actions that can be attempted on stuck Cursor instances.
+///
+/// Each recovery type represents a specific intervention strategy:
+/// - connection: Resume connection after network issues
+/// - stopGenerating: Stop stuck generation processes
+/// - stuck: General nudge for idle/stuck states
+/// - forceStop: Handle rate limiting situations
 public enum RecoveryType: String, CaseIterable, Codable, Sendable, Hashable {
     case connection // For connection issues (e.g., clicking "Resume")
     case stopGenerating // For clicking a "Stop Generating" button if Cursor is stuck generating
@@ -8,6 +15,17 @@ public enum RecoveryType: String, CaseIterable, Codable, Sendable, Hashable {
     case forceStop // For scenarios like "resume the conversation" after a loop limit
 }
 
+/// Represents the current operational status of a monitored Cursor instance.
+///
+/// CursorInstanceStatus tracks:
+/// - Working states with details about current activity
+/// - Idle and stuck conditions
+/// - Recovery attempts with type and count
+/// - Error states both recoverable and unrecoverable
+/// - Paused state when intervention limits are reached
+///
+/// The status is used to determine appropriate interventions and
+/// provide visual feedback to users about instance health.
 public enum CursorInstanceStatus: Equatable, Sendable, Hashable {
     case unknown
     case working(detail: String) // e.g., "Generating", "Recent Sidebar Activity"
@@ -84,7 +102,17 @@ public enum CursorInstanceStatus: Equatable, Sendable, Hashable {
 
 // MARK: - Instance Information (Spec 2.2 & 3.3.B)
 
-/// Holds information about a monitored Cursor instance.
+/// Complete information about a monitored Cursor instance including state and statistics.
+///
+/// CursorInstanceInfo captures:
+/// - Process identification (PID and window info)
+/// - Current operational status
+/// - Intervention history and counts
+/// - Timing information for state transitions
+/// - Window associations and identifiers
+///
+/// This struct serves as the primary data model for tracking
+/// individual Cursor instances throughout their lifecycle.
 public struct CursorInstanceInfo: Identifiable, Hashable {
     // MARK: Lifecycle
 

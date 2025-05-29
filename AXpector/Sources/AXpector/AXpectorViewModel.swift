@@ -19,6 +19,19 @@ enum AXpectorMode: String, CaseIterable, Identifiable {
     var id: String { self.rawValue }
 }
 
+/// View model for the AXpector accessibility inspector tool, managing UI state and element inspection.
+///
+/// AXpectorViewModel provides:
+/// - Real-time accessibility tree visualization
+/// - Element property inspection and editing
+/// - Focus tracking across applications
+/// - Element highlighting on screen
+/// - Filtering and search capabilities
+/// - Observation of accessibility notifications
+///
+/// The view model coordinates between the AXorcist framework and the UI,
+/// providing a developer-friendly interface for exploring and debugging
+/// accessibility hierarchies in macOS applications.
 @MainActor
 class AXpectorViewModel: ObservableObject {
     // MARK: Lifecycle

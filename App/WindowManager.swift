@@ -9,12 +9,24 @@ import Diagnostics
 import Foundation
 import SwiftUI
 
+/// Protocol for receiving window manager lifecycle events
 @MainActor
 protocol WindowManagerDelegate: AnyObject {
     func windowManagerDidFinishOnboarding()
     // Removed windowManagerRequestsAccessibilityPermissions as WindowManager handles it directly now
 }
 
+/// Manages all application windows and their lifecycle including settings, onboarding, and debug windows.
+///
+/// WindowManager is responsible for:
+/// - Creating and presenting various application windows (settings, onboarding, AXpector)
+/// - Managing window state and preventing duplicate windows
+/// - Handling window lifecycle events and notifications
+/// - Coordinating with the app delegate for onboarding completion
+/// - Providing debug tools access (AXpector accessibility inspector)
+///
+/// This class ensures proper window management with SwiftUI/AppKit integration
+/// and maintains references to prevent premature window closure.
 @MainActor
 class WindowManager: ObservableObject {
     // MARK: Lifecycle

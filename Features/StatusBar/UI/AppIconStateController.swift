@@ -6,6 +6,7 @@ import OSLog
 import SwiftUI
 
 // Spec 1.6: Menu Bar Icon Behavior
+/// Represents the visual state of the menu bar icon, indicating CodeLooper's current status.
 enum AppIconState: Sendable { // Made Sendable
     case green // Generating, no red
     case black // Idle/Active, no red/yellow
@@ -29,6 +30,17 @@ enum AppIconState: Sendable { // Made Sendable
     }
 }
 
+/// Controls the visual state of the menu bar icon based on CodeLooper's operational status.
+///
+/// AppIconStateController manages:
+/// - Icon color changes reflecting different operational states
+/// - Flash animations for successful interventions
+/// - State transitions based on monitoring and error conditions
+/// - Coordination with the monitoring system for real-time updates
+///
+/// The controller follows a priority system where error states (red) take precedence,
+/// followed by recovery states (yellow), active states (green), and idle states (black).
+/// The icon provides immediate visual feedback about CodeLooper's current activity.
 @MainActor
 class AppIconStateController: ObservableObject {
     // MARK: Lifecycle

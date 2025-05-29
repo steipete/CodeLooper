@@ -1,8 +1,18 @@
 import Foundation
 import OSLog
 
-/// LogLevel defines the different levels of logs in the application
-/// This provides a type-safe way to categorize logs by severity
+/// Hierarchical log severity levels for diagnostic output.
+///
+/// LogLevel provides:
+/// - Standard severity levels from debug to fault
+/// - Integration with Apple's OSLog system
+/// - Comparable implementation for filtering
+/// - Formatted display names for UI presentation
+///
+/// Levels follow standard logging conventions where higher values
+/// indicate more severe issues. Use debug for detailed diagnostic info,
+/// info for general events, warning for potential issues, error for
+/// failures, and critical/fault for severe system problems.
 public enum LogLevel: Int, Comparable, Sendable, Codable, CaseIterable {
     case debug = 0
     case info = 1

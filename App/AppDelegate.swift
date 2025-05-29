@@ -11,12 +11,22 @@ import os
 @preconcurrency import ServiceManagement
 import SwiftUI
 
+/// Main application delegate that manages the lifecycle and core functionality of CodeLooper.
+/// 
+/// This class serves as the central hub for:
+/// - Application lifecycle events (launch, termination, wake from sleep)
+/// - Menu bar management and user interaction
+/// - Cursor monitoring coordination
+/// - Settings and preferences management
+/// - Accessibility permissions handling
+/// - System notifications and AppleScript support
+///
+/// The AppDelegate coordinates between various subsystems including the monitoring service,
+/// intervention engine, and UI components to provide seamless Cursor IDE supervision.
 @objc(AppDelegate)
 @objcMembers
 @MainActor
-public class AppDelegate: NSObject, NSApplicationDelegate,
-    @unchecked Sendable,
-    ObservableObject
+public final class AppDelegate: NSObject, NSApplicationDelegate, ObservableObject
 {
     // MARK: Lifecycle
 

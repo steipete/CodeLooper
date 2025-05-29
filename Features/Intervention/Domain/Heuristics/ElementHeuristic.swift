@@ -1,8 +1,15 @@
 import AXorcist
 import Foundation
 
-// Define LocatorType based on the string keys used in LocatorManager
-// This makes it more type-safe when mapping heuristics.
+/// Identifies different types of UI elements that can be located in Cursor.
+///
+/// Each locator type corresponds to a specific UI element with:
+/// - A dedicated heuristic for finding the element
+/// - A default locator configuration
+/// - Dynamic discovery fallbacks
+///
+/// This enum provides type-safe access to element locators
+/// and ensures consistency across the locator system.
 public enum LocatorType: String, CaseIterable, Codable {
     case connectionErrorIndicator
     case errorMessagePopup
@@ -105,7 +112,15 @@ public enum LocatorType: String, CaseIterable, Codable {
     }
 }
 
-/// A protocol for heuristics that attempt to discover specific accessibility elements.
+/// Protocol for implementing element discovery strategies in Cursor's UI.
+///
+/// AXElementHeuristic defines:
+/// - A strategy pattern for finding UI elements
+/// - Dynamic discovery when default locators fail
+/// - Type-safe association with LocatorType
+///
+/// Implement this protocol to create custom discovery logic
+/// for new UI elements or to handle UI changes in Cursor.
 protocol AXElementHeuristic {
     /// The type of locator this heuristic tries to discover.
     var locatorType: LocatorType { get }

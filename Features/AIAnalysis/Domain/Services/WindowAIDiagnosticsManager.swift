@@ -6,6 +6,19 @@ import Foundation
 @preconcurrency import ScreenCaptureKit
 import SwiftUI // For ObservableObject
 
+/// Manages AI-powered diagnostics and analysis of Cursor windows for intelligent interventions.
+///
+/// WindowAIDiagnosticsManager provides:
+/// - Screenshot capture of Cursor windows for AI analysis
+/// - Integration with AI providers (OpenAI, Ollama) for visual understanding
+/// - Context enrichment with file paths and git repository information
+/// - Intelligent error detection and solution suggestions
+/// - Coordination with the intervention system for automated fixes
+///
+/// The manager uses computer vision and LLM capabilities to understand
+/// what's happening in Cursor windows, detect errors that might not be
+/// accessible through standard APIs, and suggest appropriate interventions.
+/// This enables handling of complex scenarios that require visual context.
 @MainActor
 class WindowAIDiagnosticsManager: ObservableObject {
     // MARK: Lifecycle
