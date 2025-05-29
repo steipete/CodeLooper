@@ -373,10 +373,10 @@ class WindowAIDiagnosticsManager: ObservableObject, Loggable {
                             )
                     }
                 } catch {
-                    ErrorHandlingUtility.logError(
+                    ErrorHandlingUtility.handleAndLog(
                         error,
-                        context: "Failed to get SCShareableContent for targeted window analysis",
-                        logger: logger
+                        logger: logger,
+                        context: "Failed to get SCShareableContent for targeted window analysis"
                     )
                 }
             } else {
@@ -422,7 +422,7 @@ class WindowAIDiagnosticsManager: ObservableObject, Loggable {
             }
 
             // Screenshot has changed or is new, store it and proceed with analysis
-            previousScreenshots[windowId] = jpegData
+            previousScreenshots[windowId] = tiffData
             logger
                 .info(
                     "Screenshot changes detected for window: \(windowInfo.windowTitle ?? windowId). Proceeding with AI analysis using 'working' prompt."
@@ -512,13 +512,21 @@ class WindowAIDiagnosticsManager: ObservableObject, Loggable {
 
         } catch let aiError as AIServiceError {
             let context = "AI analysis failed for window \(windowId)"
-            ErrorHandlingUtility.logError(aiError, context: context, logger: logger)
+            ErrorHandlingUtility.handleAndLog(
+                aiError,
+                logger: logger,
+                context: context
+            )
             
             windowInfo.lastAIAnalysisStatus = .error
-            windowInfo.lastAIAnalysisResponseMessage = AIErrorMapper.formatUserFriendlyMessage(for: aiError)
+            windowInfo.lastAIAnalysisResponseMessage = aiError.localizedDescription
         } catch {
             let context = "AI analysis failed for window \(windowId)"
-            ErrorHandlingUtility.logError(error, context: context, logger: logger)
+            ErrorHandlingUtility.handleAndLog(
+                error,
+                logger: logger,
+                context: context
+            )
             
             windowInfo.lastAIAnalysisStatus = .error
             windowInfo.lastAIAnalysisResponseMessage = error.localizedDescription

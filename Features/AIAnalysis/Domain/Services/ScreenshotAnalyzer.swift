@@ -14,7 +14,7 @@ public final class CursorScreenshotAnalyzer: ObservableObject, Loggable {
     
     private let imageScaleFactor: CGFloat = 1.0
     private static let maxAnalysisRetries = 2
-    private static let retryDelaySeconds: TimeInterval = TimingConfiguration.retryDelay
+    private static let retryDelaySeconds: TimeInterval = TimingConfiguration.retryBaseDelay
     
     public init() {
         // AIServiceManager.shared will be used directly. It should be configured elsewhere (e.g., AppDelegate or when settings change)

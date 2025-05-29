@@ -43,6 +43,9 @@ public enum TimingConfiguration {
     /// Interval between heartbeat checks for connection health
     public static let heartbeatCheckInterval: TimeInterval = 2.0
     
+    /// Timeout after which a heartbeat is considered failed
+    public static let heartbeatTimeout: TimeInterval = 10.0
+    
     // MARK: - Connection Timeouts
     
     /// Polling interval while waiting for WebSocket handshake completion
@@ -79,6 +82,9 @@ public enum TimingConfiguration {
     
     /// Polling interval for general use
     public static let pollInterval: TimeInterval = 0.2
+    
+    /// Delay for probe completion checks
+    public static let probeDelay: TimeInterval = 1.0
     
     /// Delay for update check progress simulation
     public static let updateCheckDelay: TimeInterval = 5.0
