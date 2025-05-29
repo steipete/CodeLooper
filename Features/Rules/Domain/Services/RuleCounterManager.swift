@@ -9,7 +9,7 @@ public class RuleCounterManager: ObservableObject {
     
     @Published public private(set) var ruleCounters: [String: Int] = [:]
     
-    private let logger = Logger(category: .intervention)
+    private let logger = Logger(category: .rules)
     
     private init() {
         loadCounters()

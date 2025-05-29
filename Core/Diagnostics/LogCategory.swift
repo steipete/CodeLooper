@@ -22,7 +22,7 @@ public enum LogCategory: String, CaseIterable {
     // Managers and Utilities
     case defaults = "Defaults"
     case mcpConfig = "MCPConfigManager"
-    case sound = "SoundManager"
+    case sound = "SoundEngine"
     case utilities = "Utilities"
 
     // Specific features or components
@@ -52,6 +52,7 @@ public enum LogCategory: String, CaseIterable {
     case unknown
     case jshook = "JSHook"
     case intervention = "Intervention"
+    case rules = "Rules"
 
     // MARK: Public
 

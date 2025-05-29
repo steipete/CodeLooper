@@ -34,7 +34,7 @@ public class RuleExecutor {
     
     // MARK: Private
     
-    private let logger = Logger(category: .intervention)
+    private let logger = Logger(category: .rules)
     private let stopAfter25LoopsRule = StopAfter25LoopsRule()
     
     /// Execute the StopAfter25LoopsRule for all windows

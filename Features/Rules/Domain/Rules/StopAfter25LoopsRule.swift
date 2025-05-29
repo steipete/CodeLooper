@@ -127,7 +127,7 @@ public class StopAfter25LoopsRule {
     
     // MARK: Private
     
-    private let logger = Logger(category: .intervention)
+    private let logger = Logger(category: .rules)
     private let sessionLogger = SessionLogger.shared
     
 }
