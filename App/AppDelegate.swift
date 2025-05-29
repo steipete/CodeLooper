@@ -71,24 +71,30 @@ public final class AppDelegate: NSObject, NSApplicationDelegate, ObservableObjec
         logger.info("Application finished launching.")
         sessionLogger.log(level: .info, message: "Application finished launching.")
 
-        // Single instance check
-        singleInstanceLock = SingleInstanceLock(identifier: "me.steipete.codelooper.instance")
+        // Single instance check - skip for Xcode previews
+        let isXcodePreview = ProcessInfo.processInfo.environment["XCODE_RUNNING_FOR_PREVIEWS"] == "1"
+        
+        if !isXcodePreview {
+            singleInstanceLock = SingleInstanceLock(identifier: "me.steipete.codelooper.instance")
 
-        // Check single instance asynchronously
-        Task { @MainActor [weak self] in
-            guard let self else { return }
-            
-            // Give the SingleInstanceLock time to check
-            try? await Task.sleep(nanoseconds: 600_000_000) // 0.6 seconds
+            // Check single instance asynchronously
+            Task { @MainActor [weak self] in
+                guard let self else { return }
+                
+                // Give the SingleInstanceLock time to check
+                try? await Task.sleep(nanoseconds: 600_000_000) // 0.6 seconds
 
-            guard let singleInstanceLock = self.singleInstanceLock else { return }
-            
-            if !singleInstanceLock.isPrimaryInstance {
-                self.logger.warning("Another instance of CodeLooper is already running. Terminating this instance.")
-                // Bring the other instance to the front
-                singleInstanceLock.activateExistingInstance()
-                NSApp.terminate(nil)
+                guard let singleInstanceLock = self.singleInstanceLock else { return }
+                
+                if !singleInstanceLock.isPrimaryInstance {
+                    self.logger.warning("Another instance of CodeLooper is already running. Terminating this instance.")
+                    // Bring the other instance to the front
+                    singleInstanceLock.activateExistingInstance()
+                    NSApp.terminate(nil)
+                }
             }
+        } else {
+            logger.info("Running in Xcode preview mode - skipping single instance check")
         }
 
         // Initialize core services FIRST
