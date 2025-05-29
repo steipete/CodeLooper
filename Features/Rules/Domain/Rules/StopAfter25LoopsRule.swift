@@ -21,7 +21,7 @@ public class StopAfter25LoopsRule {
     // MARK: Internal
 
     /// Execute the rule for a specific window
-    func execute(windowId: String, jsHookService: JSHookService) async -> Bool {
+    func execute(windowId: String, jsHookCoordinator: JSHookCoordinator) async -> Bool {
         do {
             // Check current execution count
             let currentCount = RuleCounterManager.shared.getCount(for: ruleName)
@@ -50,7 +50,7 @@ public class StopAfter25LoopsRule {
 
             // Check if rule action is needed
             let checkCommand: [String: Any] = ["type": "checkRuleNeeded"]
-            let checkResult = try await jsHookService.sendCommand(checkCommand, to: windowId)
+            let checkResult = try await jsHookCoordinator.sendCommand(checkCommand, to: windowId)
 
             // Parse the result
             guard let data = checkResult.data(using: .utf8),
@@ -66,7 +66,7 @@ public class StopAfter25LoopsRule {
 
                 // Perform the rule action
                 let ruleCommand: [String: Any] = ["type": "performRule"]
-                let ruleResult = try await jsHookService.sendCommand(ruleCommand, to: windowId)
+                let ruleResult = try await jsHookCoordinator.sendCommand(ruleCommand, to: windowId)
 
                 // Parse rule result
                 if let ruleData = ruleResult.data(using: .utf8),
