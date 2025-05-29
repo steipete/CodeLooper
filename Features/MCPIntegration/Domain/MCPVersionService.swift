@@ -30,40 +30,35 @@ final class MCPVersionService: ObservableObject {
         isChecking = true
         checkError = nil
 
-        do {
-            var latestVersionsMap: [MCPExtensionType: String] = [:]
-            var installedVersionsMap: [MCPExtensionType: String] = [:]
+        var latestVersionsMap: [MCPExtensionType: String] = [:]
+        var installedVersionsMap: [MCPExtensionType: String] = [:]
 
-            // Check latest versions from npm concurrently
-            await withTaskGroup(of: (MCPExtensionType, String?).self) { group in
-                for mcpExtension in MCPExtensionType.allCases {
-                    group.addTask {
-                        let version = try? await self.checkVersion(for: mcpExtension)
-                        return (mcpExtension, version)
-                    }
-                }
-
-                for await (mcpExtension, version) in group {
-                    if let version {
-                        latestVersionsMap[mcpExtension] = version
-                    }
-                }
-            }
-            
-            // Check installed versions
+        // Check latest versions from npm concurrently
+        await withTaskGroup(of: (MCPExtensionType, String?).self) { group in
             for mcpExtension in MCPExtensionType.allCases {
-                if let installedVersion = self.getInstalledVersion(for: mcpExtension) {
-                    installedVersionsMap[mcpExtension] = installedVersion
+                group.addTask {
+                    let version = try? await self.checkVersion(for: mcpExtension)
+                    return (mcpExtension, version)
                 }
             }
 
-            self.latestVersions = latestVersionsMap
-            self.installedVersions = installedVersionsMap
-            self.lastCheckDate = Date()
-
-        } catch {
-            self.checkError = error
+            for await (mcpExtension, version) in group {
+                if let version {
+                    latestVersionsMap[mcpExtension] = version
+                }
+            }
         }
+        
+        // Check installed versions
+        for mcpExtension in MCPExtensionType.allCases {
+            if let installedVersion = self.getInstalledVersion(for: mcpExtension) {
+                installedVersionsMap[mcpExtension] = installedVersion
+            }
+        }
+
+        self.latestVersions = latestVersionsMap
+        self.installedVersions = installedVersionsMap
+        self.lastCheckDate = Date()
 
         isChecking = false
     }
