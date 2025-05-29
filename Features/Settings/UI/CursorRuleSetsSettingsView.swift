@@ -129,47 +129,50 @@ private struct RuleCard: View {
 
     var body: some View {
         DSCard(style: .filled) {
-            VStack(alignment: .leading, spacing: Spacing.medium) {
-                // Main rule header
-                HStack(spacing: Spacing.medium) {
-                    // Status indicator with execution count
-                    HStack(spacing: Spacing.small) {
-                        Circle()
-                            .fill(rule.enabled ? ColorPalette.success : ColorPalette.textTertiary)
-                            .frame(width: 8, height: 8)
-                        
-                        // Execution counter badge
-                        Text("\(executionCount)")
-                            .font(Typography.caption1(.semibold))
-                            .foregroundColor(ColorPalette.accent)
-                            .padding(.horizontal, 6)
-                            .padding(.vertical, 2)
-                            .background(ColorPalette.accent.opacity(0.1))
-                            .cornerRadius(4)
+            VStack(spacing: Spacing.medium) {
+                // Row 1: Main rule header with consistent alignment
+                HStack(alignment: .top, spacing: Spacing.medium) {
+                    // Column 1: Status indicators (fixed width)
+                    VStack(alignment: .leading, spacing: Spacing.xSmall) {
+                        HStack(spacing: Spacing.small) {
+                            Circle()
+                                .fill(rule.enabled ? ColorPalette.success : ColorPalette.textTertiary)
+                                .frame(width: 8, height: 8)
+                            
+                            Text("\(executionCount)")
+                                .font(Typography.caption1(.semibold))
+                                .foregroundColor(ColorPalette.accent)
+                                .padding(.horizontal, 6)
+                                .padding(.vertical, 2)
+                                .background(ColorPalette.accent.opacity(0.1))
+                                .cornerRadius(4)
+                        }
                     }
+                    .frame(width: 60, alignment: .leading)
 
-                    // Rule info
+                    // Column 2: Rule content (flexible width)
                     VStack(alignment: .leading, spacing: Spacing.small) {
                         Text(rule.name)
                             .font(Typography.body(.medium))
                             .foregroundColor(ColorPalette.text)
+                            .frame(maxWidth: .infinity, alignment: .leading)
 
                         Text(rule.description)
                             .font(Typography.caption1())
                             .foregroundColor(ColorPalette.textSecondary)
+                            .frame(maxWidth: .infinity, alignment: .leading)
                     }
+                    .frame(maxWidth: .infinity)
 
-                    Spacer()
-
-                    // Actions
+                    // Column 3: Actions (fixed width)
                     HStack(spacing: Spacing.small) {
-                        // Info button
                         if isHovered {
                             Button(action: {
                                 showPopover = true
                             }) {
                                 Image(systemName: "info.circle")
                                     .foregroundColor(ColorPalette.textSecondary)
+                                    .frame(width: 20, height: 20)
                             }
                             .buttonStyle(.plain)
                             .popover(isPresented: $showPopover) {
@@ -182,51 +185,56 @@ private struct RuleCard: View {
                             .controlSize(.small)
                             .onTapGesture { onToggle() }
                     }
+                    .frame(width: 80, alignment: .trailing)
                 }
                 
-                // Trigger -> Action flow
-                HStack(spacing: Spacing.small) {
+                // Row 2: Trigger -> Action flow (centered with consistent spacing)
+                HStack(spacing: Spacing.medium) {
+                    Spacer()
                     DSBadge(rule.trigger.displayName, style: .info)
-                        .frame(width: 140, alignment: .center)
+                        .frame(width: 140)
                     Image(systemName: "arrow.right")
                         .font(.system(size: 10))
                         .foregroundColor(ColorPalette.textTertiary)
+                        .frame(width: 20)
                     DSBadge(rule.action.displayName, style: .primary)
-                        .frame(width: 140, alignment: .center)
+                        .frame(width: 140)
+                    Spacer()
                 }
                 
-                // On execution settings (always show)
-                VStack(alignment: .leading, spacing: Spacing.small) {
+                // Row 3: On execution settings (grid aligned)
+                HStack(spacing: Spacing.medium) {
+                    // Column 1: Label (fixed width to align with status column)
                     Text("On execution")
                         .font(Typography.caption2(.medium))
                         .foregroundColor(ColorPalette.textSecondary)
                         .textCase(.uppercase)
+                        .frame(width: 100, alignment: .leading)
                     
-                    HStack(spacing: Spacing.medium) {
-                        // Sound picker
-                        CompactSoundPicker(ruleName: rule.name)
-                        
-                        Spacer()
-                        
-                        // Notification checkbox
-                        HStack(spacing: Spacing.xSmall) {
-                            Button(action: {
-                                toggleNotification(for: rule.name)
-                            }) {
-                                Image(systemName: getNotificationEnabled(for: rule.name) ? "checkmark.square.fill" : "square")
-                                    .foregroundColor(getNotificationEnabled(for: rule.name) ? ColorPalette.accent : ColorPalette.textSecondary)
-                                    .font(.system(size: 16))
-                            }
-                            .buttonStyle(.plain)
-                            
-                            Text("Notify")
-                                .font(Typography.caption1())
-                                .foregroundColor(ColorPalette.text)
+                    // Column 2: Sound picker
+                    CompactSoundPicker(ruleName: rule.name)
+                    
+                    Spacer()
+                    
+                    // Column 3: Notification (aligned with actions column)
+                    HStack(spacing: Spacing.xSmall) {
+                        Button(action: {
+                            toggleNotification(for: rule.name)
+                        }) {
+                            Image(systemName: getNotificationEnabled(for: rule.name) ? "checkmark.square.fill" : "square")
+                                .foregroundColor(getNotificationEnabled(for: rule.name) ? ColorPalette.accent : ColorPalette.textSecondary)
+                                .font(.system(size: 16))
                         }
+                        .buttonStyle(.plain)
+                        
+                        Text("Notification")
+                            .font(Typography.caption1())
+                            .foregroundColor(ColorPalette.text)
                     }
+                    .frame(width: 120, alignment: .leading)
                 }
-                .padding(.top, Spacing.xSmall)
             }
+            .padding(Spacing.medium)
         }
         .onTapGesture { onSelect() }
         .onHover { hovering in
@@ -259,47 +267,33 @@ private struct CompactSoundPicker: View {
     let ruleName: String
 
     var body: some View {
-        HStack(spacing: Spacing.xSmall) {
-            // Sound icon and picker button
-            Button(action: {
-                isShowingPicker.toggle()
-            }) {
-                HStack(spacing: Spacing.xSmall) {
-                    Image(systemName: "speaker.wave.2")
-                        .foregroundColor(currentSound.isEmpty ? ColorPalette.textSecondary : ColorPalette.accent)
-                        .font(.system(size: 14))
-                    
-                    Text(currentSound.isEmpty ? "None" : currentSound)
-                        .font(Typography.caption1())
-                        .foregroundColor(ColorPalette.text)
-                }
-                .padding(.horizontal, Spacing.xSmall)
-                .padding(.vertical, 2)
-                .background(ColorPalette.backgroundSecondary)
-                .cornerRadius(4)
+        // Sound icon and picker button
+        Button(action: {
+            isShowingPicker.toggle()
+        }) {
+            HStack(spacing: Spacing.xSmall) {
+                Image(systemName: "speaker.wave.2")
+                    .foregroundColor(currentSound.isEmpty ? ColorPalette.textSecondary : ColorPalette.accent)
+                    .font(.system(size: 14))
+                
+                Text(currentSound.isEmpty ? "None" : currentSound)
+                    .font(Typography.caption1())
+                    .foregroundColor(ColorPalette.text)
             }
-            .buttonStyle(.plain)
-            .popover(isPresented: $isShowingPicker, arrowEdge: .bottom) {
-                CompactSoundPickerPopover(
-                    selectedSound: Binding(
-                        get: { currentSound },
-                        set: { newValue in setSound(newValue) }
-                    ),
-                    isPresented: $isShowingPicker
-                )
-            }
-            
-            // Play button (only show if sound is selected)
-            if !currentSound.isEmpty {
-                Button(action: {
-                    playSound()
-                }) {
-                    Image(systemName: "play.fill")
-                        .foregroundColor(ColorPalette.accent)
-                        .font(.system(size: 12))
-                }
-                .buttonStyle(.plain)
-            }
+            .padding(.horizontal, Spacing.xSmall)
+            .padding(.vertical, 2)
+            .background(ColorPalette.backgroundSecondary)
+            .cornerRadius(4)
+        }
+        .buttonStyle(.plain)
+        .popover(isPresented: $isShowingPicker, arrowEdge: .bottom) {
+            CompactSoundPickerPopover(
+                selectedSound: Binding(
+                    get: { currentSound },
+                    set: { newValue in setSound(newValue) }
+                ),
+                isPresented: $isShowingPicker
+            )
         }
     }
 
