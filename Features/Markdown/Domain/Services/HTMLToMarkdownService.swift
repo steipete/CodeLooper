@@ -1,9 +1,8 @@
+import Diagnostics
 import Foundation
 import JavaScriptCore
-import Diagnostics
 
-@MainActor
-final class HTMLToMarkdownService {
+actor HTMLToMarkdownService {
     static let shared = HTMLToMarkdownService()
     
     // Serial queue ensures thread safety and consistent thread context for JSContext
@@ -17,38 +16,43 @@ final class HTMLToMarkdownService {
     private var domParser: JSValue?
     private var turndownServiceClass: JSValue?
     
-    private init() {
+    init() {
         initializeOnBackgroundQueue()
     }
     
-    private func initializeOnBackgroundQueue() {
-        queue.async { [weak self] in
-            guard let self = self else { return }
-            
-            // Create VM and context once on the background thread
-            self.jsVirtualMachine = JSVirtualMachine()
-            guard let vm = self.jsVirtualMachine else { 
-                self.logger.error("Failed to create JSVirtualMachine")
-                return 
+    private nonisolated func initializeOnBackgroundQueue() {
+        queue.async {
+            Task { [weak self] in
+                guard let self = self else { return }
+                await self.initializeJavaScriptEnvironment()
             }
-            
-            self.jsContext = JSContext(virtualMachine: vm)
-            guard let context = self.jsContext else { 
-                self.logger.error("Failed to create JSContext")
-                return 
-            }
-            
-            // Set up console.log for debugging
-            let consoleLog: @convention(block) (String) -> Void = { message in
-                Logger(category: .utilities).debug("JS Console: \(message)")
-            }
-            context.setObject(unsafeBitCast(consoleLog, to: AnyObject.self),
-                             forKeyedSubscript: "consoleLog" as NSString)
-            context.evaluateScript("console = { log: function() { consoleLog(Array.prototype.slice.call(arguments).join(' ')); } };")
-            
-            // Load libraries and prepare reusable instances
-            self.loadLibrariesAndPrepareInstances(in: context)
         }
+    }
+    
+    private func initializeJavaScriptEnvironment() {
+        // Create VM and context once on the background thread
+        self.jsVirtualMachine = JSVirtualMachine()
+        guard let vm = self.jsVirtualMachine else { 
+            self.logger.error("Failed to create JSVirtualMachine")
+            return 
+        }
+        
+        self.jsContext = JSContext(virtualMachine: vm)
+        guard let context = self.jsContext else { 
+            self.logger.error("Failed to create JSContext")
+            return 
+        }
+        
+        // Set up console.log for debugging
+        let consoleLog: @convention(block) (String) -> Void = { message in
+            Logger(category: .utilities).debug("JS Console: \(message)")
+        }
+        context.setObject(unsafeBitCast(consoleLog, to: AnyObject.self),
+                         forKeyedSubscript: "consoleLog" as NSString)
+        context.evaluateScript("console = { log: function() { consoleLog(Array.prototype.slice.call(arguments).join(' ')); } };")
+        
+        // Load libraries and prepare reusable instances
+        self.loadLibrariesAndPrepareInstances(in: context)
     }
     
     private func loadLibrariesAndPrepareInstances(in context: JSContext) {
@@ -119,54 +123,69 @@ final class HTMLToMarkdownService {
         }
         
         return try await withCheckedThrowingContinuation { continuation in
-            queue.async { [weak self] in
-                guard let self = self,
-                      let domParser = self.domParser,
-                      let turndownServiceClass = self.turndownServiceClass else {
-                    continuation.resume(throwing: MarkdownConversionError.serviceUnavailable)
-                    return
-                }
-                
-                do {
-                    // Parse the HTML into a DOM document using our reusable parser
-                    guard let document = domParser.invokeMethod("parseFromString", withArguments: [html, "text/html"]) else {
-                        throw MarkdownConversionError.domParsingFailed
+            queue.async {
+                Task { [weak self] in
+                    guard let self = self else {
+                        continuation.resume(throwing: MarkdownConversionError.serviceUnavailable)
+                        return
                     }
                     
-                    // Create a new TurndownService instance with default options
-                    guard let turndownService = turndownServiceClass.construct(withArguments: [
-                        [
-                            "headingStyle": "atx",
-                            "hr": "---",
-                            "bulletListMarker": "-",
-                            "codeBlockStyle": "fenced",
-                            "fence": "```",
-                            "emDelimiter": "_",
-                            "strongDelimiter": "**",
-                            "linkStyle": "inlined",
-                            "linkReferenceStyle": "full"
-                        ]
-                    ]) else {
-                        throw MarkdownConversionError.turndownNotLoaded
+                    let result = await self.performConversion(html: html)
+                    switch result {
+                    case .success(let markdown):
+                        continuation.resume(returning: markdown)
+                    case .failure(let error):
+                        continuation.resume(throwing: error)
                     }
-                    
-                    // Configure the service
-                    turndownService.invokeMethod("keep", withArguments: [["del", "ins", "sup", "sub"]])
-                    turndownService.invokeMethod("remove", withArguments: [["script", "style"]])
-                    
-                    // Convert the DOM document to Markdown
-                    guard let result = turndownService.invokeMethod("turndown", withArguments: [document]),
-                          let markdown = result.toString() else {
-                        throw MarkdownConversionError.conversionFailed
-                    }
-                    
-                    continuation.resume(returning: markdown)
-                    
-                } catch {
-                    self.logger.error("Markdown conversion failed: \(error)")
-                    continuation.resume(throwing: error)
                 }
             }
+        }
+    }
+    
+    private func performConversion(html: String) async -> Result<String, Error> {
+        guard let domParser = self.domParser,
+              let turndownServiceClass = self.turndownServiceClass else {
+            return .failure(MarkdownConversionError.serviceUnavailable)
+        }
+        
+        do {
+            // Parse the HTML into a DOM document using our reusable parser
+            guard let document = domParser.invokeMethod("parseFromString", withArguments: [html, "text/html"]) else {
+                throw MarkdownConversionError.domParsingFailed
+            }
+            
+            // Create a new TurndownService instance with default options
+            guard let turndownService = turndownServiceClass.construct(withArguments: [
+                [
+                    "headingStyle": "atx",
+                    "hr": "---",
+                    "bulletListMarker": "-",
+                    "codeBlockStyle": "fenced",
+                    "fence": "```",
+                    "emDelimiter": "_",
+                    "strongDelimiter": "**",
+                    "linkStyle": "inlined",
+                    "linkReferenceStyle": "full"
+                ]
+            ]) else {
+                throw MarkdownConversionError.turndownNotLoaded
+            }
+            
+            // Configure the service
+            turndownService.invokeMethod("keep", withArguments: [["del", "ins", "sup", "sub"]])
+            turndownService.invokeMethod("remove", withArguments: [["script", "style"]])
+            
+            // Convert the DOM document to Markdown
+            guard let result = turndownService.invokeMethod("turndown", withArguments: [document]),
+                  let markdown = result.toString() else {
+                throw MarkdownConversionError.conversionFailed
+            }
+            
+            return .success(markdown)
+            
+        } catch {
+            self.logger.error("Markdown conversion failed: \(error)")
+            return .failure(error)
         }
     }
     
@@ -177,55 +196,49 @@ final class HTMLToMarkdownService {
             try await Task.sleep(nanoseconds: 100_000_000) // 100ms
         }
         
-        return try await withCheckedThrowingContinuation { continuation in
-            queue.async { [weak self] in
-                guard let self = self,
-                      let domParser = self.domParser,
-                      let turndownServiceClass = self.turndownServiceClass else {
-                    continuation.resume(throwing: MarkdownConversionError.serviceUnavailable)
-                    return
-                }
-                
-                do {
-                    // Parse the HTML into a DOM document using our reusable parser
-                    guard let document = domParser.invokeMethod("parseFromString", withArguments: [html, "text/html"]) else {
-                        throw MarkdownConversionError.domParsingFailed
-                    }
-                    
-                    // Create a new TurndownService instance with custom options
-                    guard let turndownService = turndownServiceClass.construct(withArguments: [
-                        [
-                            "headingStyle": options.headingStyle.rawValue,
-                            "hr": "---",
-                            "bulletListMarker": options.bulletListMarker,
-                            "codeBlockStyle": options.codeBlockStyle.rawValue,
-                            "fence": "```",
-                            "emDelimiter": "_",
-                            "strongDelimiter": "**",
-                            "linkStyle": "inlined",
-                            "linkReferenceStyle": "full"
-                        ]
-                    ]) else {
-                        throw MarkdownConversionError.turndownNotLoaded
-                    }
-                    
-                    // Configure the service
-                    turndownService.invokeMethod("keep", withArguments: [["del", "ins", "sup", "sub"]])
-                    turndownService.invokeMethod("remove", withArguments: [["script", "style"]])
-                    
-                    // Convert the DOM document to Markdown
-                    guard let result = turndownService.invokeMethod("turndown", withArguments: [document]),
-                          let markdown = result.toString() else {
-                        throw MarkdownConversionError.conversionFailed
-                    }
-                    
-                    continuation.resume(returning: markdown)
-                    
-                } catch {
-                    self.logger.error("Markdown conversion with options failed: \(error)")
-                    continuation.resume(throwing: error)
-                }
+        guard let domParser = self.domParser,
+              let turndownServiceClass = self.turndownServiceClass else {
+            throw MarkdownConversionError.serviceUnavailable
+        }
+        
+        do {
+            // Parse the HTML into a DOM document using our reusable parser
+            guard let document = domParser.invokeMethod("parseFromString", withArguments: [html, "text/html"]) else {
+                throw MarkdownConversionError.domParsingFailed
             }
+            
+            // Create a new TurndownService instance with custom options
+            guard let turndownService = turndownServiceClass.construct(withArguments: [
+                [
+                    "headingStyle": options.headingStyle.rawValue,
+                    "hr": "---",
+                    "bulletListMarker": options.bulletListMarker,
+                    "codeBlockStyle": options.codeBlockStyle.rawValue,
+                    "fence": "```",
+                    "emDelimiter": "_",
+                    "strongDelimiter": "**",
+                    "linkStyle": "inlined",
+                    "linkReferenceStyle": "full"
+                ]
+            ]) else {
+                throw MarkdownConversionError.turndownNotLoaded
+            }
+            
+            // Configure the service
+            turndownService.invokeMethod("keep", withArguments: [["del", "ins", "sup", "sub"]])
+            turndownService.invokeMethod("remove", withArguments: [["script", "style"]])
+            
+            // Convert the DOM document to Markdown
+            guard let result = turndownService.invokeMethod("turndown", withArguments: [document]),
+                  let markdown = result.toString() else {
+                throw MarkdownConversionError.conversionFailed
+            }
+            
+            return markdown
+            
+        } catch {
+            self.logger.error("Markdown conversion with options failed: \(error)")
+            throw error
         }
     }
     
