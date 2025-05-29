@@ -102,3 +102,7 @@ tools/
 artifacts/
 binary/
 .private_keys/
+
+# Test results
+TestResults/
+TestResults.xcresult
