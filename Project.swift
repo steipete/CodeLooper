@@ -97,7 +97,7 @@ let project = Project(
                 "Resources/JavaScript/**",
                 "Resources/chain_link_lottie.json",
                 "App/Resources/Assets.xcassets",
-                "CodeLooper/Base.lproj/**",
+                "CodeLooper/Base.lproj/Main.storyboard",
             ],
             entitlements: .file(path: "App/Resources/Entitlements/CodeLooper.entitlements"),
             dependencies: [

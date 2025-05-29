@@ -3,6 +3,7 @@ import PackageDescription
 
 let package = Package(
     name: "CodeLooper",
+    defaultLocalization: "en",
     platforms: [
         .macOS(.v14),
     ],
@@ -65,11 +66,9 @@ let package = Package(
                 .product(name: "Ollama", package: "ollama-swift"),
                 .product(name: "Lottie", package: "lottie-ios"),
             ],
-            path: "Sources",
-            exclude: ["Diagnostics"],
-            resources: [
-                .copy("../Resources"),
-            ],
+            path: ".",
+            exclude: ["Core/Diagnostics"],
+            sources: ["App", "Core", "Features"],
             swiftSettings: [
                 // Using complete concurrency checking for Swift 6 compatibility.
                 // Ensure that all code complies with Swift 6 concurrency rules, including:
