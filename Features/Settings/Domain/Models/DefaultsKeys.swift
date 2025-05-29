@@ -70,6 +70,7 @@ extension Defaults.Keys {
 
     // --- Updates (Sparkle - Spec 3.3.A) ---
     static let automaticallyCheckForUpdates = Key<Bool>("automaticallyCheckForUpdates", default: true)
+    static let receivePreReleaseUpdates = Key<Bool>("receivePreReleaseUpdates", default: true)
 
     // --- Custom Locators (JSON Strings - Spec 3.3.E) ---
     static let locatorJSONGeneratingIndicatorText = Key<String>(

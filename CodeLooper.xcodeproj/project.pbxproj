@@ -1993,7 +1993,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
-				MARKETING_VERSION = 2025.5.2;
+				MARKETING_VERSION = 2025.5.29;
 				PRODUCT_BUNDLE_IDENTIFIER = me.steipete.codelooper;
 				PRODUCT_NAME = CodeLooper;
 				SDKROOT = macosx;
@@ -2216,7 +2216,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
-				MARKETING_VERSION = 2025.5.2;
+				MARKETING_VERSION = 2025.5.29;
 				PRODUCT_BUNDLE_IDENTIFIER = me.steipete.codelooper;
 				PRODUCT_NAME = CodeLooper;
 				SDKROOT = macosx;

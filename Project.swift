@@ -121,7 +121,7 @@ let project = Project(
                 base: [
                     "INFOPLIST_FILE": "App/Info.plist",
                     "PRODUCT_BUNDLE_IDENTIFIER": "me.steipete.codelooper",
-                    "MARKETING_VERSION": "2025.5.2",
+                    "MARKETING_VERSION": "2025.5.29",
                     "CURRENT_PROJECT_VERSION": "2",
                     // Team ID will be inherited from project-level if not specified per target/config
                 ],

@@ -38,7 +38,7 @@ public final class MainSettingsCoordinator: NSObject {
 
     public static let shared = MainSettingsCoordinator(
         loginItemManager: LoginItemManager.shared,
-        updaterViewModel: UpdaterViewModel(sparkleUpdaterManager: nil)
+        updaterViewModel: UpdaterViewModel(sparkleUpdaterManager: SparkleUpdaterManager())
     )
 
     // MARK: - Public Interface

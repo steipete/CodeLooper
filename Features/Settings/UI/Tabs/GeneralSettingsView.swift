@@ -8,6 +8,8 @@ struct GeneralSettingsView: View {
     @EnvironmentObject var mainSettingsViewModel: MainSettingsViewModel
     @Default(.automaticallyCheckForUpdates)
     var automaticallyCheckForUpdates
+    @Default(.receivePreReleaseUpdates)
+    var receivePreReleaseUpdates
     @Default(.showInDock)
     var showInDock
     @Default(.gitClientApp) var gitClientApp
@@ -23,10 +25,76 @@ struct GeneralSettingsView: View {
     private var appBuild: String {
         Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "N/A"
     }
+    
+    private static let dateFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.dateStyle = .medium
+        formatter.timeStyle = .short
+        return formatter
+    }()
 
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: Spacing.xLarge) {
+                // App Section (using design system)
+                DSSettingsSection("App") {
+                    // Current Version Info
+                    HStack {
+                        VStack(alignment: .leading, spacing: Spacing.xSmall) {
+                            HStack(spacing: Spacing.xSmall) {
+                                Text("Current version: v\(appVersion)")
+                                    .font(Typography.body())
+                                    .foregroundColor(ColorPalette.text)
+                                
+                                Text("(Build: \(appBuild))")
+                                    .font(Typography.body())
+                                    .foregroundColor(ColorPalette.textSecondary)
+                            }
+                            
+                            Text("CodeLooper is up to date!")
+                                .font(Typography.caption1())
+                                .foregroundColor(ColorPalette.success)
+                            
+                            Button("Read the changelog.") {
+                                if let url = URL(string: "https://github.com/steipete/CodeLooper/releases") {
+                                    NSWorkspace.shared.open(url)
+                                }
+                            }
+                            .buttonStyle(PlainButtonStyle())
+                            .foregroundColor(ColorPalette.accent)
+                            .font(Typography.caption1())
+                            .underline()
+                        }
+                        
+                        Spacer()
+                        
+                        DSButton("Check for updates", style: .primary) {
+                            updaterViewModel.checkForUpdates()
+                        }
+                        .disabled(updaterViewModel.isUpdateInProgress)
+                        .frame(width: 168, height: 32)
+                        .fixedSize()
+                    }
+                    
+                    DSDivider()
+                    
+                    // Automatic Updates
+                    DSToggle(
+                        "Automatic updates",
+                        isOn: $automaticallyCheckForUpdates,
+                        description: "Turn this off to prevent the app from checking for updates."
+                    )
+                    
+                    DSDivider()
+                    
+                    // Pre-release Updates
+                    DSToggle(
+                        "Receive early access versions",
+                        isOn: $receivePreReleaseUpdates,
+                        description: "Auto-update to the latest early access version. These versions include new features but may be less stable."
+                    )
+                }
+                
                 // General Application Behavior
                 DSSettingsSection("General") {
                     DSToggle(
@@ -128,29 +196,7 @@ struct GeneralSettingsView: View {
                     }
                 }
 
-                // Updates
-                DSSettingsSection("Updates") {
-                    DSToggle(
-                        "Automatically Check for Updates",
-                        isOn: $automaticallyCheckForUpdates
-                    )
 
-                    DSButton("Check for Updates Now", style: .secondary) {
-                        if let appDelegate = NSApp.delegate as? AppDelegate {
-                            appDelegate.checkForUpdates(nil)
-                        }
-                    }
-                    .disabled(updaterViewModel.isUpdateInProgress)
-                }
-
-                // Version info
-                HStack {
-                    Spacer()
-                    Text("Version \(appVersion) (\(appBuild))")
-                        .textStyle(TextStyles.captionMedium)
-                    Spacer()
-                }
-                .padding(.top, Spacing.large)
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
