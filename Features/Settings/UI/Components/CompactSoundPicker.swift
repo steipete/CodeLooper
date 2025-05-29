@@ -32,7 +32,7 @@ struct CompactSoundPicker: View {
                     .foregroundColor(ColorPalette.text)
                     .padding(.horizontal, 6)
                     .padding(.vertical, 2)
-                    .background(ColorPalette.backgroundSecondary)
+                    .background(ColorPalette.backgroundTertiary)
                     .cornerRadius(4)
             }
             .menuStyle(.borderlessButton)

@@ -16,8 +16,8 @@ struct WelcomeStepView: View {
                         .fill(
                             LinearGradient(
                                 gradient: Gradient(colors: [
-                                    ColorPalette.primary.opacity(0.2),
-                                    ColorPalette.primaryLight.opacity(0.1),
+                                    ColorPalette.loopTint.opacity(0.2),
+                                    ColorPalette.loopBlue.opacity(0.1),
                                 ]),
                                 startPoint: .topLeading,
                                 endPoint: .bottomTrailing
@@ -31,7 +31,7 @@ struct WelcomeStepView: View {
                         .aspectRatio(contentMode: .fit)
                         .frame(width: 80, height: 80)
                 }
-                .shadow(color: ColorPalette.primary.opacity(0.3), radius: 20, y: 10)
+                .shadow(color: ColorPalette.loopTint.opacity(0.3), radius: 20, y: 10)
 
                 VStack(spacing: Spacing.small) {
                     Text("Welcome to CodeLooper")
@@ -51,7 +51,7 @@ struct WelcomeStepView: View {
             VStack(spacing: Spacing.medium) {
                 ModernFeatureCard(
                     icon: "brain.filled.head.profile",
-                    iconColor: ColorPalette.primary,
+                    iconColor: ColorPalette.loopTint,
                     title: "AI-Powered Monitoring",
                     description: "Advanced detection and automatic recovery from stuck states"
                 )
@@ -82,7 +82,7 @@ struct WelcomeStepView: View {
 
                 Link("Learn more", destination: URL(string: Constants.githubRepositoryURL)!)
                     .font(Typography.caption1())
-                    .foregroundColor(ColorPalette.primary)
+                    .foregroundColor(ColorPalette.loopTint)
             }
             .padding(.bottom, Spacing.medium)
         }

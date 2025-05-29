@@ -88,6 +88,6 @@ struct NodeDetailsView: View {
             }
             .padding(Spacing.large)
         }
-        .background(ColorPalette.background)
+        .background(Color(NSColor.windowBackgroundColor))
     }
 }

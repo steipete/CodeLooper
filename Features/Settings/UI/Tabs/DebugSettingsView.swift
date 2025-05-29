@@ -29,7 +29,7 @@ struct DebugSettingsView: View {
 
                         Text(useDynamicMenuBarIcon ? "Dynamic (Lottie)" : "Static (PNG)")
                             .font(Typography.caption1(.medium))
-                            .foregroundColor(useDynamicMenuBarIcon ? ColorPalette.success : ColorPalette.primary)
+                            .foregroundColor(useDynamicMenuBarIcon ? ColorPalette.success : ColorPalette.loopTint)
                     }
                 }
             }
@@ -132,7 +132,7 @@ struct DebugSettingsView: View {
             Spacer()
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(ColorPalette.background)
+        .background(MaterialPalette.windowBackground)
         .withDesignSystem()
     }
 
@@ -198,7 +198,7 @@ private struct LottieTestView: View {
                 } else {
                     Text("Failed to load animation")
                         .font(Typography.caption2())
-                        .foregroundColor(.red)
+                        .foregroundColor(ColorPalette.error)
                 }
             }
 
@@ -210,8 +210,8 @@ private struct LottieTestView: View {
                         .foregroundColor(ColorPalette.textSecondary)
 
                     LottieMenuBarView()
-                        .background(ColorPalette.backgroundSecondary)
-                        .border(Color.red, width: 1) // Debug border
+                        .background(ColorPalette.backgroundTertiary)
+                        .border(ColorPalette.error, width: 1) // Debug border
                 }
 
                 VStack(spacing: Spacing.small) {
@@ -221,8 +221,8 @@ private struct LottieTestView: View {
 
                     LottieTestAnimationView(isEnabled: localAnimationEnabled)
                         .frame(width: testSize, height: testSize)
-                        .background(ColorPalette.backgroundSecondary)
-                        .border(Color.blue, width: 1) // Debug border
+                        .background(ColorPalette.backgroundTertiary)
+                        .border(ColorPalette.loopTint, width: 1) // Debug border
                 }
 
                 VStack(spacing: Spacing.small) {
@@ -240,8 +240,8 @@ private struct LottieTestView: View {
                             localAnimationEnabled ? .linear(duration: 2).repeatForever(autoreverses: false) : .default,
                             value: localAnimationEnabled
                         )
-                        .background(ColorPalette.backgroundSecondary)
-                        .border(Color.green, width: 1)
+                        .background(ColorPalette.backgroundTertiary)
+                        .border(ColorPalette.success, width: 1)
                         .onAppear {
                             if localAnimationEnabled {
                                 rotationAngle = 360
@@ -262,8 +262,8 @@ private struct LottieTestView: View {
                         .foregroundColor(ColorPalette.textSecondary)
 
                     CustomChainLinkIcon(size: testSize)
-                        .background(ColorPalette.backgroundSecondary)
-                        .border(Color.purple, width: 1)
+                        .background(ColorPalette.backgroundTertiary)
+                        .border(ColorPalette.loopPurple, width: 1)
                 }
 
                 VStack(spacing: Spacing.small) {
@@ -272,8 +272,8 @@ private struct LottieTestView: View {
                         .foregroundColor(ColorPalette.textSecondary)
 
                     SimplifiedChainLinkIcon(size: testSize)
-                        .background(ColorPalette.backgroundSecondary)
-                        .border(Color.orange, width: 1)
+                        .background(ColorPalette.backgroundTertiary)
+                        .border(ColorPalette.warning, width: 1)
                 }
             }
 
@@ -375,11 +375,11 @@ private struct LottieTestView: View {
                 HStack(spacing: Spacing.medium) {
                     Text("Global Watching: \(isWatchingEnabled ? "Enabled" : "Disabled")")
                         .font(Typography.caption1(.medium))
-                        .foregroundColor(isWatchingEnabled ? .green : .red)
+                        .foregroundColor(isWatchingEnabled ? ColorPalette.success : ColorPalette.error)
 
                     Text("Local Animation: \(localAnimationEnabled ? "Enabled" : "Disabled")")
                         .font(Typography.caption1(.medium))
-                        .foregroundColor(localAnimationEnabled ? .green : .red)
+                        .foregroundColor(localAnimationEnabled ? ColorPalette.success : ColorPalette.error)
                 }
             }
         }
@@ -490,7 +490,7 @@ private struct LogViewerContent: View {
                 } label: {
                     Image(systemName: "trash")
                 }
-                .foregroundColor(.red)
+                .foregroundColor(ColorPalette.error)
                 .help("Clear log")
             }
             .padding(.horizontal, Spacing.medium)
@@ -584,10 +584,10 @@ private struct LogViewerContent: View {
 
     private func colorForLogLevel(_ level: LogLevel) -> Color {
         switch level {
-        case .debug: .gray
-        case .info: .blue
-        case .warning: .orange
-        case .error, .critical: .red
+        case .debug: ColorPalette.textSecondary
+        case .info: ColorPalette.info
+        case .warning: ColorPalette.warning
+        case .error, .critical: ColorPalette.error
         default: .primary
         }
     }
@@ -617,7 +617,7 @@ struct DebugSettingsView_Previews: PreviewProvider {
             .environmentObject(SessionLogger.shared)
             .frame(width: 600, height: 800)
             .padding()
-            .background(ColorPalette.background)
+            .background(MaterialPalette.windowBackground)
             .withDesignSystem()
     }
 }

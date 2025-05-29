@@ -71,7 +71,8 @@ struct ToolbarTabButtonView: View {
 
     private var iconColor: Color {
         if isSelected {
-            Color(NSColor.controlAccentColor)
+            // Use SwiftUI accentColor instead of NSColor.controlAccentColor (fixes macOS bug)
+            Color.accentColor
         } else if isHovered {
             Color(NSColor.labelColor)
         } else {
@@ -91,7 +92,8 @@ struct ToolbarTabButtonView: View {
 
     private var backgroundColor: Color {
         if isSelected {
-            Color(NSColor.controlAccentColor).opacity(0.15)
+            // Use SwiftUI accentColor instead of NSColor.controlAccentColor (fixes macOS bug)
+            Color.accentColor.opacity(0.15)
         } else if isHovered {
             Color(NSColor.controlBackgroundColor)
         } else {
@@ -101,7 +103,8 @@ struct ToolbarTabButtonView: View {
 
     private var borderColor: Color {
         if isSelected {
-            Color(NSColor.controlAccentColor).opacity(0.3)
+            // Use SwiftUI accentColor instead of NSColor.controlAccentColor (fixes macOS bug)
+            Color.accentColor.opacity(0.3)
         } else {
             Color.clear
         }

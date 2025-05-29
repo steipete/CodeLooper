@@ -212,7 +212,7 @@ private struct WindowRow: View {
                         }, label: {
                             Image(systemName: "ladybug")
                                 .font(.system(size: 12))
-                                .foregroundColor(ColorPalette.primary)
+                                .foregroundColor(ColorPalette.loopTint)
                         })
                         .buttonStyle(.plain)
                         .help("Debug JavaScript Functions")
@@ -227,7 +227,7 @@ private struct WindowRow: View {
                     }, label: {
                         Image(systemName: "doc.text.magnifyingglass")
                             .font(.system(size: 12))
-                            .foregroundColor(ColorPalette.primary)
+                            .foregroundColor(ColorPalette.loopTint)
                     })
                     .buttonStyle(.plain)
                     .help("View Sidebar Content")
@@ -354,14 +354,14 @@ private struct WindowRow: View {
                         .foregroundColor(ColorPalette.textTertiary)
                     Text(branch)
                         .font(Typography.caption2())
-                        .foregroundColor(ColorPalette.primary)
+                        .foregroundColor(ColorPalette.loopTint)
                 }
             } else if let branch = gitRepo.currentBranch {
                 Text("•")
                     .foregroundColor(ColorPalette.textTertiary)
                 Text(branch)
                     .font(Typography.caption2())
-                    .foregroundColor(ColorPalette.primary)
+                    .foregroundColor(ColorPalette.loopTint)
             }
 
             if gitRepo.totalChangedFiles > 0 {
@@ -477,14 +477,14 @@ private struct WindowRow: View {
                 CursorWindowsList(style: .popover)
                     .frame(width: 400)
                     .padding()
-                    .background(ColorPalette.background)
+                    .background(Color(NSColor.windowBackgroundColor))
                     .previewDisplayName("Popover Style")
 
                 // Settings style
                 CursorWindowsList(style: .settings)
                     .frame(width: 600)
                     .padding()
-                    .background(ColorPalette.background)
+                    .background(Color(NSColor.windowBackgroundColor))
                     .previewDisplayName("Settings Style")
             }
             .withDesignSystem()

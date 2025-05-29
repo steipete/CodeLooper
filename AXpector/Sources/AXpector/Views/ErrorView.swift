@@ -18,6 +18,6 @@ struct ErrorView: View {
                 .padding()
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(ColorPalette.background)
+        .background(Color(NSColor.windowBackgroundColor))
     }
 }

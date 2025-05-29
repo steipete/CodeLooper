@@ -86,7 +86,7 @@ struct CompletionStepView: View {
                 HStack(spacing: Spacing.medium) {
                     Image(systemName: "menubar.rectangle")
                         .font(.system(size: 20))
-                        .foregroundColor(ColorPalette.primary)
+                        .foregroundColor(ColorPalette.loopTint)
 
                     VStack(alignment: .leading, spacing: Spacing.xSmall) {
                         Text("Access from Menu Bar")
@@ -101,7 +101,7 @@ struct CompletionStepView: View {
                     Spacer()
                 }
                 .padding(Spacing.medium)
-                .background(ColorPalette.primary.opacity(0.1))
+                .background(ColorPalette.loopTint.opacity(0.1))
                 .cornerRadius(Layout.CornerRadius.medium)
 
                 // Auto start reminder if enabled

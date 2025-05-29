@@ -13,6 +13,6 @@ struct LoadingView: View {
                 .foregroundColor(ColorPalette.textSecondary)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(ColorPalette.background)
+        .background(Color(NSColor.windowBackgroundColor))
     }
 }

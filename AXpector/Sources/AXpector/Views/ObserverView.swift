@@ -30,7 +30,7 @@ struct ObserverView: View {
                     )
                 }
                 .padding(Spacing.medium)
-                .background(ColorPalette.backgroundSecondary)
+                .background(MaterialPalette.panelBackground)
 
                 DSDivider()
 
@@ -58,7 +58,7 @@ struct ObserverView: View {
                 .frame(minWidth: 300) // Ensure tree has some minimum width
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .background(ColorPalette.background)
+            .background(Color(NSColor.windowBackgroundColor))
 
             // Observer Node Details View
             if let selectedID = observerSelectedNodeID,

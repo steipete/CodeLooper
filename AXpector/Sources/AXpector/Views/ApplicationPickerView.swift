@@ -66,7 +66,7 @@ struct ApplicationPickerView: View {
                 }
                 .padding(.horizontal, Spacing.small)
                 .padding(.vertical, Spacing.xSmall)
-                .background(ColorPalette.backgroundSecondary)
+                .background(MaterialPalette.cardBackground)
                 .cornerRadius(6)
             }
             .menuStyle(.borderlessButton)

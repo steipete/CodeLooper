@@ -364,7 +364,7 @@ private struct MCPExtension: Identifiable {
             ExternalMCPsSettingsView()
                 .frame(width: 600, height: 700)
                 .padding()
-                .background(ColorPalette.background)
+                .background(Color(NSColor.windowBackgroundColor))
                 .withDesignSystem()
         }
     }

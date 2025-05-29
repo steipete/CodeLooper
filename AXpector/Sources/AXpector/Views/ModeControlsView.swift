@@ -55,7 +55,7 @@ struct ModeControlsView: View {
                         .foregroundColor(ColorPalette.text)
                         .padding(Spacing.xSmall)
                         .frame(maxWidth: .infinity, alignment: .leading)
-                        .background(ColorPalette.backgroundSecondary.opacity(0.5))
+                        .background(ColorPalette.backgroundTertiary.opacity(0.5))
                         .cornerRadius(4)
                         .textSelection(.enabled)
                 }

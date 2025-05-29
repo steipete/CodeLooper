@@ -13,15 +13,15 @@ public final class ColorTheme {
     // MARK: - Dynamic Colors
 
     public var primary: Color {
-        isDarkMode ? ColorPalette.primaryLight : ColorPalette.primary
+        ColorPalette.loopTint
     }
 
     public var background: Color {
-        ColorPalette.background
+        Color(NSColor.windowBackgroundColor)
     }
 
     public var backgroundSecondary: Color {
-        ColorPalette.backgroundSecondary
+        ColorPalette.backgroundTertiary
     }
 
     public var text: Color {

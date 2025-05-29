@@ -47,6 +47,6 @@ struct EmptyStateView: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .padding()
-        .background(ColorPalette.background)
+        .background(Color(NSColor.windowBackgroundColor))
     }
 }

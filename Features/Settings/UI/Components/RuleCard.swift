@@ -44,7 +44,7 @@ struct RuleCard<Rule>: View where Rule: Identifiable {
                 HStack {
                     HStack(spacing: Spacing.xxxSmall) {
                         Image(systemName: "number.circle.fill")
-                            .foregroundColor(ColorPalette.primary)
+                            .foregroundColor(ColorPalette.loopTint)
 
                         Text("Executed \(executionCount) times")
                             .font(Typography.caption2())

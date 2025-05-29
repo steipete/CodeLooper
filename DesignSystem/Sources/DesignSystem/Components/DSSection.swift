@@ -65,9 +65,10 @@ public struct DSSettingsSection<Content: View>: View {
             if let title {
                 Text(title)
                     .font(Typography.caption1(.semibold))
-                    .foregroundColor(ColorPalette.textSecondary)
+                    .foregroundColor(ColorPalette.sectionHeader)
                     .textCase(.uppercase)
                     .padding(.bottom, Spacing.xSmall)
+                    .background(Color.clear) // Ensure transparent background
             }
 
             DSCard(style: .filled) {

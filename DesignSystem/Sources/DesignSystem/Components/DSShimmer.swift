@@ -30,7 +30,7 @@ public struct DSShimmer: View {
 
     public var body: some View {
         RoundedRectangle(cornerRadius: cornerRadius)
-            .fill(ColorPalette.backgroundSecondary)
+            .fill(MaterialPalette.cardBackground)
             .frame(width: width, height: height)
             .shimmer()
     }

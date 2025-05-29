@@ -97,13 +97,13 @@ public struct NotificationPermissionsView: View {
             VStack(spacing: Spacing.large) {
                 NotificationPermissionsView(showTitle: true, compact: false)
                     .padding()
-                    .background(ColorPalette.background)
+                    .background(Color(NSColor.windowBackgroundColor))
 
                 Divider()
 
                 NotificationPermissionsView(showTitle: false, compact: true)
                     .padding()
-                    .background(ColorPalette.background)
+                    .background(Color(NSColor.windowBackgroundColor))
             }
             .frame(width: 500)
             .withDesignSystem()

@@ -53,12 +53,12 @@ struct SettingsStepView: View {
                     HStack(spacing: Spacing.medium) {
                         ZStack {
                             RoundedRectangle(cornerRadius: Layout.CornerRadius.small)
-                                .fill(ColorPalette.primary.opacity(0.1))
+                                .fill(ColorPalette.loopTint.opacity(0.1))
                                 .frame(width: 40, height: 40)
 
                             Image(systemName: "power.circle.fill")
                                 .font(.system(size: 20))
-                                .foregroundColor(ColorPalette.primary)
+                                .foregroundColor(ColorPalette.loopTint)
                         }
 
                         VStack(alignment: .leading, spacing: Spacing.xSmall) {
@@ -122,7 +122,7 @@ struct SettingsStepView: View {
                 HStack(spacing: Spacing.medium) {
                     Image(systemName: "keyboard")
                         .font(Typography.body())
-                        .foregroundColor(ColorPalette.primary)
+                        .foregroundColor(ColorPalette.loopTint)
 
                     Text("You can set up keyboard shortcuts in the settings after setup")
                         .font(Typography.caption1())

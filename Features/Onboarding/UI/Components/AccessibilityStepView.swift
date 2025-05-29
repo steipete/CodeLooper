@@ -15,8 +15,8 @@ struct AccessibilityStepView: View {
                             .fill(
                                 LinearGradient(
                                     gradient: Gradient(colors: [
-                                        ColorPalette.primary.opacity(0.2),
-                                        ColorPalette.primaryLight.opacity(0.1),
+                                        ColorPalette.loopTint.opacity(0.2),
+                                        ColorPalette.loopBlue.opacity(0.1),
                                     ]),
                                     startPoint: .topLeading,
                                     endPoint: .bottomTrailing
@@ -26,10 +26,10 @@ struct AccessibilityStepView: View {
 
                         Image(systemName: "shield.checkered")
                             .font(.system(size: 45))
-                            .foregroundColor(ColorPalette.primary)
+                            .foregroundColor(ColorPalette.loopTint)
                             .symbolRenderingMode(.hierarchical)
                     }
-                    .shadow(color: ColorPalette.primary.opacity(0.2), radius: 15, y: 5)
+                    .shadow(color: ColorPalette.loopTint.opacity(0.2), radius: 15, y: 5)
 
                     VStack(spacing: Spacing.small) {
                         Text("Grant Required Permissions")
@@ -51,7 +51,7 @@ struct AccessibilityStepView: View {
                     // Accessibility Permission
                     PermissionCard(
                         icon: "hand.tap.fill",
-                        iconColor: ColorPalette.primary,
+                        iconColor: ColorPalette.loopTint,
                         title: "Accessibility Access",
                         description: "Required to detect and interact with Cursor's UI elements"
                     ) {

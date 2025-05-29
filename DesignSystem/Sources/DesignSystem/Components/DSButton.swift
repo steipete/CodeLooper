@@ -171,11 +171,11 @@ public struct DSButton: View {
     private var backgroundColor: Color {
         switch style {
         case .primary:
-            isHovered ? ColorPalette.primaryDark : ColorPalette.primary
+            isHovered ? ColorPalette.loopBlue : ColorPalette.loopPurple
         case .secondary:
-            isHovered ? ColorPalette.backgroundTertiary : ColorPalette.backgroundSecondary
+            isHovered ? ColorPalette.backgroundTertiary : Color(NSColor.controlBackgroundColor)
         case .tertiary:
-            isHovered ? ColorPalette.hover : Color.clear
+            isHovered ? ColorPalette.backgroundTertiary : Color.clear
         case .destructive:
             isHovered ? ColorPalette.error.opacity(0.9) : ColorPalette.error
         case .ghost:
@@ -190,7 +190,7 @@ public struct DSButton: View {
         case .secondary:
             ColorPalette.text
         case .tertiary, .ghost:
-            ColorPalette.primary
+            ColorPalette.loopPurple
         }
     }
 
@@ -201,7 +201,7 @@ public struct DSButton: View {
         case .secondary:
             ColorPalette.border
         case .tertiary:
-            isHovered ? ColorPalette.primary.opacity(0.3) : Color.clear
+            isHovered ? ColorPalette.loopPurple.opacity(0.3) : Color.clear
         case .ghost:
             Color.clear
         }

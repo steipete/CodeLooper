@@ -17,8 +17,8 @@ struct WelcomeView: View {
             // Modern gradient background
             LinearGradient(
                 gradient: Gradient(colors: [
-                    ColorPalette.background,
-                    ColorPalette.backgroundSecondary.opacity(0.3),
+                    Color(NSColor.windowBackgroundColor),
+                    ColorPalette.backgroundTertiary.opacity(0.3),
                 ]),
                 startPoint: .topLeading,
                 endPoint: .bottomTrailing

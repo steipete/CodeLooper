@@ -37,8 +37,8 @@ public struct DSCard<Content: View>: View {
 
     public var body: some View {
         content()
-            .padding(Spacing.medium)
-            .background(backgroundColor)
+            .padding(Spacing.small)
+            .background(backgroundMaterial)
             .clipShape(RoundedRectangle(cornerRadius: Layout.CornerRadius.large))
             .overlay(
                 RoundedRectangle(cornerRadius: Layout.CornerRadius.large)
@@ -52,12 +52,14 @@ public struct DSCard<Content: View>: View {
     private let style: Style
     private let content: () -> Content
 
-    private var backgroundColor: Color {
+    @ViewBuilder
+    private var backgroundMaterial: some View {
         switch style {
         case .elevated, .outlined:
-            ColorPalette.background
+            Color.clear.background(MaterialPalette.windowBackground)
         case .filled:
-            ColorPalette.backgroundSecondary
+            // Use clear background to avoid layering with window background
+            Color.clear
         }
     }
 
@@ -65,8 +67,10 @@ public struct DSCard<Content: View>: View {
         switch style {
         case .outlined:
             ColorPalette.border
-        case .elevated, .filled:
+        case .elevated:
             Color.clear
+        case .filled:
+            ColorPalette.cardBorder
         }
     }
 
@@ -74,8 +78,10 @@ public struct DSCard<Content: View>: View {
         switch style {
         case .outlined:
             Layout.BorderWidth.regular
-        case .elevated, .filled:
+        case .elevated:
             0
+        case .filled:
+            Layout.BorderWidth.thin
         }
     }
 

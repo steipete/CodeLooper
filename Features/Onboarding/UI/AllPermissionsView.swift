@@ -113,7 +113,7 @@ private struct PermissionRowView: View {
             AllPermissionsView()
                 .padding()
                 .frame(width: 500)
-                .background(ColorPalette.background)
+                .background(Color(NSColor.windowBackgroundColor))
                 .withDesignSystem()
         }
     }

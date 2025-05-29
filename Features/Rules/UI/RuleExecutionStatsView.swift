@@ -35,7 +35,7 @@ struct RuleExecutionStatsView: View {
                 }
             }
             .padding(Spacing.medium)
-            .background(ColorPalette.background)
+            .background(Color(NSColor.windowBackgroundColor))
             .cornerRadius(12)
             .overlay(
                 RoundedRectangle(cornerRadius: 12)
@@ -146,7 +146,7 @@ struct CompactRuleStatsView: View {
                 // Main stats view
                 RuleExecutionStatsView()
                     .padding()
-                    .background(ColorPalette.backgroundSecondary)
+                    .background(ColorPalette.backgroundTertiary)
                     .previewDisplayName("Rule Stats")
                     .onAppear {
                         // Add some test data
@@ -158,7 +158,7 @@ struct CompactRuleStatsView: View {
                 // Compact version
                 CompactRuleStatsView()
                     .padding()
-                    .background(ColorPalette.backgroundSecondary)
+                    .background(ColorPalette.backgroundTertiary)
                     .previewDisplayName("Compact Stats")
             }
             .withDesignSystem()

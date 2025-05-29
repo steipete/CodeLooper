@@ -42,7 +42,7 @@ struct ObserverNodeDetailsView: View {
             .padding(Spacing.medium)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(ColorPalette.backgroundSecondary) // Differentiate from main tree background
+        .background(MaterialPalette.panelBackground) // Differentiate from main tree background
         .border(ColorPalette.border, width: 1)
     }
 }

@@ -57,13 +57,13 @@ struct TreeSidebarView: View {
                 .font(Typography.caption1())
             }
             .padding(Spacing.medium)
-            .background(ColorPalette.backgroundSecondary)
+            .background(MaterialPalette.sidebarBackground)
 
             DSDivider()
 
             // Tree Content
             TreeContentView(viewModel: viewModel, selectedNodeID: $selectedNodeID)
         }
-        .background(ColorPalette.background)
+        .background(Color(NSColor.windowBackgroundColor))
     }
 }

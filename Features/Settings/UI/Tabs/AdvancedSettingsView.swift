@@ -112,6 +112,7 @@ struct AdvancedSettingsView: View {
             }
 
             Spacer()
+                
         }
         .alert("Reset & Restart CodeLooper?", isPresented: $showResetAndRestartConfirmation) {
             Button("Cancel", role: .cancel) {}
@@ -246,7 +247,6 @@ struct AdvancedSettingsView: View {
             AdvancedSettingsView()
                 .frame(width: 500, height: 700)
                 .padding()
-                .background(ColorPalette.background)
                 .withDesignSystem()
         }
     }

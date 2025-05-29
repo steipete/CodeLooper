@@ -32,7 +32,7 @@ struct MainPopoverView: View {
                 } else {
                     Image(systemName: "link.circle.fill")
                         .font(.title2)
-                        .foregroundColor(ColorPalette.primary)
+                        .foregroundColor(ColorPalette.loopTint)
                 }
 
                 Text("CodeLooper")
@@ -120,7 +120,7 @@ struct MainPopoverView: View {
         .padding(Spacing.large)
         .frame(width: 480)
         .fixedSize(horizontal: false, vertical: true)
-        .background(ColorPalette.background)
+        .background(Color(NSColor.windowBackgroundColor))
         .animation(.default, value: isGlobalMonitoringEnabled)
         .animation(.default, value: diagnosticsManager.windowStates.count)
     }

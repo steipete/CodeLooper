@@ -24,7 +24,7 @@ struct MainContentView: View {
             }
             .pickerStyle(SegmentedPickerStyle())
             .padding([.horizontal, .top])
-            .background(ColorPalette.background)
+            .background(Color(NSColor.windowBackgroundColor))
 
             switch viewModel.currentMode {
             case .inspector:
@@ -49,6 +49,6 @@ struct MainContentView: View {
             }
         }
         .frame(minHeight: 600, idealHeight: 800)
-        .background(ColorPalette.background)
+        .background(Color(NSColor.windowBackgroundColor))
     }
 }

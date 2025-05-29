@@ -11,7 +11,7 @@ struct ProgressBar: View {
             ZStack(alignment: .leading) {
                 // Background
                 RoundedRectangle(cornerRadius: 4)
-                    .fill(ColorPalette.backgroundSecondary)
+                    .fill(ColorPalette.backgroundTertiary)
                     .frame(height: 8)
 
                 // Progress
@@ -19,8 +19,8 @@ struct ProgressBar: View {
                     .fill(
                         LinearGradient(
                             gradient: Gradient(colors: [
-                                ColorPalette.primary,
-                                ColorPalette.primaryLight,
+                                ColorPalette.loopTint,
+                                ColorPalette.loopBlue,
                             ]),
                             startPoint: .leading,
                             endPoint: .trailing

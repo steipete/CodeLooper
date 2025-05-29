@@ -163,7 +163,7 @@ private extension CursorRuleSetsSettingsView {
             CursorRuleSetsSettingsView()
                 .frame(width: 600, height: 700)
                 .padding()
-                .background(ColorPalette.background)
+                .background(Color(NSColor.windowBackgroundColor))
                 .withDesignSystem()
         }
     }

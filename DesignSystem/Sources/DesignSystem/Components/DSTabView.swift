@@ -41,14 +41,14 @@ public struct DSTabView<Content: View>: View {
             }
             .padding(.horizontal, Spacing.medium)
             .padding(.vertical, Spacing.small)
-            .background(ColorPalette.backgroundSecondary)
+            .background(MaterialPalette.cardBackground)
 
             DSDivider()
 
             // Content area
             content()
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .background(ColorPalette.background)
+                .windowBackground() // Use proper material background
         }
     }
 
@@ -83,7 +83,7 @@ private struct TabButton: View {
             }
             .padding(.horizontal, Spacing.medium)
             .padding(.vertical, Spacing.xSmall)
-            .background(backgroundColor)
+            .background(backgroundMaterial)
             .cornerRadiusDS(Layout.CornerRadius.medium)
             .scaleEffect(isSelected ? 1.0 : (isHovered ? 0.98 : 1.0))
             .overlay(
@@ -99,7 +99,7 @@ private struct TabButton: View {
 
     private var foregroundColor: Color {
         if isSelected {
-            ColorPalette.primary
+            ColorPalette.loopTint
         } else if isHovered {
             ColorPalette.text
         } else {
@@ -109,11 +109,18 @@ private struct TabButton: View {
 
     private var backgroundColor: Color {
         if isSelected {
-            ColorPalette.primary.opacity(0.1)
-        } else if isHovered {
-            ColorPalette.hover
+            ColorPalette.loopTint.opacity(0.15)
         } else {
             Color.clear
+        }
+    }
+    
+    @ViewBuilder
+    private var backgroundMaterial: some View {
+        if isHovered && !isSelected {
+            Rectangle().fill(MaterialPalette.selectionBackground)
+        } else {
+            backgroundColor
         }
     }
 }

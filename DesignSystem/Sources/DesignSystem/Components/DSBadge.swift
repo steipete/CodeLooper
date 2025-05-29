@@ -58,7 +58,7 @@ public struct DSBadge: View {
         case .default:
             ColorPalette.backgroundTertiary
         case .primary:
-            ColorPalette.primary.opacity(0.15)
+            ColorPalette.loopTint.opacity(0.15)
         case .success:
             ColorPalette.success.opacity(0.15)
         case .warning:
@@ -75,7 +75,7 @@ public struct DSBadge: View {
         case .default:
             ColorPalette.textSecondary
         case .primary:
-            ColorPalette.primary
+            ColorPalette.loopTint
         case .success:
             ColorPalette.success
         case .warning:

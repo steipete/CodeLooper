@@ -194,14 +194,14 @@ private struct SoundRowView: View {
             Group {
                 SoundPickerView(selectedSound: .constant("Boop"))
                     .padding()
-                    .background(ColorPalette.background)
+                    .background(Color(NSColor.windowBackgroundColor))
                     .previewDisplayName("Sound Picker")
 
                 SoundPickerPopover(
                     selectedSound: .constant("Boop"),
                     isPresented: .constant(true)
                 )
-                .background(ColorPalette.background)
+                .background(Color(NSColor.windowBackgroundColor))
                 .previewDisplayName("Sound Picker Popover")
             }
             .withDesignSystem()

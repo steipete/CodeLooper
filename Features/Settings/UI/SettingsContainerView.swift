@@ -36,7 +36,7 @@ struct SettingsContainerView: View {
             minHeight: 400,
             maxHeight: 1200
         )
-        .background(ColorPalette.background)
+        .background(Color(NSColor.windowBackgroundColor))
         .withDesignSystem()
     }
 
@@ -132,7 +132,7 @@ private struct TitleBarView: View {
         }
         .padding(.horizontal, Spacing.medium)
         .padding(.vertical, Spacing.xSmall)
-        .background(ColorPalette.backgroundSecondary)
+        .background(ColorPalette.backgroundTertiary)
         .overlay(
             DSDivider()
                 .frame(height: Layout.BorderWidth.regular),
@@ -193,7 +193,7 @@ private struct TitleBarTabButton: View {
 
     private var iconColor: Color {
         if isSelected {
-            ColorPalette.primary
+            ColorPalette.loopTint
         } else if isHovered {
             ColorPalette.text
         } else {
@@ -213,9 +213,9 @@ private struct TitleBarTabButton: View {
 
     private var backgroundColor: Color {
         if isSelected {
-            ColorPalette.background
+            Color(NSColor.controlBackgroundColor)
         } else if isHovered {
-            ColorPalette.backgroundSecondary.opacity(0.7)
+            ColorPalette.backgroundTertiary.opacity(0.7)
         } else {
             Color.clear
         }
@@ -223,7 +223,7 @@ private struct TitleBarTabButton: View {
 
     private var borderColor: Color {
         if isSelected {
-            ColorPalette.primary.opacity(0.3)
+            ColorPalette.loopTint.opacity(0.3)
         } else {
             Color.clear
         }

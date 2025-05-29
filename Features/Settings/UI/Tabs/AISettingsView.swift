@@ -137,7 +137,7 @@ struct AISettingsView: View {
             Spacer()
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(ColorPalette.background)
+        .background(Color(NSColor.windowBackgroundColor))
         .withDesignSystem()
         .onAppear {
             openAIAPIKey = loadAPIKeyFromKeychain(service: "CODELOOPER_OPENAI_API_KEY")
@@ -211,7 +211,7 @@ struct AISettingsView: View {
 
             Link("Get your API key from OpenAI", destination: URL(string: "https://platform.openai.com/api-keys")!)
                 .font(Typography.caption1())
-                .foregroundColor(ColorPalette.primary)
+                .foregroundColor(ColorPalette.loopTint)
         }
     }
 
@@ -273,7 +273,7 @@ struct AISettingsView: View {
 
             Link("Install Ollama", destination: URL(string: "https://ollama.ai")!)
                 .font(Typography.caption1())
-                .foregroundColor(ColorPalette.primary)
+                .foregroundColor(ColorPalette.loopTint)
         }
     }
 
@@ -408,7 +408,7 @@ struct AISettingsView: View {
         static var previews: some View {
             AISettingsView()
                 .frame(width: 600, height: 700)
-                .background(ColorPalette.background)
+                .background(Color(NSColor.windowBackgroundColor))
                 .withDesignSystem()
         }
     }

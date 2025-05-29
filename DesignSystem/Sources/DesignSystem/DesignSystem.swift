@@ -75,6 +75,7 @@ public struct DesignSystemViewModifier: ViewModifier {
     public func body(content: Content) -> some View {
         content
             .environment(\.colorTheme, colorTheme)
+            .tint(ColorPalette.loopTint) // Apply CodeLooper brand tint
             .onReceive(NotificationCenter.default
                 .publisher(for: NSApplication.didChangeOcclusionStateNotification))
             { _ in

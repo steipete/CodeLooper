@@ -31,7 +31,8 @@ extension Color {
         case .secondary:
             NSColor.secondaryLabelColor
         default:
-            NSColor.controlAccentColor
+            // Use proper SwiftUI accentColor conversion (fixes macOS bug with controlAccentColor)
+            NSColor(.accentColor)
         }
     }
 }

@@ -65,7 +65,7 @@ public struct DSTextField: View {
             }
             .padding(.horizontal, Spacing.small)
             .padding(.vertical, Spacing.xSmall)
-            .background(ColorPalette.backgroundSecondary)
+            .background(MaterialPalette.cardBackground)
             .clipShape(RoundedRectangle(cornerRadius: Layout.CornerRadius.medium))
             .overlay(
                 RoundedRectangle(cornerRadius: Layout.CornerRadius.medium)
@@ -97,14 +97,14 @@ public struct DSTextField: View {
         if errorText != nil {
             return ColorPalette.error
         }
-        return isFocused ? ColorPalette.primary : ColorPalette.textSecondary
+        return isFocused ? ColorPalette.loopTint : ColorPalette.textSecondary
     }
 
     private var borderColor: Color {
         if errorText != nil {
             return ColorPalette.error
         }
-        return isFocused ? ColorPalette.primary : ColorPalette.border
+        return isFocused ? ColorPalette.loopTint : ColorPalette.border
     }
 
     private var borderWidth: CGFloat {

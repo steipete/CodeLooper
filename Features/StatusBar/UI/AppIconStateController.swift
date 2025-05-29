@@ -68,7 +68,8 @@ class AppIconStateController: ObservableObject {
         preFlashTintColor = currentTintColor
         isFlashing = true
         // Set flash tint color (use accent color or blue for visibility)
-        currentTintColor = .controlAccentColor
+        // Use proper SwiftUI accentColor conversion (fixes macOS bug with controlAccentColor)
+        currentTintColor = NSColor(.accentColor)
         Self.logger.debug("Icon flash initiated with tint: \\(String(describing: currentTintColor)).")
 
         flashTask = Task { [weak self] in

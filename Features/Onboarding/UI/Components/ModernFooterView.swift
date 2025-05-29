@@ -22,7 +22,7 @@ struct ModernFooterView: View {
             HStack(spacing: Spacing.small) {
                 ForEach(WelcomeStep.allCases, id: \.self) { step in
                     Circle()
-                        .fill(step == viewModel.currentStep ? ColorPalette.primary : ColorPalette.backgroundSecondary)
+                        .fill(step == viewModel.currentStep ? ColorPalette.loopTint : ColorPalette.backgroundTertiary)
                         .frame(width: 8, height: 8)
                         .animation(.spring(response: 0.3), value: viewModel.currentStep)
                 }

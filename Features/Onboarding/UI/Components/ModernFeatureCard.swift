@@ -43,7 +43,7 @@ struct ModernFeatureCard: View {
             Spacer()
         }
         .padding(Spacing.medium)
-        .background(ColorPalette.background)
+        .background(Color(NSColor.windowBackgroundColor))
         .cornerRadius(Layout.CornerRadius.medium)
         .shadow(color: ColorPalette.shadowLight, radius: 5, y: 2)
     }

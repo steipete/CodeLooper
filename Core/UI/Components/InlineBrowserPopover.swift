@@ -31,7 +31,7 @@ struct InlineBrowserPopover: View {
                     .controlSize(.small)
                 }
                 .padding(Spacing.medium)
-                .background(ColorPalette.backgroundSecondary)
+                .background(MaterialPalette.panelBackground)
 
                 DSDivider()
             }

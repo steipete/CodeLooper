@@ -13,10 +13,12 @@ import SwiftUI
 /// and maintain WCAG accessibility guidelines for contrast.
 public enum ColorPalette {
     // MARK: - Brand Colors
-
-    public static let primary = Color(red: 0.0, green: 0.478, blue: 1.0)
-    public static let primaryLight = Color(red: 0.2, green: 0.6, blue: 1.0)
-    public static let primaryDark = Color(red: 0.0, green: 0.35, blue: 0.8)
+    
+    /// CodeLooper signature blue-purple loop color for global tinting
+    public static let loopBlue = Color(red: 0.3, green: 0.5, blue: 0.9)      // Main loop color
+    public static let loopPurple = Color(red: 0.5, green: 0.3, blue: 0.9)    // Secondary loop color
+    public static let loopTint = Color(red: 0.4, green: 0.35, blue: 0.85)    // Darker, more purple tint
+    
 
     // MARK: - Semantic Colors
 
@@ -30,19 +32,20 @@ public enum ColorPalette {
     public static let text = Color.primary
     public static let textSecondary = Color.secondary
     public static let textTertiary = Color.secondary.opacity(0.6)
+    
+    /// Consistent color for section headers to ensure uniformity
+    public static let sectionHeader = Color.secondary
 
-    public static let background = Color(NSColor.windowBackgroundColor)
-    public static let backgroundSecondary = Color(NSColor.controlBackgroundColor).opacity(0.6)
     public static let backgroundTertiary = Color(NSColor.underPageBackgroundColor)
+    
 
     public static let border = Color(NSColor.separatorColor)
     public static let borderLight = Color(NSColor.separatorColor).opacity(0.5)
+    public static let cardBorder = Color(NSColor.separatorColor).opacity(0.4)
 
     // MARK: - Interactive States
 
-    public static let accent = Color.accentColor
-    public static let hover = Color.accentColor.opacity(0.1)
-    public static let pressed = Color.accentColor.opacity(0.2)
+    public static let accent = loopTint // Use CodeLooper brand tint
     public static let disabled = Color.gray.opacity(0.3)
 
     // MARK: - Shadows

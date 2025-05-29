@@ -154,7 +154,7 @@ struct GeneralSettingsView: View {
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(ColorPalette.background)
+        .windowBackground() // Use proper material background
         .withDesignSystem()
         .onAppear {
             loadAppIcon(for: gitClientApp)
