@@ -500,7 +500,8 @@ class WindowAIDiagnosticsManager: ObservableObject, Loggable {
 
                 logger.info(
                     """
-                    Successfully parsed AI JSON response for window \(windowId). Status: '\(statusString)', Reason: '\(aiResult.reason ?? "N/A")'
+                    Successfully parsed AI JSON response for window \(windowId). \
+                    Status: '\(statusString)', Reason: '\(aiResult.reason ?? "N/A")'
                     """
                 )
 
@@ -600,7 +601,8 @@ class WindowAIDiagnosticsManager: ObservableObject, Loggable {
                             } else {
                                 logger.warning(
                                     """
-                                    Content extracted with pattern '\(patternString)' ('\(jsonString)') does not appear to be valid JSON (prefix/suffix check failed).
+                                    Content extracted with pattern '\(patternString)' ('\(jsonString)') \
+                                    does not appear to be valid JSON (prefix/suffix check failed).
                                     """
                                 )
                             }

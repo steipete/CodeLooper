@@ -59,6 +59,7 @@ extension AXpectorViewModel {
     }
 
     // Function to dynamically load children for a node
+    // swiftlint:disable:next function_body_length
     func expandNodeAndLoadChildren(_ node: AXPropertyNode) {
         if !node.hasChildrenAXProperty {
             axInfoLog(
@@ -104,7 +105,10 @@ extension AXpectorViewModel {
                 let collectedLogs = axGetLogEntries()
                 for logEntry in collectedLogs { // Iterate and log
                     axDebugLog(
-                        "AXorcist (ExpandNode) Log [L:\(logEntry.level.rawValue) T:\(logEntry.timestamp)]: \(logEntry.message) Details: \(logEntry.details ?? [:])"
+                        """
+                        AXorcist (ExpandNode) Log [L:\(logEntry.level.rawValue) T:\(logEntry.timestamp)]: \
+                        \(logEntry.message) Details: \(logEntry.details ?? [:])
+                        """
                     )
                 }
                 axClearLogs()
@@ -165,8 +169,8 @@ extension AXpectorViewModel {
             let childRole = childAttributes[AXAttributeNames.kAXRoleAttribute]?.value as? String
             let childTitle = childAttributes[AXAttributeNames.kAXTitleAttribute]?.value as? String
             var childPathComponent = childRole ?? "UnknownRole"
-            if let t = childTitle,
-               !t.isEmpty { childPathComponent += "[\"\(t.prefix(20))\"]" }
+            if let title = childTitle,
+               !title.isEmpty { childPathComponent += "[\"\(title.prefix(20))\"]" }
             else { childPathComponent += "[EL:\(String(describing: childAX.underlyingElement).suffix(8))]" }
             let childFullPath = pathOfElementToFetchChildrenFor
                 .isEmpty ? childPathComponent : "\(pathOfElementToFetchChildrenFor)/\(childPathComponent)"
@@ -249,7 +253,7 @@ extension AXpectorViewModel {
         let valueText = jsonElement.attributes?[AXAttributeNames.kAXValueAttribute]?.value as? String
 
         var currentPathComponent = role ?? "UnknownRole"
-        if let t = title, !t.isEmpty { currentPathComponent += "[\"\(t.prefix(20))\"]" }
+        if let titleText = title, !titleText.isEmpty { currentPathComponent += "[\"\(titleText.prefix(20))\"]" }
         // Path construction from jsonElement.path might be better if available and reliable
         let newPath = parentPath.isEmpty ? currentPathComponent : "\(parentPath)/\(currentPathComponent)"
 
@@ -268,6 +272,8 @@ extension AXpectorViewModel {
             if let childrenArray = childrenAttr as? [Any] {
                 hasChildren = !childrenArray.isEmpty
             } else if let childrenNSArray = childrenAttr as? NSArray {
+                // swiftlint gets confused and tries to convert this to .isEmpty which doesn't exist on NSArray.
+                // swiftlint:disable:next empty_count
                 hasChildren = childrenNSArray.count > 0
             }
             // Add more checks if children can be other types that indicate presence
@@ -308,7 +314,7 @@ extension AXpectorViewModel {
         var currentPathComponent = roleDesc ?? role ?? "UnknownRole"
         // Using underlyingElement string for path component if title is empty can be very verbose and less stable.
         // Consider a more stable placeholder or relying on role if title is missing.
-        if let t = title, !t.isEmpty { currentPathComponent += "[\"\(t.prefix(20))\"]" } else {
+        if let titleText = title, !titleText.isEmpty { currentPathComponent += "[\"\(titleText.prefix(20))\"]" } else {
             currentPathComponent += "[EL:\(String(describing: axElementFromCollectAll.underlyingElement).suffix(8))]"
         } // Short unique-ish ID
 
