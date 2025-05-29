@@ -1,5 +1,16 @@
 import SwiftUI
 
+/// The About window view displaying app information and credits.
+///
+/// AboutView presents:
+/// - Animated app icon with pulsating effect
+/// - Version and build information
+/// - Copyright and author details
+/// - Links to website and GitHub repository
+/// - Credits and acknowledgments
+///
+/// The view provides a polished presentation of app metadata
+/// with subtle animations and professional styling.
 struct AboutView: View {
     // MARK: Internal
 
