@@ -25,7 +25,7 @@ public struct CursorAnalysisView: View {
 
             if let analysis = analyzer.lastAnalysis {
                 analysisResultView(analysis)
-                
+
                 DSButton("Clear", style: .secondary) {
                     analyzer.lastAnalysis = nil
                     analyzer.lastError = nil
@@ -151,7 +151,6 @@ public struct CursorAnalysisView: View {
                 .buttonStyle(.borderedProminent)
                 .tint(.blue)
                 .disabled(analyzer.isAnalyzing || (selectedPromptType == .custom && customPrompt.isEmpty))
-
             }
 
             if selectedPromptType == .custom {

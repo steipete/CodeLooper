@@ -40,11 +40,11 @@ public final class UserNotificationManager: ObservableObject {
             } catch {
                 // Handle the case where notifications are completely blocked for this app
                 logger.warning("Notification permissions unavailable - may be blocked at system level: \(error)")
-                
+
                 await MainActor.run {
                     self.hasPermission = false
                     self.authorizationStatus = .denied
-                    
+
                     // Show alert and open System Settings
                     self.showNotificationBlockedAlert()
                 }
@@ -150,7 +150,7 @@ public final class UserNotificationManager: ObservableObject {
     // MARK: Private
 
     private let logger = Logger(category: .utilities)
-    
+
     /// Show alert when notifications are blocked and open System Settings
     private func showNotificationBlockedAlert() {
         let alert = NSAlert()
@@ -159,9 +159,9 @@ public final class UserNotificationManager: ObservableObject {
         alert.alertStyle = .warning
         alert.addButton(withTitle: "Open System Settings")
         alert.addButton(withTitle: "Skip")
-        
+
         let response = alert.runModal()
-        
+
         if response == .alertFirstButtonReturn {
             openNotificationSettings()
         }

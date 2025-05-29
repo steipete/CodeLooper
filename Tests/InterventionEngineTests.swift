@@ -1,14 +1,14 @@
-import Testing
-import Foundation
-import Combine
 @testable import CodeLooper
+import Combine
+import Foundation
+import Testing
 
 @Test("InterventionEngine - InterventionType Enum Cases")
-func testInterventionTypeEnumCases() async throws {
+func interventionTypeEnumCases() async throws {
     // Test that all intervention types are available
     let allCases = CursorInterventionEngine.InterventionType.allCases
     #expect(allCases.count > 0)
-    
+
     // Test specific expected cases
     #expect(allCases.contains(.unknown))
     #expect(allCases.contains(.noInterventionNeeded))
@@ -22,7 +22,7 @@ func testInterventionTypeEnumCases() async throws {
 }
 
 @Test("InterventionEngine - InterventionType String Values")
-func testInterventionTypeStringValues() async throws {
+func interventionTypeStringValues() async throws {
     // Test that intervention types have proper string representations
     #expect(CursorInterventionEngine.InterventionType.unknown.rawValue == "Unknown")
     #expect(CursorInterventionEngine.InterventionType.noInterventionNeeded.rawValue == "No Intervention Needed")
@@ -33,14 +33,14 @@ func testInterventionTypeStringValues() async throws {
 }
 
 @Test("InterventionEngine - InterventionType Codable")
-func testInterventionTypeCodable() async throws {
+func interventionTypeCodable() async throws {
     let interventionType = CursorInterventionEngine.InterventionType.connectionIssue
-    
+
     // Test encoding
     let encoder = JSONEncoder()
     let data = try encoder.encode(interventionType)
     #expect(data.count > 0)
-    
+
     // Test decoding
     let decoder = JSONDecoder()
     let decodedType = try decoder.decode(CursorInterventionEngine.InterventionType.self, from: data)
@@ -48,21 +48,21 @@ func testInterventionTypeCodable() async throws {
 }
 
 @Test("InterventionEngine - InterventionType Equality")
-func testInterventionTypeEquality() async throws {
+func interventionTypeEquality() async throws {
     let type1 = CursorInterventionEngine.InterventionType.connectionIssue
     let type2 = CursorInterventionEngine.InterventionType.connectionIssue
     let type3 = CursorInterventionEngine.InterventionType.generalError
-    
+
     #expect(type1 == type2)
     #expect(type1 != type3)
 }
 
 @Test("InterventionEngine - InterventionType Case Iteration")
-func testInterventionTypeCaseIteration() async throws {
+func interventionTypeCaseIteration() async throws {
     var foundUnknown = false
     var foundConnectionIssue = false
     var foundGeneralError = false
-    
+
     for interventionType in CursorInterventionEngine.InterventionType.allCases {
         switch interventionType {
         case .unknown:
@@ -75,55 +75,55 @@ func testInterventionTypeCaseIteration() async throws {
             break
         }
     }
-    
+
     #expect(foundUnknown)
     #expect(foundConnectionIssue)
     #expect(foundGeneralError)
 }
 
 @Test("InterventionEngine - InterventionType Classification")
-func testInterventionTypeClassification() async throws {
+func interventionTypeClassification() async throws {
     // Test that intervention types can be classified into groups
     let errorTypes: Set<CursorInterventionEngine.InterventionType> = [
         .connectionIssue,
         .generalError,
-        .unrecoverableError
+        .unrecoverableError,
     ]
-    
+
     let positiveTypes: Set<CursorInterventionEngine.InterventionType> = [
         .noInterventionNeeded,
         .positiveWorkingState,
-        .sidebarActivityDetected
+        .sidebarActivityDetected,
     ]
-    
+
     #expect(errorTypes.contains(.connectionIssue))
     #expect(errorTypes.contains(.generalError))
     #expect(!errorTypes.contains(.positiveWorkingState))
-    
+
     #expect(positiveTypes.contains(.positiveWorkingState))
     #expect(positiveTypes.contains(.noInterventionNeeded))
     #expect(!positiveTypes.contains(.connectionIssue))
 }
 
 @Test("InterventionEngine - Priority Classification")
-func testInterventionTypePriorityClassification() async throws {
+func interventionTypePriorityClassification() async throws {
     // Test intervention types that would require immediate action
     let highPriorityTypes: Set<CursorInterventionEngine.InterventionType> = [
         .unrecoverableError,
         .connectionIssue,
-        .generalError
+        .generalError,
     ]
-    
+
     // Test intervention types that are informational
     let lowPriorityTypes: Set<CursorInterventionEngine.InterventionType> = [
         .positiveWorkingState,
         .noInterventionNeeded,
-        .sidebarActivityDetected
+        .sidebarActivityDetected,
     ]
-    
+
     #expect(highPriorityTypes.count > 0)
     #expect(lowPriorityTypes.count > 0)
-    
+
     // Ensure they don't overlap
     for highPriority in highPriorityTypes {
         #expect(!lowPriorityTypes.contains(highPriority))
@@ -131,34 +131,34 @@ func testInterventionTypePriorityClassification() async throws {
 }
 
 @Test("InterventionEngine - Intervention State Management")
-func testInterventionTypeStateManagement() async throws {
+func interventionTypeStateManagement() async throws {
     // Test states that indicate system health
     let healthyStates: Set<CursorInterventionEngine.InterventionType> = [
         .positiveWorkingState,
         .noInterventionNeeded,
-        .sidebarActivityDetected
+        .sidebarActivityDetected,
     ]
-    
+
     // Test states that indicate problems
     let problemStates: Set<CursorInterventionEngine.InterventionType> = [
         .connectionIssue,
         .generalError,
         .unrecoverableError,
-        .processNotRunning
+        .processNotRunning,
     ]
-    
+
     // Test states that indicate system control
     let controlStates: Set<CursorInterventionEngine.InterventionType> = [
         .manualPause,
         .monitoringPaused,
-        .interventionLimitReached
+        .interventionLimitReached,
     ]
-    
+
     // Verify categorization
     #expect(healthyStates.contains(.positiveWorkingState))
     #expect(problemStates.contains(.connectionIssue))
     #expect(controlStates.contains(.manualPause))
-    
+
     // Ensure no overlap between healthy and problem states
     for healthy in healthyStates {
         #expect(!problemStates.contains(healthy))
@@ -166,34 +166,34 @@ func testInterventionTypeStateManagement() async throws {
 }
 
 @Test("InterventionEngine - Recovery State Transitions")
-func testInterventionTypeRecoveryStateTransitions() async throws {
+func interventionTypeRecoveryStateTransitions() async throws {
     // Test recovery-related states
     let recoveryStates: Set<CursorInterventionEngine.InterventionType> = [
         .automatedRecovery,
-        .awaitingAction
+        .awaitingAction,
     ]
-    
+
     #expect(recoveryStates.contains(.automatedRecovery))
     #expect(recoveryStates.contains(.awaitingAction))
-    
+
     // These states should be distinct from final states
     let finalStates: Set<CursorInterventionEngine.InterventionType> = [
         .positiveWorkingState,
         .unrecoverableError,
-        .interventionLimitReached
+        .interventionLimitReached,
     ]
-    
+
     for recovery in recoveryStates {
         #expect(!finalStates.contains(recovery))
     }
 }
 
 @Test("InterventionEngine - Serialization Consistency")
-func testInterventionTypeSerializationConsistency() async throws {
+func interventionTypeSerializationConsistency() async throws {
     // Test that all intervention types can be serialized and deserialized
     let encoder = JSONEncoder()
     let decoder = JSONDecoder()
-    
+
     for interventionType in CursorInterventionEngine.InterventionType.allCases {
         let data = try encoder.encode(interventionType)
         let decoded = try decoder.decode(CursorInterventionEngine.InterventionType.self, from: data)
@@ -203,33 +203,33 @@ func testInterventionTypeSerializationConsistency() async throws {
 }
 
 @Test("InterventionEngine - String Representation Quality")
-func testInterventionTypeStringRepresentationQuality() async throws {
+func interventionTypeStringRepresentationQuality() async throws {
     // Test that all intervention types have meaningful string representations
     for interventionType in CursorInterventionEngine.InterventionType.allCases {
         let rawValue = interventionType.rawValue
-        
+
         // Should not be empty
         #expect(!rawValue.isEmpty)
-        
+
         // Should not be just whitespace
         #expect(!rawValue.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
-        
+
         // Should be readable (contain letters)
         #expect(rawValue.rangeOfCharacter(from: .letters) != nil)
     }
 }
 
 @Test("InterventionEngine - Type Safety")
-func testInterventionTypeTypeSafety() async throws {
+func interventionTypeTypeSafety() async throws {
     // Test that intervention types work with type-safe collections
     var typeSet: Set<CursorInterventionEngine.InterventionType> = []
     var typeArray: [CursorInterventionEngine.InterventionType] = []
-    
+
     typeSet.insert(.connectionIssue)
     typeSet.insert(.generalError)
     typeArray.append(.positiveWorkingState)
     typeArray.append(.noInterventionNeeded)
-    
+
     #expect(typeSet.count == 2)
     #expect(typeArray.count == 2)
     #expect(typeSet.contains(.connectionIssue))

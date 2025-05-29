@@ -4,19 +4,19 @@ import Foundation
 /// Errors that can occur when working with JSHook scripts
 public enum CursorJSHookError: Error, LocalizedError {
     case scriptNotFound
-    
+
+    // MARK: Public
+
     public var errorDescription: String? {
         switch self {
         case .scriptNotFound:
-            return "JavaScript hook script not found in bundle or development path"
+            "JavaScript hook script not found in bundle or development path"
         }
     }
 }
 
 /// Manages the JavaScript hook script resource
 public enum CursorJSHookScript {
-    // MARK: Public
-
     /// Current version of the JavaScript hook
     public static let version = "1.2.2"
 

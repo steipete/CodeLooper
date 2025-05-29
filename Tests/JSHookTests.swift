@@ -1,10 +1,10 @@
-import Testing
+@testable import CodeLooper
 import Foundation
 import Network
-@testable import CodeLooper
+import Testing
 
 @Test("JSHook - Script Template Loading")
-func testScriptTemplateLoading() async throws {
+func scriptTemplateLoading() async throws {
     // Test that the JavaScript template can be loaded
     do {
         let template = try CursorJSHookScript.loadTemplate()
@@ -22,11 +22,11 @@ func testScriptTemplateLoading() async throws {
 }
 
 @Test("JSHook - Script Version Constant")
-func testScriptVersionConstant() async throws {
+func scriptVersionConstant() async throws {
     let version = CursorJSHookScript.version
     #expect(version.count > 0)
     #expect(version.contains("."))
-    
+
     // Version should be in semantic versioning format
     let versionComponents = version.split(separator: ".")
     #expect(versionComponents.count >= 2)
@@ -34,7 +34,7 @@ func testScriptVersionConstant() async throws {
 }
 
 @Test("JSHook - Script Generation with Port")
-func testScriptGenerationWithPort() async throws {
+func scriptGenerationWithPort() async throws {
     // Mock the template loading since file might not exist in test environment
     let mockTemplate = """
     // Test JavaScript template
@@ -42,12 +42,12 @@ func testScriptGenerationWithPort() async throws {
     const version = '__CODELOOPER_VERSION_PLACEHOLDER__';
     console.log('Port:', port, 'Version:', version);
     """
-    
+
     // Test port replacement logic (simulated)
     let port: UInt16 = 8080
     let withPort = mockTemplate.replacingOccurrences(of: "__CODELOOPER_PORT_PLACEHOLDER__", with: String(port))
     let withVersion = withPort.replacingOccurrences(of: "__CODELOOPER_VERSION_PLACEHOLDER__", with: "1.0.0")
-    
+
     #expect(withVersion.contains("const port = 8080;"))
     #expect(withVersion.contains("const version = '1.0.0';"))
     #expect(!withVersion.contains("__CODELOOPER_PORT_PLACEHOLDER__"))
@@ -55,35 +55,35 @@ func testScriptGenerationWithPort() async throws {
 }
 
 @Test("JSHook - Error Types")
-func testJSHookErrorTypes() async throws {
+func jSHookErrorTypes() async throws {
     let scriptError = CursorJSHookError.scriptNotFound
     #expect(scriptError.errorDescription != nil)
     #expect(scriptError.errorDescription?.contains("JavaScript hook script not found") == true)
 }
 
 @Test("JSHook - Hook Error Types")
-func testHookErrorTypes() async throws {
+func hookErrorTypes() async throws {
     // Test various hook error types
     let portError = CursorJSHook.HookError.portInUse(port: 8080)
     let timeoutError = CursorJSHook.HookError.timeout(duration: 30.0, operation: "test")
     let notConnectedError = CursorJSHook.HookError.notConnected
     let cancelledError = CursorJSHook.HookError.cancelled
     let permissionError = CursorJSHook.HookError.applescriptPermissionDenied
-    
+
     // Test error descriptions exist
     #expect(portError.errorDescription != nil)
     #expect(timeoutError.errorDescription != nil)
     #expect(notConnectedError.errorDescription != nil)
     #expect(cancelledError.errorDescription != nil)
     #expect(permissionError.errorDescription != nil)
-    
+
     // Test specific error properties
     if case let .portInUse(port) = portError {
         #expect(port == 8080)
     } else {
         #expect(false, "Expected portInUse error")
     }
-    
+
     if case let .timeout(duration, operation) = timeoutError {
         #expect(duration == 30.0)
         #expect(operation == "test")
@@ -93,39 +93,39 @@ func testHookErrorTypes() async throws {
 }
 
 @Test("JSHook - WebSocket Manager Initialization")
-func testWebSocketManagerInitialization() async throws {
+func webSocketManagerInitialization() async throws {
     let port: UInt16 = 9999
     let manager = await WebSocketManager(port: port)
-    
+
     // Test initial state
     let isConnected = await manager.isConnected
     #expect(isConnected == false)
 }
 
 @Test("JSHook - Port Validation")
-func testPortValidation() async throws {
+func portValidation() async throws {
     // Test various port values
     let validPorts: [UInt16] = [8080, 9999, 3000, 1234, 65535]
-    
+
     for port in validPorts {
         let manager = await WebSocketManager(port: port)
         // Should not throw during initialization
         #expect(manager != nil)
     }
-    
+
     // Test port 0 (should create valid NWEndpoint.Port)
     let zeroPortManager = await WebSocketManager(port: 0)
     #expect(zeroPortManager != nil)
 }
 
 @Test("JSHook - Connection State Management")
-func testConnectionStateManagement() async throws {
+func connectionStateManagement() async throws {
     let manager = await WebSocketManager(port: 9998)
-    
+
     // Initially not connected
     let initialState = await manager.isConnected
     #expect(initialState == false)
-    
+
     // Connection state should be testable without actual network operations
     // This tests the state logic without requiring real connections
 }
@@ -134,12 +134,12 @@ func testConnectionStateManagement() async throws {
 func testMessageTypes() async throws {
     // Test that we can validate message type constants
     let messageTypes = ["heartbeat", "composerUpdate", "ready"]
-    
+
     for messageType in messageTypes {
         #expect(messageType.count > 0)
         #expect(!messageType.contains(" "))
     }
-    
+
     // Test JSON message structure
     let heartbeatJSON = """
     {
@@ -149,10 +149,10 @@ func testMessageTypes() async throws {
         "resumeNeeded": false
     }
     """
-    
+
     let data = heartbeatJSON.data(using: .utf8)!
     let parsed = try JSONSerialization.jsonObject(with: data) as! [String: Any]
-    
+
     #expect(parsed["type"] as? String == "heartbeat")
     #expect(parsed["version"] as? String == "1.0.0")
     #expect(parsed["location"] as? String == "test")
@@ -160,31 +160,31 @@ func testMessageTypes() async throws {
 }
 
 @Test("JSHook - Notification Names")
-func testNotificationNames() async throws {
+func notificationNames() async throws {
     // Test notification name constants
     let heartbeatNotification = Notification.Name("CursorHeartbeat")
     let composerNotification = Notification.Name("CursorComposerUpdate")
-    
+
     #expect(heartbeatNotification.rawValue == "CursorHeartbeat")
     #expect(composerNotification.rawValue == "CursorComposerUpdate")
     #expect(heartbeatNotification != composerNotification)
 }
 
 @Test("JSHook - Threading and Concurrency")
-func testThreadingAndConcurrency() async throws {
+func threadingAndConcurrency() async throws {
     // Test thread-safe operations that don't require actual networking
     let port: UInt16 = 9997
-    
+
     // Test concurrent manager creation
     await withTaskGroup(of: Bool.self) { group in
-        for i in 0..<5 {
+        for i in 0 ..< 5 {
             group.addTask {
                 let manager = await WebSocketManager(port: port + UInt16(i))
                 let isConnected = await manager.isConnected
                 return !isConnected // Should be false initially
             }
         }
-        
+
         for await result in group {
             #expect(result == true)
         }
@@ -192,7 +192,7 @@ func testThreadingAndConcurrency() async throws {
 }
 
 @Test("JSHook - JSON Parsing Edge Cases")
-func testJSONParsingEdgeCases() async throws {
+func jSONParsingEdgeCases() async throws {
     // Test malformed JSON handling
     let malformedJSONs = [
         "",
@@ -207,16 +207,16 @@ func testJSONParsingEdgeCases() async throws {
         """,
         """
         {"type": "heartbeat", "malformed": }
-        """
+        """,
     ]
-    
+
     for malformedJSON in malformedJSONs {
         let data = malformedJSON.data(using: .utf8)!
-        
+
         // Should not crash when parsing invalid JSON
         let parsed = try? JSONSerialization.jsonObject(with: data) as? [String: Any]
-        
-        if let parsed = parsed {
+
+        if let parsed {
             // If it parsed, type extraction should be safe
             let type = parsed["type"] as? String
             #expect(type == nil || type?.count ?? 0 >= 0)
@@ -226,7 +226,7 @@ func testJSONParsingEdgeCases() async throws {
 }
 
 @Test("JSHook - String Encoding")
-func testStringEncoding() async throws {
+func stringEncoding() async throws {
     // Test various string encodings that might be received
     let testStrings = [
         "ready",
@@ -236,15 +236,15 @@ func testStringEncoding() async throws {
         {"type": "heartbeat", "message": "测试"}
         """,
         "\n\r\t special chars",
-        ""
+        "",
     ]
-    
+
     for testString in testStrings {
         // Test encoding and decoding
         let data = testString.data(using: .utf8)
         #expect(data != nil)
-        
-        if let data = data {
+
+        if let data {
             let decoded = String(data: data, encoding: .utf8)
             #expect(decoded == testString)
         }
@@ -252,59 +252,59 @@ func testStringEncoding() async throws {
 }
 
 @Test("JSHook - Performance Considerations")
-func testPerformanceConsiderations() async throws {
+func performanceConsiderations() async throws {
     // Test performance of frequent operations
     let testData = "test message".data(using: .utf8)!
     let startTime = Date()
-    
+
     // Simulate frequent string decoding operations
-    for _ in 0..<1000 {
-        let _ = String(data: testData, encoding: .utf8)
+    for _ in 0 ..< 1000 {
+        _ = String(data: testData, encoding: .utf8)
     }
-    
+
     let elapsed = Date().timeIntervalSince(startTime)
     #expect(elapsed < 1.0) // Should complete quickly
-    
+
     // Test JSON parsing performance
     let jsonString = """
     {"type": "heartbeat", "version": "1.0.0", "timestamp": "\(Date().timeIntervalSince1970)"}
     """
     let jsonData = jsonString.data(using: .utf8)!
-    
+
     let jsonStartTime = Date()
-    for _ in 0..<100 {
-        let _ = try? JSONSerialization.jsonObject(with: jsonData)
+    for _ in 0 ..< 100 {
+        _ = try? JSONSerialization.jsonObject(with: jsonData)
     }
     let jsonElapsed = Date().timeIntervalSince(jsonStartTime)
     #expect(jsonElapsed < 1.0)
 }
 
 @Test("JSHook - Memory Management")
-func testMemoryManagement() async throws {
+func memoryManagement() async throws {
     // Test that managers can be created and released without leaks
     var managers: [WebSocketManager] = []
-    
-    for i in 0..<100 {
+
+    for i in 0 ..< 100 {
         let manager = await WebSocketManager(port: UInt16(10000 + i))
         managers.append(manager)
     }
-    
+
     #expect(managers.count == 100)
-    
+
     // Clear references - in real app, ARC should handle cleanup
     managers.removeAll()
     #expect(managers.isEmpty)
 }
 
 @Test("JSHook - Error Handling Robustness")
-func testErrorHandlingRobustness() async throws {
+func errorHandlingRobustness() async throws {
     // Test that error conditions are handled gracefully
-    
+
     // Test invalid port handling (conceptually)
     let maxPort = UInt16.max
     let manager = await WebSocketManager(port: maxPort)
     #expect(manager != nil) // Should create successfully
-    
+
     // Test error message consistency
     let errors: [CursorJSHook.HookError] = [
         .portInUse(port: 8080),
@@ -313,9 +313,9 @@ func testErrorHandlingRobustness() async throws {
         .cancelled,
         .applescriptPermissionDenied,
         .networkError(URLError(.networkConnectionLost)),
-        .connectionLost(underlyingError: URLError(.timedOut))
+        .connectionLost(underlyingError: URLError(.timedOut)),
     ]
-    
+
     for error in errors {
         #expect(error.errorDescription != nil)
         #expect((error.errorDescription?.count ?? 0) > 0)

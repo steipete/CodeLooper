@@ -10,14 +10,16 @@ import SwiftUI
 /// - Sound preview functionality
 /// - Integration with user defaults
 struct CompactSoundPicker: View {
+    // MARK: Internal
+
     let ruleName: String
-    
+
     var body: some View {
         HStack(spacing: Spacing.xSmall) {
             Image(systemName: "speaker.wave.2.fill")
                 .foregroundColor(ColorPalette.textSecondary)
                 .font(.system(size: 12))
-            
+
             Menu {
                 ForEach(availableSounds, id: \.self) { sound in
                     Button(sound.displayName) {
@@ -36,39 +38,39 @@ struct CompactSoundPicker: View {
             .menuStyle(.borderlessButton)
         }
     }
-    
-    // MARK: - Private
-    
+
+    // MARK: Private
+
     private let availableSounds: [NotificationSound] = [
         .none,
         .default,
         .glass,
         .ping,
         .pop,
-        .sosumi
+        .sosumi,
     ]
-    
+
     // Default sound settings per rule
     @Default(.stopAfter25LoopsRuleSound) private var stopAfter25LoopsSound
     @Default(.plainStopRuleSound) private var plainStopSound
     @Default(.connectionIssuesRuleSound) private var connectionIssuesSound
     @Default(.editedInAnotherChatRuleSound) private var editedInAnotherChatSound
-    
+
     private func getCurrentSound(for ruleName: String) -> NotificationSound {
         switch ruleName {
         case "Stop after 25 loops":
-            return NotificationSound(rawValue: stopAfter25LoopsSound) ?? .default
+            NotificationSound(rawValue: stopAfter25LoopsSound) ?? .default
         case "Plain Stop":
-            return NotificationSound(rawValue: plainStopSound) ?? .default
+            NotificationSound(rawValue: plainStopSound) ?? .default
         case "Connection Issues":
-            return NotificationSound(rawValue: connectionIssuesSound) ?? .default
+            NotificationSound(rawValue: connectionIssuesSound) ?? .default
         case "Edited in another chat":
-            return NotificationSound(rawValue: editedInAnotherChatSound) ?? .default
+            NotificationSound(rawValue: editedInAnotherChatSound) ?? .default
         default:
-            return .default
+            .default
         }
     }
-    
+
     private func setSound(_ sound: NotificationSound, for ruleName: String) {
         switch ruleName {
         case "Stop after 25 loops":
@@ -88,41 +90,43 @@ struct CompactSoundPicker: View {
 // MARK: - Supporting Types
 
 enum NotificationSound: String, CaseIterable {
-    case none = "none"
-    case `default` = "default"
+    case none
+    case `default`
     case glass = "Glass"
     case ping = "Ping"
     case pop = "Pop"
     case sosumi = "Sosumi"
-    
+
+    // MARK: Internal
+
     var displayName: String {
         switch self {
         case .none:
-            return "None"
+            "None"
         case .default:
-            return "Default"
+            "Default"
         case .glass:
-            return "Glass"
+            "Glass"
         case .ping:
-            return "Ping"
+            "Ping"
         case .pop:
-            return "Pop"
+            "Pop"
         case .sosumi:
-            return "Sosumi"
+            "Sosumi"
         }
     }
 }
 
 #if DEBUG
-struct CompactSoundPicker_Previews: PreviewProvider {
-    static var previews: some View {
-        VStack(spacing: Spacing.medium) {
-            CompactSoundPicker(ruleName: "Stop after 25 loops")
-            CompactSoundPicker(ruleName: "Plain Stop")
-            CompactSoundPicker(ruleName: "Connection Issues")
+    struct CompactSoundPicker_Previews: PreviewProvider {
+        static var previews: some View {
+            VStack(spacing: Spacing.medium) {
+                CompactSoundPicker(ruleName: "Stop after 25 loops")
+                CompactSoundPicker(ruleName: "Plain Stop")
+                CompactSoundPicker(ruleName: "Connection Issues")
+            }
+            .padding()
+            .withDesignSystem()
         }
-        .padding()
-        .withDesignSystem()
     }
-}
 #endif

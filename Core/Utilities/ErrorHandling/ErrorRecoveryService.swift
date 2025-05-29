@@ -14,14 +14,14 @@ import UserNotifications
 @MainActor
 public class ErrorRecoveryService {
     // MARK: Lifecycle
-    
+
     public init() {
         self.retryManager = RetryManager(config: .default)
         self.logger = Logger(category: .utilities)
     }
-    
+
     // MARK: Public
-    
+
     /// Recovery strategy for different types of errors
     public enum RecoveryStrategy: Sendable {
         case retry(maxAttempts: Int)
@@ -30,18 +30,22 @@ public class ErrorRecoveryService {
         case ignore
         case escalate(to: EscalationLevel)
     }
-    
+
     /// Recovery actions that users can take
     public struct RecoveryAction: Sendable {
-        public let title: String
-        public let action: @Sendable () async -> Void
-        
+        // MARK: Lifecycle
+
         public init(title: String, action: @escaping @Sendable () async -> Void) {
             self.title = title
             self.action = action
         }
+
+        // MARK: Public
+
+        public let title: String
+        public let action: @Sendable () async -> Void
     }
-    
+
     /// Escalation levels for critical errors
     public enum EscalationLevel: Sendable {
         case logWarning
@@ -49,7 +53,7 @@ public class ErrorRecoveryService {
         case disableFeature
         case shutdownGracefully
     }
-    
+
     /// Handle an error with automatic recovery strategies
     /// - Parameters:
     ///   - error: The error to handle
@@ -60,33 +64,33 @@ public class ErrorRecoveryService {
     public func handleError(
         _ error: Error,
         context: String = "",
-        fallback: (() async throws -> Void)? = nil
+        fallback _: (() async throws -> Void)? = nil
     ) async -> Bool {
         logger.error("🚨 Handling error in \(context): \(error)")
-        
+
         let strategy = determineRecoveryStrategy(for: error)
-        
+
         switch strategy {
-        case .retry(let maxAttempts):
+        case let .retry(maxAttempts):
             return await attemptRetry(error: error, maxAttempts: maxAttempts, context: context)
-            
-        case .fallback(let operation):
+
+        case let .fallback(operation):
             return await attemptFallback(operation: operation, context: context)
-            
-        case .userIntervention(let message, let actions):
+
+        case let .userIntervention(message, actions):
             await presentUserRecoveryOptions(message: message, actions: actions)
             return false
-            
+
         case .ignore:
             logger.debug("🔕 Ignoring error as per recovery strategy")
             return true
-            
-        case .escalate(let level):
+
+        case let .escalate(level):
             await escalateError(error, level: level, context: context)
             return false
         }
     }
-    
+
     /// Execute an operation with automatic error recovery
     /// - Parameters:
     ///   - operation: The operation to execute
@@ -103,9 +107,9 @@ public class ErrorRecoveryService {
             return try await operation()
         } catch {
             logger.warning("⚠️ Operation '\(context)' failed, attempting recovery: \(error)")
-            
+
             let strategy = recoveryStrategy ?? determineRecoveryStrategy(for: error)
-            
+
             switch strategy {
             case .retry:
                 return try await retryManager.execute(
@@ -114,8 +118,8 @@ public class ErrorRecoveryService {
                         self.logger.info("🔄 Retrying '\(context)' (attempt \(attempt)) after \(delay)s: \(error)")
                     }
                 )
-                
-            case .fallback(let fallbackOp):
+
+            case let .fallback(fallbackOp):
                 do {
                     try await fallbackOp()
                     // If fallback succeeds, retry the original operation once
@@ -124,7 +128,7 @@ public class ErrorRecoveryService {
                     logger.error("❌ Fallback failed for '\(context)': \(error)")
                     throw error
                 }
-                
+
             default:
                 // For non-retry strategies, handle the error and re-throw
                 await handleError(error, context: context)
@@ -132,48 +136,48 @@ public class ErrorRecoveryService {
             }
         }
     }
-    
+
     // MARK: Private
-    
+
     private let retryManager: RetryManager
     private let logger: Logger
-    
+
     /// Determine the appropriate recovery strategy for an error
     private func determineRecoveryStrategy(for error: Error) -> RecoveryStrategy {
         // Check for specific error types with known recovery strategies
         switch error {
         case let hookError as CursorJSHook.HookError:
-            return recoveryStrategyForHookError(hookError)
-            
+            recoveryStrategyForHookError(hookError)
+
         case let urlError as URLError:
-            return recoveryStrategyForURLError(urlError)
-            
+            recoveryStrategyForURLError(urlError)
+
         case let nsError as NSError:
-            return recoveryStrategyForNSError(nsError)
-            
+            recoveryStrategyForNSError(nsError)
+
         default:
             // Default strategy based on error characteristics
             if let retryableError = error as? RetryableError, retryableError.isRetryable {
-                return .retry(maxAttempts: 3)
+                .retry(maxAttempts: 3)
             } else {
-                return .userIntervention(
+                .userIntervention(
                     message: "An unexpected error occurred: \(error.localizedDescription)",
                     actions: [
                         RecoveryAction(title: "Retry") { /* Default retry */ },
-                        RecoveryAction(title: "Cancel") { /* Do nothing */ }
+                        RecoveryAction(title: "Cancel") { /* Do nothing */ },
                     ]
                 )
             }
         }
     }
-    
+
     private func recoveryStrategyForHookError(_ error: CursorJSHook.HookError) -> RecoveryStrategy {
         switch error {
         case .timeout, .connectionLost, .handshakeFailed:
-            return .retry(maxAttempts: 3)
-            
+            .retry(maxAttempts: 3)
+
         case .portInUse:
-            return .userIntervention(
+            .userIntervention(
                 message: "Port conflict detected. Another instance may be running.",
                 actions: [
                     RecoveryAction(title: "Retry with different port") {
@@ -181,12 +185,12 @@ public class ErrorRecoveryService {
                     },
                     RecoveryAction(title: "Kill other instances") {
                         // Implementation would terminate other instances
-                    }
+                    },
                 ]
             )
-            
+
         case .applescriptPermissionDenied:
-            return .userIntervention(
+            .userIntervention(
                 message: "Automation permissions are required for CodeLooper to function.",
                 actions: [
                     RecoveryAction(title: "Open System Settings") {
@@ -194,39 +198,39 @@ public class ErrorRecoveryService {
                     },
                     RecoveryAction(title: "Continue without automation") {
                         // Implementation would disable affected features
-                    }
+                    },
                 ]
             )
-            
+
         case .networkError:
-            return .retry(maxAttempts: 5)
-            
+            .retry(maxAttempts: 5)
+
         case .cancelled:
-            return .ignore
-            
+            .ignore
+
         default:
-            return .escalate(to: .notifyUser)
+            .escalate(to: .notifyUser)
         }
     }
-    
+
     private func recoveryStrategyForURLError(_ error: URLError) -> RecoveryStrategy {
         switch error.code {
         case .timedOut, .cannotConnectToHost, .networkConnectionLost:
-            return .retry(maxAttempts: 3)
+            .retry(maxAttempts: 3)
         case .notConnectedToInternet:
-            return .userIntervention(
+            .userIntervention(
                 message: "Internet connection is required.",
                 actions: [
                     RecoveryAction(title: "Check Network Settings") {
                         await self.openNetworkSettings()
-                    }
+                    },
                 ]
             )
         default:
-            return .escalate(to: .logWarning)
+            .escalate(to: .logWarning)
         }
     }
-    
+
     private func recoveryStrategyForNSError(_ error: NSError) -> RecoveryStrategy {
         switch error.domain {
         case NSURLErrorDomain:
@@ -239,7 +243,7 @@ public class ErrorRecoveryService {
                     actions: [
                         RecoveryAction(title: "Grant Permission") {
                             // Implementation would request file access
-                        }
+                        },
                     ]
                 )
             }
@@ -248,15 +252,15 @@ public class ErrorRecoveryService {
             return .escalate(to: .logWarning)
         }
     }
-    
-    private func attemptRetry(error: Error, maxAttempts: Int, context: String) async -> Bool {
+
+    private func attemptRetry(error _: Error, maxAttempts: Int, context: String) async -> Bool {
         logger.info("🔄 Attempting retry recovery for '\(context)' (max \(maxAttempts) attempts)")
         // In a real implementation, this would coordinate with the retry manager
         // For now, just log the attempt and return false to indicate manual intervention needed
         _ = maxAttempts // Acknowledge the parameter to avoid warning
         return false
     }
-    
+
     private func attemptFallback(operation: () async throws -> Void, context: String) async -> Bool {
         do {
             logger.info("🛡️ Attempting fallback recovery for '\(context)'")
@@ -267,71 +271,71 @@ public class ErrorRecoveryService {
             return false
         }
     }
-    
+
     private func presentUserRecoveryOptions(message: String, actions: [RecoveryAction]) async {
         logger.info("👤 Presenting recovery options to user: \(message)")
-        
+
         let alert = NSAlert()
         alert.messageText = "Recovery Required"
         alert.informativeText = message
         alert.alertStyle = .warning
-        
+
         for action in actions {
             alert.addButton(withTitle: action.title)
         }
-        
+
         let response = alert.runModal()
         let actionIndex = response.rawValue - NSApplication.ModalResponse.alertFirstButtonReturn.rawValue
-        
-        if actionIndex >= 0 && actionIndex < actions.count {
+
+        if actionIndex >= 0, actionIndex < actions.count {
             await actions[actionIndex].action()
         }
     }
-    
+
     private func escalateError(_ error: Error, level: EscalationLevel, context: String) async {
         switch level {
         case .logWarning:
             logger.warning("⚠️ Escalated error in '\(context)': \(error)")
-            
+
         case .notifyUser:
             logger.error("🚨 Critical error in '\(context)': \(error)")
             await showErrorNotification(error: error, context: context)
-            
+
         case .disableFeature:
             logger.error("⛔ Disabling feature due to error in '\(context)': \(error)")
             // Implementation would disable the affected feature
-            
+
         case .shutdownGracefully:
             logger.critical("💥 Critical system error, initiating graceful shutdown: \(error)")
             // Implementation would initiate graceful shutdown
         }
     }
-    
+
     private func showErrorNotification(error: Error, context: String) async {
         let content = UNMutableNotificationContent()
         content.title = "CodeLooper Error"
         content.body = "Error in \(context): \(error.localizedDescription)"
         content.sound = .default
-        
+
         let request = UNNotificationRequest(
             identifier: UUID().uuidString,
             content: content,
             trigger: nil
         )
-        
+
         do {
             try await UNUserNotificationCenter.current().add(request)
         } catch {
             logger.error("Failed to show error notification: \(error)")
         }
     }
-    
+
     private func openAutomationSettings() async {
         if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Automation") {
             NSWorkspace.shared.open(url)
         }
     }
-    
+
     private func openNetworkSettings() async {
         if let url = URL(string: "x-apple.systempreferences:com.apple.preference.network") {
             NSWorkspace.shared.open(url)

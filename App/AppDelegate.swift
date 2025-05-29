@@ -12,7 +12,7 @@ import os
 import SwiftUI
 
 /// Main application delegate that manages the lifecycle and core functionality of CodeLooper.
-/// 
+///
 /// This class serves as the central hub for:
 /// - Application lifecycle events (launch, termination, wake from sleep)
 /// - Menu bar management and user interaction
@@ -26,8 +26,7 @@ import SwiftUI
 @objc(AppDelegate)
 @objcMembers
 @MainActor
-public final class AppDelegate: NSObject, NSApplicationDelegate, ObservableObject
-{
+public final class AppDelegate: NSObject, NSApplicationDelegate, ObservableObject {
     // MARK: Lifecycle
 
     // Called when app is initialized with SwiftUI lifecycle
@@ -73,19 +72,19 @@ public final class AppDelegate: NSObject, NSApplicationDelegate, ObservableObjec
 
         // Single instance check - skip for Xcode previews
         let isXcodePreview = ProcessInfo.processInfo.environment["XCODE_RUNNING_FOR_PREVIEWS"] == "1"
-        
+
         if !isXcodePreview {
             singleInstanceLock = SingleInstanceLock(identifier: "me.steipete.codelooper.instance")
 
             // Check single instance asynchronously
             Task { @MainActor [weak self] in
                 guard let self else { return }
-                
+
                 // Give the SingleInstanceLock time to check
                 try? await Task.sleep(for: .seconds(TimingConfiguration.shortDelay)) // 0.6 seconds
 
                 guard let singleInstanceLock = self.singleInstanceLock else { return }
-                
+
                 if !singleInstanceLock.isPrimaryInstance {
                     self.logger.warning("Another instance of CodeLooper is already running. Terminating this instance.")
                     // Bring the other instance to the front
@@ -173,6 +172,7 @@ public final class AppDelegate: NSObject, NSApplicationDelegate, ObservableObjec
     // MARK: Internal
 
     // MARK: - Logger
+
     // Services - initialized directly in AppDelegate
     var loginItemManager: LoginItemManager?
     var axApplicationObserver: AXApplicationObserver?

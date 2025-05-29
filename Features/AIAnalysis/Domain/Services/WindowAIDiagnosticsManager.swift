@@ -218,7 +218,10 @@ class WindowAIDiagnosticsManager: ObservableObject, Loggable {
                         await self.documentPathTracker.recordDocumentAccess(documentPath, forWindow: window.id)
 
                         // Get repository for this window (with per-window fallback heuristic)
-                        if let gitRepo = await self.documentPathTracker.getRepositoryForDocument(documentPath, forWindow: window.id) {
+                        if let gitRepo = await self.documentPathTracker.getRepositoryForDocument(
+                            documentPath,
+                            forWindow: window.id
+                        ) {
                             DispatchQueue.main.async {
                                 if var updatedWindowInfo = self.windowStates[window.id] {
                                     updatedWindowInfo.gitRepository = gitRepo
@@ -231,7 +234,9 @@ class WindowAIDiagnosticsManager: ObservableObject, Loggable {
                 } else {
                     // For windows without document paths, try to get the most frequent repository for this window
                     Task {
-                        if let gitRepo = await self.documentPathTracker.getMostFrequentRepository(forWindow: window.id) {
+                        if let gitRepo = await self.documentPathTracker
+                            .getMostFrequentRepository(forWindow: window.id)
+                        {
                             DispatchQueue.main.async {
                                 if var updatedWindowInfo = self.windowStates[window.id] {
                                     updatedWindowInfo.gitRepository = gitRepo
@@ -517,7 +522,7 @@ class WindowAIDiagnosticsManager: ObservableObject, Loggable {
                 logger: logger,
                 context: context
             )
-            
+
             windowInfo.lastAIAnalysisStatus = .error
             windowInfo.lastAIAnalysisResponseMessage = aiError.localizedDescription
         } catch {
@@ -527,7 +532,7 @@ class WindowAIDiagnosticsManager: ObservableObject, Loggable {
                 logger: logger,
                 context: context
             )
-            
+
             windowInfo.lastAIAnalysisStatus = .error
             windowInfo.lastAIAnalysisResponseMessage = error.localizedDescription
         }

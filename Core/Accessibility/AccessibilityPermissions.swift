@@ -56,11 +56,11 @@ public final class PermissionsManager: ObservableObject, Loggable {
     /// Request notification permissions
     public func requestNotificationPermissions() async {
         logger.info("Requesting notification permissions")
-        
+
         // First check current authorization status
         let center = UNUserNotificationCenter.current()
         let currentSettings = await center.notificationSettings()
-        
+
         switch currentSettings.authorizationStatus {
         case .notDetermined:
             // Only request if not determined yet
@@ -69,7 +69,7 @@ public final class PermissionsManager: ObservableObject, Loggable {
                 self.hasNotificationPermissions = granted
                 cachePermissionStates()
                 logger.info("Notification permissions request result: \(granted)")
-                
+
                 if !granted {
                     showPermissionDeniedAlert()
                 }
@@ -79,28 +79,28 @@ public final class PermissionsManager: ObservableObject, Loggable {
                 cachePermissionStates()
                 showPermissionErrorAlert(error: error)
             }
-            
+
         case .denied:
             logger.info("Notification permissions were previously denied")
             self.hasNotificationPermissions = false
             cachePermissionStates()
             showPermissionSettingsAlert()
-            
+
         case .authorized:
             logger.info("Notification permissions already granted")
             self.hasNotificationPermissions = true
             cachePermissionStates()
-            
+
         case .provisional:
             logger.info("Notification permissions are provisional")
             self.hasNotificationPermissions = true
             cachePermissionStates()
-            
+
         case .ephemeral:
             logger.info("Notification permissions are ephemeral")
             self.hasNotificationPermissions = true
             cachePermissionStates()
-            
+
         @unknown default:
             logger.warning("Unknown notification permission status")
             self.hasNotificationPermissions = false
@@ -123,10 +123,6 @@ public final class PermissionsManager: ObservableObject, Loggable {
 
     // MARK: Private
 
-    private var monitoringTask: Task<Void, Never>?
-    private var initialCheckTask: Task<Void, Never>?
-    private let cursorBundleID = "com.todesktop.230313mzl4w4u92"
-    
     // UserDefaults keys for caching permissions
     private enum CacheKeys {
         static let accessibilityPermissions = "cached_accessibility_permissions"
@@ -136,22 +132,26 @@ public final class PermissionsManager: ObservableObject, Loggable {
         static let lastPermissionCheck = "last_permission_check_timestamp"
     }
 
+    private var monitoringTask: Task<Void, Never>?
+    private var initialCheckTask: Task<Void, Never>?
+    private let cursorBundleID = "com.todesktop.230313mzl4w4u92"
+
     private func loadCachedPermissions() {
         let defaults = UserDefaults.standard
-        
+
         // Load cached permission states for immediate UI display
         hasAccessibilityPermissions = defaults.bool(forKey: CacheKeys.accessibilityPermissions)
         hasAutomationPermissions = defaults.bool(forKey: CacheKeys.automationPermissions)
         hasScreenRecordingPermissions = defaults.bool(forKey: CacheKeys.screenRecordingPermissions)
         hasNotificationPermissions = defaults.bool(forKey: CacheKeys.notificationPermissions)
-        
+
         logger.info("""
-            Loaded cached permissions - Accessibility: \(hasAccessibilityPermissions), \
-            Automation: \(hasAutomationPermissions), Screen Recording: \(hasScreenRecordingPermissions), \
-            Notifications: \(hasNotificationPermissions)
-            """)
+        Loaded cached permissions - Accessibility: \(hasAccessibilityPermissions), \
+        Automation: \(hasAutomationPermissions), Screen Recording: \(hasScreenRecordingPermissions), \
+        Notifications: \(hasNotificationPermissions)
+        """)
     }
-    
+
     private func scheduleInitialPermissionCheck() {
         // Schedule initial permission check to run after a short delay to avoid blocking app startup
         initialCheckTask = Task {
@@ -160,30 +160,30 @@ public final class PermissionsManager: ObservableObject, Loggable {
             await checkAndUpdateAllPermissions()
         }
     }
-    
+
     private func checkAndUpdateAllPermissions() async {
         // Check all permissions and update both UI state and cache
         let newAccessibility = AXPermissionHelpers.hasAccessibilityPermissions()
         let newAutomation = await checkAutomationPermission()
         let newScreenRecording = await checkScreenRecordingPermission()
         let newNotifications = await checkNotificationPermission()
-        
+
         // Update UI state
         hasAccessibilityPermissions = newAccessibility
         hasAutomationPermissions = newAutomation
         hasScreenRecordingPermissions = newScreenRecording
         hasNotificationPermissions = newNotifications
-        
+
         // Cache the results
         cachePermissionStates()
-        
+
         logger.info("""
-            Updated permission status - Accessibility: \(hasAccessibilityPermissions), \
-            Automation: \(hasAutomationPermissions), Screen Recording: \(hasScreenRecordingPermissions), \
-            Notifications: \(hasNotificationPermissions)
-            """)
+        Updated permission status - Accessibility: \(hasAccessibilityPermissions), \
+        Automation: \(hasAutomationPermissions), Screen Recording: \(hasScreenRecordingPermissions), \
+        Notifications: \(hasNotificationPermissions)
+        """)
     }
-    
+
     private func cachePermissionStates() {
         let defaults = UserDefaults.standard
         defaults.set(hasAccessibilityPermissions, forKey: CacheKeys.accessibilityPermissions)
@@ -293,43 +293,49 @@ public final class PermissionsManager: ObservableObject, Loggable {
             }
         }
     }
-    
+
     // MARK: - Alert Helpers
-    
+
     @MainActor
     private func showPermissionDeniedAlert() {
         let alert = NSAlert()
         alert.messageText = "Notification Permission Denied"
-        alert.informativeText = "You denied notification permissions. CodeLooper uses notifications to inform you about automation events and important updates."
+        alert
+            .informativeText =
+            "You denied notification permissions. CodeLooper uses notifications to inform you about automation events and important updates."
         alert.alertStyle = .warning
         alert.addButton(withTitle: "OK")
         alert.runModal()
     }
-    
+
     @MainActor
-    private func showPermissionErrorAlert(error: Error) {
+    private func showPermissionErrorAlert(error _: Error) {
         let alert = NSAlert()
         alert.messageText = "Notification Permission Request Failed"
-        alert.informativeText = "Notifications are not allowed for this application. You can enable them in System Settings."
+        alert
+            .informativeText =
+            "Notifications are not allowed for this application. You can enable them in System Settings."
         alert.alertStyle = .warning
         alert.addButton(withTitle: "Open System Settings")
         alert.addButton(withTitle: "Skip")
-        
+
         let response = alert.runModal()
         if response == .alertFirstButtonReturn {
             openNotificationSettings()
         }
     }
-    
+
     @MainActor
     private func showPermissionSettingsAlert() {
         let alert = NSAlert()
         alert.messageText = "Notification Permission Required"
-        alert.informativeText = "Notification permissions were previously denied. Please enable them in System Settings > Privacy & Security > Notifications."
+        alert
+            .informativeText =
+            "Notification permissions were previously denied. Please enable them in System Settings > Privacy & Security > Notifications."
         alert.alertStyle = .informational
         alert.addButton(withTitle: "Open System Settings")
         alert.addButton(withTitle: "Cancel")
-        
+
         let response = alert.runModal()
         if response == .alertFirstButtonReturn {
             openNotificationSettings()

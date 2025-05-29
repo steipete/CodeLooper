@@ -12,7 +12,7 @@ import Foundation
 ///
 /// Each Cursor window gets a unique port for its WebSocket connection,
 /// enabling isolated communication channels for JavaScript injection.
-/// The manager ensures ports are reused for the same windows and 
+/// The manager ensures ports are reused for the same windows and
 /// prevents port conflicts with other applications.
 @MainActor
 class PortManager: Loggable {

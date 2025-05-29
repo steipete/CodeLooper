@@ -6,9 +6,10 @@ import Foundation
 /// These patterns provide structured approaches to common async scenarios
 /// like retries, debouncing, batching, and resource management.
 public enum AsyncPatterns {
-    
+    // MARK: Public
+
     // MARK: - Retry Patterns
-    
+
     /// Execute operation with exponential backoff retry
     public static func withRetry<T>(
         maxAttempts: Int = 3,
@@ -18,13 +19,13 @@ public enum AsyncPatterns {
     ) async throws -> T {
         var lastError: Error?
         var delay = initialDelay
-        
-        for attempt in 1...maxAttempts {
+
+        for attempt in 1 ... maxAttempts {
             do {
                 return try await operation()
             } catch {
                 lastError = error
-                
+
                 // Don't delay on the last attempt
                 if attempt < maxAttempts {
                     try await Task.sleep(for: .seconds(delay))
@@ -32,10 +33,10 @@ public enum AsyncPatterns {
                 }
             }
         }
-        
+
         throw lastError ?? TaskError.noResult
     }
-    
+
     /// Execute operation with retry on specific error conditions
     public static func withConditionalRetry<T>(
         maxAttempts: Int = 3,
@@ -44,27 +45,27 @@ public enum AsyncPatterns {
         operation: @escaping () async throws -> T
     ) async throws -> T {
         var lastError: Error?
-        
-        for attempt in 1...maxAttempts {
+
+        for attempt in 1 ... maxAttempts {
             do {
                 return try await operation()
             } catch {
                 lastError = error
-                
+
                 // Only retry if condition is met and we have attempts left
-                if attempt < maxAttempts && shouldRetry(error) {
+                if attempt < maxAttempts, shouldRetry(error) {
                     try await Task.sleep(for: .seconds(delay))
                 } else {
                     throw error
                 }
             }
         }
-        
+
         throw lastError ?? TaskError.noResult
     }
-    
+
     // MARK: - Resource Management
-    
+
     /// Execute operation with automatic resource cleanup
     public static func withResource<Resource, T>(
         acquire: @escaping () async throws -> Resource,
@@ -72,7 +73,7 @@ public enum AsyncPatterns {
         operation: @escaping (Resource) async throws -> T
     ) async throws -> T {
         let resource = try await acquire()
-        
+
         do {
             let result = try await operation(resource)
             try await release(resource)
@@ -82,36 +83,36 @@ public enum AsyncPatterns {
             throw error
         }
     }
-    
+
     /// Execute operation with lock-like resource protection
     public static func withLock<T: Sendable>(
         lock: AsyncLock,
         operation: @escaping @Sendable () async throws -> T
     ) async throws -> T {
         await lock.acquire()
-        defer { 
+        defer {
             Task { await lock.release() }
         }
-        
+
         return try await operation()
     }
-    
+
     // MARK: - Debouncing and Throttling
-    
+
     /// Debounce async operations to prevent excessive calls
     public static func debounced<T: Sendable>(
         delay: TimeInterval,
         operation: @escaping @Sendable () async throws -> T
     ) -> @Sendable () async throws -> T? {
         let debouncer = AsyncDebouncer(delay: delay)
-        
+
         return {
             try await debouncer.execute(operation)
         }
     }
-    
+
     // MARK: - Batching Operations
-    
+
     /// Execute operations in batches with controlled concurrency
     public static func batchExecute<T: Sendable, U: Sendable>(
         items: [T],
@@ -119,7 +120,7 @@ public enum AsyncPatterns {
         operation: @escaping @Sendable (T) async throws -> U
     ) async -> [U] {
         var results: [U] = []
-        
+
         for batch in items.chunked(into: batchSize) {
             let batchResults = await withTaskGroup(of: U?.self) { group in
                 for item in batch {
@@ -131,24 +132,24 @@ public enum AsyncPatterns {
                         }
                     }
                 }
-                
+
                 var batchResults: [U] = []
                 for await result in group {
-                    if let result = result {
+                    if let result {
                         batchResults.append(result)
                     }
                 }
                 return batchResults
             }
-            
+
             results.append(contentsOf: batchResults)
         }
-        
+
         return results
     }
-    
+
     // MARK: - Stream Processing
-    
+
     /// Process async sequence with error handling and backpressure
     public static func processSequence<S, T: Sendable>(
         sequence: S,
@@ -158,23 +159,23 @@ public enum AsyncPatterns {
         AsyncStream { continuation in
             Task {
                 var buffer: [S.Element] = []
-                
+
                 do {
                     for try await element in sequence {
                         buffer.append(element)
-                        
+
                         // Process buffer when it reaches capacity
                         if buffer.count >= bufferSize {
                             await processBatch(buffer, processor: processor, continuation: continuation)
                             buffer.removeAll()
                         }
                     }
-                    
+
                     // Process remaining items
                     if !buffer.isEmpty {
                         await processBatch(buffer, processor: processor, continuation: continuation)
                     }
-                    
+
                     continuation.finish()
                 } catch {
                     continuation.yield(.failure(error))
@@ -183,7 +184,9 @@ public enum AsyncPatterns {
             }
         }
     }
-    
+
+    // MARK: Private
+
     private static func processBatch<T: Sendable, U: Sendable>(
         _ batch: [T],
         processor: @escaping @Sendable (T) async throws -> U,
@@ -200,7 +203,7 @@ public enum AsyncPatterns {
                     }
                 }
             }
-            
+
             for await result in group {
                 continuation.yield(result)
             }
@@ -212,60 +215,72 @@ public enum AsyncPatterns {
 
 /// Simple async lock for resource protection
 public actor AsyncLock {
-    private var isLocked = false
-    private var waiters: [CheckedContinuation<Void, Never>] = []
-    
+    // MARK: Lifecycle
+
     public init() {}
-    
+
+    // MARK: Public
+
     public func acquire() async {
         if !isLocked {
             isLocked = true
             return
         }
-        
+
         await withCheckedContinuation { continuation in
             waiters.append(continuation)
         }
     }
-    
+
     public func release() {
         isLocked = false
-        
+
         if !waiters.isEmpty {
             let waiter = waiters.removeFirst()
             isLocked = true
             waiter.resume()
         }
     }
+
+    // MARK: Private
+
+    private var isLocked = false
+    private var waiters: [CheckedContinuation<Void, Never>] = []
 }
 
 /// Async debouncer to prevent excessive operations
 public actor AsyncDebouncer {
-    private let delay: TimeInterval
-    private var currentTask: Task<Void, Never>?
-    
+    // MARK: Lifecycle
+
     public init(delay: TimeInterval) {
         self.delay = delay
     }
-    
+
+    // MARK: Public
+
     public func execute<T: Sendable>(_ operation: @escaping @Sendable () async throws -> T) async throws -> T? {
         // Cancel previous task
         currentTask?.cancel()
-        
+
         // Create new debounced task
         currentTask = Task {
             try? await Task.sleep(for: .seconds(delay))
         }
-        
+
         await currentTask?.value
-        
+
         // If task was cancelled, return nil
         guard currentTask?.isCancelled == false else {
             return nil
         }
-        
+
         return try await operation()
     }
+
+    // MARK: Private
+
+    private let delay: TimeInterval
+    private var currentTask: Task<Void, Never>?
 }
 
 // MARK: - Collection Extensions
@@ -273,8 +288,8 @@ public actor AsyncDebouncer {
 extension Collection {
     /// Split collection into chunks of specified size
     func chunked(into size: Int) -> [[Element]] {
-        return stride(from: 0, to: count, by: size).map {
-            Array(self[index(startIndex, offsetBy: $0)..<index(startIndex, offsetBy: Swift.min($0 + size, count))])
+        stride(from: 0, to: count, by: size).map {
+            Array(self[index(startIndex, offsetBy: $0) ..< index(startIndex, offsetBy: Swift.min($0 + size, count))])
         }
     }
 }
@@ -291,16 +306,16 @@ public func withTimeout<T: Sendable>(
         group.addTask {
             try await operation()
         }
-        
+
         // Add timeout task
         group.addTask {
             try await Task.sleep(for: .seconds(timeout))
             throw TaskError.timeout(duration: timeout)
         }
-        
+
         // Return first result and cancel remaining
         defer { group.cancelAll() }
-        
+
         if let result = try await group.next() {
             return result
         } else {

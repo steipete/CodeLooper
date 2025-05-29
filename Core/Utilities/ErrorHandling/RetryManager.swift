@@ -12,24 +12,20 @@ import Foundation
 @MainActor
 public class RetryManager {
     // MARK: Lifecycle
-    
+
     /// Initialize a retry manager with custom configuration
     /// - Parameter config: Retry configuration parameters
     public init(config: RetryConfiguration = .default) {
         self.config = config
         self.logger = Logger(category: .utilities)
     }
-    
+
     // MARK: Public
-    
+
     /// Retry configuration parameters
     public struct RetryConfiguration: Sendable {
-        public let maxAttempts: Int
-        public let initialDelay: TimeInterval
-        public let maxDelay: TimeInterval
-        public let backoffMultiplier: Double
-        public let jitterEnabled: Bool
-        
+        // MARK: Lifecycle
+
         public init(
             maxAttempts: Int = 3,
             initialDelay: TimeInterval = 1.0,
@@ -43,24 +39,32 @@ public class RetryManager {
             self.backoffMultiplier = backoffMultiplier
             self.jitterEnabled = jitterEnabled
         }
-        
+
+        // MARK: Public
+
         public static let `default` = RetryConfiguration()
-        
+
         public static let aggressive = RetryConfiguration(
             maxAttempts: 5,
             initialDelay: 0.5,
             maxDelay: 10.0,
             backoffMultiplier: 1.5
         )
-        
+
         public static let conservative = RetryConfiguration(
             maxAttempts: 2,
             initialDelay: 2.0,
             maxDelay: 60.0,
             backoffMultiplier: 3.0
         )
+
+        public let maxAttempts: Int
+        public let initialDelay: TimeInterval
+        public let maxDelay: TimeInterval
+        public let backoffMultiplier: Double
+        public let jitterEnabled: Bool
     }
-    
+
     /// Execute an operation with retry logic
     /// - Parameters:
     ///   - operation: The async operation to retry
@@ -75,24 +79,24 @@ public class RetryManager {
     ) async throws -> T {
         var lastError: Error?
         var delay = config.initialDelay
-        
-        for attempt in 1...config.maxAttempts {
+
+        for attempt in 1 ... config.maxAttempts {
             do {
                 let result = try await operation()
-                
+
                 // Log successful operation after retries
                 if attempt > 1 {
                     logger.info("✅ Operation succeeded after \(attempt) attempts")
                 }
-                
+
                 return result
-                
+
             } catch {
                 lastError = error
-                
+
                 // Check if we should retry this error
                 let errorIsRetryable = shouldRetry?(error) ?? defaultShouldRetry(error)
-                
+
                 // If this is our last attempt or error is not retryable, throw
                 if attempt >= config.maxAttempts || !errorIsRetryable {
                     if !errorIsRetryable {
@@ -102,54 +106,57 @@ public class RetryManager {
                     }
                     throw error
                 }
-                
+
                 // Calculate delay with jitter if enabled
                 let actualDelay = calculateDelay(baseDelay: delay)
-                
-                logger.warning("⚠️ Attempt \(attempt) failed, retrying in \(String(format: "%.1f", actualDelay))s: \(error)")
-                
+
+                logger
+                    .warning(
+                        "⚠️ Attempt \(attempt) failed, retrying in \(String(format: "%.1f", actualDelay))s: \(error)"
+                    )
+
                 // Notify retry callback
                 onRetry?(attempt, error, actualDelay)
-                
+
                 // Wait before next attempt
                 try await Task.sleep(for: .seconds(actualDelay))
-                
+
                 // Update delay for next iteration
                 delay = min(delay * config.backoffMultiplier, config.maxDelay)
             }
         }
-        
+
         // This should never be reached, but provide fallback
         throw lastError ?? RetryError.unknownFailure
     }
-    
+
     /// Execute an operation with specific retry conditions
     /// - Parameters:
     ///   - operation: The async operation to retry
     ///   - retryableErrors: Specific error types that should be retried
     /// - Returns: The result of the successful operation
     /// - Throws: The last error if all retries fail
-    public func execute<T: Sendable, E: Error>(
+    public func execute<T: Sendable>(
         operation: @escaping @Sendable () async throws -> T,
-        retryableErrors: [E.Type]
-    ) async throws -> T where E: Equatable {
-        return try await execute(operation: operation) { error in
+        retryableErrors: [(some Error & Equatable).Type]
+    ) async throws -> T {
+        try await execute(operation: operation) { error in
             retryableErrors.contains { type(of: error) == $0 }
         }
     }
-    
+
     // MARK: Private
-    
+
     private let config: RetryConfiguration
     private let logger: Logger
-    
+
     /// Default retry logic based on common error patterns
     private func defaultShouldRetry(_ error: Error) -> Bool {
         // Check for retryable error protocols
         if let retryableError = error as? RetryableError {
             return retryableError.isRetryable
         }
-        
+
         // Check for common retryable error types
         switch error {
         case let urlError as URLError:
@@ -161,37 +168,37 @@ public class RetryManager {
             return false
         }
     }
-    
+
     private func isRetryableURLError(_ error: URLError) -> Bool {
         switch error.code {
         case .timedOut, .cannotConnectToHost, .networkConnectionLost,
              .dnsLookupFailed, .cannotFindHost, .httpTooManyRedirects:
-            return true
+            true
         case .userCancelledAuthentication, .badURL, .unsupportedURL:
-            return false
+            false
         default:
-            return false
+            false
         }
     }
-    
+
     private func isRetryableNSError(_ error: NSError) -> Bool {
         switch error.domain {
         case NSURLErrorDomain:
             // Handle URL errors
-            return isRetryableURLError(URLError(.init(rawValue: error.code) ?? .unknown))
+            isRetryableURLError(URLError(URLError.Code(rawValue: error.code) ?? .unknown))
         case "NWErrorDomain":
             // Network framework errors
-            return error.code != 57 // Connection refused is usually not retryable
+            error.code != 57 // Connection refused is usually not retryable
         default:
-            return false
+            false
         }
     }
-    
+
     private func calculateDelay(baseDelay: TimeInterval) -> TimeInterval {
         guard config.jitterEnabled else { return baseDelay }
-        
+
         // Add up to 25% jitter to prevent thundering herd
-        let jitter = Double.random(in: 0.75...1.25)
+        let jitter = Double.random(in: 0.75 ... 1.25)
         return baseDelay * jitter
     }
 }
@@ -208,15 +215,17 @@ public enum RetryError: Error, LocalizedError {
     case unknownFailure
     case maxAttemptsExceeded(attempts: Int)
     case operationCancelled
-    
+
+    // MARK: Public
+
     public var errorDescription: String? {
         switch self {
         case .unknownFailure:
-            return "An unknown error occurred during retry operation"
-        case .maxAttemptsExceeded(let attempts):
-            return "Operation failed after \(attempts) retry attempts"
+            "An unknown error occurred during retry operation"
+        case let .maxAttemptsExceeded(attempts):
+            "Operation failed after \(attempts) retry attempts"
         case .operationCancelled:
-            return "Retry operation was cancelled"
+            "Retry operation was cancelled"
         }
     }
 }

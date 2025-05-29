@@ -8,20 +8,24 @@ import Foundation
 /// and prevent common concurrency issues.
 @MainActor
 public final class TaskManager {
-    // MARK: - Singleton
-    
-    public static let shared = TaskManager()
-    
+    // MARK: Lifecycle
+
     private init() {
         logger.info("TaskManager initialized")
     }
-    
+
     deinit {
         // Cleanup handled externally to avoid actor isolation issues
     }
-    
+
+    // MARK: Public
+
+    // MARK: - Singleton
+
+    public static let shared = TaskManager()
+
     // MARK: - Public API
-    
+
     /// Execute a task with automatic error handling and timeout
     @discardableResult
     public func execute<T: Sendable>(
@@ -32,22 +36,20 @@ public final class TaskManager {
     ) async -> T? {
         let taskId = generateTaskId(name: name)
         logger.debug("🚀 Starting task '\(name)' (ID: \(taskId))")
-        
+
         let task = Task(priority: priority) {
             do {
-                let result: T
-                
-                if let timeout = timeout {
-                    result = try await withTimeout(timeout) {
+                let result: T = if let timeout {
+                    try await withTimeout(timeout) {
                         try await operation()
                     }
                 } else {
-                    result = try await operation()
+                    try await operation()
                 }
-                
+
                 logger.debug("✅ Task '\(name)' completed successfully")
                 return result
-                
+
             } catch {
                 await ErrorHandler.shared.handleAsync(
                     error,
@@ -58,7 +60,7 @@ public final class TaskManager {
                 throw error
             }
         }
-        
+
         // Track the task
         activeTasks[taskId] = TaskInfo(
             id: taskId,
@@ -66,18 +68,18 @@ public final class TaskManager {
             task: task,
             startTime: Date()
         )
-        
+
         defer {
             activeTasks.removeValue(forKey: taskId)
         }
-        
+
         do {
             return try await task.value
         } catch {
             return nil
         }
     }
-    
+
     /// Execute a detached task that runs independently
     @discardableResult
     public func executeDetached<T: Sendable>(
@@ -95,14 +97,14 @@ public final class TaskManager {
             )
         }
     }
-    
+
     /// Execute a task group for concurrent operations
     public func executeGroup<T: Sendable>(
         name: String,
         operations: [(String, @Sendable () async throws -> T)]
     ) async -> [T] {
         logger.debug("🔄 Starting task group '\(name)' with \(operations.count) operations")
-        
+
         return await withTaskGroup(of: T?.self) { group in
             for (operationName, operation) in operations {
                 group.addTask { [weak self] in
@@ -112,19 +114,19 @@ public final class TaskManager {
                     )
                 }
             }
-            
+
             var results: [T] = []
             for await result in group {
-                if let result = result {
+                if let result {
                     results.append(result)
                 }
             }
-            
+
             logger.debug("✅ Task group '\(name)' completed with \(results.count) successful operations")
             return results
         }
     }
-    
+
     /// Execute a repeating task with interval
     @discardableResult
     public func executeRepeating(
@@ -135,17 +137,17 @@ public final class TaskManager {
     ) -> Task<Void, Never> {
         let taskId = generateTaskId(name: name)
         logger.debug("🔁 Starting repeating task '\(name)' (interval: \(interval)s)")
-        
+
         let task = Task {
             var iteration = 0
-            
+
             while !Task.isCancelled {
                 // Check max iterations
-                if let maxIterations = maxIterations, iteration >= maxIterations {
+                if let maxIterations, iteration >= maxIterations {
                     logger.debug("🏁 Repeating task '\(name)' reached max iterations (\(maxIterations))")
                     break
                 }
-                
+
                 do {
                     try await operation()
                     iteration += 1
@@ -155,54 +157,54 @@ public final class TaskManager {
                         context: .backgroundOperation,
                         showAlert: false
                     )
-                    
+
                     // Continue on error unless it's a cancellation
                     if error is CancellationError {
                         break
                     }
                 }
-                
+
                 // Wait for interval
                 try? await Task.sleep(for: .seconds(interval))
             }
-            
+
             logger.debug("🛑 Repeating task '\(name)' stopped after \(iteration) iterations")
         }
-        
+
         activeTasks[taskId] = TaskInfo(
             id: taskId,
             name: name,
             task: task,
             startTime: Date()
         )
-        
+
         return task
     }
-    
+
     /// Cancel all active tasks
     public func cancelAllTasks() {
         let taskCount = activeTasks.count
         logger.debug("🛑 Cancelling \(taskCount) active tasks")
-        
+
         for taskInfo in activeTasks.values {
             taskInfo.cancel()
         }
-        
+
         activeTasks.removeAll()
         logger.debug("✅ All tasks cancelled")
     }
-    
+
     /// Cancel a specific task by name
     public func cancelTask(named name: String) {
         let matchingTasks = activeTasks.values.filter { $0.name == name }
-        
+
         for taskInfo in matchingTasks {
             logger.debug("🛑 Cancelling task '\(name)' (ID: \(taskInfo.id))")
             taskInfo.cancel()
             activeTasks.removeValue(forKey: taskInfo.id)
         }
     }
-    
+
     /// Get status of active tasks
     public func getActiveTasksStatus() -> [TaskStatus] {
         activeTasks.values.map { taskInfo in
@@ -215,18 +217,20 @@ public final class TaskManager {
             )
         }
     }
-    
+
+    // MARK: Private
+
     // MARK: - Private Implementation
-    
+
     private let logger = Logger(category: .general)
     private var activeTasks: [String: TaskInfo] = [:]
     private var taskCounter: UInt64 = 0
-    
+
     private func generateTaskId(name: String) -> String {
         taskCounter += 1
         return "\(name)_\(taskCounter)"
     }
-    
+
     /// Execute operation with timeout
     private func withTimeout<T: Sendable>(
         _ timeout: TimeInterval,
@@ -237,16 +241,16 @@ public final class TaskManager {
             group.addTask {
                 try await operation()
             }
-            
+
             // Add timeout task
             group.addTask {
                 try await Task.sleep(for: .seconds(timeout))
                 throw TaskError.timeout(duration: timeout)
             }
-            
+
             // Return first result and cancel remaining
             defer { group.cancelAll() }
-            
+
             if let result = try await group.next() {
                 return result
             } else {
@@ -260,19 +264,23 @@ public final class TaskManager {
 
 /// Internal structure for tracking active tasks with metadata
 private struct TaskInfo {
-    let id: String
-    let name: String
-    let startTime: Date
-    let cancel: () -> Void
-    let isCancelled: () -> Bool
-    
-    init<T, F>(id: String, name: String, task: Task<T, F>, startTime: Date) {
+    // MARK: Lifecycle
+
+    init(id: String, name: String, task: Task<some Any, some Any>, startTime: Date) {
         self.id = id
         self.name = name
         self.startTime = startTime
         self.cancel = { task.cancel() }
         self.isCancelled = { task.isCancelled }
     }
+
+    // MARK: Internal
+
+    let id: String
+    let name: String
+    let startTime: Date
+    let cancel: () -> Void
+    let isCancelled: () -> Bool
 }
 
 /// Represents the status of a managed task
@@ -298,17 +306,17 @@ public enum TaskError: Error, LocalizedError {
     case cancelled
     /// Task completed but produced no result
     case noResult
-    
+
+    // MARK: Public
+
     public var errorDescription: String? {
         switch self {
         case let .timeout(duration):
-            return "Task timed out after \(duration) seconds"
+            "Task timed out after \(duration) seconds"
         case .cancelled:
-            return "Task was cancelled"
+            "Task was cancelled"
         case .noResult:
-            return "Task completed without result"
+            "Task completed without result"
         }
     }
 }
-
-

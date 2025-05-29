@@ -12,9 +12,9 @@ import Foundation
 /// Example usage:
 /// ```swift
 /// let debouncer = Debouncer(delay: 0.5)
-/// debouncer.call { 
+/// debouncer.call {
 ///     // This will only execute 0.5 seconds after the last call
-///     performExpensiveOperation() 
+///     performExpensiveOperation()
 /// }
 /// ```
 @MainActor
@@ -23,7 +23,7 @@ public final class Debouncer: Sendable {
 
     public init(delay: TimeInterval) {
         self.delay = delay
-        
+
         // Create the stream and capture the continuation
         var streamContinuation: AsyncStream<@Sendable () -> Void>.Continuation?
         let stream = AsyncStream<@Sendable () -> Void> { continuation in
@@ -31,22 +31,22 @@ public final class Debouncer: Sendable {
         }
         self.stream = stream
         self.continuation = streamContinuation
-        
+
         // Start the debouncing task
         self.task = Task { @MainActor in
             var lastAction: (@Sendable () -> Void)?
-            
+
             for await action in stream {
                 lastAction = action
-                
+
                 // Cancel previous delay
                 self.delayTask?.cancel()
-                
+
                 // Start new delay
                 self.delayTask = Task {
                     do {
                         try await Task.sleep(for: .seconds(delay))
-                        
+
                         // Execute the action if not cancelled
                         if !Task.isCancelled {
                             lastAction?()

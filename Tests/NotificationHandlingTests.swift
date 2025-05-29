@@ -1,78 +1,78 @@
-import Testing
-import Foundation
 import AppKit
-import UserNotifications
 @testable import CodeLooper
+import Foundation
+import Testing
+import UserNotifications
 
 @Test("UserNotificationManager - Singleton")
-func testUserNotificationManagerSingleton() async throws {
+func userNotificationManagerSingleton() async throws {
     let manager1 = await UserNotificationManager.shared
     let manager2 = await UserNotificationManager.shared
-    
+
     #expect(manager1 === manager2)
 }
 
 @Test("UserNotificationManager - Initialization")
-func testUserNotificationManagerInitialization() async throws {
+func userNotificationManagerInitialization() async throws {
     let manager = await UserNotificationManager.shared
-    
+
     // Test initial state
     #expect(manager != nil)
-    
+
     // Test initial published values
     let initialPermission = await manager.hasPermission
     let initialStatus = await manager.authorizationStatus
-    
+
     // Values should be initialized (though actual values depend on system state)
     #expect(initialPermission == true || initialPermission == false)
     #expect(initialStatus != nil)
 }
 
 @Test("NotificationError - Error Cases")
-func testNotificationErrorCases() async throws {
+func notificationErrorCases() async throws {
     let permissionError = NotificationError.permissionDenied
     let deliveryError = NotificationError.deliveryFailed(URLError(.notConnectedToInternet))
-    
+
     // Test error descriptions
     #expect(permissionError.errorDescription != nil)
     #expect(permissionError.errorDescription?.contains("permission") == true)
-    
+
     #expect(deliveryError.errorDescription != nil)
     #expect(deliveryError.errorDescription?.contains("deliver") == true)
-    
+
     // Test error equality
     let anotherPermissionError = NotificationError.permissionDenied
     #expect(permissionError.errorDescription == anotherPermissionError.errorDescription)
 }
 
 @Test("NotificationError - Delivery Error Details")
-func testNotificationErrorDeliveryErrorDetails() async throws {
+func notificationErrorDeliveryErrorDetails() async throws {
     let underlyingError = URLError(.timedOut)
     let deliveryError = NotificationError.deliveryFailed(underlyingError)
-    
+
     #expect(deliveryError.errorDescription?.contains("timed out") == true)
     #expect(deliveryError.errorDescription?.contains("Failed to deliver") == true)
-    
+
     let nsError = NSError(domain: "TestDomain", code: 123, userInfo: [NSLocalizedDescriptionKey: "Test error"])
     let nsDeliveryError = NotificationError.deliveryFailed(nsError)
-    
+
     #expect(nsDeliveryError.errorDescription?.contains("Test error") == true)
 }
 
 @Test("UserNotificationManager - Authorization Status Handling")
-func testUserNotificationManagerAuthorizationStatusHandling() async throws {
+func userNotificationManagerAuthorizationStatusHandling() async throws {
     let manager = await UserNotificationManager.shared
-    
+
     // Test that authorization status check doesn't crash
     await manager.checkAuthorizationStatus()
-    
+
     let status = await manager.authorizationStatus
     let hasPermission = await manager.hasPermission
-    
+
     // Verify status is a valid UNAuthorizationStatus
     let validStatuses: [UNAuthorizationStatus] = [.notDetermined, .denied, .authorized, .provisional, .ephemeral]
     #expect(validStatuses.contains(status))
-    
+
     // Verify hasPermission matches status
     if status == .authorized {
         #expect(hasPermission == true)
@@ -82,17 +82,21 @@ func testUserNotificationManagerAuthorizationStatusHandling() async throws {
 }
 
 @Test("UserNotificationManager - Notification Content Creation")
-func testUserNotificationManagerNotificationContentCreation() async throws {
+func userNotificationManagerNotificationContentCreation() async throws {
     // Test notification content creation parameters
     let testCases = [
         (title: "Test Title", body: "Test Body", id: "test-id"),
         (title: "Long Title with Multiple Words and Special Characters !@#$", body: "Short body", id: "long-title"),
-        (title: "Short", body: "Very long body text that contains multiple sentences and provides detailed information about the notification content that the user should read carefully.", id: "long-body"),
+        (
+            title: "Short",
+            body: "Very long body text that contains multiple sentences and provides detailed information about the notification content that the user should read carefully.",
+            id: "long-body"
+        ),
         (title: "", body: "", id: "empty"),
         (title: "Emoji Test 🚀", body: "Body with émojis 🎉 and unicode characters 测试", id: "unicode"),
-        (title: "Rule Executed", body: "TestRule executed successfully (execution #5)", id: "rule-test-1234567890")
+        (title: "Rule Executed", body: "TestRule executed successfully (execution #5)", id: "rule-test-1234567890"),
     ]
-    
+
     for testCase in testCases {
         // Verify that the test case parameters are valid strings
         #expect(testCase.title.count >= 0)
@@ -102,9 +106,9 @@ func testUserNotificationManagerNotificationContentCreation() async throws {
 }
 
 @Test("UserNotificationManager - Rule Execution Notifications")
-func testUserNotificationManagerRuleExecutionNotifications() async throws {
+func userNotificationManagerRuleExecutionNotifications() async throws {
     let manager = await UserNotificationManager.shared
-    
+
     // Test rule execution notification without permission (should not crash)
     await manager.sendRuleExecutionNotification(
         ruleName: "test-rule",
@@ -112,7 +116,7 @@ func testUserNotificationManagerRuleExecutionNotifications() async throws {
         executionCount: 5,
         isWarning: false
     )
-    
+
     // Test warning notification
     await manager.sendRuleExecutionNotification(
         ruleName: "warning-rule",
@@ -120,7 +124,7 @@ func testUserNotificationManagerRuleExecutionNotifications() async throws {
         executionCount: 20,
         isWarning: true
     )
-    
+
     // Test maximum execution notification
     await manager.sendRuleExecutionNotification(
         ruleName: "max-rule",
@@ -128,20 +132,20 @@ func testUserNotificationManagerRuleExecutionNotifications() async throws {
         executionCount: 25,
         isWarning: false
     )
-    
+
     // These calls should not crash even without permissions
     #expect(true)
 }
 
 @Test("UserNotificationManager - System Settings URL")
-func testUserNotificationManagerSystemSettingsURL() async throws {
+func userNotificationManagerSystemSettingsURL() async throws {
     let manager = await UserNotificationManager.shared
-    
+
     // Test that opening notification settings doesn't crash
     // Note: This will actually try to open System Settings in a real environment
     // In tests, we just verify the method doesn't crash
     manager.openNotificationSettings()
-    
+
     // Verify URL can be created
     let settingsURL = URL(string: "x-apple.systempreferences:com.apple.preference.notifications")
     #expect(settingsURL != nil)
@@ -149,29 +153,29 @@ func testUserNotificationManagerSystemSettingsURL() async throws {
 }
 
 @Test("UserNotificationManager - Notification Sound Options")
-func testUserNotificationManagerNotificationSoundOptions() async throws {
+func userNotificationManagerNotificationSoundOptions() async throws {
     // Test various sound options
     let defaultSound = UNNotificationSound.default
     let customSound = UNNotificationSound(named: UNNotificationSoundName("custom.wav"))
-    
+
     #expect(defaultSound != nil)
     #expect(customSound != nil)
-    
+
     // Test that sounds can be used in notification parameters
     // We can't actually send notifications in tests without permissions,
     // but we can verify the sound objects are created correctly
 }
 
 @Test("UserNotificationManager - Badge Numbers")
-func testUserNotificationManagerBadgeNumbers() async throws {
+func userNotificationManagerBadgeNumbers() async throws {
     let badgeNumbers = [
         NSNumber(value: 0),
         NSNumber(value: 1),
         NSNumber(value: 99),
         NSNumber(value: 999),
-        NSNumber(value: -1) // Invalid badge number
+        NSNumber(value: -1), // Invalid badge number
     ]
-    
+
     for badgeNumber in badgeNumbers {
         // Verify badge numbers can be created
         #expect(badgeNumber != nil)
@@ -179,27 +183,27 @@ func testUserNotificationManagerBadgeNumbers() async throws {
 }
 
 @Test("UserNotificationManager - Concurrent Operations")
-func testUserNotificationManagerConcurrentOperations() async throws {
+func userNotificationManagerConcurrentOperations() async throws {
     let manager = await UserNotificationManager.shared
-    
+
     // Test concurrent authorization status checks
     await withTaskGroup(of: Void.self) { group in
-        for _ in 0..<5 {
+        for _ in 0 ..< 5 {
             group.addTask {
                 await manager.checkAuthorizationStatus()
             }
         }
     }
-    
+
     // Manager should still be in a valid state
     let finalStatus = await manager.authorizationStatus
     #expect(finalStatus != nil)
 }
 
 @Test("UserNotificationManager - Error Handling")
-func testUserNotificationManagerErrorHandling() async throws {
+func userNotificationManagerErrorHandling() async throws {
     let manager = await UserNotificationManager.shared
-    
+
     // Test sending notification without permission
     do {
         try await manager.sendNotification(
@@ -222,7 +226,7 @@ func testUserNotificationManagerErrorHandling() async throws {
 }
 
 @Test("UserNotificationManager - Notification Identifiers")
-func testUserNotificationManagerNotificationIdentifiers() async throws {
+func userNotificationManagerNotificationIdentifiers() async throws {
     // Test various identifier formats
     let identifiers = [
         "simple-id",
@@ -233,13 +237,13 @@ func testUserNotificationManagerNotificationIdentifiers() async throws {
         UUID().uuidString,
         "",
         "id-with-émojis-🚀",
-        "very-long-identifier-that-contains-many-characters-and-should-still-work-correctly-1234567890"
+        "very-long-identifier-that-contains-many-characters-and-should-still-work-correctly-1234567890",
     ]
-    
+
     for identifier in identifiers {
         // Test that identifiers are valid strings
         #expect(identifier.count >= 0)
-        
+
         // Empty identifier should generate UUID
         let finalId = identifier.isEmpty ? UUID().uuidString : identifier
         #expect(finalId.count > 0)
@@ -247,11 +251,11 @@ func testUserNotificationManagerNotificationIdentifiers() async throws {
 }
 
 @Test("UserNotificationManager - Memory Management")
-func testUserNotificationManagerMemoryManagement() async throws {
+func userNotificationManagerMemoryManagement() async throws {
     let manager = await UserNotificationManager.shared
-    
+
     // Test multiple rule execution notifications
-    for i in 0..<100 {
+    for i in 0 ..< 100 {
         await manager.sendRuleExecutionNotification(
             ruleName: "test-rule-\(i)",
             displayName: "Test Rule \(i)",
@@ -259,29 +263,29 @@ func testUserNotificationManagerMemoryManagement() async throws {
             isWarning: i % 20 == 0
         )
     }
-    
+
     // Manager should still be functional
     let status = await manager.authorizationStatus
     #expect(status != nil)
 }
 
 @Test("UserNotificationManager - Performance")
-func testUserNotificationManagerPerformance() async throws {
+func userNotificationManagerPerformance() async throws {
     let manager = await UserNotificationManager.shared
-    
+
     let startTime = Date()
-    
+
     // Test rapid authorization status checks
-    for _ in 0..<100 {
+    for _ in 0 ..< 100 {
         await manager.checkAuthorizationStatus()
     }
-    
+
     let elapsed = Date().timeIntervalSince(startTime)
     #expect(elapsed < 5.0) // Should complete within reasonable time
 }
 
 @Test("Notifications - String Encoding")
-func testNotificationsStringEncoding() async throws {
+func notificationsStringEncoding() async throws {
     let testStrings = [
         "Simple ASCII text",
         "Text with émojis 🚀🎉📱",
@@ -289,16 +293,16 @@ func testNotificationsStringEncoding() async throws {
         "Special chars: !@#$%^&*()_+-=[]{}|;':\",./<>?",
         "Numbers and symbols: 123456789 ±∞≠≤≥",
         "\nNewlines\nand\ntabs\t\there",
-        ""
+        "",
     ]
-    
+
     for testString in testStrings {
         // Test that strings can be encoded to UTF-8
         let data = testString.data(using: .utf8)
         #expect(data != nil)
-        
+
         // Test round-trip encoding
-        if let data = data {
+        if let data {
             let decoded = String(data: data, encoding: .utf8)
             #expect(decoded == testString)
         }
@@ -306,22 +310,22 @@ func testNotificationsStringEncoding() async throws {
 }
 
 @Test("Notifications - Authorization Status Types")
-func testNotificationsAuthorizationStatusTypes() async throws {
+func notificationsAuthorizationStatusTypes() async throws {
     let allStatuses: [UNAuthorizationStatus] = [
         .notDetermined,
         .denied,
         .authorized,
         .provisional,
-        .ephemeral
+        .ephemeral,
     ]
-    
+
     // Test that all status values are distinct
-    for i in 0..<allStatuses.count {
-        for j in (i+1)..<allStatuses.count {
+    for i in 0 ..< allStatuses.count {
+        for j in (i + 1) ..< allStatuses.count {
             #expect(allStatuses[i] != allStatuses[j])
         }
     }
-    
+
     // Test permission mapping
     for status in allStatuses {
         let shouldHavePermission = (status == .authorized)

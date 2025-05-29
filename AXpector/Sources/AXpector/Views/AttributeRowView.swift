@@ -7,7 +7,7 @@ import SwiftUI
 ///
 /// AttributeRowView provides formatted display of:
 /// - Attribute names with consistent styling
-/// - Type-aware value formatting and presentation  
+/// - Type-aware value formatting and presentation
 /// - Special handling for complex attribute types
 /// - Copy-to-clipboard functionality for debugging
 ///

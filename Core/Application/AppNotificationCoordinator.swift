@@ -1,7 +1,7 @@
 import AppKit
+import Defaults
 import Diagnostics
 import Foundation
-import Defaults
 
 /// Coordinates application-wide notification observers and system events.
 ///
@@ -9,64 +9,71 @@ import Defaults
 /// and preference changes to reduce complexity in AppDelegate.
 @MainActor
 final class AppNotificationCoordinator: Loggable {
+    // MARK: Lifecycle
+
     // MARK: - Initialization
-    
+
     init() {
         logger.info("AppNotificationCoordinator initialized")
     }
-    
+
     deinit {
         // Cleanup handled externally to avoid capture issues
     }
-    
+
+    // MARK: Internal
+
     // MARK: - Public API
-    
+
     /// Setup all notification observers and system event monitoring
     func setupNotifications() {
         logger.info("🔔 Setting up notification observers...")
-        
+
         setupMenuBarHighlightObserver()
         setupAXpectorWindowObserver()
         setupSystemSleepWakeObservers()
         setupPreferenceObservers()
         setupExceptionHandling()
-        
+
         logger.info("✅ Notification observers configured")
     }
-    
+
     /// Clean up all notification observers
     func cleanup() {
         logger.info("🧹 Cleaning up notification observers...")
-        
+
         for observer in notificationObservers {
             NotificationCenter.default.removeObserver(observer)
         }
         notificationObservers.removeAll()
-        
+
         // Cancel all tasks
         for task in notificationTasks {
             task.cancel()
         }
         notificationTasks.removeAll()
-        
+
         // Remove workspace observers
         NSWorkspace.shared.notificationCenter.removeObserver(self)
-        
+
         logger.info("✅ Notification cleanup complete")
     }
-    
+
     // MARK: - Action Handlers
-    
+
     /// Set the window manager for handling window-related notifications
     func setWindowManager(_ windowManager: WindowManager?) {
         self.windowManager = windowManager
     }
-    
+
+    // MARK: Private
+
     // MARK: - Private Implementation
+
     private var notificationObservers: [NSObjectProtocol] = []
     private var notificationTasks: [Task<Void, Never>] = []
     private weak var windowManager: WindowManager?
-    
+
     /// Setup menu bar highlight notification observer
     private func setupMenuBarHighlightObserver() {
         let observer = NotificationCenter.default.addObserver(
@@ -76,14 +83,14 @@ final class AppNotificationCoordinator: Loggable {
         ) { [weak self] notification in
             let duration = notification.userInfo?["duration"] as? TimeInterval ?? 2.0
             Task { @MainActor [weak self] in
-                guard let self = self else { return }
+                guard let self else { return }
                 self.logger.info("📍 Menu bar highlight requested for \(duration) seconds")
                 // TODO: Implement menu bar highlighting animation
             }
         }
         notificationObservers.append(observer)
     }
-    
+
     /// Setup AXpector window notification observer
     private func setupAXpectorWindowObserver() {
         let observer = NotificationCenter.default.addObserver(
@@ -97,7 +104,7 @@ final class AppNotificationCoordinator: Loggable {
         }
         notificationObservers.append(observer)
     }
-    
+
     /// Setup system sleep and wake observers
     private func setupSystemSleepWakeObservers() {
         let sleepObserver = NSWorkspace.shared.notificationCenter.addObserver(
@@ -110,7 +117,7 @@ final class AppNotificationCoordinator: Loggable {
             }
         }
         notificationObservers.append(sleepObserver)
-        
+
         let wakeObserver = NSWorkspace.shared.notificationCenter.addObserver(
             forName: NSWorkspace.didWakeNotification,
             object: nil,
@@ -122,7 +129,7 @@ final class AppNotificationCoordinator: Loggable {
         }
         notificationObservers.append(wakeObserver)
     }
-    
+
     /// Setup preference change observers
     private func setupPreferenceObservers() {
         // Global monitoring preference observer
@@ -133,7 +140,7 @@ final class AppNotificationCoordinator: Loggable {
         }
         // Store task to cancel on deinit
         notificationTasks.append(task)
-        
+
         // Dock visibility preference observer
         let dockTask = Task { @MainActor in
             for await value in Defaults.updates(.showInDock) {
@@ -143,11 +150,11 @@ final class AppNotificationCoordinator: Loggable {
         // Store task to cancel on deinit
         notificationTasks.append(dockTask)
     }
-    
+
     /// Setup global exception handling
     private func setupExceptionHandling() {
         logger.info("🛡️ Setting up exception handling...")
-        
+
         NSSetUncaughtExceptionHandler { exception in
             let exceptionLogger = Logger(category: .general)
             exceptionLogger.critical("Uncaught exception: \(exception.name.rawValue)")
@@ -155,15 +162,14 @@ final class AppNotificationCoordinator: Loggable {
             exceptionLogger.critical("Stack trace: \(exception.callStackSymbols.joined(separator: "\n"))")
         }
     }
-    
+
     // MARK: - Event Handlers
-    
-    
+
     private func handleShowAXpectorWindow() {
         logger.info("🔍 Request to show AXpector window")
         windowManager?.showAXpectorWindow()
     }
-    
+
     private func handleSystemWillSleep() {
         logger.info("💤 System going to sleep - pausing monitoring")
         // Pause all monitored apps
@@ -171,10 +177,10 @@ final class AppNotificationCoordinator: Loggable {
             CursorMonitor.shared.pauseMonitoring(for: app.pid)
         }
     }
-    
+
     private func handleSystemDidWake() {
         logger.info("⏰ System waking up - resuming monitoring")
-        
+
         Task { @MainActor in
             // Give system time to stabilize after wake
             try? await Task.sleep(for: .seconds(TimingConfiguration.mediumDelay))
@@ -184,10 +190,10 @@ final class AppNotificationCoordinator: Loggable {
             }
         }
     }
-    
+
     private func handleMonitoringPreferenceChange(enabled: Bool) {
         logger.info("🔄 Global monitoring preference changed to: \(enabled)")
-        
+
         if enabled {
             logger.info("📡 Enabling monitoring - will start when Cursor instances are detected")
             WindowAIDiagnosticsManager.shared.enableLiveWatchingForAllWindows()
@@ -197,10 +203,10 @@ final class AppNotificationCoordinator: Loggable {
             WindowAIDiagnosticsManager.shared.disableLiveWatchingForAllWindows()
         }
     }
-    
+
     private func handleDockVisibilityChange(visible: Bool) {
         logger.info("🎯 Dock visibility changed to: \(visible)")
-        
+
         if visible {
             NSApp.setActivationPolicy(.regular)
         } else {
@@ -208,4 +214,3 @@ final class AppNotificationCoordinator: Loggable {
         }
     }
 }
-

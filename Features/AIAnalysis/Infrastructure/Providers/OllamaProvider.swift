@@ -30,7 +30,7 @@ final class OllamaService: AIService, Loggable {
                 prompt: request.prompt,
                 images: [jpegData]
             )
-            
+
             return ImageAnalysisResponse(
                 text: response.response,
                 model: request.model,

@@ -48,11 +48,11 @@ final class OpenAIService: AIService, Loggable {
 
         do {
             let response = try await client.chats(query: query)
-            
+
             guard let content = response.choices.first?.message.content else {
                 throw AIServiceError.invalidResponse
             }
-            
+
             return ImageAnalysisResponse(
                 text: content,
                 model: request.model,

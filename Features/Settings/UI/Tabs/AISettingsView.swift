@@ -313,7 +313,6 @@ struct AISettingsView: View {
         AIServiceManager.shared.configure(provider: currentProvider, apiKey: currentAPIKey, baseURL: currentOllamaURL)
 
         let providerName = AIServiceManager.shared.currentProvider.displayName
-        let messagePrefix = isAutoTesting ? "" : "Testing \(providerName)... "
 
         if await AIServiceManager.shared.isServiceAvailable() {
             var successMessage = ""

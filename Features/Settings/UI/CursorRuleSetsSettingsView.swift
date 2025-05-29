@@ -19,10 +19,10 @@ struct CursorRuleSetsSettingsView: View {
         VStack(alignment: .leading, spacing: Spacing.large) {
             // Header section
             headerSection
-            
+
             // Rules list
             rulesListSection
-            
+
             // Info footer
             infoSection
         }
@@ -42,19 +42,19 @@ struct CursorRuleSetsSettingsView: View {
     @State private var attemptedRuleName = ""
 
     // MARK: - View Components
-    
+
     private var headerSection: some View {
         VStack(alignment: .leading, spacing: Spacing.xxxSmall) {
             Text("Intervention Rules")
                 .font(Typography.headline())
                 .foregroundColor(ColorPalette.text)
-            
+
             Text("Define how CodeLooper should respond to different Cursor states")
                 .font(Typography.caption1())
                 .foregroundColor(ColorPalette.textSecondary)
         }
     }
-    
+
     private var rulesListSection: some View {
         ScrollView {
             VStack(spacing: Spacing.medium) {
@@ -72,7 +72,7 @@ struct CursorRuleSetsSettingsView: View {
             }
         }
     }
-    
+
     private var infoSection: some View {
         HStack {
             Spacer()
@@ -102,9 +102,9 @@ struct CursorRuleSetsSettingsView: View {
     private func ruleKeyForRule(_ ruleName: String) -> String {
         switch ruleName {
         case "Stop after 25 loops":
-            return "StopAfter25LoopsRule"
+            "StopAfter25LoopsRule"
         default:
-            return ruleName
+            ruleName
         }
     }
 }

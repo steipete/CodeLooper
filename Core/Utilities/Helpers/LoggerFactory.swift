@@ -34,30 +34,33 @@ import Foundation
 /// }
 /// ```
 public enum LoggerFactory {
-    
+    // MARK: Public
+
     /// Creates a logger for the specified type with automatic category detection
     /// - Parameter type: The type requesting the logger
     /// - Returns: A configured Logger instance
-    public static func logger<T>(for type: T.Type) -> Logger {
+    public static func logger(for type: (some Any).Type) -> Logger {
         let category = categoryFromType(type)
         return Logger(category: category)
     }
-    
+
     /// Creates a logger for the specified type with explicit category
     /// - Parameters:
     ///   - type: The type requesting the logger
     ///   - category: The log category to use
     /// - Returns: A configured Logger instance
-    public static func logger<T>(for type: T.Type, category: LogCategory) -> Logger {
-        return Logger(category: category)
+    public static func logger(for _: (some Any).Type, category: LogCategory) -> Logger {
+        Logger(category: category)
     }
-    
+
+    // MARK: Private
+
     // MARK: - Private Helpers
-    
+
     /// Maps type names to appropriate log categories
-    private static func categoryFromType<T>(_ type: T.Type) -> LogCategory {
+    private static func categoryFromType(_ type: (some Any).Type) -> LogCategory {
         let typeName = String(describing: type)
-        
+
         // Map based on common naming patterns and specific types
         switch typeName {
         case "AppDelegate":

@@ -18,7 +18,6 @@ import Foundation
 /// - ``withErrorRecovery(_:recovery:)``
 /// - ``withRetryOnError(_:maxAttempts:operation:)``
 public enum ErrorHandlingUtility {
-    
     /// Handles errors with standardized logging and optional recovery
     /// - Parameters:
     ///   - operation: The throwing operation to execute
@@ -36,16 +35,16 @@ public enum ErrorHandlingUtility {
             return try operation()
         } catch {
             logger.error("❌ \(context) failed: \(error.localizedDescription)")
-            
-            if let recovery = recovery {
+
+            if let recovery {
                 logger.info("🔄 Attempting error recovery for: \(context)")
                 return recovery()
             }
-            
+
             return nil
         }
     }
-    
+
     /// Handles async errors with standardized logging and optional recovery
     /// - Parameters:
     ///   - operation: The async throwing operation to execute
@@ -63,16 +62,16 @@ public enum ErrorHandlingUtility {
             return try await operation()
         } catch {
             logger.error("❌ \(context) failed: \(error.localizedDescription)")
-            
-            if let recovery = recovery {
+
+            if let recovery {
                 logger.info("🔄 Attempting error recovery for: \(context)")
                 return await recovery()
             }
-            
+
             return nil
         }
     }
-    
+
     /// Logs an error with standardized format and context
     /// - Parameters:
     ///   - error: The error to log
@@ -85,13 +84,13 @@ public enum ErrorHandlingUtility {
     ) {
         let errorType = String(describing: type(of: error))
         logger.error("❌ [\(errorType)] \(context): \(error.localizedDescription)")
-        
+
         // Log additional debug information for development
         #if DEBUG
-        logger.debug("Error details: \(String(reflecting: error))")
+            logger.debug("Error details: \(String(reflecting: error))")
         #endif
     }
-    
+
     /// Executes an operation with error recovery fallback
     /// - Parameters:
     ///   - operation: The primary operation to attempt
@@ -107,7 +106,7 @@ public enum ErrorHandlingUtility {
             return recovery()
         }
     }
-    
+
     /// Executes an async operation with error recovery fallback
     /// - Parameters:
     ///   - operation: The primary async operation to attempt
@@ -123,7 +122,7 @@ public enum ErrorHandlingUtility {
             return await recovery()
         }
     }
-    
+
     /// Executes an operation with retry logic
     /// - Parameters:
     ///   - maxAttempts: Maximum number of retry attempts
@@ -135,8 +134,8 @@ public enum ErrorHandlingUtility {
         _ operation: @escaping () throws -> T
     ) throws -> T {
         var lastError: Error?
-        
-        for attempt in 1...maxAttempts {
+
+        for attempt in 1 ... maxAttempts {
             do {
                 return try operation()
             } catch {
@@ -147,14 +146,14 @@ public enum ErrorHandlingUtility {
                 }
             }
         }
-        
+
         throw lastError ?? NSError(
             domain: "ErrorHandlingUtility",
             code: -1,
             userInfo: [NSLocalizedDescriptionKey: "All retry attempts failed"]
         )
     }
-    
+
     /// Creates a standardized error context for operations
     /// - Parameters:
     ///   - operation: Name of the operation
@@ -167,7 +166,7 @@ public enum ErrorHandlingUtility {
         details: String? = nil
     ) -> String {
         var context = "\(component).\(operation)"
-        if let details = details {
+        if let details {
             context += " (\(details))"
         }
         return context
@@ -177,25 +176,25 @@ public enum ErrorHandlingUtility {
 /// Protocol for types that want standardized error handling
 public protocol ErrorHandling {
     var errorLogger: Logger { get }
-    
+
     /// Handle an error with automatic logging and context
     func handleError<T>(_ operation: @autoclosure () throws -> T, context: String) -> T?
-    
+
     /// Handle an async error with automatic logging and context
     func handleAsyncError<T>(_ operation: @escaping () async throws -> T, context: String) async -> T?
 }
 
 public extension ErrorHandling {
     func handleError<T>(_ operation: @autoclosure () throws -> T, context: String) -> T? {
-        return ErrorHandlingUtility.handle(
-            try operation(),
+        try ErrorHandlingUtility.handle(
+            operation(),
             in: context,
             logger: errorLogger
         )
     }
-    
+
     func handleAsyncError<T>(_ operation: @escaping () async throws -> T, context: String) async -> T? {
-        return await ErrorHandlingUtility.handleAsync(
+        await ErrorHandlingUtility.handleAsync(
             operation,
             in: context,
             logger: errorLogger

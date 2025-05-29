@@ -9,10 +9,10 @@ import Foundation
 /// Usage:
 /// ```swift
 /// let box = ThreadSafeBox(false)
-/// 
+///
 /// // Safe concurrent reads
 /// let value = box.get()
-/// 
+///
 /// // Safe writes with barrier synchronization
 /// box.set(true)
 /// ```
@@ -21,21 +21,21 @@ import Foundation
 /// ensures exclusive access during writes through barrier dispatch.
 public final class ThreadSafeBox<T: Sendable>: @unchecked Sendable {
     // MARK: Lifecycle
-    
+
     /// Creates a new ThreadSafeBox with the specified initial value
     /// - Parameter value: The initial value to store
     public init(_ value: T) {
         _value = value
     }
-    
+
     // MARK: Public
-    
+
     /// Safely retrieves the current value
     /// - Returns: The current value stored in the box
     public func get() -> T {
         queue.sync { _value }
     }
-    
+
     /// Safely updates the stored value
     /// - Parameter value: The new value to store
     public func set(_ value: T) {
@@ -43,25 +43,25 @@ public final class ThreadSafeBox<T: Sendable>: @unchecked Sendable {
             self?._value = value
         }
     }
-    
+
     /// Safely updates the value using a transform closure
     /// - Parameter transform: A closure that receives the current value and returns the new value
-    public func update(_ transform: @escaping (T) -> T) {
+    public func update(_ transform: @escaping @Sendable (T) -> T) {
         queue.async(flags: .barrier) { [weak self] in
-            guard let self = self else { return }
+            guard let self else { return }
             self._value = transform(self._value)
         }
     }
-    
+
     /// Safely reads and transforms the value without modifying it
     /// - Parameter transform: A closure that receives the current value and returns a transformed result
     /// - Returns: The result of the transform closure
-    public func read<U>(_ transform: (T) -> U) -> U {
+    public func read<U>(_ transform: @Sendable (T) -> U) -> U {
         queue.sync { transform(_value) }
     }
-    
+
     // MARK: Private
-    
+
     private let queue = DispatchQueue(label: "ThreadSafeBox", attributes: .concurrent)
     private var _value: T
 }
@@ -83,7 +83,7 @@ public extension ThreadSafeBox where T: Numeric {
     func increment(by amount: T = 1) {
         update { $0 + amount }
     }
-    
+
     /// Safely decrements a numeric value
     /// - Parameter amount: The amount to decrement by (default: 1)
     func decrement(by amount: T = 1) {
@@ -96,12 +96,12 @@ public extension ThreadSafeBox where T == Bool {
     func toggle() {
         update { !$0 }
     }
-    
+
     /// Safely sets the value to true
     func setTrue() {
         set(true)
     }
-    
+
     /// Safely sets the value to false
     func setFalse() {
         set(false)

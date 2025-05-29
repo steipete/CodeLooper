@@ -377,7 +377,7 @@ private struct WindowRow: View {
                             .font(Typography.caption2())
                             .foregroundColor(isHoveringGitStatus ? ColorPalette.accent : ColorPalette.textSecondary)
                     }
-                    
+
                     // GitHub info button (appears on hover if GitHub URL is available)
                     if isHoveringGitStatus, let githubURL = gitRepo.githubURL {
                         Button(action: {

@@ -70,6 +70,7 @@ public final class MainSettingsCoordinator: NSObject {
     }
 
     // MARK: Private
+
     private var cancellables = Set<AnyCancellable>()
     private let loginItemManager: LoginItemManager
     private let updaterViewModel: UpdaterViewModel

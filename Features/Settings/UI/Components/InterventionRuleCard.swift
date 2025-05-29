@@ -16,7 +16,7 @@ import SwiftUI
 /// while maintaining consistent spacing and alignment.
 struct InterventionRuleCard: View {
     // MARK: Lifecycle
-    
+
     init(
         rule: InterventionRule,
         isSelected: Bool,
@@ -30,9 +30,9 @@ struct InterventionRuleCard: View {
         self.onSelect = onSelect
         self.onToggle = onToggle
     }
-    
+
     // MARK: Internal
-    
+
     let rule: InterventionRule
     let isSelected: Bool
     let executionCount: Int
@@ -226,12 +226,14 @@ enum RuleTrigger: String, CaseIterable, Hashable {
     case generationTimeout = "generation_timeout"
     case sidebarInactive = "sidebar_inactive"
 
+    // MARK: Internal
+
     var displayName: String {
         switch self {
-        case .connectionError: return "Connection Error"
-        case .stuckState: return "Stuck State"
-        case .generationTimeout: return "Generation Timeout"
-        case .sidebarInactive: return "Sidebar Inactive"
+        case .connectionError: "Connection Error"
+        case .stuckState: "Stuck State"
+        case .generationTimeout: "Generation Timeout"
+        case .sidebarInactive: "Sidebar Inactive"
         }
     }
 }
@@ -243,13 +245,15 @@ enum RuleAction: String, CaseIterable, Hashable {
     case restartCursor = "restart_cursor"
     case sendNotification = "send_notification"
 
+    // MARK: Internal
+
     var displayName: String {
         switch self {
-        case .clickResumeButton: return "Click Resume"
-        case .forceRefresh: return "Force Refresh"
-        case .stopGeneration: return "Stop Generation"
-        case .restartCursor: return "Restart Cursor"
-        case .sendNotification: return "Send Notification"
+        case .clickResumeButton: "Click Resume"
+        case .forceRefresh: "Force Refresh"
+        case .stopGeneration: "Stop Generation"
+        case .restartCursor: "Restart Cursor"
+        case .sendNotification: "Send Notification"
         }
     }
 }

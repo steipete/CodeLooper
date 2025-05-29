@@ -77,6 +77,7 @@ class WelcomeWindowCoordinator: NSObject {
     }
 
     // MARK: Private
+
     private var cancellables = Set<AnyCancellable>()
 
     // MARK: - Notification Handling

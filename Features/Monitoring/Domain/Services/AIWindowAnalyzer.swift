@@ -112,15 +112,13 @@ class AIWindowAnalyzer {
 
     private func saveScreenshot(_ image: NSImage) async throws -> String {
         let jpegData = try ImageProcessor.convertToJPEG(image)
-        
+
         let tempDir = FileManager.default.temporaryDirectory
         let filename = "cursor_window_\(UUID().uuidString).jpg"
         let fileURL = tempDir.appendingPathComponent(filename)
-        
+
         try jpegData.write(to: fileURL)
         return fileURL.path
-
-
     }
 
     private func analyzeScreenshotWithAI(screenshotPath: String) async -> String {

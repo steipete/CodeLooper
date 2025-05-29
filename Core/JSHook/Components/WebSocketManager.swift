@@ -50,7 +50,7 @@ final class WebSocketManager: Loggable {
             logger.debug("🔧 Created NWListener with WebSocket protocol")
         } catch {
             logger.error("❌ Failed to create listener on port \(port): \(error)")
-            
+
             // Map specific errors to appropriate hook errors
             if let posixError = error as? POSIXError {
                 switch posixError.code {
@@ -141,7 +141,7 @@ final class WebSocketManager: Loggable {
     private func startListenerAndWait() async -> Bool {
         await withCheckedContinuation { continuation in
             let resumedBox = ThreadSafeBox(false)
-            
+
             listener?.stateUpdateHandler = { state in
                 // Already on main queue, no need for Task creation
                 self.logger.debug("🌀 Listener state updated: \(state)")
@@ -222,25 +222,26 @@ final class WebSocketManager: Loggable {
 
         if let error {
             let hookError: CursorJSHook.HookError
-            
-            // Map specific network errors to appropriate hook errors
-            if let nwError = error as? NWError {
+
+                // Map specific network errors to appropriate hook errors
+                = if let nwError = error as? NWError
+            {
                 switch nwError {
-                case .posix(let code) where code == .ECONNREFUSED:
-                    hookError = .connectionLost(underlyingError: error)
-                case .posix(let code) where code == .ETIMEDOUT:
-                    hookError = .timeout(duration: 0, operation: "message receive")
-                case .posix(let code) where code == .EPIPE:
-                    hookError = .connectionLost(underlyingError: error)
+                case let .posix(code) where code == .ECONNREFUSED:
+                    .connectionLost(underlyingError: error)
+                case let .posix(code) where code == .ETIMEDOUT:
+                    .timeout(duration: 0, operation: "message receive")
+                case let .posix(code) where code == .EPIPE:
+                    .connectionLost(underlyingError: error)
                 default:
-                    hookError = .networkError(URLError(.networkConnectionLost))
+                    .networkError(URLError(.networkConnectionLost))
                 }
             } else if let urlError = error as? URLError {
-                hookError = .networkError(urlError)
+                .networkError(urlError)
             } else {
-                hookError = .connectionLost(underlyingError: error)
+                .connectionLost(underlyingError: error)
             }
-            
+
             logger.error("🌀 WS Receive error: \(hookError.errorDescription ?? error.localizedDescription)")
             cleanupConnection(error: hookError)
             return
@@ -257,7 +258,6 @@ final class WebSocketManager: Loggable {
     }
 
     private func processReceivedText(_ text: String) {
-
         // Handle handshake
         if text == "ready", !handshakeCompleted {
             handshakeCompleted = true

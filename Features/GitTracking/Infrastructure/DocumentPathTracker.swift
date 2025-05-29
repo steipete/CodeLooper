@@ -37,7 +37,10 @@ final class DocumentPathTracker {
 
             // Only log when we first encounter this document in this repository for this window
             if isNewDocumentInRepoForWindow {
-                logger.debug("Recorded new document for window \(windowId): \(documentPath) in repository: \(repository.path)")
+                logger
+                    .debug(
+                        "Recorded new document for window \(windowId): \(documentPath) in repository: \(repository.path)"
+                    )
             }
         } else if isNewDocument {
             logger.debug("Document path has no Git repository: \(documentPath)")
@@ -47,7 +50,8 @@ final class DocumentPathTracker {
     /// Get the most frequently accessed repository for a specific window
     public func getMostFrequentRepository(forWindow windowId: String) async -> GitRepository? {
         guard let windowAccess = windowRepositoryAccessCount[windowId],
-              let mostFrequentRepoPath = windowAccess.max(by: { $0.value < $1.value })?.key else {
+              let mostFrequentRepoPath = windowAccess.max(by: { $0.value < $1.value })?.key
+        else {
             return nil
         }
 
@@ -74,12 +78,14 @@ final class DocumentPathTracker {
     }
 
     /// Get statistics about tracked paths for a specific window
-    public func getStatistics(forWindow windowId: String) -> (totalPaths: Int, repositoryCount: Int, mostFrequent: String?) {
+    public func getStatistics(forWindow windowId: String)
+        -> (totalPaths: Int, repositoryCount: Int, mostFrequent: String?)
+    {
         let windowRepoPaths = windowRepositoryDocumentPaths[windowId] ?? [:]
         let windowRepoAccess = windowRepositoryAccessCount[windowId] ?? [:]
         let mostFrequent = windowRepoAccess.max { $0.value < $1.value }?.key
         let totalPathsForWindow = windowRepoPaths.values.reduce(0) { $0 + $1.count }
-        
+
         return (
             totalPaths: totalPathsForWindow,
             repositoryCount: windowRepoPaths.count,
@@ -89,8 +95,8 @@ final class DocumentPathTracker {
 
     /// Get statistics about all tracked paths across all windows
     public func getGlobalStatistics() -> (totalPaths: Int, windowCount: Int, repositoryCount: Int) {
-        let uniqueRepositories = Set(windowRepositoryDocumentPaths.values.flatMap { $0.keys })
-        
+        let uniqueRepositories = Set(windowRepositoryDocumentPaths.values.flatMap(\.keys))
+
         return (
             totalPaths: allDocumentPaths.count,
             windowCount: windowRepositoryDocumentPaths.count,
