@@ -67,7 +67,7 @@ struct CodeLooperApp: App {
         .windowResizability(.contentSize)
         .defaultSize(width: 640, height: 800)
         .commandsRemoved()
-        .handlesExternalEvents(matching: Set(arrayLiteral: "settings"))
+        .handlesExternalEvents(matching: Set(["settings"]))
         .commands {
             CommandGroup(replacing: .appInfo) {
                 Button("About CodeLooper") {

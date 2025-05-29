@@ -208,11 +208,11 @@ private struct WindowRow: View {
                     if Defaults[.showDebugTab] {
                         Button(action: {
                             showDebugPopover = true
-                        }) {
+                        }, label: {
                             Image(systemName: "ladybug")
                                 .font(.system(size: 12))
                                 .foregroundColor(ColorPalette.primary)
-                        }
+                        })
                         .buttonStyle(.plain)
                         .help("Debug JavaScript Functions")
                         .popover(isPresented: $showDebugPopover) {
@@ -223,11 +223,11 @@ private struct WindowRow: View {
                     // Show markdown content viewer
                     Button(action: {
                         showMarkdownPopover = true
-                    }) {
+                    }, label: {
                         Image(systemName: "doc.text.magnifyingglass")
                             .font(.system(size: 12))
                             .foregroundColor(ColorPalette.primary)
-                    }
+                    })
                     .buttonStyle(.plain)
                     .help("View Sidebar Content")
                     .popover(isPresented: $showMarkdownPopover) {
@@ -383,11 +383,11 @@ private struct WindowRow: View {
                     if isHoveringGitStatus, let githubURL = gitRepo.githubURL {
                         Button(action: {
                             NSWorkspace.shared.open(githubURL)
-                        }) {
+                        }, label: {
                             Image(systemName: "info.circle")
                                 .font(.system(size: 10))
                                 .foregroundColor(ColorPalette.accent)
-                        }
+                        })
                         .buttonStyle(.borderless)
                         .help("Open on GitHub")
                     }

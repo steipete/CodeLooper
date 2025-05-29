@@ -148,7 +148,7 @@ public final class CursorScreenshotAnalyzer: ObservableObject, Loggable {
 }
 
 public extension CursorScreenshotAnalyzer {
-    struct AnalysisPrompts {
+    enum AnalysisPrompts {
         public static let generalAnalysis = """
         Analyze this Cursor IDE screenshot and describe what's happening.
         """

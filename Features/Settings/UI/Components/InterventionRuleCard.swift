@@ -123,13 +123,13 @@ struct InterventionRuleCard: View {
                     HStack(spacing: Spacing.xSmall) {
                         Button(action: {
                             toggleNotification(for: rule.name)
-                        }) {
+                        }, label: {
                             Image(systemName: getNotificationEnabled(for: rule.name) ? "checkmark.square.fill" :
                                 "square")
                                 .foregroundColor(getNotificationEnabled(for: rule.name) ? ColorPalette
                                     .accent : ColorPalette.textSecondary)
                                 .font(.system(size: 16))
-                        }
+                        })
                         .buttonStyle(.plain)
 
                         Text("Notification")

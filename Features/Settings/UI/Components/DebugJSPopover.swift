@@ -112,10 +112,10 @@ struct DebugJSPopover: View {
                     Button(action: {
                         NSPasteboard.general.clearContents()
                         NSPasteboard.general.setString(debugState.lastResult, forType: .string)
-                    }) {
+                    }, label: {
                         Image(systemName: "doc.on.doc")
                             .font(.caption)
-                    }
+                    })
                     .buttonStyle(.plain)
                     .disabled(debugState.lastResult.isEmpty)
                     .help("Copy to clipboard")
@@ -145,11 +145,11 @@ struct DebugJSPopover: View {
             Task {
                 await action()
             }
-        }) {
+        }, label: {
             Label(title, systemImage: icon)
                 .font(.caption)
                 .frame(maxWidth: .infinity)
-        }
+        })
         .buttonStyle(.bordered)
         .controlSize(.small)
         .disabled(debugState.isExecuting)

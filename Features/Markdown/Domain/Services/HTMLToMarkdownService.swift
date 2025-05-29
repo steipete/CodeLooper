@@ -2,6 +2,18 @@ import Diagnostics
 import Foundation
 import JavaScriptCore
 
+// MARK: - Supporting Types
+
+enum HTMLMarkdownHeadingStyle: String {
+    case setext
+    case atx
+}
+
+enum HTMLMarkdownCodeBlockStyle: String {
+    case indented
+    case fenced
+}
+
 /// Service for converting HTML content to Markdown format using JavaScript.
 ///
 /// HTMLToMarkdownService provides:
@@ -302,18 +314,8 @@ extension HTMLToMarkdownService {
     }
 
     struct ConversionOptions {
-        enum HeadingStyle: String {
-            case setext
-            case atx
-        }
-
-        enum CodeBlockStyle: String {
-            case indented
-            case fenced
-        }
-
-        var headingStyle: HeadingStyle = .atx
+        var headingStyle: HTMLMarkdownHeadingStyle = .atx
         var bulletListMarker: String = "-"
-        var codeBlockStyle: CodeBlockStyle = .fenced
+        var codeBlockStyle: HTMLMarkdownCodeBlockStyle = .fenced
     }
 }

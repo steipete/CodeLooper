@@ -369,13 +369,18 @@ class WindowAIDiagnosticsManager: ObservableObject, Loggable {
                     targetSCWindow = content.windows.first { $0.windowID == cgWindowID }
                     if targetSCWindow == nil {
                         logger.warning(
-                            "Could not find SCWindow matching CGWindowID \(cgWindowID) for window " +
-                            "'\(windowInfo.windowTitle ?? windowId)'. Will attempt capture of first Cursor window."
+                            """
+                            Could not find SCWindow matching CGWindowID \(cgWindowID) for window '\(windowInfo
+                                .windowTitle ?? windowId)'. \
+                            Will attempt capture of first Cursor window.
+                            """
                         )
                     } else {
                         logger.info(
-                            "Successfully found SCWindow with ID \(cgWindowID) for targeted analysis of window " +
-                            "'\(windowInfo.windowTitle ?? windowId)'."
+                            """
+                            Successfully found SCWindow with ID \(cgWindowID) for targeted analysis of window '\(windowInfo
+                                .windowTitle ?? windowId)'.
+                            """
                         )
                     }
                 } catch {
@@ -387,14 +392,18 @@ class WindowAIDiagnosticsManager: ObservableObject, Loggable {
                 }
             } else {
                 logger.warning(
-                    "Could not retrieve kAXWindowIDAttribute for window '\(windowInfo.windowTitle ?? windowId)'. " +
-                    "Will attempt capture of first Cursor window."
+                    """
+                    Could not retrieve kAXWindowIDAttribute for window '\(windowInfo.windowTitle ?? windowId)'. \
+                    Will attempt capture of first Cursor window.
+                    """
                 )
             }
         } else {
             logger.warning(
-                "No AXElement available for window '\(windowInfo.windowTitle ?? windowId)' to get specific CGWindowID. " +
-                "Will attempt capture of first Cursor window."
+                """
+                No AXElement available for window '\(windowInfo.windowTitle ?? windowId)' to get specific CGWindowID. \
+                Will attempt capture of first Cursor window.
+                """
             )
         }
 
@@ -429,10 +438,12 @@ class WindowAIDiagnosticsManager: ObservableObject, Loggable {
 
             // Screenshot has changed or is new, store it and proceed with analysis
             previousScreenshots[windowId] = tiffData
-            logger
-                .info(
-                    "Screenshot changes detected for window: \(windowInfo.windowTitle ?? windowId). Proceeding with AI analysis using 'working' prompt."
-                )
+            logger.info(
+                """
+                Screenshot changes detected for window: \(windowInfo.windowTitle ?? windowId). \
+                Proceeding with AI analysis using 'working' prompt.
+                """
+            )
 
             // Also update Git repository info when screenshot changes
             if let documentPath = windowInfo.documentPath {

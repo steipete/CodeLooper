@@ -31,8 +31,7 @@ class AXPropertyNode: ObservableObject, Identifiable, Hashable {
         actions: [String],
         hasChildrenAXProperty: Bool,
         depth: Int
-    )
-    {
+    ) {
         self.id = id
         self.axElementRef = axElementRef
         self.pid = pid

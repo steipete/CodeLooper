@@ -40,7 +40,8 @@ struct DebugSettingsView: View {
                     DSToggle(
                         "Automatic Hook Injection",
                         isOn: $automaticJSHookInjection,
-                        description: "Automatically open debug console and inject hook script. When disabled, script is copied to clipboard for manual injection."
+                        description: "Automatically open debug console and inject hook script. When disabled, " +
+                            "script is copied to clipboard for manual injection."
                     )
 
                     HStack {
