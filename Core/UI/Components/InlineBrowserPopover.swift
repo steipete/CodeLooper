@@ -90,17 +90,16 @@ private struct WebView: NSViewRepresentable {
         func webView(
             _ webView: WKWebView,
             decidePolicyFor navigationAction: WKNavigationAction,
-            preferences: WKWebpagePreferences,
-            decisionHandler: @escaping (WKNavigationActionPolicy, WKWebpagePreferences) -> Void
+            decisionHandler: @escaping (WKNavigationActionPolicy) -> Void
         ) {
             // Allow the initial load, but open external links in default browser
             if navigationAction.navigationType == .linkActivated {
                 if let url = navigationAction.request.url {
                     NSWorkspace.shared.open(url)
                 }
-                decisionHandler(.cancel, preferences)
+                decisionHandler(.cancel)
             } else {
-                decisionHandler(.allow, preferences)
+                decisionHandler(.allow)
             }
         }
     }
