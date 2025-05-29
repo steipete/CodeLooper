@@ -82,9 +82,14 @@ public final class PermissionsManager: ObservableObject {
     }
 
     private func checkAutomationPermission() async -> Bool {
-        // Ensure we're on the main thread for NSAppleScript
-        await MainActor.run {
-            performAutomationCheck()
+        // Execute AppleScript asynchronously to avoid blocking SwiftUI updates
+        await withCheckedContinuation { continuation in
+            Task.detached {
+                let result = await MainActor.run {
+                    self.performAutomationCheck()
+                }
+                continuation.resume(returning: result)
+            }
         }
     }
 
