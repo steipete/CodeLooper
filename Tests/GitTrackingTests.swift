@@ -277,7 +277,7 @@ func gitRepositoryMonitorIntegration() async throws {
     // we just verify the monitor handles these paths without crashing
     for path in testPaths {
         // This would normally call git status, but in tests it might return nil
-        let _ = await monitor.getGitRepository(for: path)
+        let _ = await monitor.findRepository(for: path)
     }
     
     #expect(true) // Monitor handled all paths without crashing
@@ -317,7 +317,7 @@ func gitRepositoryDocumentPathIntegration() async throws {
         let dirPath = (docPath as NSString).deletingLastPathComponent
         
         // This would normally check if the directory is a git repo
-        let _ = await monitor.getGitRepository(for: dirPath)
+        let _ = await monitor.findRepository(for: dirPath)
     }
     
     #expect(true) // Document paths handled without crash
@@ -332,7 +332,7 @@ func gitRepositoryConcurrentAccess() async throws {
     await withTaskGroup(of: Void.self) { group in
         for i in 0..<10 {
             group.addTask {
-                let _ = await monitor.getGitRepository(for: "/test/repo\(i)")
+                let _ = await monitor.findRepository(for: "/test/repo\(i)")
             }
         }
         

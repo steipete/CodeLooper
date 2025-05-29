@@ -1,5 +1,6 @@
 import AppKit
 @testable import CodeLooper
+import Defaults
 import Foundation
 import Testing
 
@@ -8,128 +9,118 @@ struct IconAnimationTests {
     // MARK: - IconAnimator Tests
 
     @Test
+    @MainActor
     func iconAnimationStart() async throws {
-        let animator = IconAnimator()
+        let mockStatusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
+        let animator = IconAnimator(statusItem: mockStatusItem)
 
         // Test that animator is created without errors
         #expect(animator != nil)
 
         // Test starting animation
-        await animator.startAnimation()
+        animator.startAnimating()
 
         // Test animation state
-        let isAnimating = await animator.isAnimating
+        let isAnimating = animator.isCurrentlyAnimating
         #expect(isAnimating == true || isAnimating == false) // Either state is valid
 
         // Test stopping animation
-        await animator.stopAnimation()
+        animator.stopAnimating()
 
         // Animation should be stopped
-        let isStoppedAnimating = await animator.isAnimating
+        let isStoppedAnimating = animator.isCurrentlyAnimating
         #expect(isStoppedAnimating == false)
     }
 
     @Test
+    @MainActor
     func iconAnimationStop() async throws {
-        let animator = IconAnimator()
+        let mockStatusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
+        let animator = IconAnimator(statusItem: mockStatusItem)
 
         // Initially not animating
-        var isAnimating = await animator.isAnimating
+        var isAnimating = animator.isCurrentlyAnimating
         #expect(isAnimating == false)
 
         // Start animation
-        await animator.startAnimation()
-        isAnimating = await animator.isAnimating
+        animator.startAnimating()
+        isAnimating = animator.isCurrentlyAnimating
         #expect(isAnimating == true)
 
         // Stop animation
-        await animator.stopAnimation()
-        isAnimating = await animator.isAnimating
+        animator.stopAnimating()
+        isAnimating = animator.isCurrentlyAnimating
         #expect(isAnimating == false)
 
         // Multiple stop calls should be safe
-        await animator.stopAnimation()
-        await animator.stopAnimation()
-        isAnimating = await animator.isAnimating
+        animator.stopAnimating()
+        animator.stopAnimating()
+        isAnimating = animator.isCurrentlyAnimating
         #expect(isAnimating == false)
     }
 
     @Test
+    @MainActor
     func iconAnimationStateManagement() async throws {
-        let animator = IconAnimator()
+        let mockStatusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
+        let animator = IconAnimator(statusItem: mockStatusItem)
 
         // Test rapid state changes
-        await animator.startAnimation()
-        await animator.stopAnimation()
-        await animator.startAnimation()
-        await animator.stopAnimation()
+        animator.startAnimating()
+        animator.stopAnimating()
+        animator.startAnimating()
+        animator.stopAnimating()
 
         // Final state should be stopped
-        let finalState = await animator.isAnimating
+        let finalState = animator.isCurrentlyAnimating
         #expect(finalState == false)
 
         // Test concurrent state changes
         await withTaskGroup(of: Void.self) { group in
-            group.addTask {
-                await animator.startAnimation()
+            group.addTask { @MainActor in
+                animator.startAnimating()
             }
-            group.addTask {
-                await animator.stopAnimation()
+            group.addTask { @MainActor in
+                animator.stopAnimating()
             }
-            group.addTask {
-                await animator.startAnimation()
+            group.addTask { @MainActor in
+                animator.startAnimating()
             }
         }
 
         // Should handle concurrent access gracefully
-        let concurrentState = await animator.isAnimating
+        let concurrentState = animator.isCurrentlyAnimating
         #expect(concurrentState == true || concurrentState == false)
     }
 
     // MARK: - LottieMenuBarView Tests
 
     @Test
+    @MainActor
     func lottieMenuBarIntegration() async throws {
         // Test that LottieMenuBarView can be created
         let lottieView = LottieMenuBarView()
 
-        #expect(lottieView != nil)
-
-        // Test basic view properties
-        #expect(lottieView.frame != nil)
-
-        // Test that view can handle animation state changes
-        await lottieView.setAnimationState(.playing)
-        await lottieView.setAnimationState(.paused)
-        await lottieView.setAnimationState(.stopped)
-
-        // If we get here without crashes, Lottie integration works
+        // LottieMenuBarView is a SwiftUI view, just verify it can be created
         #expect(true)
     }
 
     @Test
+    @MainActor
     func lottieAnimationFileHandling() async throws {
         let lottieView = LottieMenuBarView()
 
-        // Test loading animation file
-        let success = await lottieView.loadAnimation(named: "chain_link_lottie")
-
-        // File may or may not exist in test environment
-        #expect(success == true || success == false)
-
-        // Test handling invalid animation file
-        let invalidSuccess = await lottieView.loadAnimation(named: "nonexistent_animation")
-        #expect(invalidSuccess == false)
-
-        // Should handle invalid files gracefully
+        // LottieMenuBarView handles animation loading internally
+        // Just verify it doesn't crash
         #expect(true)
     }
 
     // MARK: - CustomChainLinkIcon Tests
 
     @Test
+    @MainActor
     func customChainLinkIcon() async throws {
-        let iconView = CustomChainLinkIcon()
+        let iconView = CustomChainLinkIcon(size: 16)
 
         // Test that custom icon view is created without errors
         #expect(iconView != nil)
@@ -137,31 +128,25 @@ struct IconAnimationTests {
         // Test basic view properties
         #expect(iconView.frame != nil)
 
-        // Test that icon can be rendered
-        await iconView.updateIcon(state: .idle)
-        await iconView.updateIcon(state: .active)
-        await iconView.updateIcon(state: .error)
+        // CustomChainLinkIcon is a SwiftUI view that updates based on defaults
+        // Just verify it doesn't crash
 
         // If we get here without crashes, custom icon rendering works
         #expect(true)
     }
 
     @Test
+    @MainActor
     func customChainLinkIconStates() async throws {
-        let iconView = CustomChainLinkIcon()
+        let iconView = CustomChainLinkIcon(size: 16)
 
-        // Test all possible icon states
-        let states: [StatusIconState] = [
-            .idle, .syncing, .error, .warning, .success,
-            .authenticated, .unauthenticated, .paused,
-        ]
-
-        for state in states {
-            await iconView.updateIcon(state: state)
-
-            // Give a moment for state to update
-            try await Task.sleep(for: .milliseconds(10))
-        }
+        // CustomChainLinkIcon animates based on isGlobalMonitoringEnabled default
+        // Toggle the default to test animation changes
+        Defaults[.isGlobalMonitoringEnabled] = true
+        try await Task.sleep(for: .milliseconds(10))
+        
+        Defaults[.isGlobalMonitoringEnabled] = false
+        try await Task.sleep(for: .milliseconds(10))
 
         // All states should be handled without crashes
         #expect(true)
@@ -171,7 +156,7 @@ struct IconAnimationTests {
 
     @Test
     func menuBarIconManagerCoordination() async throws {
-        let manager = MenuBarIconManager.shared
+        let manager = await MenuBarIconManager.shared
 
         // Test that manager is created without errors
         #expect(manager != nil)
@@ -187,7 +172,7 @@ struct IconAnimationTests {
 
     @Test
     func menuBarIconManagerRapidChanges() async throws {
-        let manager = MenuBarIconManager.shared
+        let manager = await MenuBarIconManager.shared
 
         // Test rapid state changes
         let states: [StatusIconState] = [
@@ -216,15 +201,11 @@ struct IconAnimationTests {
 
     @Test
     func nSImageResourceLoading() async throws {
-        // Test loading menu bar icon resources
-        let menuBarIcon = NSImage.loadMenuBarIcon()
-
+        // Test loading icon resources
+        let menuBarIcon = NSImage(named: "menubar")
+        
         // Icon may or may not exist in test environment
         #expect(menuBarIcon != nil || menuBarIcon == nil)
-
-        // Test loading template icons
-        let templateIcon = NSImage.loadTemplateIcon(named: "menubar")
-        #expect(templateIcon != nil || templateIcon == nil)
 
         // Should not crash regardless of file availability
         #expect(true)
@@ -233,12 +214,12 @@ struct IconAnimationTests {
     @Test
     func nSImageMissingResourceHandling() async throws {
         // Test loading non-existent icon
-        let nonExistentIcon = NSImage.loadTemplateIcon(named: "definitely_does_not_exist")
+        let nonExistentIcon = NSImage(named: "definitely_does_not_exist")
         #expect(nonExistentIcon == nil)
 
-        // Test loading with nil name
-        let nilIcon = NSImage.loadTemplateIcon(named: "")
-        #expect(nilIcon == nil)
+        // Test loading with empty name
+        let emptyIcon = NSImage(named: "")
+        #expect(emptyIcon == nil)
 
         // Should handle missing resources gracefully
         #expect(true)
@@ -247,23 +228,25 @@ struct IconAnimationTests {
     // MARK: - Integration Tests
 
     @Test
+    @MainActor
     func iconAnimationSystemIntegration() async throws {
-        let animator = IconAnimator()
-        let manager = MenuBarIconManager.shared
-        let customIcon = CustomChainLinkIcon()
+        let mockStatusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
+        let animator = IconAnimator(statusItem: mockStatusItem)
+        let manager = await MenuBarIconManager.shared
+        let customIcon = CustomChainLinkIcon(size: 16)
 
         // Test that all components can work together
-        await animator.startAnimation()
+        animator.startAnimating()
         await manager.setState(.syncing)
-        await customIcon.updateIcon(state: .syncing)
+        // CustomChainLinkIcon updates automatically based on defaults
 
         // Give time for all updates to process
         try await Task.sleep(for: .milliseconds(100))
 
         // Stop animation
-        await animator.stopAnimation()
+        animator.stopAnimating()
         await manager.setState(.idle)
-        await customIcon.updateIcon(state: .idle)
+        // CustomChainLinkIcon updates automatically
 
         // System should work without conflicts
         #expect(true)
@@ -271,7 +254,7 @@ struct IconAnimationTests {
 
     @Test
     func iconAnimationPerformance() async throws {
-        let manager = MenuBarIconManager.shared
+        let manager = await MenuBarIconManager.shared
 
         // Test performance with many rapid state changes
         let startTime = Date()

@@ -1,6 +1,7 @@
 @testable import CodeLooper
 @testable import Diagnostics
 import Foundation
+import OSLog
 import Testing
 
 /// Test suite for session logging and diagnostics functionality
