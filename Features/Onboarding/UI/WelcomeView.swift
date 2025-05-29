@@ -150,12 +150,6 @@ struct WelcomeStepView: View {
             .padding(.horizontal, Spacing.medium)
 
             Spacer()
-
-            // Get Started button
-            DSButton("Get Started", style: .primary) {
-                viewModel.goToNextStep()
-            }
-            .frame(width: 200)
             
             // Help link
             HStack(spacing: Spacing.xSmall) {
@@ -713,6 +707,17 @@ struct ProgressBar: View {
 struct ModernFooterView: View {
     var viewModel: WelcomeViewModel
     
+    private func continueButtonText() -> String {
+        switch viewModel.currentStep {
+        case .welcome:
+            return "Get Started"
+        case .settings:
+            return "Complete Setup"
+        default:
+            return "Continue"
+        }
+    }
+    
     var body: some View {
         HStack {
             // Back button
@@ -738,10 +743,10 @@ struct ModernFooterView: View {
             Spacer()
             
             // Continue button
-            DSButton(viewModel.currentStep == .settings ? "Complete Setup" : "Continue", style: .primary) {
+            DSButton(continueButtonText(), style: .primary) {
                 viewModel.goToNextStep()
             }
-            .frame(width: viewModel.currentStep == .settings ? 150 : 100)
+            .frame(width: viewModel.currentStep == .settings ? 150 : 130)
         }
         .frame(maxWidth: .infinity)
     }
