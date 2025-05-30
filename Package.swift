@@ -67,8 +67,35 @@ let package = Package(
                 .product(name: "Lottie", package: "lottie-ios"),
             ],
             path: ".",
-            exclude: ["Core/Diagnostics"],
+            exclude: [
+                "Core/Diagnostics",
+                "App/Info.plist",
+                "App/Resources/Assets.xcassets",
+                "App/Resources/Entitlements",
+                "App/Resources/Localization",
+                "CodeLooper.xcodeproj",
+                "CodeLooper.xcworkspace",
+                "Project.swift",
+                "Tuist",
+                "Derived",
+                "build",
+                "binary",
+                "scripts",
+                "docs",
+                "assets",
+                "Resources",
+                "Sources",
+                "CodeLooper",
+                "AXorcist",
+                "AXpector", 
+                "DesignSystem",
+                "Tests",
+                "TestResults.xcresult"
+            ],
             sources: ["App", "Core", "Features"],
+            resources: [
+                .copy("Resources"),
+            ],
             swiftSettings: [
                 // Using complete concurrency checking for Swift 6 compatibility.
                 // Ensure that all code complies with Swift 6 concurrency rules, including:

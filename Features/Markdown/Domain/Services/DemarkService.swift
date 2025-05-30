@@ -14,12 +14,95 @@ enum DemarkCodeBlockStyle: String {
     case fenced
 }
 
-/// Conversion options for HTML to Markdown transformation
+/// Conversion options for HTML to Markdown transformation using Turndown.js
+///
+/// This struct provides configuration options that control how HTML elements are converted to Markdown.
+/// These options map directly to Turndown.js configuration options for consistent behavior.
+///
+/// ## Basic Options
+///
+/// - `headingStyle`: Controls how headings (`<h1>`, `<h2>`, etc.) are converted
+/// - `bulletListMarker`: Sets the character used for unordered list items
+/// - `codeBlockStyle`: Determines how code blocks are formatted
+///
+/// ## Example Usage
+///
+/// ```swift
+/// // Use default options
+/// let defaultOptions = DemarkOptions()
+///
+/// // Custom configuration
+/// let customOptions = DemarkOptions(
+///     headingStyle: .setext,
+///     bulletListMarker: "*",
+///     codeBlockStyle: .indented
+/// )
+///
+/// let markdown = try await demark.convertToMarkdown(html, options: customOptions)
+/// ```
+///
+/// ## Turndown.js Compatibility
+///
+/// These options correspond to Turndown.js options:
+/// - `headingStyle` → `headingStyle` (setext or atx)
+/// - `bulletListMarker` → `bulletListMarker` (-, +, or *)
+/// - `codeBlockStyle` → `codeBlockStyle` (indented or fenced)
+///
+/// For additional Turndown.js options not yet exposed, the underlying JavaScript
+/// environment can be extended through the conversion runtime.
 struct DemarkOptions {
+    /// Controls how HTML headings are converted to Markdown
+    ///
+    /// - `.atx`: Uses `#` prefix style (e.g., `# Heading 1`, `## Heading 2`)
+    /// - `.setext`: Uses underline style for H1/H2 (e.g., `Heading\n=======`)
+    ///
+    /// **Default:** `.atx`
+    ///
+    /// **Turndown.js equivalent:** `headingStyle`
     var headingStyle: DemarkHeadingStyle = .atx
+    
+    /// Character used for unordered list items
+    ///
+    /// Valid values: `"-"`, `"+"`, or `"*"`
+    ///
+    /// **Default:** `"-"`
+    ///
+    /// **Turndown.js equivalent:** `bulletListMarker`
+    ///
+    /// ## Examples
+    /// - `"-"` produces: `- List item`
+    /// - `"*"` produces: `* List item`
+    /// - `"+"` produces: `+ List item`
     var bulletListMarker: String = "-"
+    
+    /// Controls how code blocks are formatted in Markdown
+    ///
+    /// - `.fenced`: Uses triple backticks (```) for code blocks
+    /// - `.indented`: Uses 4-space indentation for code blocks
+    ///
+    /// **Default:** `.fenced`
+    ///
+    /// **Turndown.js equivalent:** `codeBlockStyle`
+    ///
+    /// ## Examples
+    /// - `.fenced`: 
+    ///   ```
+    ///   ```javascript
+    ///   console.log('hello');
+    ///   ```
+    ///   ```
+    /// - `.indented`:
+    ///   ```
+    ///       console.log('hello');
+    ///   ```
     var codeBlockStyle: DemarkCodeBlockStyle = .fenced
     
+    /// Default configuration with commonly used settings
+    ///
+    /// Provides a sensible default configuration:
+    /// - ATX-style headings (`# Heading`)
+    /// - Dash bullets (`- Item`)
+    /// - Fenced code blocks (```)
     static let `default` = DemarkOptions()
 }
 
@@ -152,7 +235,7 @@ final class ConversionRuntime {
         
         // Create WKWebView
         webView = WKWebView(frame: .zero, configuration: config)
-        guard let webView = webView else {
+        guard webView != nil else {
             logger.error("Failed to create WKWebView")
             throw DemarkError.webViewInitializationFailed
         }
@@ -169,12 +252,16 @@ final class ConversionRuntime {
             throw DemarkError.webViewInitializationFailed
         }
         
-        // Find Turndown library
-        let possibleBundles = [
+        // Find Turndown library - try different bundle access methods
+        var possibleBundles = [
             Bundle.main,
-            Bundle(for: Demark.self),
-            Bundle.module
-        ].compactMap { $0 }
+            Bundle(for: Demark.self)
+        ]
+        
+        // Also try the module bundle if available
+        #if canImport(Foundation)
+        possibleBundles.append(Bundle.module)
+        #endif
         
         var turndownPath: String?
         
@@ -184,6 +271,13 @@ final class ConversionRuntime {
                 if turndownPath != nil {
                     logger.info("Found turndown.min.js in bundle: \(bundle.bundleIdentifier ?? "unknown")")
                     break
+                } else {
+                    // Try in Resources/JavaScript subdirectory
+                    if let resourcesPath = bundle.path(forResource: "Resources/JavaScript/turndown.min", ofType: "js") {
+                        turndownPath = resourcesPath
+                        logger.info("Found turndown.min.js in Resources/JavaScript subdirectory")
+                        break
+                    }
                 }
             }
         }
@@ -205,7 +299,7 @@ final class ConversionRuntime {
             let turndownScript = try String(contentsOfFile: turndownPath, encoding: .utf8)
             logger.info("Successfully read Turndown (\(turndownScript.count) characters)")
             
-            let result = try await webView.evaluateJavaScript(turndownScript)
+            _ = try await webView.evaluateJavaScript(turndownScript)
             logger.info("Successfully loaded Turndown JavaScript library")
             
             // Verify TurndownService is available
@@ -236,21 +330,109 @@ final class ConversionRuntime {
 /// - Async/await interface
 @MainActor
 final class Demark: Sendable {
-    // MARK: Lifecycle
-    
     init() {
         conversionRuntime = ConversionRuntime()
     }
     
-    // MARK: Internal
-    
-    /// Convert HTML to Markdown with default options
-    func convertToMarkdown(_ html: String) async throws -> String {
-        try await conversionRuntime.htmlToMarkdown(html)
-    }
-    
-    /// Convert HTML to Markdown with custom options
-    func convertToMarkdown(_ html: String, options: DemarkOptions) async throws -> String {
+    /// Convert HTML content to Markdown format using Turndown.js
+    ///
+    /// This method provides a high-level interface for HTML to Markdown conversion,
+    /// powered by the Turndown.js library running in a WKWebView environment.
+    ///
+    /// ## Features
+    ///
+    /// - **Real DOM Environment**: Uses WKWebView for proper HTML parsing and DOM manipulation
+    /// - **Turndown.js Integration**: Leverages the industry-standard Turndown library
+    /// - **Configurable Output**: Supports extensive formatting options via `DemarkOptions`
+    /// - **CommonMark Compliance**: Generates standard Markdown that works across platforms
+    /// - **Async/Await**: Modern Swift concurrency for non-blocking conversion
+    ///
+    /// ## Parameters
+    ///
+    /// - Parameter html: The HTML content to convert. Can include:
+    ///   - Complete HTML documents with `<html>`, `<head>`, `<body>` tags
+    ///   - HTML fragments (e.g., `<div><p>Content</p></div>`)
+    ///   - Simple HTML snippets (e.g., `<strong>Bold text</strong>`)
+    ///   - Complex nested structures with tables, lists, and formatting
+    ///
+    /// - Parameter options: Configuration options controlling the conversion behavior.
+    ///   See `DemarkOptions` for available settings. Uses sensible defaults if not specified.
+    ///
+    /// ## Returns
+    ///
+    /// A `String` containing the converted Markdown content, formatted according to the specified options.
+    ///
+    /// ## Throws
+    ///
+    /// - `DemarkError.libraryLoadingFailed`: When Turndown.js fails to load or initialize
+    /// - `DemarkError.conversionError`: When HTML parsing or conversion fails
+    /// - `DemarkError.invalidInput`: When the provided HTML is malformed beyond recovery
+    /// - `DemarkError.webViewError`: When WKWebView encounters an unrecoverable error
+    ///
+    /// ## Example Usage
+    ///
+    /// ```swift
+    /// let demark = Demark()
+    /// 
+    /// // Basic conversion with default options
+    /// let html = "<h1>Title</h1><p>This is <strong>bold</strong> text.</p>"
+    /// let markdown = try await demark.convertToMarkdown(html)
+    /// // Result: "# Title\n\nThis is **bold** text."
+    /// 
+    /// // Custom conversion options
+    /// let options = DemarkOptions(
+    ///     headingStyle: .setext,
+    ///     bulletListMarker: "*",
+    ///     codeBlockStyle: .fenced
+    /// )
+    /// let customMarkdown = try await demark.convertToMarkdown(html, options: options)
+    /// 
+    /// // Complex HTML with tables and lists
+    /// let complexHtml = """
+    /// <div>
+    ///     <h2>Features</h2>
+    ///     <ul>
+    ///         <li>Item 1</li>
+    ///         <li>Item 2</li>
+    ///     </ul>
+    ///     <table>
+    ///         <tr><th>Name</th><th>Value</th></tr>
+    ///         <tr><td>Test</td><td>123</td></tr>
+    ///     </table>
+    /// </div>
+    /// """
+    /// let result = try await demark.convertToMarkdown(complexHtml)
+    /// ```
+    ///
+    /// ## Performance Considerations
+    ///
+    /// - **Main Thread**: Must be called from the main thread due to WKWebView requirements
+    /// - **Async Execution**: Non-blocking operation suitable for UI applications
+    /// - **Memory Efficient**: Reuses WKWebView instance across multiple conversions
+    /// - **Initialization Cost**: First conversion includes one-time setup overhead
+    ///
+    /// ## HTML Support
+    ///
+    /// Supports all standard HTML elements that Turndown.js can process:
+    /// - Headings: `<h1>` through `<h6>`
+    /// - Text formatting: `<strong>`, `<em>`, `<code>`, `<del>`, etc.
+    /// - Lists: `<ul>`, `<ol>`, `<li>` with proper nesting
+    /// - Links and images: `<a>`, `<img>` with attributes
+    /// - Code blocks: `<pre>`, `<code>` with language detection
+    /// - Tables: `<table>`, `<tr>`, `<td>`, `<th>` (basic support)
+    /// - Block elements: `<div>`, `<p>`, `<blockquote>`, `<hr>`
+    ///
+    /// ## Thread Safety
+    ///
+    /// This method is marked with `@MainActor` and must be called from the main thread.
+    /// The underlying WKWebView requires main thread access for proper DOM manipulation.
+    ///
+    /// ## Related
+    ///
+    /// - `DemarkOptions`: Configuration options for customizing conversion behavior
+    /// - `DemarkError`: Error types that can be thrown during conversion
+    /// - Turndown.js documentation: https://github.com/mixmark-io/turndown
+    func convertToMarkdown(_ html: String, options: DemarkOptions = DemarkOptions()) async throws -> String {
         try await conversionRuntime.htmlToMarkdown(html, options: options)
     }
     

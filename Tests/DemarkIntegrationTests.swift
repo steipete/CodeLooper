@@ -1,6 +1,6 @@
 @testable import CodeLooper
 import Foundation
-import JavaScriptCore
+import WebKit
 import XCTest
 
 
@@ -15,9 +15,6 @@ class DemarkIntegrationTests: XCTestCase {
 
         let turndownPath = bundle.path(forResource: "turndown.min", ofType: "js")
         XCTAssertNotNil(turndownPath, "turndown.min.js should be available in bundle")
-
-        let slimdomPath = bundle.path(forResource: "slimdom.umd", ofType: "cjs")
-        XCTAssertNotNil(slimdomPath, "slimdom.umd.cjs should be available in bundle")
     }
 
     func testTurndownServiceLoading() async throws {
@@ -25,24 +22,28 @@ class DemarkIntegrationTests: XCTestCase {
             throw DemarkTestError.resourceNotFound("turndown.min.js")
         }
 
-        let context = JSContext()!
-
-        // Add basic error handling
-        context.exceptionHandler = { _, exception in
-            print("JS Error: \(exception?.toString() ?? "unknown")")
-        }
+        // Create a WKWebView for testing
+        let config = WKWebViewConfiguration()
+        let webView = WKWebView(frame: .zero, configuration: config)
 
         do {
+            // Load a blank page first
+            webView.loadHTMLString("<html><head></head><body></body></html>", baseURL: nil)
+            
+            // Wait for page to load
+            try await Task.sleep(nanoseconds: 100_000_000) // 100ms
+            
+            // Load Turndown script
             let turndownScript = try String(contentsOfFile: turndownPath, encoding: .utf8)
-            let result = context.evaluateScript(turndownScript)
+            let result = try await webView.evaluateJavaScript(turndownScript)
 
             // Verify TurndownService is available
-            let turndownService = context.objectForKeyedSubscript("TurndownService")
-            XCTAssertNotNil(turndownService, "TurndownService should be available after loading script")
+            let turndownCheck = try await webView.evaluateJavaScript("typeof TurndownService")
+            XCTAssertEqual(turndownCheck as? String, "function", "TurndownService should be available after loading script")
 
             // Try to instantiate TurndownService
-            let instance = turndownService?.construct(withArguments: [])
-            XCTAssertNotNil(instance, "Should be able to create TurndownService instance")
+            let instanceCheck = try await webView.evaluateJavaScript("new TurndownService() !== null")
+            XCTAssertTrue(instanceCheck as? Bool ?? false, "Should be able to create TurndownService instance")
 
         } catch {
             throw DemarkTestError.scriptLoadingFailed(error.localizedDescription)
@@ -51,7 +52,7 @@ class DemarkIntegrationTests: XCTestCase {
 
     func testBasicConversionConcept() async throws {
         // This test verifies the basic concept works
-        // In a real implementation, HTMLToMarkdownService handles the DOM complexity
+        // In a real implementation, Demark service handles the DOM complexity
 
         // For now, we'll just verify that the service class exists and can be initialized
         let service = Demark()
