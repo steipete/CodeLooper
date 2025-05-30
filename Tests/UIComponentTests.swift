@@ -1,8 +1,9 @@
 @testable import CodeLooper
+import Defaults
+import Diagnostics
 import Foundation
 import SwiftUI
 import XCTest
-import Defaults
 
 
 class UIComponentTests: XCTestCase {

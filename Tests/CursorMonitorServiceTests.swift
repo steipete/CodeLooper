@@ -1,6 +1,7 @@
 import AXorcist
 @testable import CodeLooper
 import Combine
+import Diagnostics
 import Foundation
 import XCTest
 

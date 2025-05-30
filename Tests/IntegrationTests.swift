@@ -2,6 +2,7 @@ import AppKit
 import AXorcist
 @testable import CodeLooper
 import Defaults
+import Diagnostics
 import Foundation
 import XCTest
 

@@ -1,6 +1,7 @@
 import Combine
 import Defaults
 import DesignSystem
+import Diagnostics
 import SwiftUI
 
 struct SettingsContentView: View {

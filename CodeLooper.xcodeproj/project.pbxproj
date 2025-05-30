@@ -97,7 +97,6 @@
 		5244F88F05098FA72C9766D9 /* SettingsCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA71CF8FCCFDA0FB0072AE01 /* SettingsCoordinator.swift */; };
 		54ADFEBC0E229FD6977B7AD4 /* ErrorRecoveryService.swift in Sources */ = {isa = PBXBuildFile; fileRef = E24BC78DE369479688B5E95A /* ErrorRecoveryService.swift */; };
 		54B0DA47A71D7A704DC8CD41 /* ForceStopResumeLinkHeuristic.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6D9165407E7E926B93953609 /* ForceStopResumeLinkHeuristic.swift */; };
-		56949515D028579FD8874992 /* parse5.js in Resources */ = {isa = PBXBuildFile; fileRef = 1AD14550D71AB83D98FC8BD0 /* parse5.js */; };
 		59C9B208ED1A6EB4B137F785 /* DiagnosticsOperationKeys.swift in Sources */ = {isa = PBXBuildFile; fileRef = 24C42C4B4011A09E9D2A2433 /* DiagnosticsOperationKeys.swift */; };
 		59E34C212065D0C6C80E9810 /* LogCategory.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0B9729B09602019CB5866EF /* LogCategory.swift */; };
 		5A9DAE4DB31012F64F90AAE9 /* FileLogger.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1F49DE8A739B205030BB746D /* FileLogger.swift */; };
@@ -127,6 +126,7 @@
 		717339DC84DC0492B9B3EDBB /* OperationTracker.swift in Sources */ = {isa = PBXBuildFile; fileRef = DDE89DBB68E6535CD8ACD23F /* OperationTracker.swift */; };
 		718000291222DEE704100F80 /* MCPIntegrationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 55B00B1E07D69EB75ECDA5BC /* MCPIntegrationTests.swift */; };
 		71E06465A350AE58286C8C33 /* DemarkServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84EDEB6CB63395FC0A0FE9FD /* DemarkServiceTests.swift */; };
+		724C8F662052A5D3AFCAF461 /* DemarkSimpleTest.swift in Sources */ = {isa = PBXBuildFile; fileRef = E4EFF84152ADA0051BD7610C /* DemarkSimpleTest.swift */; };
 		737BCB282D36F76132755E13 /* AppDelegate+AppleScript.swift in Sources */ = {isa = PBXBuildFile; fileRef = C27DA87D5C163E34ED40FF37 /* AppDelegate+AppleScript.swift */; };
 		738A69F5921EC40B51F2E293 /* ToolbarTabButtonView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CBF80EDE90739047D07DFD6C /* ToolbarTabButtonView.swift */; };
 		739D8BE54670F5039910A792 /* SettingsContainerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84998560B2C11EA98CEA6602 /* SettingsContainerView.swift */; };
@@ -215,7 +215,6 @@
 		C4DA4EC486CAAD57B8BE618B /* CodeLooperApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 60B16BA7518E957E64AF9F8F /* CodeLooperApp.swift */; };
 		C56C2BDFC2610F2A42F05006 /* RuleExecutionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0326A9F74898F5007E15ED29 /* RuleExecutionTests.swift */; };
 		C7150D5BC7B0B12C4349D194 /* CursorInstanceModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5DEDCE2213643BD9D3AD5C4B /* CursorInstanceModels.swift */; };
-		C78F48F941A65428FC99F9CD /* slimdom.umd.cjs in Resources */ = {isa = PBXBuildFile; fileRef = D9C84440D652BB324FF4EBB2 /* slimdom.umd.cjs */; };
 		C9022C479CF0F7AC9C3382FF /* MacOSAutomatorConfigView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5690C84AB82C7DB84BD6DCA /* MacOSAutomatorConfigView.swift */; };
 		C964EA15D3C0F430C00B4EB1 /* ThreadSafeBox.swift in Sources */ = {isa = PBXBuildFile; fileRef = B7EBAB588F0605B4C5CA0304 /* ThreadSafeBox.swift */; };
 		CA3E7BFA6105B0D7AD6C3763 /* InterventionExecutor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 774738F616D8871BD5673635 /* InterventionExecutor.swift */; };
@@ -361,7 +360,6 @@
 		17FA2368F54DA4948C833482 /* OpenAIProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OpenAIProvider.swift; sourceTree = "<group>"; };
 		18C61CFBB56EF1A7C81C5C23 /* DiagnosticReportGenerator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiagnosticReportGenerator.swift; sourceTree = "<group>"; };
 		1A63AB70345BBFD326F2CCF7 /* Logger.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Logger.swift; sourceTree = "<group>"; };
-		1AD14550D71AB83D98FC8BD0 /* parse5.js */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.javascript; path = parse5.js; sourceTree = "<group>"; };
 		1DCDDFD8275C76583209C4CB /* WelcomeWindowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WelcomeWindowView.swift; sourceTree = "<group>"; };
 		1F49DE8A739B205030BB746D /* FileLogger.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileLogger.swift; sourceTree = "<group>"; };
 		1FEE91A56A2C8C8196EB45AD /* DevConsoleDetector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DevConsoleDetector.swift; sourceTree = "<group>"; };
@@ -548,13 +546,13 @@
 		D59842EE90560E9C68496D76 /* DefaultsKeys.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DefaultsKeys.swift; sourceTree = "<group>"; };
 		D7DDD15A0AB8433DE0CB079E /* WelcomeGuideView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WelcomeGuideView.swift; sourceTree = "<group>"; };
 		D92A8EFA918C418736768B7F /* InterventionEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InterventionEngine.swift; sourceTree = "<group>"; };
-		D9C84440D652BB324FF4EBB2 /* slimdom.umd.cjs */ = {isa = PBXFileReference; path = slimdom.umd.cjs; sourceTree = "<group>"; };
 		D9E42E726A098E194FEAC98D /* InterventionRecoveryHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InterventionRecoveryHandler.swift; sourceTree = "<group>"; };
 		DDE89DBB68E6535CD8ACD23F /* OperationTracker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OperationTracker.swift; sourceTree = "<group>"; };
 		DE6BEECE2ED95874A5F840A9 /* ThreadSafeBoxTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThreadSafeBoxTests.swift; sourceTree = "<group>"; };
 		E24BC78DE369479688B5E95A /* ErrorRecoveryService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ErrorRecoveryService.swift; sourceTree = "<group>"; };
 		E25607BD9DA70B4FE5DB2D66 /* CursorJSHookScript.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CursorJSHookScript.swift; sourceTree = "<group>"; };
 		E2716B93466A5D758E1409FE /* CustomChainLinkIcon.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CustomChainLinkIcon.swift; sourceTree = "<group>"; };
+		E4EFF84152ADA0051BD7610C /* DemarkSimpleTest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DemarkSimpleTest.swift; sourceTree = "<group>"; };
 		E5690C84AB82C7DB84BD6DCA /* MacOSAutomatorConfigView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MacOSAutomatorConfigView.swift; sourceTree = "<group>"; };
 		E595EC2DD4C455A8998C336F /* LogConfiguration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LogConfiguration.swift; sourceTree = "<group>"; };
 		E70C08E6F5DBA33B403CF1D1 /* MainSettingsViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainSettingsViewModel.swift; sourceTree = "<group>"; };
@@ -691,8 +689,6 @@
 			isa = PBXGroup;
 			children = (
 				987465FE6147F57B5B370533 /* cursor-hook.js */,
-				1AD14550D71AB83D98FC8BD0 /* parse5.js */,
-				D9C84440D652BB324FF4EBB2 /* slimdom.umd.cjs */,
 				4CC010FA4A5B36052ED63377 /* turndown.min.js */,
 			);
 			path = JavaScript;
@@ -1185,6 +1181,7 @@
 				08137EDAB08D3B71F1A53429 /* DebouncerTests.swift */,
 				BE253CC9C6B4944EC33CAC22 /* DemarkIntegrationTests.swift */,
 				84EDEB6CB63395FC0A0FE9FD /* DemarkServiceTests.swift */,
+				E4EFF84152ADA0051BD7610C /* DemarkSimpleTest.swift */,
 				E9C56058467A580C6FAFC033 /* DiagnosticsTests.swift */,
 				951C2054E1E1C60B6AA2D58B /* GitTrackingTests.swift */,
 				C12E1B65B2CDA612D0A3D724 /* HeartbeatMonitoringTests.swift */,
@@ -1637,8 +1634,6 @@
 				63F6749E0C61FEA861A02839 /* Assets.xcassets in Resources */,
 				13ED50F2F28C4EEF3532770A /* Main.storyboard in Resources */,
 				AE40CB2D386F76F851DF362B /* cursor-hook.js in Resources */,
-				56949515D028579FD8874992 /* parse5.js in Resources */,
-				C78F48F941A65428FC99F9CD /* slimdom.umd.cjs in Resources */,
 				2A76E63EB8088C2459744438 /* turndown.min.js in Resources */,
 				3EB93F9333F97BEB98D906BF /* MainMenu.nib in Resources */,
 				B1FECEDB162E6A3A48101432 /* chain_link_lottie.json in Resources */,
@@ -1880,6 +1875,7 @@
 				6728F39F1EABFE845482651F /* DebouncerTests.swift in Sources */,
 				7B18DF2CA8DA92DD9E953E53 /* DemarkIntegrationTests.swift in Sources */,
 				71E06465A350AE58286C8C33 /* DemarkServiceTests.swift in Sources */,
+				724C8F662052A5D3AFCAF461 /* DemarkSimpleTest.swift in Sources */,
 				FDC5214D742934AAC9BF5D53 /* DiagnosticsTests.swift in Sources */,
 				948F09030F67ADC634E0CABF /* GitTrackingTests.swift in Sources */,
 				4C9A03866547CE3F3D3B148D /* HeartbeatMonitoringTests.swift in Sources */,
