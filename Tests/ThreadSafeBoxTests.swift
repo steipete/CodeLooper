@@ -57,11 +57,12 @@ class ThreadSafeBoxTests: XCTestCase {
             func append(_ value: Int) {
                 results.append(value)
             }
+
             func getResults() -> [Int] {
                 results
             }
         }
-        
+
         let collector = ResultCollector()
 
         await withTaskGroup(of: Void.self) { group in
@@ -80,7 +81,7 @@ class ThreadSafeBoxTests: XCTestCase {
                 }
             }
         }
-        
+
         let readResults = await collector.getResults()
 
         // Should have read some values

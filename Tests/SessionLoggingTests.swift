@@ -4,7 +4,6 @@ import Foundation
 import OSLog
 import XCTest
 
-
 class SessionLoggingTests: XCTestCase {
     // MARK: - Test Utilities
 
@@ -68,7 +67,11 @@ class SessionLoggingTests: XCTestCase {
                 group.addTask {
                     await MainActor.run {
                         logger.log(level: Diagnostics.LogLevel.info, message: "Concurrent message \(i)")
-                        logger.log(level: Diagnostics.LogLevel.debug, message: "Debug message \(i)", pid: Int32(1000 + i))
+                        logger.log(
+                            level: Diagnostics.LogLevel.debug,
+                            message: "Debug message \(i)",
+                            pid: Int32(1000 + i)
+                        )
                     }
                 }
             }
@@ -87,8 +90,22 @@ class SessionLoggingTests: XCTestCase {
         let fileLogger = await Diagnostics.FileLogger.shared
 
         // Test logging - FileLogger now uses OSLog exclusively
-        await fileLogger.log("Test file log entry", level: OSLogType.info, category: "test", file: #file, function: #function, line: #line)
-        await fileLogger.log("Test error entry", level: OSLogType.error, category: "test", file: #file, function: #function, line: #line)
+        await fileLogger.log(
+            "Test file log entry",
+            level: OSLogType.info,
+            category: "test",
+            file: #file,
+            function: #function,
+            line: #line
+        )
+        await fileLogger.log(
+            "Test error entry",
+            level: OSLogType.error,
+            category: "test",
+            file: #file,
+            function: #function,
+            line: #line
+        )
 
         // FileLogger now uses OSLog, so we can't check file contents
         // Just verify the logging didn't crash
@@ -100,7 +117,14 @@ class SessionLoggingTests: XCTestCase {
         let fileLogger = await Diagnostics.FileLogger.shared
 
         // Test logging - should not crash
-        await fileLogger.log("This should not crash", level: OSLogType.info, category: "test", file: #file, function: #function, line: #line)
+        await fileLogger.log(
+            "This should not crash",
+            level: OSLogType.info,
+            category: "test",
+            file: #file,
+            function: #function,
+            line: #line
+        )
 
         // Give logger time to attempt writing
         try await Task.sleep(for: .milliseconds(100))
@@ -132,7 +156,7 @@ class SessionLoggingTests: XCTestCase {
             logManager.app.info("Test app log")
             let supervisionLogger = logManager.getLogger(for: .supervision)
             supervisionLogger.debug("Test supervision log")
-            
+
             XCTAssertTrue(true) // If we get here, log management works
         }
     }
@@ -145,12 +169,12 @@ class SessionLoggingTests: XCTestCase {
             let appLogger = logManager.app
             let authLogger = logManager.auth
             let apiLogger = logManager.api
-            
+
             // Test logging with different loggers
             appLogger.info("Test app message")
             authLogger.info("Test auth message")
             apiLogger.info("Test API message")
-            
+
             XCTAssertTrue(true) // All categories should be handled without crashes
         }
     }
@@ -161,7 +185,7 @@ class SessionLoggingTests: XCTestCase {
         // Test creating loggers for different types
         let logger1 = LoggerFactory.logger(for: SessionLoggingTests.self)
         let logger2 = LoggerFactory.logger(for: SessionLoggingTests.self, category: .supervision)
-        
+
         XCTAssertNotNil(logger1)
         XCTAssertNotNil(logger2)
 
@@ -185,8 +209,15 @@ class SessionLoggingTests: XCTestCase {
             sessionLogger.log(level: .info, message: "Session log test")
             logManager.app.info("Manager log test")
         }
-        
-        await fileLogger.log("File log test", level: OSLogType.info, category: "test", file: #file, function: #function, line: #line)
+
+        await fileLogger.log(
+            "File log test",
+            level: OSLogType.info,
+            category: "test",
+            file: #file,
+            function: #function,
+            line: #line
+        )
 
         // Test concurrent usage
         await withTaskGroup(of: Void.self) { group in
@@ -208,7 +239,14 @@ class SessionLoggingTests: XCTestCase {
 
             group.addTask {
                 for i in 0 ..< 5 {
-                    await fileLogger.log("File \(i)", level: OSLogType.debug, category: "test", file: #file, function: #function, line: #line)
+                    await fileLogger.log(
+                        "File \(i)",
+                        level: OSLogType.debug,
+                        category: "test",
+                        file: #file,
+                        function: #function,
+                        line: #line
+                    )
                 }
             }
         }

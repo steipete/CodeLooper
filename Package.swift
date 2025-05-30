@@ -26,6 +26,8 @@ let package = Package(
         .package(path: "AXpector"),
         // Design System
         .package(path: "DesignSystem"),
+        // Markdown conversion
+        .package(path: "../Demark"),
         // Auto-updater
         .package(url: "https://github.com/sparkle-project/Sparkle.git", .upToNextMajor(from: "2.7.0")),
         // MenuBarExtra enhancements
@@ -65,6 +67,7 @@ let package = Package(
                 .product(name: "OpenAI", package: "OpenAI"),
                 .product(name: "Ollama", package: "ollama-swift"),
                 .product(name: "Lottie", package: "lottie-ios"),
+                .product(name: "Demark", package: "Demark"),
             ],
             path: ".",
             exclude: [
@@ -87,10 +90,10 @@ let package = Package(
                 "Sources",
                 "CodeLooper",
                 "AXorcist",
-                "AXpector", 
+                "AXpector",
                 "DesignSystem",
                 "Tests",
-                "TestResults.xcresult"
+                "TestResults.xcresult",
             ],
             sources: ["App", "Core", "Features"],
             resources: [

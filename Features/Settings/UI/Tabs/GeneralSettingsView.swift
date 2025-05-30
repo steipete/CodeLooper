@@ -25,7 +25,7 @@ struct GeneralSettingsView: View {
     private var appBuild: String {
         Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "N/A"
     }
-    
+
     private static let dateFormatter: DateFormatter = {
         let formatter = DateFormatter()
         formatter.dateStyle = .medium
@@ -34,167 +34,167 @@ struct GeneralSettingsView: View {
     }()
 
     var body: some View {
-            VStack(alignment: .leading, spacing: Spacing.xLarge) {
-                // App Section (using design system)
-                DSSettingsSection("App") {
-                    // Current Version Info
+        VStack(alignment: .leading, spacing: Spacing.xLarge) {
+            // App Section (using design system)
+            DSSettingsSection("App") {
+                // Current Version Info
+                HStack {
+                    VStack(alignment: .leading, spacing: Spacing.xSmall) {
+                        HStack(spacing: Spacing.xSmall) {
+                            Text("Current version: v\(appVersion)")
+                                .font(Typography.body())
+                                .foregroundColor(ColorPalette.text)
+
+                            Text("(Build: \(appBuild))")
+                                .font(Typography.body())
+                                .foregroundColor(ColorPalette.textSecondary)
+                        }
+
+                        Text("CodeLooper is up to date!")
+                            .font(Typography.caption1())
+                            .foregroundColor(ColorPalette.success)
+
+                        Button("Read the changelog.") {
+                            if let url = URL(string: "https://github.com/steipete/CodeLooper/releases") {
+                                NSWorkspace.shared.open(url)
+                            }
+                        }
+                        .buttonStyle(PlainButtonStyle())
+                        .foregroundColor(ColorPalette.accent)
+                        .font(Typography.caption1())
+                        .underline()
+                    }
+
+                    Spacer()
+
+                    DSButton("Check for updates", style: .primary) {
+                        updaterViewModel.checkForUpdates()
+                    }
+                    .disabled(updaterViewModel.isUpdateInProgress)
+                    .frame(width: 168, height: 32)
+                    .fixedSize()
+                }
+
+                DSDivider()
+
+                // Automatic Updates
+                DSToggle(
+                    "Automatic updates",
+                    isOn: $automaticallyCheckForUpdates,
+                    description: "Turn this off to prevent the app from checking for updates."
+                )
+
+                DSDivider()
+
+                // Pre-release Updates
+                DSToggle(
+                    "Receive early access versions",
+                    isOn: $receivePreReleaseUpdates,
+                    description: "Auto-update to the latest early access version. These versions include new features but may be less stable."
+                )
+            }
+
+            // General Application Behavior
+            DSSettingsSection("General") {
+                DSToggle(
+                    "Launch CodeLooper at Login",
+                    isOn: Binding(
+                        get: { mainSettingsViewModel.startAtLogin },
+                        set: { mainSettingsViewModel.updateStartAtLogin($0) }
+                    ),
+                    description: "Automatically start CodeLooper when you log in to your Mac"
+                )
+
+                DSDivider()
+
+                DSToggle(
+                    "Show CodeLooper in Dock",
+                    isOn: $showInDock,
+                    description: "Display CodeLooper icon in the dock"
+                )
+            }
+
+            // Global Shortcut Configuration
+            DSSettingsSection("Keyboard Shortcuts") {
+                VStack(alignment: .leading, spacing: Spacing.small) {
                     HStack {
                         VStack(alignment: .leading, spacing: Spacing.xSmall) {
-                            HStack(spacing: Spacing.xSmall) {
-                                Text("Current version: v\(appVersion)")
-                                    .font(Typography.body())
-                                    .foregroundColor(ColorPalette.text)
-                                
-                                Text("(Build: \(appBuild))")
-                                    .font(Typography.body())
-                                    .foregroundColor(ColorPalette.textSecondary)
-                            }
-                            
-                            Text("CodeLooper is up to date!")
-                                .font(Typography.caption1())
-                                .foregroundColor(ColorPalette.success)
-                            
-                            Button("Read the changelog.") {
-                                if let url = URL(string: "https://github.com/steipete/CodeLooper/releases") {
-                                    NSWorkspace.shared.open(url)
-                                }
-                            }
-                            .buttonStyle(PlainButtonStyle())
-                            .foregroundColor(ColorPalette.accent)
-                            .font(Typography.caption1())
-                            .underline()
-                        }
-                        
-                        Spacer()
-                        
-                        DSButton("Check for updates", style: .primary) {
-                            updaterViewModel.checkForUpdates()
-                        }
-                        .disabled(updaterViewModel.isUpdateInProgress)
-                        .frame(width: 168, height: 32)
-                        .fixedSize()
-                    }
-                    
-                    DSDivider()
-                    
-                    // Automatic Updates
-                    DSToggle(
-                        "Automatic updates",
-                        isOn: $automaticallyCheckForUpdates,
-                        description: "Turn this off to prevent the app from checking for updates."
-                    )
-                    
-                    DSDivider()
-                    
-                    // Pre-release Updates
-                    DSToggle(
-                        "Receive early access versions",
-                        isOn: $receivePreReleaseUpdates,
-                        description: "Auto-update to the latest early access version. These versions include new features but may be less stable."
-                    )
-                }
-                
-                // General Application Behavior
-                DSSettingsSection("General") {
-                    DSToggle(
-                        "Launch CodeLooper at Login",
-                        isOn: Binding(
-                            get: { mainSettingsViewModel.startAtLogin },
-                            set: { mainSettingsViewModel.updateStartAtLogin($0) }
-                        ),
-                        description: "Automatically start CodeLooper when you log in to your Mac"
-                    )
+                            Text("Toggle Monitoring")
+                                .font(Typography.body())
+                                .foregroundColor(ColorPalette.text)
 
-                    DSDivider()
-
-                    DSToggle(
-                        "Show CodeLooper in Dock",
-                        isOn: $showInDock,
-                        description: "Display CodeLooper icon in the dock"
-                    )
-                }
-
-                // Global Shortcut Configuration
-                DSSettingsSection("Keyboard Shortcuts") {
-                    VStack(alignment: .leading, spacing: Spacing.small) {
-                        HStack {
-                            VStack(alignment: .leading, spacing: Spacing.xSmall) {
-                                Text("Toggle Monitoring")
-                                    .font(Typography.body())
-                                    .foregroundColor(ColorPalette.text)
-
-                                Text("Define a global keyboard shortcut to quickly toggle monitoring")
-                                    .font(Typography.caption1())
-                                    .foregroundColor(ColorPalette.textSecondary)
-                                    .lineSpacing(3)
-                            }
-
-                            Spacer()
-
-                            KeyboardShortcuts.Recorder(for: .toggleMonitoring)
-                                .frame(width: 140, height: 32)
-                                .fixedSize()
-                        }
-
-                        Text("Use standard symbols: ⌘ (Command), ⌥ (Option/Alt), ⇧ (Shift), ⌃ (Control)")
-                            .font(Typography.caption1())
-                            .foregroundColor(ColorPalette.textTertiary)
-                    }
-                }
-
-                // Git Integration
-                DSSettingsSection("Git Integration") {
-                    VStack(alignment: .leading, spacing: Spacing.small) {
-                        HStack(spacing: Spacing.small) {
-                            HStack(spacing: Spacing.small) {
-                                // App icon (fixed size to prevent jumping)
-                                Group {
-                                    if let appIcon {
-                                        Image(nsImage: appIcon)
-                                            .resizable()
-                                            .aspectRatio(contentMode: .fit)
-                                    } else {
-                                        Image(systemName: "app.dashed")
-                                            .foregroundColor(ColorPalette.textTertiary)
-                                    }
-                                }
-                                .frame(width: 20, height: 20)
-
-                                Text("Git Client App:")
-                                    .font(Typography.body())
-                                    .foregroundColor(ColorPalette.text)
-                            }
-                            .frame(width: 160, alignment: .leading)
-
-                            DSTextField("", text: $gitClientApp)
-                                .frame(maxWidth: .infinity)
-                                .onChange(of: gitClientApp) { _, newValue in
-                                    loadAppIcon(for: newValue)
-                                }
-
-                            DSButton("Browse...", style: .secondary, size: .small) {
-                                selectGitClientApp()
-                            }
-                            .frame(width: 140, height: 32)
-                            .fixedSize()
-                        }
-
-                        HStack {
-                            Text("Path to your Git client application (e.g., Tower, SourceTree, GitKraken)")
+                            Text("Define a global keyboard shortcut to quickly toggle monitoring")
                                 .font(Typography.caption1())
                                 .foregroundColor(ColorPalette.textSecondary)
                                 .lineSpacing(3)
+                        }
 
-                            if !gitClientApp.isEmpty {
-                                Spacer()
-                                Image(systemName: isValidApp ? "checkmark.circle.fill" : "xmark.circle.fill")
-                                    .foregroundColor(isValidApp ? ColorPalette.success : ColorPalette.error)
-                                    .font(.system(size: 12))
+                        Spacer()
+
+                        KeyboardShortcuts.Recorder(for: .toggleMonitoring)
+                            .frame(width: 140, height: 32)
+                            .fixedSize()
+                    }
+
+                    Text("Use standard symbols: ⌘ (Command), ⌥ (Option/Alt), ⇧ (Shift), ⌃ (Control)")
+                        .font(Typography.caption1())
+                        .foregroundColor(ColorPalette.textTertiary)
+                }
+            }
+
+            // Git Integration
+            DSSettingsSection("Git Integration") {
+                VStack(alignment: .leading, spacing: Spacing.small) {
+                    HStack(spacing: Spacing.small) {
+                        HStack(spacing: Spacing.small) {
+                            // App icon (fixed size to prevent jumping)
+                            Group {
+                                if let appIcon {
+                                    Image(nsImage: appIcon)
+                                        .resizable()
+                                        .aspectRatio(contentMode: .fit)
+                                } else {
+                                    Image(systemName: "app.dashed")
+                                        .foregroundColor(ColorPalette.textTertiary)
+                                }
                             }
+                            .frame(width: 20, height: 20)
+
+                            Text("Git Client App:")
+                                .font(Typography.body())
+                                .foregroundColor(ColorPalette.text)
+                        }
+                        .frame(width: 160, alignment: .leading)
+
+                        DSTextField("", text: $gitClientApp)
+                            .frame(maxWidth: .infinity)
+                            .onChange(of: gitClientApp) { _, newValue in
+                                loadAppIcon(for: newValue)
+                            }
+
+                        DSButton("Browse...", style: .secondary, size: .small) {
+                            selectGitClientApp()
+                        }
+                        .frame(width: 140, height: 32)
+                        .fixedSize()
+                    }
+
+                    HStack {
+                        Text("Path to your Git client application (e.g., Tower, SourceTree, GitKraken)")
+                            .font(Typography.caption1())
+                            .foregroundColor(ColorPalette.textSecondary)
+                            .lineSpacing(3)
+
+                        if !gitClientApp.isEmpty {
+                            Spacer()
+                            Image(systemName: isValidApp ? "checkmark.circle.fill" : "xmark.circle.fill")
+                                .foregroundColor(isValidApp ? ColorPalette.success : ColorPalette.error)
+                                .font(.system(size: 12))
                         }
                     }
                 }
             }
+        }
         .onAppear {
             loadAppIcon(for: gitClientApp)
         }

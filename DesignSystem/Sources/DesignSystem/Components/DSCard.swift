@@ -52,16 +52,6 @@ public struct DSCard<Content: View>: View {
     private let style: Style
     private let content: () -> Content
 
-    @ViewBuilder
-    private var backgroundMaterial: some View {
-        switch style {
-        case .elevated, .outlined:
-            Color.clear.background(MaterialPalette.windowBackground)
-        case .filled:
-            Color.clear.background(MaterialPalette.cardBackground)
-        }
-    }
-
     private var borderColor: Color {
         switch style {
         case .outlined:
@@ -90,6 +80,16 @@ public struct DSCard<Content: View>: View {
             Layout.Shadow.medium
         case .outlined, .filled:
             Layout.Shadow.none
+        }
+    }
+
+    @ViewBuilder
+    private var backgroundMaterial: some View {
+        switch style {
+        case .elevated, .outlined:
+            Color.clear.background(MaterialPalette.windowBackground)
+        case .filled:
+            Color.clear.background(MaterialPalette.cardBackground)
         }
     }
 }

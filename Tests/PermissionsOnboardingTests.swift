@@ -1,9 +1,8 @@
 @testable import CodeLooper
 import Foundation
+import LaunchAtLogin
 import SwiftUI
 import XCTest
-import LaunchAtLogin
-
 
 class PermissionsOnboardingTests: XCTestCase {
     // MARK: - OnboardingCoordinator Tests
@@ -33,7 +32,7 @@ class PermissionsOnboardingTests: XCTestCase {
 
         // Test step progression
         await viewModel.goToNextStep()
-        
+
         await MainActor.run {
             XCTAssertNotEqual(viewModel.currentStep, .welcome)
         }
@@ -49,7 +48,8 @@ class PermissionsOnboardingTests: XCTestCase {
         // Test step state
         await MainActor.run {
             let currentStep = viewModel.currentStep
-            XCTAssertTrue(currentStep == .welcome || currentStep == .accessibility || currentStep == .settings || currentStep == .complete)
+            XCTAssertTrue(currentStep == .welcome || currentStep == .accessibility || currentStep == .settings ||
+                currentStep == .complete)
         }
 
         // Should handle validation checks gracefully
@@ -61,7 +61,7 @@ class PermissionsOnboardingTests: XCTestCase {
     func testAccessibilityPermissionStep() async throws {
         let loginItemManager = await LoginItemManager.shared
         let viewModel = await WelcomeViewModel(loginItemManager: loginItemManager)
-        
+
         // Move to accessibility step
         await MainActor.run {
             viewModel.currentStep = .accessibility
@@ -172,7 +172,7 @@ class PermissionsOnboardingTests: XCTestCase {
     // MARK: - Welcome Flow Tests
 
     func testWelcomeGuideFlow() async throws {
-        let welcomeGuide = await WelcomeGuideView { }
+        let welcomeGuide = await WelcomeGuideView {}
 
         // Test that welcome guide is created without errors
         XCTAssertNotNil(welcomeGuide)
@@ -237,13 +237,13 @@ class PermissionsOnboardingTests: XCTestCase {
 
         // Test window operations
         await coordinator.showWelcomeWindow()
-        
+
         await MainActor.run {
             XCTAssertNotNil(coordinator.welcomeWindow)
         }
-        
+
         await coordinator.dismissWelcomeWindow()
-        
+
         await MainActor.run {
             XCTAssertEqual(coordinator.welcomeWindow, nil)
         }
@@ -257,14 +257,14 @@ class PermissionsOnboardingTests: XCTestCase {
         await MainActor.run {
             // Start at welcome
             XCTAssertEqual(viewModel.currentStep, .welcome)
-            
+
             // Move through steps
             viewModel.goToNextStep() // -> accessibility
             XCTAssertEqual(viewModel.currentStep, .accessibility)
-            
+
             viewModel.goToNextStep() // -> settings
             XCTAssertEqual(viewModel.currentStep, .settings)
-            
+
             viewModel.goToNextStep() // -> complete
             XCTAssertEqual(viewModel.currentStep, .complete)
         }
@@ -312,17 +312,17 @@ class PermissionsOnboardingTests: XCTestCase {
 
     func testOnboardingPerformance() async throws {
         let loginItemManager = await LoginItemManager.shared
-        
+
         // Test performance of creating multiple view models
         let startTime = Date()
-        
-        for _ in 0..<10 {
+
+        for _ in 0 ..< 10 {
             let _ = await WelcomeViewModel(loginItemManager: loginItemManager)
         }
-        
+
         let endTime = Date()
         let duration = endTime.timeIntervalSince(startTime)
-        
+
         // Should complete quickly (less than 0.5 seconds for 10 instances)
         XCTAssertLessThan(duration, 0.5)
     }

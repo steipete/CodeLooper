@@ -6,7 +6,6 @@ import Diagnostics
 import Foundation
 import XCTest
 
-
 class IntegrationTests: XCTestCase {
     // MARK: - Test Utilities
 
@@ -21,7 +20,11 @@ class IntegrationTests: XCTestCase {
             coordinator = await AppServiceCoordinator()
             let loginItemManager = await LoginItemManager.shared
             let sessionLogger = await SessionLogger.shared
-            windowManager = await WindowManager(loginItemManager: loginItemManager, sessionLogger: sessionLogger, delegate: nil)
+            windowManager = await WindowManager(
+                loginItemManager: loginItemManager,
+                sessionLogger: sessionLogger,
+                delegate: nil
+            )
         }
 
         func shutdown() async {
@@ -35,7 +38,7 @@ class IntegrationTests: XCTestCase {
     func withTemporaryDefaults<T>(_ block: () async throws -> T) async rethrows -> T {
         // Note: Defaults library no longer supports changing suite at runtime
         // Just run the block directly
-        return try await block()
+        try await block()
     }
 
     // MARK: - Application Lifecycle Tests
@@ -75,7 +78,7 @@ class IntegrationTests: XCTestCase {
         let monitor = await CursorMonitor.shared
         await MainActor.run {
             XCTAssertNotNil(monitor.axorcist)
-            
+
             // Verify initial state
             XCTAssertTrue(!monitor.isMonitoringActivePublic)
             XCTAssertTrue(monitor.monitoredApps.isEmpty)
@@ -286,13 +289,16 @@ class IntegrationTests: XCTestCase {
     func testPermissionFlowIntegration() async throws {
         // Test accessibility permissions check
         let permissionsManager = await PermissionsManager()
-        
+
         // Wait for initial check
         try await Task.sleep(for: .milliseconds(100))
 
         // This should not crash regardless of permission state
         await MainActor.run {
-            XCTAssertEqual(permissionsManager.hasAccessibilityPermissions, true || permissionsManager.hasAccessibilityPermissions == false)
+            XCTAssertEqual(
+                permissionsManager.hasAccessibilityPermissions,
+                true || permissionsManager.hasAccessibilityPermissions == false
+            )
         }
     }
 

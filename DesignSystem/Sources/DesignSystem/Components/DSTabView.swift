@@ -114,10 +114,10 @@ private struct TabButton: View {
             Color.clear
         }
     }
-    
+
     @ViewBuilder
     private var backgroundMaterial: some View {
-        if isHovered && !isSelected {
+        if isHovered, !isSelected {
             Rectangle().fill(MaterialPalette.selectionBackground)
         } else {
             backgroundColor

@@ -15,7 +15,9 @@ import Sparkle
 /// interface for the rest of the application while handling all
 /// update-related delegate callbacks and UI presentation.
 @MainActor
-public class SparkleUpdaterManager: NSObject, SPUUpdaterDelegate, SPUStandardUserDriverDelegate, ObservableObject, Loggable {
+public class SparkleUpdaterManager: NSObject, SPUUpdaterDelegate, SPUStandardUserDriverDelegate, ObservableObject,
+    Loggable
+{
     // MARK: Lifecycle
 
     override init() {

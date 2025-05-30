@@ -4,7 +4,6 @@ import Defaults
 import Foundation
 import XCTest
 
-
 @MainActor
 class IconAnimationTests: XCTestCase {
     // MARK: - IconAnimator Tests
@@ -131,7 +130,7 @@ class IconAnimationTests: XCTestCase {
         // Toggle the default to test animation changes
         Defaults[.isGlobalMonitoringEnabled] = true
         try await Task.sleep(for: .milliseconds(10))
-        
+
         Defaults[.isGlobalMonitoringEnabled] = false
         try await Task.sleep(for: .milliseconds(10))
 
@@ -187,7 +186,7 @@ class IconAnimationTests: XCTestCase {
     func testNSImageResourceLoading() async throws {
         // Test loading icon resources
         let menuBarIcon = NSImage(named: "menubar")
-        
+
         // Icon may or may not exist in test environment
         XCTAssertTrue(menuBarIcon != nil || menuBarIcon == nil)
 

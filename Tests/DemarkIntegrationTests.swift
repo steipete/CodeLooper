@@ -3,12 +3,10 @@ import Foundation
 import WebKit
 import XCTest
 
-
 /// Integration test for Demark functionality
 /// This test verifies that the JavaScript libraries can be loaded and work correctly
 @MainActor
 class DemarkIntegrationTests: XCTestCase {
-    
     func testJavaScriptLibrariesExist() async throws {
         // Check that the required JavaScript files exist in the test bundle
         let bundle = Bundle.main
@@ -29,17 +27,21 @@ class DemarkIntegrationTests: XCTestCase {
         do {
             // Load a blank page first
             webView.loadHTMLString("<html><head></head><body></body></html>", baseURL: nil)
-            
+
             // Wait for page to load
             try await Task.sleep(nanoseconds: 100_000_000) // 100ms
-            
+
             // Load Turndown script
             let turndownScript = try String(contentsOfFile: turndownPath, encoding: .utf8)
             let result = try await webView.evaluateJavaScript(turndownScript)
 
             // Verify TurndownService is available
             let turndownCheck = try await webView.evaluateJavaScript("typeof TurndownService")
-            XCTAssertEqual(turndownCheck as? String, "function", "TurndownService should be available after loading script")
+            XCTAssertEqual(
+                turndownCheck as? String,
+                "function",
+                "TurndownService should be available after loading script"
+            )
 
             // Try to instantiate TurndownService
             let instanceCheck = try await webView.evaluateJavaScript("new TurndownService() !== null")

@@ -112,7 +112,6 @@ struct AdvancedSettingsView: View {
             }
 
             Spacer()
-                
         }
         .alert("Reset & Restart CodeLooper?", isPresented: $showResetAndRestartConfirmation) {
             Button("Cancel", role: .cancel) {}

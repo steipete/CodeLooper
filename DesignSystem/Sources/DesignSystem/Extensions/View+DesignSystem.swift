@@ -68,15 +68,15 @@ public extension View {
             self
         }
     }
-    
+
     // MARK: - Brand Tinting
-    
+
     /// Applies CodeLooper brand tinting to the view
     @ViewBuilder
     func withCodeLooperTint() -> some View {
         self.tint(ColorPalette.loopTint)
     }
-    
+
     /// Applies CodeLooper brand accent color as foreground
     @ViewBuilder
     func withBrandAccent() -> some View {

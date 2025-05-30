@@ -4,38 +4,42 @@ import XCTest
 
 // Helper actor for thread-safe counting
 actor TestCounter {
-    private var count = 0
-    private var lastValue = 0
-    private var results: [String] = []
-    
+    // MARK: Internal
+
     func increment() {
         count += 1
     }
-    
+
     func increment(with value: Int) {
         count += 1
         lastValue = value
     }
-    
+
     func append(_ value: String) {
         results.append(value)
     }
-    
+
     func getCount() -> Int {
         count
     }
-    
+
     func getLastValue() -> Int {
         lastValue
     }
-    
+
     func getResults() -> [String] {
         results
     }
-    
+
     func getCountAndValue() -> (Int, Int) {
         (count, lastValue)
     }
+
+    // MARK: Private
+
+    private var count = 0
+    private var lastValue = 0
+    private var results: [String] = []
 }
 
 @MainActor
@@ -57,7 +61,7 @@ class DebouncerTests: XCTestCase {
         let finalCount = await counter.getCount()
         XCTAssertEqual(finalCount, 1)
     }
-    
+
     func testDebouncerMultipleRapidCalls() async throws {
         let debouncer = Debouncer(delay: 0.1)
         let counter = TestCounter()
@@ -81,7 +85,7 @@ class DebouncerTests: XCTestCase {
         XCTAssertEqual(finalCallCount, 1)
         XCTAssertEqual(finalLastValue, 5)
     }
-    
+
     func testDebouncerCancellation() async throws {
         let debouncer = Debouncer(delay: 0.2)
         let counter = TestCounter()
@@ -109,7 +113,7 @@ class DebouncerTests: XCTestCase {
         let finalCount = await counter.getCount()
         XCTAssertEqual(finalCount, 1)
     }
-    
+
     func testDebouncerDifferentDelays() async throws {
         let shortDebouncer = Debouncer(delay: 0.05)
         let longDebouncer = Debouncer(delay: 0.15)
@@ -145,7 +149,7 @@ class DebouncerTests: XCTestCase {
         XCTAssertEqual(shortCount2, 1)
         XCTAssertEqual(longCount2, 1)
     }
-    
+
     func testDebouncerActionCapturesContext() async throws {
         let debouncer = Debouncer(delay: 0.05)
         let counter = TestCounter()
@@ -162,7 +166,7 @@ class DebouncerTests: XCTestCase {
         let finalResults = await counter.getResults()
         XCTAssertEqual(finalResults, ["test_context"])
     }
-    
+
     func testDebouncerConcurrentAccess() async throws {
         let debouncer = Debouncer(delay: 0.05)
         let counter = TestCounter()
@@ -187,7 +191,7 @@ class DebouncerTests: XCTestCase {
         let finalCount = await counter.getCount()
         XCTAssertEqual(finalCount, 1)
     }
-    
+
     func testDebouncerZeroDelay() async throws {
         let debouncer = Debouncer(delay: 0.0)
         let counter = TestCounter()
@@ -204,7 +208,7 @@ class DebouncerTests: XCTestCase {
         let finalCount = await counter.getCount()
         XCTAssertEqual(finalCount, 1)
     }
-    
+
     func testDebouncerMultipleInstancesIndependence() async throws {
         let debouncer1 = Debouncer(delay: 0.05)
         let debouncer2 = Debouncer(delay: 0.05)

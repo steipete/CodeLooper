@@ -102,7 +102,6 @@
 		5A9DAE4DB31012F64F90AAE9 /* FileLogger.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1F49DE8A739B205030BB746D /* FileLogger.swift */; };
 		5B9FBB4E22A4CA773AEA4C4C /* SidebarActivityAreaHeuristic.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4A8E9914306D8A584ECB4DAC /* SidebarActivityAreaHeuristic.swift */; };
 		5F254D555D5E5C37772500BD /* GeneralSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCB2F412349341AED0BE35C0 /* GeneralSettingsView.swift */; };
-		5F3512C3ABCD04F762B333B7 /* DemarkService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2BB30A99BAEF37F6AC9ED470 /* DemarkService.swift */; };
 		60E1996918E2C404F0B6D511 /* SettingsSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = A71F7E04AC4E66D9257D4669 /* SettingsSection.swift */; };
 		613F6AF533E82FD1B823F167 /* MCPVersionService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 564C24959C1C3739E76F0846 /* MCPVersionService.swift */; };
 		617E308C577CC9199475B6B0 /* SessionLogger.swift in Sources */ = {isa = PBXBuildFile; fileRef = A6E4AF83D5B34296709C44F9 /* SessionLogger.swift */; };
@@ -126,7 +125,6 @@
 		717339DC84DC0492B9B3EDBB /* OperationTracker.swift in Sources */ = {isa = PBXBuildFile; fileRef = DDE89DBB68E6535CD8ACD23F /* OperationTracker.swift */; };
 		718000291222DEE704100F80 /* MCPIntegrationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 55B00B1E07D69EB75ECDA5BC /* MCPIntegrationTests.swift */; };
 		71E06465A350AE58286C8C33 /* DemarkServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84EDEB6CB63395FC0A0FE9FD /* DemarkServiceTests.swift */; };
-		724C8F662052A5D3AFCAF461 /* DemarkSimpleTest.swift in Sources */ = {isa = PBXBuildFile; fileRef = E4EFF84152ADA0051BD7610C /* DemarkSimpleTest.swift */; };
 		737BCB282D36F76132755E13 /* AppDelegate+AppleScript.swift in Sources */ = {isa = PBXBuildFile; fileRef = C27DA87D5C163E34ED40FF37 /* AppDelegate+AppleScript.swift */; };
 		738A69F5921EC40B51F2E293 /* ToolbarTabButtonView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CBF80EDE90739047D07DFD6C /* ToolbarTabButtonView.swift */; };
 		739D8BE54670F5039910A792 /* SettingsContainerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84998560B2C11EA98CEA6602 /* SettingsContainerView.swift */; };
@@ -249,7 +247,6 @@
 		E69AFCA6A5E9C0A1B79A0CBE /* turndown.min.js in Resources */ = {isa = PBXBuildFile; fileRef = 4C7B492F764D7AA73AF542DC /* turndown.min.js */; };
 		E7C24802CF33E6433B8423BC /* LoggerFactory.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5DF9B09B5EB58B7357233E6 /* LoggerFactory.swift */; };
 		EAD2792BDE3E13E195ECC83F /* AutomationPermissionsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00CC4EDB54A9AA12ABC954A0 /* AutomationPermissionsView.swift */; };
-		EBB7C67D963F4C99D92FAD84 /* MarkdownContentPopover.swift in Sources */ = {isa = PBXBuildFile; fileRef = B93FE5DBFB4CA92A0ADD0FF9 /* MarkdownContentPopover.swift */; };
 		EC277F1F63AA034EC56FD19D /* UIComponentTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8C6BF4BD778B3039CC05CFA3 /* UIComponentTests.swift */; };
 		EFBEF208A6ADC558D112D2B4 /* CursorWindowsList.swift in Sources */ = {isa = PBXBuildFile; fileRef = AACDD4C1A3FA77D39ADCC793 /* CursorWindowsList.swift */; };
 		F17E0567B5A87A71789B6541 /* MainSettingsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = E70C08E6F5DBA33B403CF1D1 /* MainSettingsViewModel.swift */; };
@@ -376,7 +373,6 @@
 		2942FA9216AA2A51C11DA8FA /* DraggableView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DraggableView.swift; sourceTree = "<group>"; };
 		2B5D657B4F2DC18192DB9A40 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/Main.storyboard; sourceTree = "<group>"; };
 		2B6F1F26DF05152139846594 /* CodeLooperTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = CodeLooperTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
-		2BB30A99BAEF37F6AC9ED470 /* DemarkService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DemarkService.swift; sourceTree = "<group>"; };
 		2D5B83132BF91F7EACD38CCB /* AIAnalysisServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIAnalysisServiceTests.swift; sourceTree = "<group>"; };
 		31C27EAC374A48E9B6BCD9A8 /* PassThroughTextField.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PassThroughTextField.swift; sourceTree = "<group>"; };
 		33BAAEF1321CC714363BD42F /* DiagnosticsLogger.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiagnosticsLogger.swift; sourceTree = "<group>"; };
@@ -507,7 +503,6 @@
 		B7E407A9668A0C58F7FFB66C /* SettingsPanesContainerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsPanesContainerView.swift; sourceTree = "<group>"; };
 		B7EBAB588F0605B4C5CA0304 /* ThreadSafeBox.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThreadSafeBox.swift; sourceTree = "<group>"; };
 		B855986CD1C95178888D1AF3 /* CursorSupervisionSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CursorSupervisionSettingsView.swift; sourceTree = "<group>"; };
-		B93FE5DBFB4CA92A0ADD0FF9 /* MarkdownContentPopover.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MarkdownContentPopover.swift; sourceTree = "<group>"; };
 		B96EB1FF68D466C7E9E3F1EE /* CompletionStepView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CompletionStepView.swift; sourceTree = "<group>"; };
 		BC20A8DCDF3278BF031054DF /* WindowAIDiagnosticsManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WindowAIDiagnosticsManager.swift; sourceTree = "<group>"; };
 		BCA0983521BFC38C9EFB5342 /* WelcomeViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WelcomeViewModel.swift; sourceTree = "<group>"; };
@@ -552,7 +547,6 @@
 		E24BC78DE369479688B5E95A /* ErrorRecoveryService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ErrorRecoveryService.swift; sourceTree = "<group>"; };
 		E25607BD9DA70B4FE5DB2D66 /* CursorJSHookScript.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CursorJSHookScript.swift; sourceTree = "<group>"; };
 		E2716B93466A5D758E1409FE /* CustomChainLinkIcon.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CustomChainLinkIcon.swift; sourceTree = "<group>"; };
-		E4EFF84152ADA0051BD7610C /* DemarkSimpleTest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DemarkSimpleTest.swift; sourceTree = "<group>"; };
 		E5690C84AB82C7DB84BD6DCA /* MacOSAutomatorConfigView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MacOSAutomatorConfigView.swift; sourceTree = "<group>"; };
 		E595EC2DD4C455A8998C336F /* LogConfiguration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LogConfiguration.swift; sourceTree = "<group>"; };
 		E70C08E6F5DBA33B403CF1D1 /* MainSettingsViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainSettingsViewModel.swift; sourceTree = "<group>"; };
@@ -721,14 +715,6 @@
 			path = Sources;
 			sourceTree = "<group>";
 		};
-		18C02703FCF0AEDAC25808D6 /* Services */ = {
-			isa = PBXGroup;
-			children = (
-				2BB30A99BAEF37F6AC9ED470 /* DemarkService.swift */,
-			);
-			path = Services;
-			sourceTree = "<group>";
-		};
 		2061F4044B35D9130FF9D215 /* Extensions */ = {
 			isa = PBXGroup;
 			children = (
@@ -855,15 +841,6 @@
 			path = Domain;
 			sourceTree = "<group>";
 		};
-		39291E6D3EE739DC606D290A /* Markdown */ = {
-			isa = PBXGroup;
-			children = (
-				528968F265BBAEA24D1F3A9C /* Domain */,
-				C4A779E5EA24C81A9F9C1FBD /* UI */,
-			);
-			path = Markdown;
-			sourceTree = "<group>";
-		};
 		3CDB825EFD72238B3AA606F2 /* Components */ = {
 			isa = PBXGroup;
 			children = (
@@ -921,14 +898,6 @@
 				90627A81625451554813CEFA /* Components */,
 			);
 			path = UI;
-			sourceTree = "<group>";
-		};
-		528968F265BBAEA24D1F3A9C /* Domain */ = {
-			isa = PBXGroup;
-			children = (
-				18C02703FCF0AEDAC25808D6 /* Services */,
-			);
-			path = Domain;
 			sourceTree = "<group>";
 		};
 		5413B1913FEB6E7778DDFC8A /* Concurrency */ = {
@@ -1092,7 +1061,6 @@
 				28551B37A63C9E106B367776 /* AIAnalysis */,
 				AD4ABAB54DDEBDC8C5552407 /* GitTracking */,
 				7BAAC7D4C4FDD6B44B9DF363 /* Intervention */,
-				39291E6D3EE739DC606D290A /* Markdown */,
 				D0934BCE12B7DEAC2D1971E8 /* MCPIntegration */,
 				B0B6CDED5B9F94FC68354ACF /* Monitoring */,
 				844BE48F0A721CECD7B28A02 /* Onboarding */,
@@ -1181,7 +1149,6 @@
 				08137EDAB08D3B71F1A53429 /* DebouncerTests.swift */,
 				BE253CC9C6B4944EC33CAC22 /* DemarkIntegrationTests.swift */,
 				84EDEB6CB63395FC0A0FE9FD /* DemarkServiceTests.swift */,
-				E4EFF84152ADA0051BD7610C /* DemarkSimpleTest.swift */,
 				E9C56058467A580C6FAFC033 /* DiagnosticsTests.swift */,
 				951C2054E1E1C60B6AA2D58B /* GitTrackingTests.swift */,
 				C12E1B65B2CDA612D0A3D724 /* HeartbeatMonitoringTests.swift */,
@@ -1293,14 +1260,6 @@
 				D3A5446DB90C079913704AF4 /* GitRepositoryService.swift */,
 			);
 			path = Domain;
-			sourceTree = "<group>";
-		};
-		C4A779E5EA24C81A9F9C1FBD /* UI */ = {
-			isa = PBXGroup;
-			children = (
-				B93FE5DBFB4CA92A0ADD0FF9 /* MarkdownContentPopover.swift */,
-			);
-			path = UI;
 			sourceTree = "<group>";
 		};
 		C4AF9E68731B63B94CC30DD2 /* Derived */ = {
@@ -1749,8 +1708,6 @@
 				17FC19EB1AD8F887DAB55B43 /* MCPConfigurationService.swift in Sources */,
 				613F6AF533E82FD1B823F167 /* MCPVersionService.swift in Sources */,
 				6DF53B1DFA19E01D5CCB27BA /* MCPConfigurationView.swift in Sources */,
-				5F3512C3ABCD04F762B333B7 /* DemarkService.swift in Sources */,
-				EBB7C67D963F4C99D92FAD84 /* MarkdownContentPopover.swift in Sources */,
 				C7150D5BC7B0B12C4349D194 /* CursorInstanceModels.swift in Sources */,
 				6F7FF41192392957DE96AB06 /* MonitoredInstance.swift in Sources */,
 				FA9410108CB27C68004C4FF6 /* MonitoredInstanceInfo.swift in Sources */,
@@ -1875,7 +1832,6 @@
 				6728F39F1EABFE845482651F /* DebouncerTests.swift in Sources */,
 				7B18DF2CA8DA92DD9E953E53 /* DemarkIntegrationTests.swift in Sources */,
 				71E06465A350AE58286C8C33 /* DemarkServiceTests.swift in Sources */,
-				724C8F662052A5D3AFCAF461 /* DemarkSimpleTest.swift in Sources */,
 				FDC5214D742934AAC9BF5D53 /* DiagnosticsTests.swift in Sources */,
 				948F09030F67ADC634E0CABF /* GitTrackingTests.swift in Sources */,
 				4C9A03866547CE3F3D3B148D /* HeartbeatMonitoringTests.swift in Sources */,

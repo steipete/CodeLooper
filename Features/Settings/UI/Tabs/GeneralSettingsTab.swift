@@ -17,7 +17,7 @@ struct GeneralSettingsTab: View {
                         Text("Menu Bar icon:")
                             .frame(width: 120, alignment: .trailing)
                             .gridColumnAlignment(.trailing)
-                        
+
                         Toggle("Show CodeLooper in Menu Bar", isOn: Binding(
                             get: { viewModel.showInMenuBar },
                             set: { viewModel.updateShowInMenuBar($0) }
@@ -27,19 +27,19 @@ struct GeneralSettingsTab: View {
                         .gridColumnAlignment(.leading)
                     }
                     .padding(.vertical, 6)
-                    
+
                     GridRow {
                         Divider()
                             .gridCellColumns(2)
                     }
-                    
+
                     // Launch Settings
                     GridRow {
                         Text("Launch settings:")
                             .frame(width: 120, alignment: .trailing)
                             .gridCellAnchor(.topTrailing)
                             .gridColumnAlignment(.trailing)
-                        
+
                         VStack(alignment: .leading, spacing: 10) {
                             Toggle("Start at login", isOn: Binding(
                                 get: { viewModel.startAtLogin },
@@ -47,7 +47,7 @@ struct GeneralSettingsTab: View {
                             ))
                             .toggleStyle(.checkbox)
                             .help("Automatically start CodeLooper when you log in to your Mac")
-                            
+
                             Toggle("Show welcome screen on next launch", isOn: Binding(
                                 get: { viewModel.showWelcomeScreen },
                                 set: { viewModel.updateShowWelcomeScreen($0) }
@@ -58,25 +58,25 @@ struct GeneralSettingsTab: View {
                         .gridColumnAlignment(.leading)
                     }
                     .padding(.vertical, 6)
-                    
+
                     GridRow {
                         Divider()
                             .gridCellColumns(2)
                     }
-                    
+
                     // Application Info
                     GridRow {
                         Text("Application:")
                             .frame(width: 120, alignment: .trailing)
                             .gridColumnAlignment(.trailing)
-                        
+
                         VStack(alignment: .leading, spacing: 10) {
                             Text("CodeLooper is your coding companion for macOS")
                                 .font(.footnote)
                                 .foregroundColor(.secondary)
-                            
+
                             let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ??
-                            "1.0.0"
+                                "1.0.0"
                             Text("Version: \(version)")
                                 .font(.footnote)
                                 .foregroundColor(.secondary)
@@ -85,7 +85,7 @@ struct GeneralSettingsTab: View {
                     }
                     .padding(.vertical, 6)
                 }
-                
+
                 Spacer()
             }
             .padding()

@@ -5,7 +5,6 @@ import Foundation
 import SwiftUI
 import XCTest
 
-
 class UIComponentTests: XCTestCase {
     // MARK: - SettingsCoordinator Tests
 
@@ -43,7 +42,7 @@ class UIComponentTests: XCTestCase {
             documentPath: nil,
             isPaused: false
         )
-        
+
         await MainActor.run {
             XCTAssertEqual(windowInfo.id, "test-window")
             XCTAssertEqual(windowInfo.windowTitle, "Test Window")
@@ -54,7 +53,7 @@ class UIComponentTests: XCTestCase {
     func testAIAnalysisStatus() async throws {
         // Test AIAnalysisStatus enum
         let statuses: [AIAnalysisStatus] = [.working, .notWorking, .pending, .error, .off, .unknown]
-        
+
         for status in statuses {
             XCTAssertEqual(status.displayName.isEmpty, false)
         }
@@ -65,7 +64,7 @@ class UIComponentTests: XCTestCase {
     func testLoginItemManager() async throws {
         let manager = await LoginItemManager.shared
         XCTAssertTrue(true) // Manager exists
-        
+
         // Test that we can check login item status
         let isEnabled = await manager.startsAtLogin()
         XCTAssertEqual(isEnabled, true || isEnabled == false) // Either state is valid
@@ -74,11 +73,11 @@ class UIComponentTests: XCTestCase {
     func testDocumentPathTracking() async throws {
         let gitMonitor = await GitRepositoryMonitor()
         let tracker = await DocumentPathTracker(gitRepositoryMonitor: gitMonitor)
-        
+
         // Test document path existence check
         let exists = await tracker.documentPathExists("/nonexistent/path")
         XCTAssertEqual(exists, false)
-        
+
         // Test with a real path
         let homeExists = await tracker.documentPathExists(NSHomeDirectory())
         XCTAssertEqual(homeExists, true)
@@ -89,7 +88,7 @@ class UIComponentTests: XCTestCase {
     func testLoggingConfiguration() async throws {
         // Test that logging is configured properly
         let logger = Logger(category: .ui)
-        
+
         // Logger should exist and be usable
         logger.info("Test log message")
         XCTAssertTrue(true) // If we get here, logging works
@@ -101,9 +100,9 @@ class UIComponentTests: XCTestCase {
             .general, .appDelegate, .appLifecycle, .supervision,
             .intervention, .jshook, .settings, .aiAnalysis,
             .accessibility, .diagnostics, .networking, .git,
-            .statusBar, .onboarding, .ui, .utilities
+            .statusBar, .onboarding, .ui, .utilities,
         ]
-        
+
         for category in categories {
             let logger = Logger(category: category)
             XCTAssertTrue(true) // Logger exists
@@ -144,9 +143,9 @@ class UIComponentTests: XCTestCase {
             .serviceInitializationFailed(service: "Test", underlying: nil),
             .configurationMissing(setting: "Test"),
             .accessibilityPermissionDenied,
-            .hookConnectionLost(windowId: "test-window")
+            .hookConnectionLost(windowId: "test-window"),
         ]
-        
+
         for error in errors {
             XCTAssertEqual(error.localizedDescription.isEmpty, false)
         }
@@ -178,7 +177,7 @@ class UIComponentTests: XCTestCase {
     func testStatusIconStates() async throws {
         // Test status icon states
         let states: [StatusIconState] = [.idle, .syncing, .error, .paused, .success]
-        
+
         for state in states {
             XCTAssertEqual(state.rawValue.isEmpty, false)
         }

@@ -1,4 +1,5 @@
 import AppKit
+import Demark
 import DesignSystem
 import Diagnostics
 import SwiftUI

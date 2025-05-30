@@ -105,7 +105,7 @@ public final class AppDelegate: NSObject, NSApplicationDelegate, ObservableObjec
 
         // Setup dock visibility based on user preference
         setupDockVisibility()
-        
+
         // Apply global CodeLooper brand tint
         setupGlobalTint()
 
@@ -506,15 +506,15 @@ public final class AppDelegate: NSObject, NSApplicationDelegate, ObservableObjec
                 .error("Failed to start AX observation for Cursor via AXorcist. Error: \(message), Code: \(code)")
         }
     }
-    
+
     // MARK: - Global Tint Setup
-    
+
     private func setupGlobalTint() {
         logger.info("Applying CodeLooper brand tint globally")
-        
+
         // The global tint is now applied via SwiftUI's .withDesignSystem() modifier
         // This ensures consistent brand tinting across the entire app
-        
+
         logger.info("Global CodeLooper tint configured successfully")
     }
 }

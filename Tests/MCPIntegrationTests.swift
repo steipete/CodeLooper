@@ -2,7 +2,6 @@
 import Foundation
 import XCTest
 
-
 class MCPIntegrationTests: XCTestCase {
     // MARK: - MCPConfigManager Tests
 
@@ -17,7 +16,7 @@ class MCPIntegrationTests: XCTestCase {
     func testMCPConfigurationState() async throws {
         await MainActor.run {
             let configService = MCPConfigManager.shared
-            
+
             // Test reading MCP configuration
             let config = configService.readMCPConfig()
             // Config can be nil if file doesn't exist, which is fine
@@ -38,11 +37,11 @@ class MCPIntegrationTests: XCTestCase {
     func testMCPVersionChecking() async throws {
         await MainActor.run {
             let versionService = MCPVersionService.shared
-            
+
             // Test version checking for an MCP extension
             let version = versionService.getLatestVersion(for: .peekaboo)
             XCTAssertTrue(!version.isEmpty)
-            
+
             // Check another extension
             let claudeCodeVersion = versionService.getLatestVersion(for: .claudeCode)
             XCTAssertTrue(!claudeCodeVersion.isEmpty)
@@ -52,7 +51,7 @@ class MCPIntegrationTests: XCTestCase {
     func testMCPInstalledVersions() async throws {
         await MainActor.run {
             let versionService = MCPVersionService.shared
-            
+
             // Test getting installed version (may return cached or default)
             let installedVersion = versionService.getInstalledVersionCached(for: .terminator)
             XCTAssertTrue(!installedVersion.isEmpty)
@@ -62,7 +61,7 @@ class MCPIntegrationTests: XCTestCase {
     func testMCPAllExtensions() async throws {
         await MainActor.run {
             let versionService = MCPVersionService.shared
-            
+
             // Test all extension types
             for ext in MCPExtensionType.allCases {
                 let version = versionService.getLatestVersion(for: ext)
@@ -77,16 +76,16 @@ class MCPIntegrationTests: XCTestCase {
         await MainActor.run {
             let configService = MCPConfigManager.shared
             let versionService = MCPVersionService.shared
-            
+
             // Test that both services can work together
             XCTAssertTrue(true) // Both singletons exist
-            
+
             // Test reading config
             _ = configService.readMCPConfig()
-            
+
             // Test version checking
             _ = versionService.getLatestVersion(for: .automator)
-            
+
             // This tests that the services don't interfere with each other
             XCTAssertTrue(true)
         }
@@ -95,31 +94,31 @@ class MCPIntegrationTests: XCTestCase {
     func testMCPExtensionTypes() async throws {
         // Test MCPExtensionType enum
         let allExtensions = MCPExtensionType.allCases
-        
+
         XCTAssertGreaterThan(allExtensions.count, 0)
         XCTAssertTrue(allExtensions.contains(.peekaboo))
         XCTAssertTrue(allExtensions.contains(.terminator))
         XCTAssertTrue(allExtensions.contains(.claudeCode))
         XCTAssertTrue(allExtensions.contains(.conduit))
         XCTAssertTrue(allExtensions.contains(.automator))
-        
+
         // Test identifiable conformance
         for ext in allExtensions {
             XCTAssertEqual(ext.id, ext.rawValue)
         }
     }
-    
+
     func testMCPVersionServiceProperties() async throws {
         await MainActor.run {
             let versionService = MCPVersionService.shared
-            
+
             // Test published properties exist
             _ = versionService.latestVersions
             _ = versionService.installedVersions
             _ = versionService.isChecking
             _ = versionService.lastCheckDate
             _ = versionService.checkError
-            
+
             XCTAssertTrue(true) // Properties are accessible
         }
     }

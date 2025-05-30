@@ -1,4 +1,5 @@
 import Foundation
+import Demark
 
 /// Central service manager for CodeLooper that manages singleton instances.
 ///
@@ -7,17 +8,17 @@ import Foundation
 @MainActor
 final class ServiceManager: ObservableObject, Sendable {
     // MARK: Lifecycle
-    
+
     init() {}
-    
+
     // MARK: Internal
-    
+
     static let shared = ServiceManager()
-    
+
     /// Shared Demark service for HTML to Markdown conversion
     lazy var demarkService = Demark()
-    
+
     // MARK: Private
-    
+
     // Add other shared services here as needed
 }

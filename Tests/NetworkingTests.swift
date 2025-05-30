@@ -4,7 +4,6 @@ import Foundation
 import Network
 import XCTest
 
-
 class NetworkingTests: XCTestCase {
     // MARK: - Test Utilities
 
@@ -20,7 +19,7 @@ class NetworkingTests: XCTestCase {
         var mockError: Error?
         var shouldTimeout = false
 
-        func data(for request: URLRequest) async throws -> (Data, URLResponse) {
+        func data(for _: URLRequest) async throws -> (Data, URLResponse) {
             if let error = mockError {
                 throw error
             }
@@ -30,7 +29,8 @@ class NetworkingTests: XCTestCase {
             }
 
             guard let data = mockData,
-                  let response = mockResponse else {
+                  let response = mockResponse
+            else {
                 throw URLError(.badServerResponse)
             }
 
@@ -104,7 +104,7 @@ class NetworkingTests: XCTestCase {
     func testApiKeyServiceInitialization() async throws {
         // Create API key service
         let apiKeyService = await APIKeyService.shared
-        
+
         // Test that service can be created
         XCTAssertNotNil(apiKeyService)
     }
@@ -121,10 +121,10 @@ class NetworkingTests: XCTestCase {
 
         // Test version checking
         await service.checkAllVersions()
-        
+
         // Wait a bit for async operation
         try await Task.sleep(for: .milliseconds(100))
-        
+
         // Check if we have versions (may be empty in test environment)
         await MainActor.run {
             XCTAssertNotNil(service.latestVersions)
@@ -185,7 +185,7 @@ class NetworkingTests: XCTestCase {
         let mappedError = AIServiceError.modelNotFound(modelName)
 
         switch mappedError {
-        case .modelNotFound(let name):
+        case let .modelNotFound(name):
             XCTAssertEqual(name, modelName)
         default:
             XCTFail()
@@ -221,7 +221,7 @@ class NetworkingTests: XCTestCase {
         components.path = "/v1/test"
         components.queryItems = [
             URLQueryItem(name: "key", value: "value"),
-            URLQueryItem(name: "limit", value: "10")
+            URLQueryItem(name: "limit", value: "10"),
         ]
 
         let url = components.url
@@ -236,7 +236,7 @@ class NetworkingTests: XCTestCase {
         components.host = "api.example.com"
         components.queryItems = [
             URLQueryItem(name: "text", value: "Hello World!"),
-            URLQueryItem(name: "symbols", value: "@#$%")
+            URLQueryItem(name: "symbols", value: "@#$%"),
         ]
 
         let url = components.url
@@ -312,7 +312,7 @@ class NetworkingTests: XCTestCase {
 
     func testPortManagerDuplication() async throws {
         let portManager = await PortManager()
-        
+
         let port1 = await portManager.getOrAssignPort(for: "window1")
         let port2 = await portManager.getOrAssignPort(for: "window2")
 
@@ -324,10 +324,10 @@ class NetworkingTests: XCTestCase {
     func testNetworkReachability() async throws {
         // Test basic network path monitoring setup
         let monitor = NWPathMonitor()
-        
+
         // Monitor should be created without errors
         XCTAssertNotNil(monitor)
-        
+
         // Note: Actual network testing would require real network conditions
         monitor.cancel()
     }
@@ -335,31 +335,31 @@ class NetworkingTests: XCTestCase {
     func testNetworkPathStatus() async throws {
         let monitor = NWPathMonitor()
         let queue = DispatchQueue(label: "test.network.monitor")
-        
+
         // Use an actor to handle concurrent access
         actor PathUpdateTracker {
             private(set) var pathUpdated = false
-            
+
             func markUpdated() {
                 pathUpdated = true
             }
         }
-        
+
         let tracker = PathUpdateTracker()
-        
-        monitor.pathUpdateHandler = { path in
+
+        monitor.pathUpdateHandler = { _ in
             Task {
                 await tracker.markUpdated()
             }
         }
-        
+
         monitor.start(queue: queue)
-        
+
         // Give time for initial update
         try await Task.sleep(for: .milliseconds(100))
-        
+
         monitor.cancel()
-        
+
         // Should have received at least one path update
         let wasUpdated = await tracker.pathUpdated
         XCTAssertTrue(wasUpdated)
@@ -389,7 +389,7 @@ class NetworkingTests: XCTestCase {
 
     func testWebSocketReconnection() async throws {
         let manager = await WebSocketManager(port: 9880)
-        
+
         // Test reconnection capability
         await MainActor.run {
             XCTAssertNotNil(manager)
@@ -415,7 +415,7 @@ class NetworkingTests: XCTestCase {
         // Test concurrent network operations
         await withTaskGroup(of: Void.self) { group in
             // Simulate multiple network operations
-            for i in 0..<5 {
+            for i in 0 ..< 5 {
                 group.addTask {
                     let manager = await WebSocketManager(port: UInt16(9900 + i))
                     do {
@@ -439,7 +439,7 @@ class NetworkingTests: XCTestCase {
         let startTime = Date()
 
         // Test creating multiple WebSocket managers
-        for i in 0..<10 {
+        for i in 0 ..< 10 {
             let _ = await WebSocketManager(port: UInt16(10000 + i))
         }
 

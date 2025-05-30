@@ -4,7 +4,6 @@ import Diagnostics
 import Foundation
 import Testing
 
-
 @Test
 @MainActor
 func windowManagerInitialization() async throws {
@@ -21,7 +20,6 @@ func windowManagerInitialization() async throws {
     #expect(windowManager != nil)
     // Remove delegate check as it causes Sendable issues
 }
-
 
 @Test
 @MainActor
@@ -41,7 +39,6 @@ func windowControllerManagement() async throws {
     #expect(initialWelcomeController == nil)
 }
 
-
 @Test
 @MainActor
 func windowManagerDelegate() async throws {
@@ -50,12 +47,11 @@ func windowManagerDelegate() async throws {
 
     // Test that delegate methods can be called without errors
     await delegate.windowManagerDidFinishOnboarding()
-    
+
     // Use a simple boolean to avoid reflection issues
     let wasCalled = delegate.didFinishOnboardingCalled
     #expect(wasCalled == true)
 }
-
 
 @Test
 func windowPositionManagerSingleton() async throws {
@@ -65,7 +61,6 @@ func windowPositionManagerSingleton() async throws {
     // Both references should point to the same instance
     #expect(manager1 === manager2)
 }
-
 
 @Test
 func windowPositionOperations() async throws {
@@ -95,7 +90,6 @@ func windowPositionOperations() async throws {
     #expect(resizedFrame.size.height == 400)
 }
 
-
 @Test
 func positionSavingAndRestoration() async throws {
     let manager = await WindowPositionManager.shared
@@ -113,7 +107,6 @@ func positionSavingAndRestoration() async throws {
     #expect(testFrame.size.height == 500)
     #expect(identifier.contains("test-window"))
 }
-
 
 @Test
 func appleScriptSupportMethods() async throws {
@@ -135,7 +128,6 @@ func appleScriptSupportMethods() async throws {
     #expect(size.width == 800.0)
     #expect(size.height == 600.0)
 }
-
 
 @Test
 func userDefaultsSerialization() async throws {
@@ -170,7 +162,6 @@ func userDefaultsSerialization() async throws {
     }
 }
 
-
 @Test
 @MainActor
 func monitoredWindowInfo() async throws {
@@ -193,7 +184,6 @@ func monitoredWindowInfo() async throws {
     #expect(windowInfo.documentPath == documentPath)
     #expect(windowInfo.isPaused == false)
 }
-
 
 @Test
 func windowTitleParsing() async throws {
@@ -219,7 +209,6 @@ func windowTitleParsing() async throws {
     }
 }
 
-
 @Test
 func documentPathProcessing() async throws {
     // Test various document path formats
@@ -242,7 +231,6 @@ func documentPathProcessing() async throws {
         }
     }
 }
-
 
 @Test
 func displayTextExtraction() async throws {
@@ -292,7 +280,6 @@ func displayTextExtraction() async throws {
     }
 }
 
-
 @Test
 func asyncOperations() async throws {
     // Test concurrent window processing simulation
@@ -325,7 +312,6 @@ func asyncOperations() async throws {
     }
 }
 
-
 @Test
 func frameCalculations() async throws {
     // Test various frame calculation scenarios
@@ -357,7 +343,6 @@ func frameCalculations() async throws {
     #expect(newFrame.size.height == 500)
 }
 
-
 @Test
 func windowManagementThreadSafety() async throws {
     // Test concurrent access to window operations
@@ -383,7 +368,6 @@ func windowManagementThreadSafety() async throws {
         #expect(frameCount == 10)
     }
 }
-
 
 @Test
 func errorHandling() async throws {

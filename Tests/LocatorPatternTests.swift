@@ -1,8 +1,7 @@
-@testable import CodeLooper
 import AXorcist
+@testable import CodeLooper
 import Foundation
 import XCTest
-
 
 class LocatorPatternTests: XCTestCase {
     // MARK: - LocatorManager Tests
@@ -31,7 +30,7 @@ class LocatorPatternTests: XCTestCase {
         // Test getting locators for different types
         _ = await manager.getLocator(for: .mainInputField)
         _ = await manager.getLocator(for: .stopGeneratingButton)
-        
+
         // These might be nil, which is valid behavior
         XCTAssertTrue(true)
     }
@@ -50,11 +49,11 @@ class LocatorPatternTests: XCTestCase {
     func testLocatorTypeDefaultLocators() async throws {
         // Test that each locator type has a valid default locator
         let allTypes = LocatorType.allCases
-        
+
         for type in allTypes {
             let locator = type.defaultLocator
             XCTAssertNotNil(locator)
-            
+
             // Check that locator exists (defaultLocator should never be nil)
             if let loc = locator {
                 XCTAssertNotNil(loc.criteria)
@@ -65,7 +64,7 @@ class LocatorPatternTests: XCTestCase {
     func testLocatorTypeRawValues() async throws {
         // Test that each locator type has a raw value
         let allTypes = LocatorType.allCases
-        
+
         for type in allTypes {
             let rawValue = type.rawValue
             XCTAssertTrue(!rawValue.isEmpty)
