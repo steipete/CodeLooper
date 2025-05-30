@@ -48,7 +48,6 @@
 		26DEF8E209C4E833EE8C2048 /* OpenAI in Frameworks */ = {isa = PBXBuildFile; productRef = 0AA445C586C5EFF298BD5B0D /* OpenAI */; };
 		2755A41A7569026C8F18778A /* DocumentPathTracker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8934AB7C0DF5445978C46683 /* DocumentPathTracker.swift */; };
 		2850357F96675166FD40C6D3 /* XcodeBuildConfigView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 044E767DB568D90A9D156B32 /* XcodeBuildConfigView.swift */; };
-		2A76E63EB8088C2459744438 /* turndown.min.js in Resources */ = {isa = PBXBuildFile; fileRef = 4CC010FA4A5B36052ED63377 /* turndown.min.js */; };
 		2B231ADF6F02176D061DA120 /* OpenAIProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 17FA2368F54DA4948C833482 /* OpenAIProvider.swift */; };
 		2E153716DF27FD15981D5417 /* APIKeyManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 02281B1D972E2A403443EB0A /* APIKeyManager.swift */; };
 		2E764173424783AA0DD4AFD8 /* PortManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5AE786A2B4DC323E00FA6ECB /* PortManager.swift */; };
@@ -118,13 +117,11 @@
 		6DB88BE458BB478BDCAC3AD0 /* AXorcist in Frameworks */ = {isa = PBXBuildFile; productRef = 62A53CC7AEA8471CC32FB29F /* AXorcist */; };
 		6DF53B1DFA19E01D5CCB27BA /* MCPConfigurationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3AE37DC3F2F39D61A5446454 /* MCPConfigurationView.swift */; };
 		6F7FF41192392957DE96AB06 /* MonitoredInstance.swift in Sources */ = {isa = PBXBuildFile; fileRef = A551B6E360C41A0CCD667DE0 /* MonitoredInstance.swift */; };
-		6F9320AFAC45121310EEF222 /* TuistBundle+CodeLooperTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37EAD2216ECCACA01A496BD4 /* TuistBundle+CodeLooperTests.swift */; };
 		7121B29429143A55DEBF937A /* MacAutomatorConfigView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 177DC12E1687A212F7A6404D /* MacAutomatorConfigView.swift */; };
 		715C20835309BB1938AAE8A1 /* TuistAssets+CodeLooper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 86D2A836363CA4B076AC653B /* TuistAssets+CodeLooper.swift */; };
 		7167D4DEB91B9E3AC510F888 /* UserDefaultsStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8304762033C20EAE78A7A4D5 /* UserDefaultsStorage.swift */; };
 		717339DC84DC0492B9B3EDBB /* OperationTracker.swift in Sources */ = {isa = PBXBuildFile; fileRef = DDE89DBB68E6535CD8ACD23F /* OperationTracker.swift */; };
 		718000291222DEE704100F80 /* MCPIntegrationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 55B00B1E07D69EB75ECDA5BC /* MCPIntegrationTests.swift */; };
-		71E06465A350AE58286C8C33 /* DemarkServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84EDEB6CB63395FC0A0FE9FD /* DemarkServiceTests.swift */; };
 		737BCB282D36F76132755E13 /* AppDelegate+AppleScript.swift in Sources */ = {isa = PBXBuildFile; fileRef = C27DA87D5C163E34ED40FF37 /* AppDelegate+AppleScript.swift */; };
 		738A69F5921EC40B51F2E293 /* ToolbarTabButtonView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CBF80EDE90739047D07DFD6C /* ToolbarTabButtonView.swift */; };
 		739D8BE54670F5039910A792 /* SettingsContainerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84998560B2C11EA98CEA6602 /* SettingsContainerView.swift */; };
@@ -135,7 +132,6 @@
 		7A4AD4452ECA4934ECAA4866 /* CursorWindowInfo.swift in Sources */ = {isa = PBXBuildFile; fileRef = 264CCA2C41913E6AFB7881E9 /* CursorWindowInfo.swift */; };
 		7A9A8CF59FF98DAA368B39E9 /* AboutSettingsTab.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4BCC80D63C6ECE698941CF19 /* AboutSettingsTab.swift */; };
 		7B10AC04B1880D461BB980C0 /* SoundEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = BD5739D675F87965FEB8C03A /* SoundEngine.swift */; };
-		7B18DF2CA8DA92DD9E953E53 /* DemarkIntegrationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BE253CC9C6B4944EC33CAC22 /* DemarkIntegrationTests.swift */; };
 		7B69C358953A327727D855D2 /* CursorWindowManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3FD09182D0EEA303D40F5CFC /* CursorWindowManager.swift */; };
 		7CAB5E3AF8D41A5899367B90 /* StatusBarTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1750B8F7C88E9C60808FF64 /* StatusBarTests.swift */; };
 		7EB685ACF1C190B9DBD581D2 /* WelcomeStep+Sendable.swift in Sources */ = {isa = PBXBuildFile; fileRef = 824C15C24C4A321C3B3C1F99 /* WelcomeStep+Sendable.swift */; };
@@ -199,6 +195,7 @@
 		B4EF67DB32B4713E51AD4972 /* GeneralSettingsTab.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA6CB723D91D9348E2086AAD /* GeneralSettingsTab.swift */; };
 		B5F52A6677D9BC895B34A60B /* QueryManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0C40C39CC2F895E1A45E415B /* QueryManager.swift */; };
 		B64065FF2DB310363F17F357 /* AISettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2322F598135E442321A408B0 /* AISettingsView.swift */; };
+		B6CEF532118E14319BD63081 /* Demark in Frameworks */ = {isa = PBXBuildFile; productRef = 8EAC0DEA71BA55AC629B56ED /* Demark */; };
 		BB08C8F0BB00FABD02CD6EC5 /* NSImage+ResourceLoader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C431DD7518F03F20F1CD78F /* NSImage+ResourceLoader.swift */; };
 		BC0A1686EEAA49A0E2E1D5E4 /* ProcessMonitorService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0D6CAF9E9B702E02DFDBFEB2 /* ProcessMonitorService.swift */; };
 		BDA9C21C437EE2BB5BDE4630 /* AXorcist in Frameworks */ = {isa = PBXBuildFile; productRef = 09EEC73F5A7F9C22F99EC8E1 /* AXorcist */; };
@@ -244,9 +241,9 @@
 		E3AFE5ECE90642DFC8E72043 /* UploadCompletionFeedback.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3854A3BBFB93AAD09B5B660 /* UploadCompletionFeedback.swift */; };
 		E55E6A4B38A6564EAA4E109B /* Logger.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A63AB70345BBFD326F2CCF7 /* Logger.swift */; };
 		E563949793CB87FE37E47027 /* PassThroughTextField.swift in Sources */ = {isa = PBXBuildFile; fileRef = 31C27EAC374A48E9B6BCD9A8 /* PassThroughTextField.swift */; };
-		E69AFCA6A5E9C0A1B79A0CBE /* turndown.min.js in Resources */ = {isa = PBXBuildFile; fileRef = 4C7B492F764D7AA73AF542DC /* turndown.min.js */; };
 		E7C24802CF33E6433B8423BC /* LoggerFactory.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5DF9B09B5EB58B7357233E6 /* LoggerFactory.swift */; };
 		EAD2792BDE3E13E195ECC83F /* AutomationPermissionsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00CC4EDB54A9AA12ABC954A0 /* AutomationPermissionsView.swift */; };
+		EBB7C67D963F4C99D92FAD84 /* MarkdownContentPopover.swift in Sources */ = {isa = PBXBuildFile; fileRef = B93FE5DBFB4CA92A0ADD0FF9 /* MarkdownContentPopover.swift */; };
 		EC277F1F63AA034EC56FD19D /* UIComponentTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8C6BF4BD778B3039CC05CFA3 /* UIComponentTests.swift */; };
 		EFBEF208A6ADC558D112D2B4 /* CursorWindowsList.swift in Sources */ = {isa = PBXBuildFile; fileRef = AACDD4C1A3FA77D39ADCC793 /* CursorWindowsList.swift */; };
 		F17E0567B5A87A71789B6541 /* MainSettingsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = E70C08E6F5DBA33B403CF1D1 /* MainSettingsViewModel.swift */; };
@@ -378,7 +375,6 @@
 		33BAAEF1321CC714363BD42F /* DiagnosticsLogger.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiagnosticsLogger.swift; sourceTree = "<group>"; };
 		35B9080ABF667A15D29F5EF4 /* PermissionCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PermissionCard.swift; sourceTree = "<group>"; };
 		37382D210CA16F8C4A831728 /* DynamicLocatorDiscoverer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DynamicLocatorDiscoverer.swift; sourceTree = "<group>"; };
-		37EAD2216ECCACA01A496BD4 /* TuistBundle+CodeLooperTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "TuistBundle+CodeLooperTests.swift"; sourceTree = "<group>"; };
 		3AE37DC3F2F39D61A5446454 /* MCPConfigurationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MCPConfigurationView.swift; sourceTree = "<group>"; };
 		3D605DF85E9D2CBF959E4DA1 /* ClaudeCodeConfigView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClaudeCodeConfigView.swift; sourceTree = "<group>"; };
 		3FD09182D0EEA303D40F5CFC /* CursorWindowManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CursorWindowManager.swift; sourceTree = "<group>"; };
@@ -395,8 +391,6 @@
 		4A8E9914306D8A584ECB4DAC /* SidebarActivityAreaHeuristic.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SidebarActivityAreaHeuristic.swift; sourceTree = "<group>"; };
 		4BCC80D63C6ECE698941CF19 /* AboutSettingsTab.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AboutSettingsTab.swift; sourceTree = "<group>"; };
 		4C431DD7518F03F20F1CD78F /* NSImage+ResourceLoader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "NSImage+ResourceLoader.swift"; sourceTree = "<group>"; };
-		4C7B492F764D7AA73AF542DC /* turndown.min.js */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.javascript; path = turndown.min.js; sourceTree = "<group>"; };
-		4CC010FA4A5B36052ED63377 /* turndown.min.js */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.javascript; path = turndown.min.js; sourceTree = "<group>"; };
 		4CF0E6F14A1C5857A84FF6F5 /* CursorMonitorServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CursorMonitorServiceTests.swift; sourceTree = "<group>"; };
 		4D0E00D428925064E6EFD24B /* AIWindowAnalyzer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIWindowAnalyzer.swift; sourceTree = "<group>"; };
 		4D742DBB2C6E98D0F0FF241B /* CursorInputWatcherViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CursorInputWatcherViewModel.swift; sourceTree = "<group>"; };
@@ -428,6 +422,7 @@
 		63FB4DF1A870217177B9B982 /* AIAnalysisStatus.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIAnalysisStatus.swift; sourceTree = "<group>"; };
 		64121F794DD9A0E79182F1E0 /* InterventionStateChecker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InterventionStateChecker.swift; sourceTree = "<group>"; };
 		66D291C6C46A13EA5ABFFE32 /* AccessibilityPermissions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccessibilityPermissions.swift; sourceTree = "<group>"; };
+		675137F21F301C4E5204CEE9 /* Demark */ = {isa = PBXFileReference; lastKnownFileType = folder; name = Demark; path = ../Demark; sourceTree = "<group>"; };
 		684ADFED0C0657FCEEA078BA /* SettingsTab.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsTab.swift; sourceTree = "<group>"; };
 		6943FF4E98060C242A14D838 /* ScreenshotAnalyzer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreenshotAnalyzer.swift; sourceTree = "<group>"; };
 		6955584328FDBA7FA95B2D9A /* Task+Timeout.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Task+Timeout.swift"; sourceTree = "<group>"; };
@@ -461,7 +456,6 @@
 		839CD1B3A5FC8EC7D5B9541A /* Constants.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Constants.swift; sourceTree = "<group>"; };
 		8439B960E1C494EDF3C28C75 /* LocatorPatternTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocatorPatternTests.swift; sourceTree = "<group>"; };
 		84998560B2C11EA98CEA6602 /* SettingsContainerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsContainerView.swift; sourceTree = "<group>"; };
-		84EDEB6CB63395FC0A0FE9FD /* DemarkServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DemarkServiceTests.swift; sourceTree = "<group>"; };
 		85C9898BAEBC8EA9C233F1D1 /* ModernFeatureCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModernFeatureCard.swift; sourceTree = "<group>"; };
 		860B62CBC13EC70F5F7D59F3 /* ModernFooterView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModernFooterView.swift; sourceTree = "<group>"; };
 		86D2A836363CA4B076AC653B /* TuistAssets+CodeLooper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "TuistAssets+CodeLooper.swift"; sourceTree = "<group>"; };
@@ -503,13 +497,13 @@
 		B7E407A9668A0C58F7FFB66C /* SettingsPanesContainerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsPanesContainerView.swift; sourceTree = "<group>"; };
 		B7EBAB588F0605B4C5CA0304 /* ThreadSafeBox.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThreadSafeBox.swift; sourceTree = "<group>"; };
 		B855986CD1C95178888D1AF3 /* CursorSupervisionSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CursorSupervisionSettingsView.swift; sourceTree = "<group>"; };
+		B93FE5DBFB4CA92A0ADD0FF9 /* MarkdownContentPopover.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MarkdownContentPopover.swift; sourceTree = "<group>"; };
 		B96EB1FF68D466C7E9E3F1EE /* CompletionStepView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CompletionStepView.swift; sourceTree = "<group>"; };
 		BC20A8DCDF3278BF031054DF /* WindowAIDiagnosticsManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WindowAIDiagnosticsManager.swift; sourceTree = "<group>"; };
 		BCA0983521BFC38C9EFB5342 /* WelcomeViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WelcomeViewModel.swift; sourceTree = "<group>"; };
 		BD5739D675F87965FEB8C03A /* SoundEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SoundEngine.swift; sourceTree = "<group>"; };
 		BDBFF30FAA095767B2117C5D /* MonitoredInstanceInfo.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MonitoredInstanceInfo.swift; sourceTree = "<group>"; };
 		BDDDC4FCC3588E5E3FC80418 /* SoundManagerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SoundManagerTests.swift; sourceTree = "<group>"; };
-		BE253CC9C6B4944EC33CAC22 /* DemarkIntegrationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DemarkIntegrationTests.swift; sourceTree = "<group>"; };
 		BFB40FA7CB0F3776228402C7 /* JSHookDevConsoleDetector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JSHookDevConsoleDetector.swift; sourceTree = "<group>"; };
 		C0C85FA33C5B6BA52B664268 /* PermissionsOnboardingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PermissionsOnboardingTests.swift; sourceTree = "<group>"; };
 		C0EEEBFFB3903381A11252D2 /* AdvancedSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdvancedSettingsView.swift; sourceTree = "<group>"; };
@@ -588,6 +582,7 @@
 				26DEF8E209C4E833EE8C2048 /* OpenAI in Frameworks */,
 				BDFA492781204ACB586E5163 /* Ollama in Frameworks */,
 				AF117898DB9DE292A02E63F4 /* Lottie in Frameworks */,
+				B6CEF532118E14319BD63081 /* Demark in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -616,6 +611,7 @@
 			children = (
 				606FD31E5CDAD9A2D805242B /* AXorcist */,
 				7413E3D792A60AC390808102 /* AXpector */,
+				675137F21F301C4E5204CEE9 /* Demark */,
 				CDAC1075ADD1DD56A1C7CC99 /* DesignSystem */,
 			);
 			name = Packages;
@@ -683,7 +679,6 @@
 			isa = PBXGroup;
 			children = (
 				987465FE6147F57B5B370533 /* cursor-hook.js */,
-				4CC010FA4A5B36052ED63377 /* turndown.min.js */,
 			);
 			path = JavaScript;
 			sourceTree = "<group>";
@@ -710,7 +705,6 @@
 			children = (
 				86D2A836363CA4B076AC653B /* TuistAssets+CodeLooper.swift */,
 				041C2110ECFE15066C6C3E00 /* TuistBundle+CodeLooper.swift */,
-				37EAD2216ECCACA01A496BD4 /* TuistBundle+CodeLooperTests.swift */,
 			);
 			path = Sources;
 			sourceTree = "<group>";
@@ -839,6 +833,14 @@
 				FE316044F418D4832DFBBF8A /* Services */,
 			);
 			path = Domain;
+			sourceTree = "<group>";
+		};
+		39291E6D3EE739DC606D290A /* Markdown */ = {
+			isa = PBXGroup;
+			children = (
+				C4A779E5EA24C81A9F9C1FBD /* UI */,
+			);
+			path = Markdown;
 			sourceTree = "<group>";
 		};
 		3CDB825EFD72238B3AA606F2 /* Components */ = {
@@ -1061,6 +1063,7 @@
 				28551B37A63C9E106B367776 /* AIAnalysis */,
 				AD4ABAB54DDEBDC8C5552407 /* GitTracking */,
 				7BAAC7D4C4FDD6B44B9DF363 /* Intervention */,
+				39291E6D3EE739DC606D290A /* Markdown */,
 				D0934BCE12B7DEAC2D1971E8 /* MCPIntegration */,
 				B0B6CDED5B9F94FC68354ACF /* Monitoring */,
 				844BE48F0A721CECD7B28A02 /* Onboarding */,
@@ -1121,14 +1124,6 @@
 			path = Models;
 			sourceTree = "<group>";
 		};
-		9B28C2C7F2DE15BE28926A11 /* JavaScript */ = {
-			isa = PBXGroup;
-			children = (
-				4C7B492F764D7AA73AF542DC /* turndown.min.js */,
-			);
-			path = JavaScript;
-			sourceTree = "<group>";
-		};
 		A017C5AD46F39A574626753F /* Helpers */ = {
 			isa = PBXGroup;
 			children = (
@@ -1142,13 +1137,10 @@
 		A0677BFC5129B9D09943A6D5 /* Tests */ = {
 			isa = PBXGroup;
 			children = (
-				A91EDF9251327F7B838ECAF3 /* Resources */,
 				54B6EAF5AA96B78867B615E3 /* AccessibilityTests.swift */,
 				2D5B83132BF91F7EACD38CCB /* AIAnalysisServiceTests.swift */,
 				4CF0E6F14A1C5857A84FF6F5 /* CursorMonitorServiceTests.swift */,
 				08137EDAB08D3B71F1A53429 /* DebouncerTests.swift */,
-				BE253CC9C6B4944EC33CAC22 /* DemarkIntegrationTests.swift */,
-				84EDEB6CB63395FC0A0FE9FD /* DemarkServiceTests.swift */,
 				E9C56058467A580C6FAFC033 /* DiagnosticsTests.swift */,
 				951C2054E1E1C60B6AA2D58B /* GitTrackingTests.swift */,
 				C12E1B65B2CDA612D0A3D724 /* HeartbeatMonitoringTests.swift */,
@@ -1206,14 +1198,6 @@
 			path = App;
 			sourceTree = "<group>";
 		};
-		A91EDF9251327F7B838ECAF3 /* Resources */ = {
-			isa = PBXGroup;
-			children = (
-				9B28C2C7F2DE15BE28926A11 /* JavaScript */,
-			);
-			path = Resources;
-			sourceTree = "<group>";
-		};
 		AD4ABAB54DDEBDC8C5552407 /* GitTracking */ = {
 			isa = PBXGroup;
 			children = (
@@ -1260,6 +1244,14 @@
 				D3A5446DB90C079913704AF4 /* GitRepositoryService.swift */,
 			);
 			path = Domain;
+			sourceTree = "<group>";
+		};
+		C4A779E5EA24C81A9F9C1FBD /* UI */ = {
+			isa = PBXGroup;
+			children = (
+				B93FE5DBFB4CA92A0ADD0FF9 /* MarkdownContentPopover.swift */,
+			);
+			path = UI;
 			sourceTree = "<group>";
 		};
 		C4AF9E68731B63B94CC30DD2 /* Derived */ = {
@@ -1514,6 +1506,7 @@
 				0AA445C586C5EFF298BD5B0D /* OpenAI */,
 				0B727DC7A228F234F413942E /* Ollama */,
 				0296B9A9308E381618870C5E /* Lottie */,
+				8EAC0DEA71BA55AC629B56ED /* Demark */,
 			);
 			productName = CodeLooper;
 			productReference = 72CAF9D1E03CFD28069B089F /* CodeLooper.app */;
@@ -1558,6 +1551,7 @@
 				015BA77169BA6C0C4393D8E2 /* XCLocalSwiftPackageReference "/Users/steipete/Projects/CodeLooper/AXorcist" */,
 				2F333F5A9F706191367AE0CB /* XCLocalSwiftPackageReference "/Users/steipete/Projects/CodeLooper/AXpector" */,
 				4482A0F0D7A4B6F4AF763A2D /* XCLocalSwiftPackageReference "/Users/steipete/Projects/CodeLooper/DesignSystem" */,
+				5308BB8FDEA4569D69C23411 /* XCLocalSwiftPackageReference "/Users/steipete/Projects/Demark" */,
 			);
 			productRefGroup = 62DE123ABE72A0C7DA250733 /* Products */;
 			projectDirPath = "";
@@ -1582,7 +1576,6 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				E69AFCA6A5E9C0A1B79A0CBE /* turndown.min.js in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1593,7 +1586,6 @@
 				63F6749E0C61FEA861A02839 /* Assets.xcassets in Resources */,
 				13ED50F2F28C4EEF3532770A /* Main.storyboard in Resources */,
 				AE40CB2D386F76F851DF362B /* cursor-hook.js in Resources */,
-				2A76E63EB8088C2459744438 /* turndown.min.js in Resources */,
 				3EB93F9333F97BEB98D906BF /* MainMenu.nib in Resources */,
 				B1FECEDB162E6A3A48101432 /* chain_link_lottie.json in Resources */,
 			);
@@ -1708,6 +1700,7 @@
 				17FC19EB1AD8F887DAB55B43 /* MCPConfigurationService.swift in Sources */,
 				613F6AF533E82FD1B823F167 /* MCPVersionService.swift in Sources */,
 				6DF53B1DFA19E01D5CCB27BA /* MCPConfigurationView.swift in Sources */,
+				EBB7C67D963F4C99D92FAD84 /* MarkdownContentPopover.swift in Sources */,
 				C7150D5BC7B0B12C4349D194 /* CursorInstanceModels.swift in Sources */,
 				6F7FF41192392957DE96AB06 /* MonitoredInstance.swift in Sources */,
 				FA9410108CB27C68004C4FF6 /* MonitoredInstanceInfo.swift in Sources */,
@@ -1825,13 +1818,10 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				6F9320AFAC45121310EEF222 /* TuistBundle+CodeLooperTests.swift in Sources */,
 				F5C8D1C9417882F7CA1A1914 /* AIAnalysisServiceTests.swift in Sources */,
 				1AFA7973BA5AE0E4C8D478EF /* AccessibilityTests.swift in Sources */,
 				F8974EC02B8AE6D7A002EE99 /* CursorMonitorServiceTests.swift in Sources */,
 				6728F39F1EABFE845482651F /* DebouncerTests.swift in Sources */,
-				7B18DF2CA8DA92DD9E953E53 /* DemarkIntegrationTests.swift in Sources */,
-				71E06465A350AE58286C8C33 /* DemarkServiceTests.swift in Sources */,
 				FDC5214D742934AAC9BF5D53 /* DiagnosticsTests.swift in Sources */,
 				948F09030F67ADC634E0CABF /* GitTrackingTests.swift in Sources */,
 				4C9A03866547CE3F3D3B148D /* HeartbeatMonitoringTests.swift in Sources */,
@@ -2274,6 +2264,10 @@
 			isa = XCLocalSwiftPackageReference;
 			relativePath = /Users/steipete/Projects/CodeLooper/DesignSystem;
 		};
+		5308BB8FDEA4569D69C23411 /* XCLocalSwiftPackageReference "/Users/steipete/Projects/Demark" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = /Users/steipete/Projects/Demark;
+		};
 /* End XCLocalSwiftPackageReference section */
 
 /* Begin XCRemoteSwiftPackageReference section */
@@ -2431,6 +2425,10 @@
 		7E3ECC987050217D4CA1A8FF /* LaunchAtLogin */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = LaunchAtLogin;
+		};
+		8EAC0DEA71BA55AC629B56ED /* Demark */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = Demark;
 		};
 		9B1F7BAF768299D7040A748A /* DesignSystem */ = {
 			isa = XCSwiftPackageProductDependency;

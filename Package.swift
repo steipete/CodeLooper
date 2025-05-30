@@ -27,7 +27,7 @@ let package = Package(
         // Design System
         .package(path: "DesignSystem"),
         // Markdown conversion
-        .package(path: "../Demark"),
+        .package(path: "/Users/steipete/Projects/Demark"),
         // Auto-updater
         .package(url: "https://github.com/sparkle-project/Sparkle.git", .upToNextMajor(from: "2.7.0")),
         // MenuBarExtra enhancements

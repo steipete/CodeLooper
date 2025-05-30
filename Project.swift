@@ -31,6 +31,7 @@ let project = Project(
         .local(path: "AXorcist"),
         .local(path: "AXpector"),
         .local(path: "DesignSystem"),
+        .local(path: "/Users/steipete/Projects/Demark"),
     ],
     settings: .settings(
         base: [
@@ -116,6 +117,7 @@ let project = Project(
                 .package(product: "OpenAI"),
                 .package(product: "Ollama"),
                 .package(product: "Lottie"),
+                .package(product: "Demark"),
             ],
             settings: .settings(
                 base: [
