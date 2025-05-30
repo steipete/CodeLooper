@@ -4,12 +4,10 @@ import JavaScriptCore
 import XCTest
 
 
-@MainActor
-class MarkdownServiceIntegrationTest: XCTestCase {
-/// Integration test for HTMLToMarkdownService functionality
+/// Integration test for Demark functionality
 /// This test verifies that the JavaScript libraries can be loaded and work correctly
 @MainActor
-struct MarkdownServiceIntegrationTest {
+class DemarkIntegrationTests: XCTestCase {
     
     func testJavaScriptLibrariesExist() async throws {
         // Check that the required JavaScript files exist in the test bundle
@@ -18,13 +16,13 @@ struct MarkdownServiceIntegrationTest {
         let turndownPath = bundle.path(forResource: "turndown.min", ofType: "js")
         XCTAssertNotNil(turndownPath, "turndown.min.js should be available in bundle")
 
-        let linkedomPath = bundle.path(forResource: "linkedom.min", ofType: "js")
-        XCTAssertNotNil(linkedomPath, "linkedom.min.js should be available in bundle")
+        let slimdomPath = bundle.path(forResource: "slimdom.umd", ofType: "cjs")
+        XCTAssertNotNil(slimdomPath, "slimdom.umd.cjs should be available in bundle")
     }
 
     func testTurndownServiceLoading() async throws {
         guard let turndownPath = Bundle.main.path(forResource: "turndown.min", ofType: "js") else {
-            throw MarkdownTestError.resourceNotFound("turndown.min.js")
+            throw DemarkTestError.resourceNotFound("turndown.min.js")
         }
 
         let context = JSContext()!
@@ -47,7 +45,7 @@ struct MarkdownServiceIntegrationTest {
             XCTAssertNotNil(instance, "Should be able to create TurndownService instance")
 
         } catch {
-            throw MarkdownTestError.scriptLoadingFailed(error.localizedDescription)
+            throw DemarkTestError.scriptLoadingFailed(error.localizedDescription)
         }
     }
 
@@ -56,59 +54,49 @@ struct MarkdownServiceIntegrationTest {
         // In a real implementation, HTMLToMarkdownService handles the DOM complexity
 
         // For now, we'll just verify that the service class exists and can be initialized
-        let service = HTMLToMarkdownService.shared
+        let service = Demark()
 
-        // Wait for potential async initialization
-        try await Task.sleep(for: .seconds(1)) // 1 second
+        // The service should be immediately available and work
+        XCTAssertNotNil(service, "Demark should be instantiable")
 
-        let isAvailable = await service.isAvailable
-
-        // The service might not be available in test environment due to bundle resource paths
-        // but we can verify the class structure is correct
-        XCTAssertNotNil(service, "HTMLToMarkdownService should be instantiable")
-
-        // If the service is available, test a basic conversion
-        if isAvailable {
-            do {
-                let html = "<p>Test</p>"
-                let markdown = try await service.convertToMarkdown(html)
-                XCTAssertTrue(!markdown.isEmpty, "Conversion should produce non-empty result")
-                print("✅ Conversion test successful: \(markdown)")
-            } catch {
-                print("⚠️  Conversion failed (expected in test environment): \(error)")
-                // This is expected since test bundle might not have proper resource setup
-            }
-        } else {
-            print("ℹ️  Service not available in test environment (expected)")
+        // Test a basic conversion - service should initialize on first use
+        do {
+            let html = "<p>Test</p>"
+            let markdown = try await service.convertToMarkdown(html)
+            XCTAssertTrue(!markdown.isEmpty, "Conversion should produce non-empty result")
+            print("✅ Conversion test successful: \(markdown)")
+        } catch {
+            print("⚠️  Conversion failed (expected in test environment): \(error)")
+            // This is expected since test bundle might not have proper resource setup
         }
     }
 
     func testConversionOptionsStructure() async throws {
         // Test that the options structure is properly defined
-        let options = HTMLToMarkdownService.ConversionOptions(
-            headingStyle: HTMLMarkdownHeadingStyle.atx,
+        let options = DemarkOptions(
+            headingStyle: DemarkHeadingStyle.atx,
             bulletListMarker: "*",
-            codeBlockStyle: HTMLMarkdownCodeBlockStyle.fenced
+            codeBlockStyle: DemarkCodeBlockStyle.fenced
         )
 
-        XCTAssertEqual(options.headingStyle, HTMLMarkdownHeadingStyle.atx)
+        XCTAssertEqual(options.headingStyle, DemarkHeadingStyle.atx)
         XCTAssertEqual(options.bulletListMarker, "*")
-        XCTAssertEqual(options.codeBlockStyle, HTMLMarkdownCodeBlockStyle.fenced)
+        XCTAssertEqual(options.codeBlockStyle, DemarkCodeBlockStyle.fenced)
 
         // Test setext heading style
-        let setextOptions = HTMLToMarkdownService.ConversionOptions(
-            headingStyle: HTMLMarkdownHeadingStyle.setext,
+        let setextOptions = DemarkOptions(
+            headingStyle: DemarkHeadingStyle.setext,
             bulletListMarker: "-",
-            codeBlockStyle: HTMLMarkdownCodeBlockStyle.indented
+            codeBlockStyle: DemarkCodeBlockStyle.indented
         )
 
-        XCTAssertEqual(setextOptions.headingStyle, HTMLMarkdownHeadingStyle.setext)
+        XCTAssertEqual(setextOptions.headingStyle, DemarkHeadingStyle.setext)
         XCTAssertEqual(setextOptions.bulletListMarker, "-")
-        XCTAssertEqual(setextOptions.codeBlockStyle, HTMLMarkdownCodeBlockStyle.indented)
+        XCTAssertEqual(setextOptions.codeBlockStyle, DemarkCodeBlockStyle.indented)
     }
 
     func testErrorHandling() async throws {
-        let service = HTMLToMarkdownService.shared
+        let service = Demark()
 
         // Test with invalid HTML - should not crash
         do {
@@ -116,7 +104,7 @@ struct MarkdownServiceIntegrationTest {
             print("Handled malformed HTML: \(result)")
         } catch {
             // Expected to fail gracefully
-            XCTAssertTrue(error is HTMLToMarkdownService.MarkdownConversionError, "Should throw MarkdownConversionError for invalid input")
+            XCTAssertTrue(error is DemarkError, "Should throw DemarkError for invalid input")
         }
 
         // Test with empty string
@@ -131,14 +119,14 @@ struct MarkdownServiceIntegrationTest {
 
 // MARK: - Test Support
 
-enum MarkdownTestError: Error {
+enum DemarkTestError: Error {
     case resourceNotFound(String)
     case scriptLoadingFailed(String)
     case serviceNotReady
 }
 
 /// Mock service for testing when actual service is not available
-private class MockHTMLToMarkdownService {
+private class MockDemarkService {
     func convertToMarkdown(_ html: String) -> String {
         // Very basic mock conversion for testing
         html
@@ -149,5 +137,4 @@ private class MockHTMLToMarkdownService {
             .replacingOccurrences(of: "<strong>", with: "**")
             .replacingOccurrences(of: "</strong>", with: "**")
     }
-}
 }

@@ -3,29 +3,24 @@ import JavaScriptCore
 import XCTest
 
 @testable import CodeLooper
-
-
 @MainActor
-class HTMLToMarkdownServiceTests: XCTestCase {
+class DemarkServiceTests: XCTestCase {
     // MARK: - Initialization Tests
 
     func testServiceInitialization() async throws {
-        let service = HTMLToMarkdownService.shared
+        let service = Demark()
         
-        // Wait for initialization with a reasonable timeout
-        try await waitForService(service, maxAttempts: 50) // 5 seconds total
+        // Service should initialize on first access and work immediately
+        let html = "<h1>Test</h1>"
+        let markdown = try await service.convertToMarkdown(html)
         
-        // Service should now be available
-        let finalAvailability = await service.isAvailable
-        XCTAssertTrue(finalAvailability, "HTML to Markdown service should be available after initialization")
+        XCTAssertTrue(markdown.contains("Test"), "Service should work immediately after initialization")
     }
 
     // MARK: - Basic HTML Conversion Tests
 
     func testSimpleHTMLConversion() async throws {
-        let service = HTMLToMarkdownService.shared
-        try await waitForService(service)
-        try await skipIfServiceNotWorking(service)
+        let service = Demark()
 
         let html = "<h1>Hello World</h1>"
         let markdown = try await service.convertToMarkdown(html)
@@ -35,9 +30,7 @@ class HTMLToMarkdownServiceTests: XCTestCase {
     }
 
     func testParagraphConversion() async throws {
-        let service = HTMLToMarkdownService.shared
-        try await waitForService(service)
-        try await skipIfServiceNotWorking(service)
+        let service = Demark()
 
         let html = "<p>This is a simple paragraph.</p>"
         let markdown = try await service.convertToMarkdown(html)
@@ -46,9 +39,7 @@ class HTMLToMarkdownServiceTests: XCTestCase {
     }
 
     func testEmphasizedText() async throws {
-        let service = HTMLToMarkdownService.shared
-        try await waitForService(service)
-        try await skipIfServiceNotWorking(service)
+        let service = Demark()
 
         let html = "<p>This is <em>emphasized</em> text.</p>"
         let markdown = try await service.convertToMarkdown(html)
@@ -57,9 +48,7 @@ class HTMLToMarkdownServiceTests: XCTestCase {
     }
 
     func testStrongText() async throws {
-        let service = HTMLToMarkdownService.shared
-        try await waitForService(service)
-        try await skipIfServiceNotWorking(service)
+        let service = Demark()
 
         let html = "<p>This is <strong>bold</strong> text.</p>"
         let markdown = try await service.convertToMarkdown(html)
@@ -68,9 +57,7 @@ class HTMLToMarkdownServiceTests: XCTestCase {
     }
 
     func testLinkConversion() async throws {
-        let service = HTMLToMarkdownService.shared
-        try await waitForService(service)
-        try await skipIfServiceNotWorking(service)
+        let service = Demark()
 
         let html = "<p>Visit <a href=\"https://example.com\">our website</a> for more info.</p>"
         let markdown = try await service.convertToMarkdown(html)
@@ -79,9 +66,7 @@ class HTMLToMarkdownServiceTests: XCTestCase {
     }
 
     func testUnorderedList() async throws {
-        let service = HTMLToMarkdownService.shared
-        try await waitForService(service)
-        try await skipIfServiceNotWorking(service)
+        let service = Demark()
 
         let html = """
         <ul>
@@ -102,9 +87,7 @@ class HTMLToMarkdownServiceTests: XCTestCase {
     }
 
     func testCodeBlock() async throws {
-        let service = HTMLToMarkdownService.shared
-        try await waitForService(service)
-        try await skipIfServiceNotWorking(service)
+        let service = Demark()
 
         let html = "<pre><code>let x = 42;</code></pre>"
         let markdown = try await service.convertToMarkdown(html)
@@ -126,10 +109,7 @@ class HTMLToMarkdownServiceTests: XCTestCase {
     // MARK: - Complex HTML Tests
 
     func testComplexHTML() async throws {
-        let service = HTMLToMarkdownService.shared
-
-        try await waitForService(service)
-
+        let service = Demark()
         let html = """
         <article>
             <h1>Main Title</h1>
@@ -154,10 +134,7 @@ class HTMLToMarkdownServiceTests: XCTestCase {
     }
 
     func testScriptTagRemoval() async throws {
-        let service = HTMLToMarkdownService.shared
-
-        try await waitForService(service)
-
+        let service = Demark()
         let html = """
         <div>
             <p>Visible content</p>
@@ -175,10 +152,7 @@ class HTMLToMarkdownServiceTests: XCTestCase {
     }
 
     func testStyleTagRemoval() async throws {
-        let service = HTMLToMarkdownService.shared
-
-        try await waitForService(service)
-
+        let service = Demark()
         let html = """
         <div>
             <p>Visible content</p>
@@ -198,12 +172,9 @@ class HTMLToMarkdownServiceTests: XCTestCase {
     // MARK: - Custom Options Tests
 
     func testCustomHeadingStyle() async throws {
-        let service = HTMLToMarkdownService.shared
-
-        try await waitForService(service)
-
+        let service = Demark()
         let html = "<h1>Test Heading</h1>"
-        let options = HTMLToMarkdownService.ConversionOptions(
+        let options = DemarkOptions(
             headingStyle: .setext,
             bulletListMarker: "-",
             codeBlockStyle: .fenced
@@ -217,12 +188,9 @@ class HTMLToMarkdownServiceTests: XCTestCase {
     }
 
     func testCustomBulletMarker() async throws {
-        let service = HTMLToMarkdownService.shared
-
-        try await waitForService(service)
-
+        let service = Demark()
         let html = "<ul><li>Item 1</li><li>Item 2</li></ul>"
-        let options = HTMLToMarkdownService.ConversionOptions(
+        let options = DemarkOptions(
             headingStyle: .atx,
             bulletListMarker: "*",
             codeBlockStyle: .fenced
@@ -237,9 +205,7 @@ class HTMLToMarkdownServiceTests: XCTestCase {
     // MARK: - Edge Cases and Error Handling
 
     func testEmptyHTML() async throws {
-        let service = HTMLToMarkdownService.shared
-        try await waitForService(service)
-        try await skipIfServiceNotWorking(service)
+        let service = Demark()
 
         let html = ""
         let markdown = try await service.convertToMarkdown(html)
@@ -248,10 +214,7 @@ class HTMLToMarkdownServiceTests: XCTestCase {
     }
 
     func testMalformedHTML() async throws {
-        let service = HTMLToMarkdownService.shared
-
-        try await waitForService(service)
-
+        let service = Demark()
         let html = "<p>Unclosed paragraph <strong>bold text"
         let markdown = try await service.convertToMarkdown(html)
 
@@ -261,10 +224,7 @@ class HTMLToMarkdownServiceTests: XCTestCase {
     }
 
     func testSpecialCharacters() async throws {
-        let service = HTMLToMarkdownService.shared
-
-        try await waitForService(service)
-
+        let service = Demark()
         let html = "<p>Special chars: &amp; &lt; &gt; &quot; &#39;</p>"
         let markdown = try await service.convertToMarkdown(html)
 
@@ -275,10 +235,7 @@ class HTMLToMarkdownServiceTests: XCTestCase {
     }
 
     func testLargeHTML() async throws {
-        let service = HTMLToMarkdownService.shared
-
-        try await waitForService(service)
-
+        let service = Demark()
         // Generate a large HTML document
         var html = "<div>"
         for i in 1 ... 100 {
@@ -296,10 +253,7 @@ class HTMLToMarkdownServiceTests: XCTestCase {
     // MARK: - Performance Tests
 
     func testConcurrentConversions() async throws {
-        let service = HTMLToMarkdownService.shared
-
-        try await waitForService(service)
-
+        let service = Demark()
         let html = "<h1>Test</h1><p>This is a <strong>test</strong> paragraph.</p>"
 
         // Perform multiple concurrent conversions
@@ -331,10 +285,7 @@ class HTMLToMarkdownServiceTests: XCTestCase {
     // MARK: - Real-world HTML Tests
 
     func testRealisticSidebarContent() async throws {
-        let service = HTMLToMarkdownService.shared
-
-        try await waitForService(service)
-
+        let service = Demark()
         // Simulate realistic Cursor sidebar content
         let html = """
         <div class="sidebar-content">
@@ -375,8 +326,7 @@ class HTMLToMarkdownServiceTests: XCTestCase {
     // MARK: - Debug and Helper Tests
     
     func testServiceDebugOutput() async throws {
-        let service = HTMLToMarkdownService.shared
-        try await waitForService(service)
+        let service = Demark()
         
         let simpleHTML = "<p>Hello World</p>"
         let result = try await service.convertToMarkdown(simpleHTML)
@@ -390,12 +340,37 @@ class HTMLToMarkdownServiceTests: XCTestCase {
         // This test just prints debug info and always passes
         XCTAssertTrue(true, "Debug test completed")
     }
+    
+    func testEnhancedErrorHandling() async throws {
+        let service = Demark()
+        
+        // Test that the service can be created without throwing
+        XCTAssertNotNil(service, "Service should be created successfully")
+        
+        // Test with valid HTML
+        let validHTML = "<h1>Test Heading</h1><p>Test paragraph with <strong>bold</strong> text.</p>"
+        
+        do {
+            let result = try await service.convertToMarkdown(validHTML)
+            print("Enhanced error handling test - successful conversion: \(result)")
+            XCTAssertTrue(result.contains("Test Heading"), "Should contain heading text")
+            XCTAssertTrue(result.contains("Test paragraph"), "Should contain paragraph text")
+        } catch {
+            print("Enhanced error handling test failed with error: \(error)")
+            // Print detailed error information for debugging
+            if let demarkError = error as? DemarkError {
+                print("DemarkError type: \(demarkError)")
+                print("Error description: \(demarkError.errorDescription ?? "No description")")
+                print("Recovery suggestion: \(demarkError.recoverySuggestion ?? "No suggestion")")
+            }
+            throw error
+        }
+    }
 
     // MARK: - Comprehensive Additional Tests
 
     func testEmptyAndWhitespaceHTML() async throws {
-        let service = HTMLToMarkdownService.shared
-        try await waitForService(service)
+        let service = Demark()
 
         // Test empty string
         let emptyMarkdown = try await service.convertToMarkdown("")
@@ -413,8 +388,7 @@ class HTMLToMarkdownServiceTests: XCTestCase {
     }
 
     func testSpecialCharactersAndEncoding() async throws {
-        let service = HTMLToMarkdownService.shared
-        try await waitForService(service)
+        let service = Demark()
 
         let htmlWithSpecialChars = """
         <h1>Special Characters Test</h1>
@@ -435,8 +409,7 @@ class HTMLToMarkdownServiceTests: XCTestCase {
     }
 
     func testNestedComplexStructures() async throws {
-        let service = HTMLToMarkdownService.shared
-        try await waitForService(service)
+        let service = Demark()
 
         let complexHTML = """
         <article>
@@ -509,8 +482,7 @@ class HTMLToMarkdownServiceTests: XCTestCase {
     }
 
     func testMalformedHTMLAdvanced() async throws {
-        let service = HTMLToMarkdownService.shared
-        try await waitForService(service)
+        let service = Demark()
 
         // Test unclosed tags
         let malformedHTML1 = "<p>This paragraph is not closed<div>Neither is this div<strong>Bold text"
@@ -532,8 +504,7 @@ class HTMLToMarkdownServiceTests: XCTestCase {
     }
 
     func testLargeDocumentPerformance() async throws {
-        let service = HTMLToMarkdownService.shared
-        try await waitForService(service)
+        let service = Demark()
 
         // Generate a large HTML document
         var largeHTML = "<html><body><h1>Large Document Test</h1>"
@@ -572,8 +543,7 @@ class HTMLToMarkdownServiceTests: XCTestCase {
     }
 
     func testConcurrentConversionsAdvanced() async throws {
-        let service = HTMLToMarkdownService.shared
-        try await waitForService(service)
+        let service = Demark()
 
         let htmlSamples = [
             "<h1>Document 1</h1><p>Content for <strong>first</strong> document.</p>",
@@ -616,8 +586,7 @@ class HTMLToMarkdownServiceTests: XCTestCase {
     }
 
     func testErrorHandlingAndEdgeCases() async throws {
-        let service = HTMLToMarkdownService.shared
-        try await waitForService(service)
+        let service = Demark()
 
         // Test extremely long single line
         let longString = String(repeating: "a", count: 50000)
@@ -658,8 +627,7 @@ class HTMLToMarkdownServiceTests: XCTestCase {
     }
 
     func testCustomConversionOptions() async throws {
-        let service = HTMLToMarkdownService.shared
-        try await waitForService(service)
+        let service = Demark()
 
         let testHTML = """
         <h1>Main Title</h1>
@@ -678,7 +646,7 @@ class HTMLToMarkdownServiceTests: XCTestCase {
         XCTAssertTrue(defaultResult.contains("## Subtitle"))
 
         // Test with custom options (atx headings, different bullet marker)
-        let customOptions = HTMLToMarkdownService.ConversionOptions(
+        let customOptions = DemarkOptions(
             headingStyle: .atx,
             bulletListMarker: "*",
             codeBlockStyle: .fenced
@@ -690,33 +658,28 @@ class HTMLToMarkdownServiceTests: XCTestCase {
         XCTAssertTrue(customResult.contains("```"))
     }
 
-    func testServiceAvailabilityAndReinitialization() async throws {
-        let service = HTMLToMarkdownService.shared
-        
-        // Service should be available after initialization
-        try await waitForService(service)
-        let initialAvailability = await service.isAvailable
-        XCTAssertTrue(initialAvailability)
+    func testServiceReliability() async throws {
+        let service = Demark()
 
-        // Service should remain available for multiple operations
+        // Service should remain reliable for multiple operations
         let html1 = "<p>First conversion</p>"
         let result1 = try await service.convertToMarkdown(html1)
         XCTAssertTrue(result1.contains("First conversion"))
-        
-        let midAvailability = await service.isAvailable
-        XCTAssertTrue(midAvailability)
 
         let html2 = "<p>Second conversion</p>"
         let result2 = try await service.convertToMarkdown(html2)
         XCTAssertTrue(result2.contains("Second conversion"))
         
-        let finalAvailability = await service.isAvailable
-        XCTAssertTrue(finalAvailability)
+        // Should work consistently across multiple calls
+        for i in 1...5 {
+            let html = "<p>Test \(i)</p>"
+            let result = try await service.convertToMarkdown(html)
+            XCTAssertTrue(result.contains("Test \(i)"))
+        }
     }
 
     func testMarkdownOutputQuality() async throws {
-        let service = HTMLToMarkdownService.shared
-        try await waitForService(service)
+        let service = Demark()
 
         let documentationHTML = """
         <article>
@@ -807,50 +770,4 @@ class HTMLToMarkdownServiceTests: XCTestCase {
 
     // MARK: - Helper Functions
 
-    /// Wait for the HTMLToMarkdownService to be ready
-    private func waitForService(_ service: HTMLToMarkdownService, maxAttempts: Int = 20) async throws {
-    var attempts = 0
-    var isReady = await service.isAvailable
-    while !isReady, attempts < maxAttempts {
-        try await Task.sleep(for: .milliseconds(100)) // 100ms
-        attempts += 1
-        isReady = await service.isAvailable
-    }
-
-        if !isReady {
-            throw TestError.serviceNotReady
-        }
-    }
-    
-    /// Check if the HTMLToMarkdownService is actually working correctly
-    private func isServiceWorking(_ service: HTMLToMarkdownService) async throws -> Bool {
-        do {
-            let testHTML = "<p>test</p>"
-            let result = try await service.convertToMarkdown(testHTML)
-            
-            // If the service returns "undefined" or empty, it's not working
-            if result.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ||
-               result.contains("undefined") ||
-               result == "null" {
-                return false
-            }
-            
-            // If it contains the test content, it's working
-            return result.contains("test")
-        } catch {
-            return false
-        }
-    }
-    
-    /// Skip test if service is not working properly
-    private func skipIfServiceNotWorking(_ service: HTMLToMarkdownService) async throws {
-        let isWorking = try await isServiceWorking(service)
-        if !isWorking {
-            throw XCTSkip("HTMLToMarkdownService is not functioning correctly (may return 'undefined' or empty content)")
-        }
-    }
-
-    enum TestError: Error {
-        case serviceNotReady
-    }
 }

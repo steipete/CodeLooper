@@ -18,7 +18,7 @@ struct MarkdownContentPopover: View {
     @ObservedObject var viewModel: CursorInputWatcherViewModel
 
     @StateObject private var contentState = MarkdownContentState()
-    private let markdownService = HTMLToMarkdownService.shared
+    private let markdownService = ServiceManager.shared.demarkService
     private let logger = Logger(category: .ui)
 
     var body: some View {
