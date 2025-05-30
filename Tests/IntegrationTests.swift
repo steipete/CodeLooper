@@ -226,29 +226,36 @@ class IntegrationTests: XCTestCase {
     func testSettingsPersistenceIntegration() async throws {
         try await withTemporaryDefaults {
             // Set some test settings
-            Defaults[.isGlobalMonitoringEnabled] = true
-            Defaults[.maxInterventionsBeforePause] = 10
+            await MainActor.run {
+                Defaults[.isGlobalMonitoringEnabled] = true
+                Defaults[.maxInterventionsBeforePause] = 10
+            }
 
             // Create first coordinator instance
             let coordinator1 = await AppServiceCoordinator()
             let monitor1 = await CursorMonitor.shared
 
             // Verify settings are loaded
-            XCTAssertEqual(Defaults[.isGlobalMonitoringEnabled], true)
-            XCTAssertEqual(Defaults[.maxInterventionsBeforePause], 10)
+            await MainActor.run {
+                XCTAssertEqual(Defaults[.isGlobalMonitoringEnabled], true)
+                XCTAssertEqual(Defaults[.maxInterventionsBeforePause], 10)
+            }
 
             // Create second coordinator instance (simulating restart)
             let coordinator2 = await AppServiceCoordinator()
             let monitor2 = await CursorMonitor.shared
 
             // Verify settings persistence
-            XCTAssertEqual(Defaults[.isGlobalMonitoringEnabled], true)
-            XCTAssertEqual(Defaults[.maxInterventionsBeforePause], 10)
+            await MainActor.run {
+                XCTAssertEqual(Defaults[.isGlobalMonitoringEnabled], true)
+                XCTAssertEqual(Defaults[.maxInterventionsBeforePause], 10)
+            }
 
             // Test settings changes
-            Defaults[.isGlobalMonitoringEnabled] = false
-
-            XCTAssertEqual(Defaults[.isGlobalMonitoringEnabled], false)
+            await MainActor.run {
+                Defaults[.isGlobalMonitoringEnabled] = false
+                XCTAssertEqual(Defaults[.isGlobalMonitoringEnabled], false)
+            }
         }
     }
 
