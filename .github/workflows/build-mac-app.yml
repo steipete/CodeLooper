@@ -254,11 +254,15 @@ jobs:
             # Add to keychain search list
             security list-keychains -d user -s "$TEMP_KEYCHAIN" $(security list-keychains -d user | sed s/\"//g)
             
-            # Import certificate
-            security import "$MACOS_SIGNING_P12_FILE_PATH" -k "$TEMP_KEYCHAIN" -P "$MACOS_SIGNING_CERTIFICATE_PASSWORD" -T /usr/bin/codesign
+            # Import certificate with access control
+            security import "$MACOS_SIGNING_P12_FILE_PATH" -k "$TEMP_KEYCHAIN" -P "$MACOS_SIGNING_CERTIFICATE_PASSWORD" -T /usr/bin/codesign -T /usr/bin/security
             
-            # Allow codesign to access the keychain
-            security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$TEMP_KEYCHAIN_PASSWORD" "$TEMP_KEYCHAIN"
+            # Allow codesign to access the keychain without prompting
+            security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$TEMP_KEYCHAIN_PASSWORD" "$TEMP_KEYCHAIN" >/dev/null 2>&1
+            
+            # Verify the certificate was imported correctly
+            echo "Verifying certificate import:"
+            security find-identity -v "$TEMP_KEYCHAIN" | head -10
             
             # Find the signing identity
             echo "Listing all certificates in keychain:"
