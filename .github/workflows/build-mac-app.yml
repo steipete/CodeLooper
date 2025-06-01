@@ -254,13 +254,24 @@ jobs:
             # Add to keychain search list
             security list-keychains -d user -s "$TEMP_KEYCHAIN" $(security list-keychains -d user | sed s/\"//g)
             
+            # Debug: Check P12 file
+            echo "P12 file size: $(ls -la "$MACOS_SIGNING_P12_FILE_PATH" | awk '{print $5}') bytes"
+            echo "P12 file info:"
+            file "$MACOS_SIGNING_P12_FILE_PATH"
+            
             # Import certificate - ensure we import both cert and private key
-            security import "$MACOS_SIGNING_P12_FILE_PATH" \
+            echo "Importing certificate..."
+            if security import "$MACOS_SIGNING_P12_FILE_PATH" \
               -k "$TEMP_KEYCHAIN" \
               -P "$MACOS_SIGNING_CERTIFICATE_PASSWORD" \
               -T /usr/bin/codesign \
               -T /usr/bin/security \
-              -A
+              -A; then
+              echo "Certificate import succeeded"
+            else
+              echo "::error::Certificate import failed with exit code $?"
+              exit 1
+            fi
             
             # Set keychain partition list to allow codesign access
             security set-key-partition-list -S apple-tool:,apple: -s -k "$TEMP_KEYCHAIN_PASSWORD" "$TEMP_KEYCHAIN"
