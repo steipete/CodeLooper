@@ -303,18 +303,23 @@ jobs:
             fi
             
             if [ -z "$SIGNING_IDENTITY" ]; then
-              echo "::error::Could not find Developer ID Application certificate in keychain"
+              echo "::warning::Could not find Developer ID Application certificate in keychain"
               echo "Available certificates:"
               security find-identity -v -p codesigning "$TEMP_KEYCHAIN"
-              exit 1
+              echo "::warning::Continuing without code signing"
+              SKIP_CODESIGN=true
             fi
             
-            echo "Found signing identity: $SIGNING_IDENTITY"
-            echo "Signing with hardened runtime..."
-            codesign --force --deep --options runtime \
-              --sign "$SIGNING_IDENTITY" \
-              --keychain "$TEMP_KEYCHAIN" \
-              binary/CodeLooper.app
+            if [ "$SKIP_CODESIGN" != "true" ]; then
+              echo "Found signing identity: $SIGNING_IDENTITY"
+              echo "Signing with hardened runtime..."
+              codesign --force --deep --options runtime \
+                --sign "$SIGNING_IDENTITY" \
+                --keychain "$TEMP_KEYCHAIN" \
+                binary/CodeLooper.app
+            else
+              echo "::warning::Skipping code signing due to missing identity"
+            fi
               
             # Clean up keychain
             security delete-keychain "$TEMP_KEYCHAIN"
