@@ -6,7 +6,7 @@
 
 **A macOS menubar app that keeps your agents working in Cursor** 🔄
 
-CodeLooper is a native macOS application that sits in your menubar, checking the the status of each Cursor window.
+CodeLooper is a native macOS application that sits in your menubar, monitoring the status of each Cursor window.
 When Cursor breaks out of its productive loop – getting stuck generating code, dropping connections, or hitting errors – CodeLooper loops back in to restore the flow using macOS accessibility APIs:
 
 It resolves these situations:
