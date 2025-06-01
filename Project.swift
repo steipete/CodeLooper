@@ -1,6 +1,8 @@
 import ProjectDescription
 import ProjectDescriptionHelpers
 
+// Test CI build trigger
+
 let project = Project(
     name: "CodeLooper",
     organizationName: "Anantus Machina",
