@@ -162,7 +162,9 @@ jobs:
           echo "Preparing App Store Connect API Key (.p8) file..."
           mkdir -p .private_keys
           P8_FILE_PATH="${{ github.workspace }}/.private_keys/AuthKey_ci_rcodesign.p8"
-          echo "$P8_KEY_CONTENT" > "$P8_FILE_PATH"
+          cat <<EOF > "$P8_FILE_PATH"
+$P8_KEY_CONTENT
+EOF
           if [ $? -ne 0 ] || [ ! -s "$P8_FILE_PATH" ]; then
             echo "::error::Failed to write APP_STORE_CONNECT_API_KEY_P8 secret to $P8_FILE_PATH"
             echo "p8_file_path=" >> $GITHUB_OUTPUT
@@ -329,8 +331,8 @@ jobs:
             echo "::warning::No P12 certificate file available, skipping code signing"
           fi
           
-          # Test notarization if credentials are available
-          if [ -n "$APP_STORE_CONNECT_KEY_ID" ]; then
+          # Test notarization if credentials are available and app was signed
+          if [ -n "$APP_STORE_CONNECT_KEY_ID" ] && [ "$SKIP_CODESIGN" != "true" ]; then
             echo "Testing notarization..."
             
             # Download rcodesign
@@ -353,6 +355,9 @@ jobs:
               binary/CodeLooper.app
               
             echo "notarization_status=success" >> $GITHUB_OUTPUT
+          elif [ "$SKIP_CODESIGN" = "true" ]; then
+            echo "::warning::Skipping notarization because app was not signed"
+            echo "notarization_status=skipped_unsigned" >> $GITHUB_OUTPUT
           else
             echo "notarization_status=skipped_no_creds" >> $GITHUB_OUTPUT
           fi
