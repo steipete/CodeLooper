@@ -79,6 +79,15 @@ public enum Constants: UIConstantsProvider {
     public static var bundleIdentifier: String {
         Bundle.main.bundleIdentifier ?? "me.steipete.codelooper"
     }
+    
+    // MARK: - Test Environment
+    
+    /// Check if running in test mode to disable UI interactions and permissions
+    public static var isTestEnvironment: Bool {
+        ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] != nil ||
+        ProcessInfo.processInfo.arguments.contains("--test-mode") ||
+        NSClassFromString("XCTest") != nil
+    }
 
     // UIConstantsProvider implementation
     public static var navBarHeight: CGFloat { 48 }

@@ -76,9 +76,11 @@ struct WelcomeView: View {
     }
 }
 
-#Preview {
-    WelcomeView(viewModel: WelcomeViewModel(
-        loginItemManager: LoginItemManager.shared,
-        windowManager: nil // Preview doesn't need actual WindowManager
-    ))
-}
+#if hasFeature(PreviewsMacros)
+    #Preview {
+        WelcomeView(viewModel: WelcomeViewModel(
+            loginItemManager: LoginItemManager.shared,
+            windowManager: nil // Preview doesn't need actual WindowManager
+        ))
+    }
+#endif

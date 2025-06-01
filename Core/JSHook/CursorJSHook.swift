@@ -353,6 +353,13 @@ public final class CursorJSHook {
 
     private func showManualInjectionAlert(port: UInt16, targetWindow: String?) async {
         let logger = Logger(category: .jshook)
+
+        // Skip showing alerts in test environment
+        if CodeLooper.Constants.isTestEnvironment {
+            logger.info("Skipping manual injection alert in test mode")
+            return
+        }
+
         logger.info("📢 Showing manual injection alert")
 
         let alert = NSAlert()

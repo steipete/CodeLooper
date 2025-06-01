@@ -90,7 +90,8 @@ struct GeneralSettingsView: View {
                 DSToggle(
                     "Receive early access versions",
                     isOn: $receivePreReleaseUpdates,
-                    description: "Auto-update to the latest early access version. These versions include new features but may be less stable."
+                    description: "Auto-update to the latest early access version. " +
+                        "These versions include new features but may be less stable."
                 )
             }
 

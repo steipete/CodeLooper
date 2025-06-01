@@ -25,6 +25,12 @@ public final class UserNotificationManager: ObservableObject {
 
     /// Request notification permissions
     public func requestNotificationPermissions() {
+        // Skip permission requests in test environment
+        if Constants.isTestEnvironment {
+            logger.info("Skipping notification permissions request in test mode")
+            return
+        }
+        
         Task {
             do {
                 let granted = try await UNUserNotificationCenter.current().requestAuthorization(
@@ -139,6 +145,12 @@ public final class UserNotificationManager: ObservableObject {
 
     /// Open notification settings
     public func openNotificationSettings() {
+        // Skip opening settings in test environment
+        if Constants.isTestEnvironment {
+            logger.info("Skipping notification settings open in test mode")
+            return
+        }
+        
         guard let settingsURL = URL(string: "x-apple.systempreferences:com.apple.preference.notifications") else {
             logger.error("Failed to create notification settings URL")
             return
@@ -153,6 +165,12 @@ public final class UserNotificationManager: ObservableObject {
 
     /// Show alert when notifications are blocked and open System Settings
     private func showNotificationBlockedAlert() {
+        // Skip showing alerts in test environment
+        if Constants.isTestEnvironment {
+            logger.info("Skipping notification blocked alert in test mode")
+            return
+        }
+        
         let alert = NSAlert()
         alert.messageText = "Notifications Blocked"
         alert.informativeText = "Notifications are not allowed for CodeLooper. You can enable them in System Settings."

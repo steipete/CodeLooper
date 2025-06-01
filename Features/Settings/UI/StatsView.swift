@@ -41,6 +41,8 @@ class StatsViewController: NSViewController {
 }
 
 /// A preview provider for StatsView
-#Preview {
-    StatsView()
-}
+#if hasFeature(PreviewsMacros)
+    #Preview {
+        StatsView()
+    }
+#endif

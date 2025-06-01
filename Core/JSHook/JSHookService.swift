@@ -288,6 +288,12 @@ final class JSHookService: Loggable {
     /// Show alert for automation permission issues
     private func showAutomationPermissionAlert() {
         Task { @MainActor in
+            // Skip showing alerts in test environment
+            if CodeLooper.Constants.isTestEnvironment {
+                logger.info("Skipping automation permission alert in test mode")
+                return
+            }
+
             let alert = NSAlert()
             alert.messageText = "Automation Permission Required"
             alert.informativeText = """

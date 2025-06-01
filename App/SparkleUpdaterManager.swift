@@ -1,7 +1,7 @@
 import Combine
 import Diagnostics
-import Sparkle
 import os
+import Sparkle
 
 /// Manages the Sparkle auto-update framework integration.
 ///
@@ -25,6 +25,13 @@ public class SparkleUpdaterManager: NSObject, SPUUpdaterDelegate, SPUStandardUse
 
     override init() {
         super.init()
+        
+        // Skip Sparkle initialization in test environment to avoid dialogs
+        if Constants.isTestEnvironment {
+            self.logger.info("SparkleUpdaterManager initialized in test mode - Sparkle disabled")
+            return
+        }
+        
         // Accessing the lazy var here will trigger its initialization.
         _ = self.updaterController
         self.logger.info("SparkleUpdaterManager initialized. Updater controller lazy initialization triggered.")

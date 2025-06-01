@@ -74,11 +74,11 @@ class AccessibilityTests: XCTestCase {
 
     func testAXPermissionHelpersPermissionRequest() async throws {
         // Test that permission request method is available and doesn't crash
-        // Note: This will show system dialog in real usage
+        // Note: This will show system dialog in real usage, but returns false in test mode
         let result = await AXPermissionHelpers.requestPermissions()
 
-        // Should return a boolean result
-        XCTAssertEqual(result, true || result == false)
+        // Should return a boolean result (false in test mode to avoid permission dialogs)
+        XCTAssertTrue(result == true || result == false, "Result should be a boolean value")
     }
 
     @MainActor

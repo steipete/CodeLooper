@@ -29,9 +29,11 @@ extension AXpectorViewModel {
     }
 
     // Path calculation is now done during mapping. This can be kept for ad-hoc recalculation if needed.
-    func calculateFullPath(for nodeID: AXPropertyNode.ID?, in tree: [AXPropertyNode],
-                           currentPathParts: [String] = []) -> String
-    {
+    func calculateFullPath(
+        for nodeID: AXPropertyNode.ID?,
+        in tree: [AXPropertyNode],
+        currentPathParts: [String] = []
+    ) -> String {
         guard let targetID = nodeID else { return "Error: No ID" }
 
         for node in tree {
@@ -255,9 +257,12 @@ extension AXpectorViewModel {
     // but might be kept if it's used for an initial full tree fetch.
     // For expanding nodes, recursivelyFetchChildren is more direct.
     @MainActor
-    func mapJsonAXElementToNode(_ jsonElement: AXElement, pid: pid_t, currentDepth: Int,
-                                parentPath: String) -> AXPropertyNode
-    {
+    func mapJsonAXElementToNode(
+        _ jsonElement: AXElement,
+        pid: pid_t,
+        currentDepth: Int,
+        parentPath: String
+    ) -> AXPropertyNode {
         let role = jsonElement.attributes?[AXAttributeNames.kAXRoleAttribute]?.value as? String
         let title = jsonElement.attributes?[AXAttributeNames.kAXTitleAttribute]?.value as? String
         let descriptionText = jsonElement.attributes?[AXAttributeNames.kAXDescriptionAttribute]?.value as? String
@@ -311,9 +316,12 @@ extension AXpectorViewModel {
     }
 
     @MainActor
-    func mapAXElementToNode(_ axElementFromCollectAll: Element, pid: pid_t, currentDepth: Int,
-                            parentPath: String) -> AXPropertyNode
-    {
+    func mapAXElementToNode(
+        _ axElementFromCollectAll: Element,
+        pid: pid_t,
+        currentDepth: Int,
+        parentPath: String
+    ) -> AXPropertyNode {
         // This mapping is for when Element comes from a broader collectAll operation,
         // which already has its children populated up to a certain depth.
 
@@ -345,7 +353,9 @@ extension AXpectorViewModel {
             descriptionText: axElementFromCollectAll.attributes?[AXAttributeNames.kAXDescriptionAttribute]?
                 .value as? String ?? "",
             value: axElementFromCollectAll.attributes?[AXAttributeNames.kAXValueAttribute]?.value as? String ?? "",
-            fullPath: newPath, children: mappedChildren, attributes: axElementFromCollectAll.attributes ?? [:],
+            fullPath: newPath,
+            children: mappedChildren,
+            attributes: axElementFromCollectAll.attributes ?? [:],
             actions: axElementFromCollectAll.actions ?? [],
             // hasChildrenAXProperty should be determined by querying the actual AXUIElement if not provided by
             // axElementFromCollectAll

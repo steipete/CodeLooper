@@ -169,7 +169,7 @@ extension KeyboardShortcuts.Recorder {
 	}
 }
 
-#if DEBUG && canImport(PreviewsMacros)
+#if hasFeature(PreviewsMacros)
 #Preview {
 	KeyboardShortcuts.Recorder("record_shortcut", name: .init("xcodePreview"))
 		.environment(\.locale, .init(identifier: "en"))

@@ -46,6 +46,8 @@ struct MacOSAutomatorConfigView: View {
     }
 }
 
-#Preview {
-    MacOSAutomatorConfigView(isPresented: .constant(true))
-}
+#if hasFeature(PreviewsMacros)
+    #Preview {
+        MacOSAutomatorConfigView(isPresented: .constant(true))
+    }
+#endif

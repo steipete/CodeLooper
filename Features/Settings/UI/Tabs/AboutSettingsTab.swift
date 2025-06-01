@@ -75,21 +75,24 @@ struct AboutSettingsTab: View {
     }
 }
 
-#Preview {
-    // Create dummy/shared instances for preview
-    let loginItemManager = LoginItemManager.shared
-    let sparkleUpdaterManager = SparkleUpdaterManager() // Assuming it can be init'd simply
-    let updaterViewModel = UpdaterViewModel(sparkleUpdaterManager: sparkleUpdaterManager)
-    let mainSettingsViewModel = MainSettingsViewModel(
-        loginItemManager: loginItemManager,
-        updaterViewModel: updaterViewModel
-    )
+#if hasFeature(PreviewsMacros)
+    #Preview {
+        // Create dummy/shared instances for preview
+        let loginItemManager = LoginItemManager.shared
+        let sparkleUpdaterManager = SparkleUpdaterManager() // Assuming it can be init'd simply
+        let updaterViewModel = UpdaterViewModel(sparkleUpdaterManager: sparkleUpdaterManager)
+        let mainSettingsViewModel = MainSettingsViewModel(
+            loginItemManager: loginItemManager,
+            updaterViewModel: updaterViewModel
+        )
 
-    AboutSettingsTab(viewModel: mainSettingsViewModel)
-        // .environmentObject(mainSettingsViewModel) // viewModel is passed directly, no need for environmentObject here
-        .frame(width: 350, height: 400)
-}
+        AboutSettingsTab(viewModel: mainSettingsViewModel)
+            // .environmentObject(mainSettingsViewModel) // viewModel is passed directly, no need for environmentObject here
+            .frame(width: 350, height: 400)
+    }
+#endif
 
+#if hasFeature(PreviewsMacros)
 struct AboutSettingsTab_Previews: PreviewProvider {
     static var previews: some View {
         // Create dummy/shared instances for preview
@@ -107,3 +110,4 @@ struct AboutSettingsTab_Previews: PreviewProvider {
             .frame(width: 350, height: 400)
     }
 }
+#endif

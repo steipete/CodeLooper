@@ -170,6 +170,12 @@ public final class ErrorHandler {
 
     /// Show error alert to user if appropriate
     private func showErrorAlert(_ error: AppError, context: ErrorContext) {
+        // Skip showing alerts in test environment
+        if Constants.isTestEnvironment {
+            logger.info("Skipping error alert in test mode: \(error.category.rawValue)")
+            return
+        }
+
         // Only show alerts for user-facing errors in certain contexts
         guard shouldShowAlert(for: error, context: context) else { return }
 

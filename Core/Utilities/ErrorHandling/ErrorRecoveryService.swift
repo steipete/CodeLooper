@@ -112,12 +112,9 @@ public class ErrorRecoveryService {
 
             switch strategy {
             case .retry:
-                return try await retryManager.execute(
-                    operation: operation,
-                    onRetry: { attempt, error, delay in
-                        self.logger.info("🔄 Retrying '\(context)' (attempt \(attempt)) after \(delay)s: \(error)")
-                    }
-                )
+                return try await retryManager.execute(operation: operation) { attempt, error, delay in
+                    self.logger.info("🔄 Retrying '\(context)' (attempt \(attempt)) after \(delay)s: \(error)")
+                }
 
             case let .fallback(fallbackOp):
                 do {
@@ -273,6 +270,12 @@ public class ErrorRecoveryService {
     }
 
     private func presentUserRecoveryOptions(message: String, actions: [RecoveryAction]) async {
+        // Skip showing recovery dialogs in test environment
+        if Constants.isTestEnvironment {
+            logger.info("Skipping recovery options dialog in test mode: \(message)")
+            return
+        }
+
         logger.info("👤 Presenting recovery options to user: \(message)")
 
         let alert = NSAlert()

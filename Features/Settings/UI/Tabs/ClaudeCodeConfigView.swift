@@ -70,8 +70,10 @@ struct ClaudeCodeConfigView: View {
     @State private var localCliName: String = ""
 }
 
-#Preview {
-    ClaudeCodeConfigView(isPresented: .constant(true), customCliName: .constant("claude-custom")) { name in
-        print("Preview save: \(name)")
+#if hasFeature(PreviewsMacros)
+    #Preview {
+        ClaudeCodeConfigView(isPresented: .constant(true), customCliName: .constant("claude-custom")) { name in
+            print("Preview save: \(name)")
+        }
     }
-}
+#endif

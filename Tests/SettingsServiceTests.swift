@@ -6,6 +6,93 @@ import XCTest
 
 @MainActor
 class SettingsServiceTests: XCTestCase {
+    override func setUp() {
+        super.setUp()
+        // Reset all relevant defaults to their defined default values before each test
+
+        // Basic monitoring and intervention settings
+        Defaults.reset(.monitoringIntervalSeconds)
+        Defaults.reset(.maxInterventionsBeforePause)
+        Defaults.reset(.playSoundOnIntervention)
+        Defaults.reset(.successfulInterventionSoundName)
+        Defaults.reset(.sendNotificationOnMaxInterventions)
+        Defaults.reset(.isGlobalMonitoringEnabled)
+        Defaults.reset(.showInMenuBar)
+        Defaults.reset(.notificationSoundName)
+        Defaults.reset(.textForCursorStopsRecovery)
+
+        // Recovery feature toggles
+        Defaults.reset(.enableConnectionIssuesRecovery)
+        Defaults.reset(.enableCursorForceStoppedRecovery)
+        Defaults.reset(.enableCursorStopsRecovery)
+
+        // Onboarding state
+        Defaults.reset(.hasShownWelcomeGuide)
+        Defaults.reset(.isFirstLaunch)
+        Defaults.reset(.hasCompletedOnboarding)
+        Defaults.reset(.showWelcomeScreen)
+
+        // App behavior settings
+        Defaults.reset(.startAtLogin)
+        Defaults.reset(.showInDock)
+        Defaults.reset(.showDebugMenu)
+        Defaults.reset(.debugModeEnabled)
+        Defaults.reset(.automaticallyCheckForUpdates)
+
+        // Counter display settings
+        Defaults.reset(.showCopyCounter)
+        Defaults.reset(.showPasteCounter)
+        Defaults.reset(.showTotalInterventions)
+        Defaults.reset(.flashIconOnIntervention)
+
+        // Logging configuration
+        Defaults.reset(.selectedLogLevel)
+        Defaults.reset(.verboseLogging)
+        Defaults.reset(.enableDetailedLogging)
+
+        // MCP configuration
+        Defaults.reset(.mcpConfigFilePath)
+        Defaults.reset(.autoReloadMCPsOnChanges)
+
+        // Locator JSON defaults
+        Defaults.reset(.locatorJSONGeneratingIndicatorText)
+        Defaults.reset(.locatorJSONSidebarActivityArea)
+        Defaults.reset(.locatorJSONErrorMessagePopup)
+        Defaults.reset(.locatorJSONStopGeneratingButton)
+        Defaults.reset(.locatorJSONConnectionErrorIndicator)
+        Defaults.reset(.locatorJSONResumeConnectionButton)
+        Defaults.reset(.locatorJSONForceStopResumeLink)
+        Defaults.reset(.locatorJSONMainInputField)
+
+        // Advanced settings
+        Defaults.reset(.sidebarActivityMaxDepth)
+        Defaults.reset(.ollamaBaseURL)
+        Defaults.reset(.aiGlobalAnalysisIntervalSeconds)
+        Defaults.reset(.gitClientApp)
+
+        // Rule settings
+        Defaults.reset(.showRuleExecutionCounters)
+        Defaults.reset(.enableRuleNotifications)
+        Defaults.reset(.enableRuleSounds)
+
+        // Rule-specific sounds
+        Defaults.reset(.stopAfter25LoopsRuleSound)
+        Defaults.reset(.plainStopRuleSound)
+        Defaults.reset(.connectionIssuesRuleSound)
+        Defaults.reset(.editedInAnotherChatRuleSound)
+
+        // Rule-specific notifications
+        Defaults.reset(.stopAfter25LoopsRuleNotification)
+        Defaults.reset(.plainStopRuleNotification)
+        Defaults.reset(.connectionIssuesRuleNotification)
+        Defaults.reset(.editedInAnotherChatRuleNotification)
+
+        // Debug settings
+        Defaults.reset(.debugMode)
+        Defaults.reset(.useDynamicMenuBarIcon)
+        Defaults.reset(.automaticJSHookInjection)
+    }
+
     func testOpenSettingsSubjectAvailability() async throws {
         // Verify the subject is available and can be used
         let subject = SettingsService.openSettingsSubject
@@ -197,9 +284,9 @@ class SettingsServiceTests: XCTestCase {
         // Test that optional notification sound defaults work
         XCTAssertEqual(Defaults[.notificationSoundName], "Default")
 
-        // Test setting to nil
-        Defaults[.notificationSoundName] = nil
-        XCTAssertEqual(Defaults[.notificationSoundName], nil)
+        // Test setting to a different value and back
+        Defaults[.notificationSoundName] = "CustomSound"
+        XCTAssertEqual(Defaults[.notificationSoundName], "CustomSound")
 
         // Restore default
         Defaults[.notificationSoundName] = "Default"

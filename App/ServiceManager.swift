@@ -6,7 +6,7 @@ import Foundation
 /// This class provides a centralized way to access shared services throughout the application,
 /// removing the need for individual services to manage their own singleton patterns.
 @MainActor
-final class ServiceManager: ObservableObject, Sendable {
+final class ServiceManager: ObservableObject {
     // MARK: Lifecycle
 
     init() {}

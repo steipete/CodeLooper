@@ -111,6 +111,7 @@ struct WelcomeScene: Scene {
     }
 }
 
+#if hasFeature(PreviewsMacros)
 #Preview {
     // Use mocked services for preview
     WelcomeWindowView(
@@ -118,3 +119,4 @@ struct WelcomeScene: Scene {
     )
     .environmentObject(AppEnvironment())
 }
+#endif

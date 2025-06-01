@@ -26,6 +26,12 @@ class MenuBarIconManager: ObservableObject {
         self.statusItem = statusItem
         logger.info("MenuBarIconManager initialized.")
 
+        // Skip full initialization in test environment
+        if Constants.isTestEnvironment {
+            logger.info("MenuBarIconManager running in test mode - limited initialization")
+            return
+        }
+
         // If a statusItem is provided, configure animator (might be useful for other things)
         if let statusItem {
             iconAnimator = IconAnimator(statusItem: statusItem)
@@ -52,7 +58,7 @@ class MenuBarIconManager: ObservableObject {
 
     // MARK: - Shared Instance
 
-    static let shared = MenuBarIconManager()
+    @MainActor static let shared = MenuBarIconManager()
 
     // MARK: - Published Properties
 
