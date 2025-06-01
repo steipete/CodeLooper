@@ -3,7 +3,7 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 55;
+	objectVersion = 60;
 	objects = {
 
 /* Begin PBXBuildFile section */
@@ -243,6 +243,7 @@
 		E563949793CB87FE37E47027 /* PassThroughTextField.swift in Sources */ = {isa = PBXBuildFile; fileRef = 31C27EAC374A48E9B6BCD9A8 /* PassThroughTextField.swift */; };
 		E7C24802CF33E6433B8423BC /* LoggerFactory.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5DF9B09B5EB58B7357233E6 /* LoggerFactory.swift */; };
 		EAD2792BDE3E13E195ECC83F /* AutomationPermissionsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00CC4EDB54A9AA12ABC954A0 /* AutomationPermissionsView.swift */; };
+		EB1A07B5BD013FEF94A72FF0 /* CodeLooper.sdef in Resources */ = {isa = PBXBuildFile; fileRef = 1E072564F6C7363162D5F526 /* CodeLooper.sdef */; };
 		EBB7C67D963F4C99D92FAD84 /* MarkdownContentPopover.swift in Sources */ = {isa = PBXBuildFile; fileRef = B93FE5DBFB4CA92A0ADD0FF9 /* MarkdownContentPopover.swift */; };
 		EC277F1F63AA034EC56FD19D /* UIComponentTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8C6BF4BD778B3039CC05CFA3 /* UIComponentTests.swift */; };
 		EFBEF208A6ADC558D112D2B4 /* CursorWindowsList.swift in Sources */ = {isa = PBXBuildFile; fileRef = AACDD4C1A3FA77D39ADCC793 /* CursorWindowsList.swift */; };
@@ -355,6 +356,7 @@
 		18C61CFBB56EF1A7C81C5C23 /* DiagnosticReportGenerator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiagnosticReportGenerator.swift; sourceTree = "<group>"; };
 		1A63AB70345BBFD326F2CCF7 /* Logger.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Logger.swift; sourceTree = "<group>"; };
 		1DCDDFD8275C76583209C4CB /* WelcomeWindowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WelcomeWindowView.swift; sourceTree = "<group>"; };
+		1E072564F6C7363162D5F526 /* CodeLooper.sdef */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = CodeLooper.sdef; sourceTree = "<group>"; };
 		1F49DE8A739B205030BB746D /* FileLogger.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileLogger.swift; sourceTree = "<group>"; };
 		1FEE91A56A2C8C8196EB45AD /* DevConsoleDetector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DevConsoleDetector.swift; sourceTree = "<group>"; };
 		20293565C29556608174AB40 /* IntegrationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IntegrationTests.swift; sourceTree = "<group>"; };
@@ -414,7 +416,7 @@
 		5DEDCE2213643BD9D3AD5C4B /* CursorInstanceModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CursorInstanceModels.swift; sourceTree = "<group>"; };
 		5ED82A54CAD589EABE8434F8 /* AppNotificationCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppNotificationCoordinator.swift; sourceTree = "<group>"; };
 		6020C10BDD9CC0EFD5A7C57E /* CustomObservation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CustomObservation.swift; sourceTree = "<group>"; };
-		606FD31E5CDAD9A2D805242B /* AXorcist */ = {isa = PBXFileReference; lastKnownFileType = folder; name = AXorcist; path = AXorcist; sourceTree = "<group>"; };
+		606FD31E5CDAD9A2D805242B /* AXorcist */ = {isa = PBXFileReference; lastKnownFileType = folder; path = AXorcist; sourceTree = "<group>"; };
 		60B16BA7518E957E64AF9F8F /* CodeLooperApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodeLooperApp.swift; sourceTree = "<group>"; };
 		626E1346FBCC6C20E199326A /* LocatorManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocatorManager.swift; sourceTree = "<group>"; };
 		62F13848032738E908F5FD24 /* Diagnostics.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Diagnostics.framework; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -422,7 +424,6 @@
 		63FB4DF1A870217177B9B982 /* AIAnalysisStatus.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIAnalysisStatus.swift; sourceTree = "<group>"; };
 		64121F794DD9A0E79182F1E0 /* InterventionStateChecker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InterventionStateChecker.swift; sourceTree = "<group>"; };
 		66D291C6C46A13EA5ABFFE32 /* AccessibilityPermissions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccessibilityPermissions.swift; sourceTree = "<group>"; };
-		675137F21F301C4E5204CEE9 /* Demark */ = {isa = PBXFileReference; lastKnownFileType = folder; name = Demark; path = ../Demark; sourceTree = "<group>"; };
 		684ADFED0C0657FCEEA078BA /* SettingsTab.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsTab.swift; sourceTree = "<group>"; };
 		6943FF4E98060C242A14D838 /* ScreenshotAnalyzer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreenshotAnalyzer.swift; sourceTree = "<group>"; };
 		6955584328FDBA7FA95B2D9A /* Task+Timeout.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Task+Timeout.swift"; sourceTree = "<group>"; };
@@ -437,7 +438,7 @@
 		72CAF9D1E03CFD28069B089F /* CodeLooper.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = CodeLooper.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		72FE762340402470BECD04F1 /* ResumeConnectionButtonHeuristic.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ResumeConnectionButtonHeuristic.swift; sourceTree = "<group>"; };
 		73A6D958007010288204D07C /* ResourceLoader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ResourceLoader.swift; sourceTree = "<group>"; };
-		7413E3D792A60AC390808102 /* AXpector */ = {isa = PBXFileReference; lastKnownFileType = folder; name = AXpector; path = AXpector; sourceTree = "<group>"; };
+		7413E3D792A60AC390808102 /* AXpector */ = {isa = PBXFileReference; lastKnownFileType = folder; path = AXpector; sourceTree = "<group>"; };
 		74E0F37B7E709C861887661C /* chain_link_lottie.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = chain_link_lottie.json; sourceTree = "<group>"; };
 		774738F616D8871BD5673635 /* InterventionExecutor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InterventionExecutor.swift; sourceTree = "<group>"; };
 		792D028B10801FA79233AE81 /* InfoKey.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InfoKey.swift; sourceTree = "<group>"; };
@@ -525,7 +526,7 @@
 		CC10D906EAF6E924567E3DB3 /* MainMenu.nib */ = {isa = PBXFileReference; lastKnownFileType = wrapper.nib; path = MainMenu.nib; sourceTree = "<group>"; };
 		CCA5A91D464B795221E17604 /* CursorMonitoringLoop.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CursorMonitoringLoop.swift; sourceTree = "<group>"; };
 		CCB2F412349341AED0BE35C0 /* GeneralSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GeneralSettingsView.swift; sourceTree = "<group>"; };
-		CDAC1075ADD1DD56A1C7CC99 /* DesignSystem */ = {isa = PBXFileReference; lastKnownFileType = folder; name = DesignSystem; path = DesignSystem; sourceTree = "<group>"; };
+		CDAC1075ADD1DD56A1C7CC99 /* DesignSystem */ = {isa = PBXFileReference; lastKnownFileType = folder; path = DesignSystem; sourceTree = "<group>"; };
 		D03027C578774FD1A011A755 /* StatusIconState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatusIconState.swift; sourceTree = "<group>"; };
 		D0DB2BAB72EC020C18CFCAFC /* InterventionRuleCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InterventionRuleCard.swift; sourceTree = "<group>"; };
 		D13538B5C3F044464C5253B9 /* CursorMonitorLifecycle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CursorMonitorLifecycle.swift; sourceTree = "<group>"; };
@@ -611,7 +612,6 @@
 			children = (
 				606FD31E5CDAD9A2D805242B /* AXorcist */,
 				7413E3D792A60AC390808102 /* AXpector */,
-				675137F21F301C4E5204CEE9 /* Demark */,
 				CDAC1075ADD1DD56A1C7CC99 /* DesignSystem */,
 			);
 			name = Packages;
@@ -1323,6 +1323,7 @@
 			children = (
 				0FCE9F3F5529BA902C630865 /* JavaScript */,
 				74E0F37B7E709C861887661C /* chain_link_lottie.json */,
+				1E072564F6C7363162D5F526 /* CodeLooper.sdef */,
 				CC10D906EAF6E924567E3DB3 /* MainMenu.nib */,
 			);
 			path = Resources;
@@ -1519,6 +1520,7 @@
 			isa = PBXProject;
 			attributes = {
 				BuildIndependentTargetsInParallel = YES;
+				LastUpgradeCheck = 1640;
 				ORGANIZATIONNAME = "Anantus Machina";
 				TargetAttributes = {
 					87FF64A5770C04C33FEACE92 = {
@@ -1548,10 +1550,10 @@
 				0E03DC693D5E087D24CDDBB3 /* XCRemoteSwiftPackageReference "LaunchAtLogin" */,
 				56A4A40657C281F3F49F82F0 /* XCRemoteSwiftPackageReference "SwiftUI-Introspect" */,
 				EDE305AEB8660A29D02A09E9 /* XCRemoteSwiftPackageReference "Sparkle" */,
+				804E557B8AB1A983E6336E7D /* XCRemoteSwiftPackageReference "Demark" */,
 				015BA77169BA6C0C4393D8E2 /* XCLocalSwiftPackageReference "/Users/steipete/Projects/CodeLooper/AXorcist" */,
 				2F333F5A9F706191367AE0CB /* XCLocalSwiftPackageReference "/Users/steipete/Projects/CodeLooper/AXpector" */,
 				4482A0F0D7A4B6F4AF763A2D /* XCLocalSwiftPackageReference "/Users/steipete/Projects/CodeLooper/DesignSystem" */,
-				5308BB8FDEA4569D69C23411 /* XCLocalSwiftPackageReference "/Users/steipete/Projects/Demark" */,
 			);
 			productRefGroup = 62DE123ABE72A0C7DA250733 /* Products */;
 			projectDirPath = "";
@@ -1585,6 +1587,7 @@
 			files = (
 				63F6749E0C61FEA861A02839 /* Assets.xcassets in Resources */,
 				13ED50F2F28C4EEF3532770A /* Main.storyboard in Resources */,
+				EB1A07B5BD013FEF94A72FF0 /* CodeLooper.sdef in Resources */,
 				AE40CB2D386F76F851DF362B /* cursor-hook.js in Resources */,
 				3EB93F9333F97BEB98D906BF /* MainMenu.nib in Resources */,
 				B1FECEDB162E6A3A48101432 /* chain_link_lottie.json in Resources */,
@@ -1894,6 +1897,7 @@
 				DYLIB_COMPATIBILITY_VERSION = 1;
 				DYLIB_CURRENT_VERSION = 1;
 				DYLIB_INSTALL_NAME_BASE = "@rpath";
+				ENABLE_MODULE_VERIFIER = YES;
 				ENABLE_STRICT_CONCURRENCY_CHECKS = YES;
 				FRAMEWORK_VERSION = A;
 				INFOPLIST_FILE = "Derived/InfoPlists/Diagnostics-Info.plist";
@@ -1905,15 +1909,13 @@
 				);
 				MACH_O_TYPE = staticlib;
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MODULE_VERIFIER_SUPPORTED_LANGUAGE_STANDARDS = "gnu11 gnu++14";
 				OTHER_SWIFT_FLAGS = "-strict-concurrency=complete";
 				PRODUCT_BUNDLE_IDENTIFIER = me.steipete.codelooper.Diagnostics;
 				PRODUCT_NAME = Diagnostics;
 				SDKROOT = macosx;
 				SKIP_INSTALL = YES;
-				SWIFT_ACTIVE_COMPILATION_CONDITIONS = (
-					"$(inherited)",
-					DEBUG,
-				);
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "$(inherited) DEBUG";
 				SWIFT_COMPILATION_MODE = singlefile;
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = 6.0;
@@ -1956,7 +1958,10 @@
 				ENABLE_STRICT_CONCURRENCY_CHECKS = YES;
 				ENABLE_TESTING = YES;
 				ENABLE_USER_SCRIPT_SANDBOXING = NO;
-				FRAMEWORK_SEARCH_PATHS = "$(inherited) $(PLATFORM_DIR)/Developer/Library/Frameworks";
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(PLATFORM_DIR)/Developer/Library/Frameworks",
+				);
 				INFOPLIST_FILE = "Derived/InfoPlists/CodeLooperTests-Info.plist";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -1968,10 +1973,7 @@
 				PRODUCT_BUNDLE_IDENTIFIER = me.steipete.codelooper.tests;
 				PRODUCT_NAME = CodeLooperTests;
 				SDKROOT = macosx;
-				SWIFT_ACTIVE_COMPILATION_CONDITIONS = (
-					"$(inherited)",
-					DEBUG,
-				);
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "$(inherited) DEBUG";
 				SWIFT_COMPILATION_MODE = singlefile;
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_PACKAGE_MACRO_VALIDATION = NO;
@@ -1989,7 +1991,10 @@
 				ENABLE_STRICT_CONCURRENCY_CHECKS = YES;
 				ENABLE_TESTING = YES;
 				ENABLE_USER_SCRIPT_SANDBOXING = NO;
-				FRAMEWORK_SEARCH_PATHS = "$(inherited) $(PLATFORM_DIR)/Developer/Library/Frameworks";
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(PLATFORM_DIR)/Developer/Library/Frameworks",
+				);
 				INFOPLIST_FILE = "Derived/InfoPlists/CodeLooperTests-Info.plist";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -2072,10 +2077,7 @@
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
 				MTL_ENABLE_DEBUG_INFO = YES;
 				ONLY_ACTIVE_ARCH = YES;
-				OTHER_SWIFT_FLAGS = (
-					"$(inherited) -warn-concurrency -enable-actor-data-race-checks",
-					"-strict-concurrency=complete",
-				);
+				OTHER_SWIFT_FLAGS = "$(inherited) -warn-concurrency -enable-actor-data-race-checks -strict-concurrency=complete";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_VERSION = 6.0;
 			};
@@ -2166,10 +2168,7 @@
 				PRODUCT_BUNDLE_IDENTIFIER = me.steipete.codelooper;
 				PRODUCT_NAME = CodeLooper;
 				SDKROOT = macosx;
-				SWIFT_ACTIVE_COMPILATION_CONDITIONS = (
-					"$(inherited)",
-					DEBUG,
-				);
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "$(inherited) DEBUG";
 				SWIFT_COMPILATION_MODE = singlefile;
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 			};
@@ -2186,6 +2185,7 @@
 				DYLIB_COMPATIBILITY_VERSION = 1;
 				DYLIB_CURRENT_VERSION = 1;
 				DYLIB_INSTALL_NAME_BASE = "@rpath";
+				ENABLE_MODULE_VERIFIER = YES;
 				ENABLE_STRICT_CONCURRENCY_CHECKS = YES;
 				FRAMEWORK_VERSION = A;
 				INFOPLIST_FILE = "Derived/InfoPlists/Diagnostics-Info.plist";
@@ -2197,6 +2197,7 @@
 				);
 				MACH_O_TYPE = staticlib;
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MODULE_VERIFIER_SUPPORTED_LANGUAGE_STANDARDS = "gnu11 gnu++14";
 				OTHER_SWIFT_FLAGS = "-strict-concurrency=complete";
 				PRODUCT_BUNDLE_IDENTIFIER = me.steipete.codelooper.Diagnostics;
 				PRODUCT_NAME = Diagnostics;
@@ -2264,10 +2265,6 @@
 			isa = XCLocalSwiftPackageReference;
 			relativePath = /Users/steipete/Projects/CodeLooper/DesignSystem;
 		};
-		5308BB8FDEA4569D69C23411 /* XCLocalSwiftPackageReference "/Users/steipete/Projects/Demark" */ = {
-			isa = XCLocalSwiftPackageReference;
-			relativePath = /Users/steipete/Projects/Demark;
-		};
 /* End XCLocalSwiftPackageReference section */
 
 /* Begin XCRemoteSwiftPackageReference section */
@@ -2306,6 +2303,14 @@
 		5C6849CD25343F2442AD744E /* XCRemoteSwiftPackageReference "ollama-swift" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/loopwork-ai/ollama-swift";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 1.0.0;
+			};
+		};
+		804E557B8AB1A983E6336E7D /* XCRemoteSwiftPackageReference "Demark" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/steipete/Demark";
 			requirement = {
 				kind = upToNextMajorVersion;
 				minimumVersion = 1.0.0;
