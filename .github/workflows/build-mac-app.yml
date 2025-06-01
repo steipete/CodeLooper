@@ -294,12 +294,12 @@ jobs:
             security find-identity -v -p codesigning "$TEMP_KEYCHAIN"
             
             # Try multiple approaches to find the identity
-            SIGNING_IDENTITY=$(security find-identity -v -p codesigning "$TEMP_KEYCHAIN" | grep -E "(Developer|Development|Distribution)" | head -1 | grep -o '"[^"]*"' | sed 's/"//g')
+            SIGNING_IDENTITY=$(security find-identity -v -p codesigning "$TEMP_KEYCHAIN" | grep -E "(Developer|Development|Distribution)" | head -1 | grep -o '"[^"]*"' | sed 's/"//g' || true)
             
             # If that fails, try without the codesigning policy
             if [ -z "$SIGNING_IDENTITY" ]; then
               echo "No codesigning identity found, trying without policy filter..."
-              SIGNING_IDENTITY=$(security find-identity -v "$TEMP_KEYCHAIN" | grep -E "(Developer|Development|Distribution)" | head -1 | grep -o '"[^"]*"' | sed 's/"//g')
+              SIGNING_IDENTITY=$(security find-identity -v "$TEMP_KEYCHAIN" | grep -E "(Developer|Development|Distribution)" | head -1 | grep -o '"[^"]*"' | sed 's/"//g' || true)
             fi
             
             if [ -z "$SIGNING_IDENTITY" ]; then
