@@ -224,70 +224,82 @@ class IntegrationTests: XCTestCase {
     // MARK: - Settings Persistence Tests
 
     func testSettingsPersistenceIntegration() async throws {
-        try await withTemporaryDefaults {
-            // Set some test settings
-            await MainActor.run {
-                Defaults[.isGlobalMonitoringEnabled] = true
-                Defaults[.maxInterventionsBeforePause] = 10
+        // Save original values
+        let originalMonitoring = await MainActor.run { Defaults[.isGlobalMonitoringEnabled] }
+        let originalMaxInterventions = await MainActor.run { Defaults[.maxInterventionsBeforePause] }
+
+        defer {
+            // Restore original values
+            Task { @MainActor in
+                Defaults[.isGlobalMonitoringEnabled] = originalMonitoring
+                Defaults[.maxInterventionsBeforePause] = originalMaxInterventions
             }
+        }
 
-            // Create first coordinator instance
-            let coordinator1 = await AppServiceCoordinator()
-            let monitor1 = await CursorMonitor.shared
+        // Set some test settings
+        await MainActor.run {
+            Defaults[.isGlobalMonitoringEnabled] = true
+            Defaults[.maxInterventionsBeforePause] = 10
+        }
 
-            // Verify settings are loaded
-            await MainActor.run {
-                XCTAssertEqual(Defaults[.isGlobalMonitoringEnabled], true)
-                XCTAssertEqual(Defaults[.maxInterventionsBeforePause], 10)
-            }
+        // Create first coordinator instance
+        let coordinator1 = await AppServiceCoordinator()
+        let monitor1 = await CursorMonitor.shared
 
-            // Create second coordinator instance (simulating restart)
-            let coordinator2 = await AppServiceCoordinator()
-            let monitor2 = await CursorMonitor.shared
+        // Verify settings are loaded
+        await MainActor.run {
+            XCTAssertEqual(Defaults[.isGlobalMonitoringEnabled], true)
+            XCTAssertEqual(Defaults[.maxInterventionsBeforePause], 10)
+        }
 
-            // Verify settings persistence
-            await MainActor.run {
-                XCTAssertEqual(Defaults[.isGlobalMonitoringEnabled], true)
-                XCTAssertEqual(Defaults[.maxInterventionsBeforePause], 10)
-            }
+        // Create second coordinator instance (simulating restart)
+        let coordinator2 = await AppServiceCoordinator()
+        let monitor2 = await CursorMonitor.shared
 
-            // Test settings changes
-            await MainActor.run {
-                Defaults[.isGlobalMonitoringEnabled] = false
-                XCTAssertEqual(Defaults[.isGlobalMonitoringEnabled], false)
-            }
+        // Verify settings persistence
+        await MainActor.run {
+            XCTAssertEqual(Defaults[.isGlobalMonitoringEnabled], true)
+            XCTAssertEqual(Defaults[.maxInterventionsBeforePause], 10)
+        }
+
+        // Test settings changes
+        await MainActor.run {
+            Defaults[.isGlobalMonitoringEnabled] = false
+            XCTAssertEqual(Defaults[.isGlobalMonitoringEnabled], false)
         }
     }
 
     func testWindowSettingsPersistence() async throws {
-        try await withTemporaryDefaults {
-            // Create window with settings
-            var windowInfo = await MonitoredWindowInfo(
-                id: "test-window",
-                windowTitle: "Test Document.txt",
-                documentPath: "/path/to/test.txt"
-            )
+        // Create window with settings
+        var windowInfo = await MonitoredWindowInfo(
+            id: "test-window",
+            windowTitle: "Test Document.txt",
+            documentPath: "/path/to/test.txt"
+        )
 
-            // Modify settings
-            await MainActor.run {
-                windowInfo.isLiveWatchingEnabled = true
-                windowInfo.aiAnalysisIntervalSeconds = 30
-                windowInfo.saveAISettings()
-            }
-
-            // Create new window instance with same ID
-            let newWindowInfo = await MonitoredWindowInfo(
-                id: "test-window",
-                windowTitle: "Test Document.txt",
-                documentPath: "/path/to/test.txt"
-            )
-
-            // Verify settings were loaded
-            await MainActor.run {
-                XCTAssertEqual(newWindowInfo.isLiveWatchingEnabled, true)
-                XCTAssertEqual(newWindowInfo.aiAnalysisIntervalSeconds, 30)
-            }
+        // Modify settings
+        await MainActor.run {
+            windowInfo.isLiveWatchingEnabled = true
+            windowInfo.aiAnalysisIntervalSeconds = 30
+            windowInfo.saveAISettings()
         }
+
+        // Create new window instance with same ID
+        let newWindowInfo = await MonitoredWindowInfo(
+            id: "test-window",
+            windowTitle: "Test Document.txt",
+            documentPath: "/path/to/test.txt"
+        )
+
+        // Verify settings were loaded
+        await MainActor.run {
+            XCTAssertEqual(newWindowInfo.isLiveWatchingEnabled, true)
+            XCTAssertEqual(newWindowInfo.aiAnalysisIntervalSeconds, 30)
+        }
+
+        // Clean up test settings if needed
+        // Note: Window settings are stored per window ID and would be cleaned up
+        // when the window is deallocated in a real scenario
     }
 
     // MARK: - Permission Flow Tests
