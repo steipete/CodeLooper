@@ -16,17 +16,22 @@ class RuleExecutionTests: XCTestCase {
 
     func testRuleExecution() async throws {
         // Save current defaults
-        let originalMonitoring = Defaults[.isGlobalMonitoringEnabled]
-        let originalRecovery = Defaults[.enableCursorForceStoppedRecovery]
+        let (originalMonitoring, originalRecovery) = await MainActor.run {
+            (Defaults[.isGlobalMonitoringEnabled], Defaults[.enableCursorForceStoppedRecovery])
+        }
 
         // Enable rules
-        Defaults[.isGlobalMonitoringEnabled] = true
-        Defaults[.enableCursorForceStoppedRecovery] = true
+        await MainActor.run {
+            Defaults[.isGlobalMonitoringEnabled] = true
+            Defaults[.enableCursorForceStoppedRecovery] = true
+        }
 
         defer {
             // Restore defaults
-            Defaults[.isGlobalMonitoringEnabled] = originalMonitoring
-            Defaults[.enableCursorForceStoppedRecovery] = originalRecovery
+            Task { @MainActor in
+                Defaults[.isGlobalMonitoringEnabled] = originalMonitoring
+                Defaults[.enableCursorForceStoppedRecovery] = originalRecovery
+            }
         }
 
         let ruleExecutor = await RuleExecutor()
@@ -70,18 +75,23 @@ class RuleExecutionTests: XCTestCase {
 
     func testRuleExecutionWithDefaults() async throws {
         // Save current defaults
-        let originalMonitoring = Defaults[.isGlobalMonitoringEnabled]
-        let originalRecovery = Defaults[.enableCursorForceStoppedRecovery]
+        let (originalMonitoring, originalRecovery) = await MainActor.run {
+            (Defaults[.isGlobalMonitoringEnabled], Defaults[.enableCursorForceStoppedRecovery])
+        }
 
         defer {
             // Restore defaults
-            Defaults[.isGlobalMonitoringEnabled] = originalMonitoring
-            Defaults[.enableCursorForceStoppedRecovery] = originalRecovery
+            Task { @MainActor in
+                Defaults[.isGlobalMonitoringEnabled] = originalMonitoring
+                Defaults[.enableCursorForceStoppedRecovery] = originalRecovery
+            }
         }
 
         // Test with monitoring disabled
-        Defaults[.isGlobalMonitoringEnabled] = false
-        Defaults[.enableCursorForceStoppedRecovery] = true
+        await MainActor.run {
+            Defaults[.isGlobalMonitoringEnabled] = false
+            Defaults[.enableCursorForceStoppedRecovery] = true
+        }
 
         let ruleExecutor = await RuleExecutor()
         await ruleExecutor.executeEnabledRules()
@@ -90,8 +100,10 @@ class RuleExecutionTests: XCTestCase {
         XCTAssertTrue(true)
 
         // Test with monitoring enabled but recovery disabled
-        Defaults[.isGlobalMonitoringEnabled] = true
-        Defaults[.enableCursorForceStoppedRecovery] = false
+        await MainActor.run {
+            Defaults[.isGlobalMonitoringEnabled] = true
+            Defaults[.enableCursorForceStoppedRecovery] = false
+        }
 
         await ruleExecutor.executeEnabledRules()
 
@@ -251,25 +263,31 @@ class RuleExecutionTests: XCTestCase {
         let result = await rule.execute(windowId: "test-window", jsHookService: jsHookService)
 
         // Result depends on whether window is actually hooked
-        XCTAssertEqual(result, true || result == false)
+        // Since there's no actual hooked window in test, result should be false
+        XCTAssertFalse(result, "Expected false since no window is hooked in test environment")
     }
 
     // MARK: - Integration Tests
 
     func testRuleSystemIntegration() async throws {
         // Save current defaults
-        let originalMonitoring = Defaults[.isGlobalMonitoringEnabled]
-        let originalRecovery = Defaults[.enableCursorForceStoppedRecovery]
+        let (originalMonitoring, originalRecovery) = await MainActor.run {
+            (Defaults[.isGlobalMonitoringEnabled], Defaults[.enableCursorForceStoppedRecovery])
+        }
 
         defer {
             // Restore defaults
-            Defaults[.isGlobalMonitoringEnabled] = originalMonitoring
-            Defaults[.enableCursorForceStoppedRecovery] = originalRecovery
+            Task { @MainActor in
+                Defaults[.isGlobalMonitoringEnabled] = originalMonitoring
+                Defaults[.enableCursorForceStoppedRecovery] = originalRecovery
+            }
         }
 
         // Enable all features
-        Defaults[.isGlobalMonitoringEnabled] = true
-        Defaults[.enableCursorForceStoppedRecovery] = true
+        await MainActor.run {
+            Defaults[.isGlobalMonitoringEnabled] = true
+            Defaults[.enableCursorForceStoppedRecovery] = true
+        }
 
         let ruleExecutor = await RuleExecutor()
         let counterManager = await RuleCounterManager.shared
@@ -357,8 +375,10 @@ class RuleExecutionTests: XCTestCase {
         let ruleExecutor = await RuleExecutor()
 
         // Enable rules
-        Defaults[.isGlobalMonitoringEnabled] = true
-        Defaults[.enableCursorForceStoppedRecovery] = true
+        await MainActor.run {
+            Defaults[.isGlobalMonitoringEnabled] = true
+            Defaults[.enableCursorForceStoppedRecovery] = true
+        }
 
         // Execute rules (likely no hooked windows in test environment)
         await ruleExecutor.executeEnabledRules()

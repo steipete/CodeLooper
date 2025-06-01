@@ -1,5 +1,5 @@
-import Foundation
 import Demark
+import Foundation
 
 /// Central service manager for CodeLooper that manages singleton instances.
 ///

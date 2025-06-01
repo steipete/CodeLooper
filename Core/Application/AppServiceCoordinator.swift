@@ -147,8 +147,8 @@ final class AppServiceCoordinator {
     private func initializeUpdateServices() async throws {
         logger.info("🔄 Initializing update services...")
 
-        // Note: Sparkle updater is currently disabled until properly configured
-        // sparkleUpdaterManager = SparkleUpdaterManager()
+        // Initialize Sparkle with error handling to prevent dialogs
+        sparkleUpdaterManager = SparkleUpdaterManager()
 
         if let sparkleManager = sparkleUpdaterManager {
             updaterViewModel = UpdaterViewModel(sparkleUpdaterManager: sparkleManager)

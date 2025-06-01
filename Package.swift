@@ -34,7 +34,7 @@ let package = Package(
         .package(url: "https://github.com/orchetect/MenuBarExtraAccess.git", .upToNextMajor(from: "1.2.1")),
         // AI and image analysis dependencies
         .package(url: "https://github.com/MacPaw/OpenAI", .upToNextMajor(from: "0.4.3")),
-        .package(url: "https://github.com/loopwork-ai/ollama-swift", .upToNextMajor(from: "1.4.0")),
+        .package(url: "https://github.com/loopwork-ai/ollama-swift", .upToNextMajor(from: "1.5.0")),
         // Animation library
         .package(url: "https://github.com/airbnb/lottie-ios", .upToNextMajor(from: "4.5.2")),
         // Development-only dependencies

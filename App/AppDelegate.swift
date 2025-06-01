@@ -296,8 +296,8 @@ public final class AppDelegate: NSObject, NSApplicationDelegate, ObservableObjec
         _ = self.locatorManager
         _ = MenuBarIconManager.shared // Ensure shared instance is initialized
 
-        // Disabled until this is setup.
-        // sparkleUpdaterManager = SparkleUpdaterManager()
+        // Initialize Sparkle with error handling to prevent dialogs
+        sparkleUpdaterManager = SparkleUpdaterManager()
         logger.info("SparkleUpdaterManager initialized.")
 
         if let sparkleManager = self.sparkleUpdaterManager {

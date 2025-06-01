@@ -1,7 +1,7 @@
 import Combine
 import Diagnostics
-import os
 import Sparkle
+import os
 
 /// Manages the Sparkle auto-update framework integration.
 ///
@@ -24,34 +24,8 @@ public class SparkleUpdaterManager: NSObject, SPUUpdaterDelegate, SPUStandardUse
         super.init()
         // Accessing the lazy var here will trigger its initialization.
         _ = self.updaterController
-        logger.info("SparkleUpdaterManager initialized. Updater controller lazy initialization triggered.")
+        self.logger.info("SparkleUpdaterManager initialized. Updater controller lazy initialization triggered.")
     }
-
-    // MARK: - SPUUpdaterDelegate (Optional methods)
-
-    // Example: Customizing update check frequency or other behaviors
-    /*
-     func allowedChannels(for updater: SPUUpdater) -> Set<String> {
-         // Return a set of allowed channels, e.g., ["beta", "stable"]
-         return []
-     }
-     */
-
-    // MARK: - SPUStandardUserDriverDelegate (Optional methods)
-
-    // Example: Handling UI events or customizing behavior during update process
-    /*
-     func standardUserDriverWillShowModalAlert(_ alert: NSAlert!) {
-         logger.debug("Sparkle: Standard user driver will show modal alert.")
-     }
-
-     func standardUserDriverDidReceiveUserAttention() {
-         logger.debug("Sparkle: Standard user driver did receive user attention.")
-     }
-     */
-
-    // Add any other necessary SPUUpdaterDelegate or SPUStandardUserDriverDelegate methods here
-    // based on the app's requirements for customizing Sparkle's behavior.
 
     // MARK: Public
 
@@ -62,9 +36,78 @@ public class SparkleUpdaterManager: NSObject, SPUUpdaterDelegate, SPUStandardUse
             updaterDelegate: self,
             userDriverDelegate: self
         )
-        logger.info("SparkleUpdaterManager: SPUStandardUpdaterController initialized with self as delegates.")
+
+        // TEMPORARY: Disable automatic update checks until appcast.xml is properly configured
+        // This prevents the "Unable to Check For Updates" error dialog
+        controller.updater.automaticallyChecksForUpdates = false
+        self.logger.warning("Automatic update checks temporarily disabled - appcast.xml not configured")
+
+        self.logger.info("SparkleUpdaterManager: SPUStandardUpdaterController initialized with self as delegates.")
         return controller
     }() // The () here executes the closure and assigns the result to updaterController
 
     // MARK: Private
+
+    // MARK: - SPUUpdaterDelegate
+
+    // Handle when no update is found or when there's an error checking for updates
+    public func updater(_: SPUUpdater, didFinishUpdateCycleFor _: SPUUpdateCheck, error: Error?) {
+        if let error = error as NSError? {
+            // Check if it's a "no update found" error - this is normal and shouldn't be logged as an error
+            if error.domain == "SUSparkleErrorDomain", error.code == 1001 {
+                self.logger.debug("No updates available")
+                return
+            }
+
+            // Check for appcast-related errors (missing file, parse errors, etc.)
+            if error.domain == "SUSparkleErrorDomain",
+               error.code == 2001 || // SUAppcastError
+               error.code == 2002 || // SUAppcastParseError
+               error.code == 2000
+            { // SUInvalidFeedURLError
+                self.logger.warning("Appcast error (missing or invalid feed): \(error.localizedDescription)")
+                // Suppress the error dialog - we'll handle this silently
+                return
+            }
+
+            // For other network errors or missing appcast, log but don't show UI
+            self.logger.warning("Update check failed: \(error.localizedDescription)")
+
+            // Suppress default error dialog by not propagating the error
+            return
+        }
+
+        self.logger.debug("Update check completed successfully")
+    }
+
+    // Prevent update checks if we know the appcast is not available
+    public func updater(_: SPUUpdater, mayPerformUpdateCheck updateCheck: SPUUpdateCheck) throws {
+        // You can add logic here to prevent update checks under certain conditions
+        // For now, we'll allow all checks but handle errors gracefully in didFinishUpdateCycleFor
+        self.logger.debug("Allowing update check of type: \(updateCheck)")
+    }
+
+    // Handle when update is not found
+    public func updaterDidNotFindUpdate(_: SPUUpdater, error: Error) {
+        if let error = error as NSError? {
+            self.logger.info("No update found: \(error.localizedDescription)")
+        } else {
+            self.logger.info("No update available")
+        }
+    }
+
+    // MARK: - SPUStandardUserDriverDelegate
+
+    // Called before showing any modal alert
+    public func standardUserDriverWillShowModalAlert() {
+        self.logger.debug("Sparkle will show modal alert")
+    }
+
+    // Called after showing any modal alert
+    public func standardUserDriverDidShowModalAlert() {
+        self.logger.debug("Sparkle did show modal alert")
+    }
+
+    // Add any other necessary SPUUpdaterDelegate or SPUStandardUserDriverDelegate methods here
+    // based on the app's requirements for customizing Sparkle's behavior.
 }
