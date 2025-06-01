@@ -280,14 +280,14 @@ jobs:
             
             # Debug: Check what's in the keychain
             echo "Certificates in keychain:"
-            security find-certificate -a "$TEMP_KEYCHAIN" | grep -E "alis|labl" | head -20
+            security find-certificate -a "$TEMP_KEYCHAIN" | grep -E "alis|labl" | head -20 || echo "No certificates found"
             
             echo "All identities in keychain:"
             security find-identity -v "$TEMP_KEYCHAIN"
             
             # Try to dump certificate info
             echo "Certificate details:"
-            security find-certificate -c "Developer" "$TEMP_KEYCHAIN" -p | openssl x509 -text -noout | grep -E "Subject:|Issuer:|Not" | head -10 || true
+            security find-certificate -c "Developer" "$TEMP_KEYCHAIN" -p 2>/dev/null | openssl x509 -text -noout 2>/dev/null | grep -E "Subject:|Issuer:|Not" | head -10 || echo "No certificate details available"
             
             # Find the signing identity
             echo "Listing all certificates in keychain:"
