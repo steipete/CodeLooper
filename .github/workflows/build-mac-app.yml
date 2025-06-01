@@ -261,10 +261,15 @@ jobs:
             security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$TEMP_KEYCHAIN_PASSWORD" "$TEMP_KEYCHAIN"
             
             # Find the signing identity
-            SIGNING_IDENTITY=$(security find-identity -v -p codesigning "$TEMP_KEYCHAIN" | grep "Developer ID Application" | head -1 | grep -o '"[^"]*"' | sed 's/"//g')
+            echo "Listing all certificates in keychain:"
+            security find-identity -v -p codesigning "$TEMP_KEYCHAIN"
+            
+            SIGNING_IDENTITY=$(security find-identity -v -p codesigning "$TEMP_KEYCHAIN" | grep -E "(Developer ID Application|Mac Developer ID Application)" | head -1 | grep -o '"[^"]*"' | sed 's/"//g')
             
             if [ -z "$SIGNING_IDENTITY" ]; then
               echo "::error::Could not find Developer ID Application certificate in keychain"
+              echo "Available certificates:"
+              security find-identity -v -p codesigning "$TEMP_KEYCHAIN"
               exit 1
             fi
             
