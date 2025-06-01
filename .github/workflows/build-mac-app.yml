@@ -238,11 +238,48 @@ jobs:
           mkdir -p binary
           cp -R "$APP_PATH" binary/
           
-          # Sign with hardened runtime
-          echo "Signing with hardened runtime..."
-          codesign --force --deep --options runtime \
-            --sign "Developer ID Application" \
-            binary/CodeLooper.app
+          # Import P12 certificate and sign with hardened runtime
+          if [ -n "$MACOS_SIGNING_P12_FILE_PATH" ] && [ -f "$MACOS_SIGNING_P12_FILE_PATH" ]; then
+            echo "Importing P12 certificate to keychain..."
+            
+            # Create a temporary keychain
+            TEMP_KEYCHAIN="temp-signing.keychain"
+            TEMP_KEYCHAIN_PASSWORD="temp-password-$(date +%s)"
+            
+            # Create and unlock temporary keychain
+            security create-keychain -p "$TEMP_KEYCHAIN_PASSWORD" "$TEMP_KEYCHAIN"
+            security set-keychain-settings -lut 21600 "$TEMP_KEYCHAIN"
+            security unlock-keychain -p "$TEMP_KEYCHAIN_PASSWORD" "$TEMP_KEYCHAIN"
+            
+            # Add to keychain search list
+            security list-keychains -d user -s "$TEMP_KEYCHAIN" $(security list-keychains -d user | sed s/\"//g)
+            
+            # Import certificate
+            security import "$MACOS_SIGNING_P12_FILE_PATH" -k "$TEMP_KEYCHAIN" -P "$MACOS_SIGNING_CERTIFICATE_PASSWORD" -T /usr/bin/codesign
+            
+            # Allow codesign to access the keychain
+            security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$TEMP_KEYCHAIN_PASSWORD" "$TEMP_KEYCHAIN"
+            
+            # Find the signing identity
+            SIGNING_IDENTITY=$(security find-identity -v -p codesigning "$TEMP_KEYCHAIN" | grep "Developer ID Application" | head -1 | grep -o '"[^"]*"' | sed 's/"//g')
+            
+            if [ -z "$SIGNING_IDENTITY" ]; then
+              echo "::error::Could not find Developer ID Application certificate in keychain"
+              exit 1
+            fi
+            
+            echo "Found signing identity: $SIGNING_IDENTITY"
+            echo "Signing with hardened runtime..."
+            codesign --force --deep --options runtime \
+              --sign "$SIGNING_IDENTITY" \
+              --keychain "$TEMP_KEYCHAIN" \
+              binary/CodeLooper.app
+              
+            # Clean up keychain
+            security delete-keychain "$TEMP_KEYCHAIN"
+          else
+            echo "::warning::No P12 certificate file available, skipping code signing"
+          fi
           
           # Test notarization if credentials are available
           if [ -n "$APP_STORE_CONNECT_KEY_ID" ]; then
