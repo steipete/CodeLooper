@@ -18,6 +18,9 @@ import os
 public class SparkleUpdaterManager: NSObject, SPUUpdaterDelegate, SPUStandardUserDriverDelegate, ObservableObject,
     Loggable
 {
+    // MARK: - Static Logger for nonisolated methods
+    nonisolated private static let staticLogger = Logger(category: .appLifecycle)
+    
     // MARK: Lifecycle
 
     override init() {
@@ -51,11 +54,11 @@ public class SparkleUpdaterManager: NSObject, SPUUpdaterDelegate, SPUStandardUse
     // MARK: - SPUUpdaterDelegate
 
     // Handle when no update is found or when there's an error checking for updates
-    public func updater(_: SPUUpdater, didFinishUpdateCycleFor _: SPUUpdateCheck, error: Error?) {
+    nonisolated public func updater(_: SPUUpdater, didFinishUpdateCycleFor _: SPUUpdateCheck, error: Error?) {
         if let error = error as NSError? {
             // Check if it's a "no update found" error - this is normal and shouldn't be logged as an error
             if error.domain == "SUSparkleErrorDomain", error.code == 1001 {
-                self.logger.debug("No updates available")
+                Self.staticLogger.debug("No updates available")
                 return
             }
 
@@ -65,47 +68,47 @@ public class SparkleUpdaterManager: NSObject, SPUUpdaterDelegate, SPUStandardUse
                error.code == 2002 || // SUAppcastParseError
                error.code == 2000
             { // SUInvalidFeedURLError
-                self.logger.warning("Appcast error (missing or invalid feed): \(error.localizedDescription)")
+                Self.staticLogger.warning("Appcast error (missing or invalid feed): \(error.localizedDescription)")
                 // Suppress the error dialog - we'll handle this silently
                 return
             }
 
             // For other network errors or missing appcast, log but don't show UI
-            self.logger.warning("Update check failed: \(error.localizedDescription)")
+            Self.staticLogger.warning("Update check failed: \(error.localizedDescription)")
 
             // Suppress default error dialog by not propagating the error
             return
         }
 
-        self.logger.debug("Update check completed successfully")
+        Self.staticLogger.debug("Update check completed successfully")
     }
 
     // Prevent update checks if we know the appcast is not available
-    public func updater(_: SPUUpdater, mayPerformUpdateCheck updateCheck: SPUUpdateCheck) throws {
+    nonisolated public func updater(_: SPUUpdater, mayPerform updateCheck: SPUUpdateCheck) throws {
         // You can add logic here to prevent update checks under certain conditions
         // For now, we'll allow all checks but handle errors gracefully in didFinishUpdateCycleFor
-        self.logger.debug("Allowing update check of type: \(updateCheck)")
+        Self.staticLogger.debug("Allowing update check of type: \(updateCheck)")
     }
 
     // Handle when update is not found
-    public func updaterDidNotFindUpdate(_: SPUUpdater, error: Error) {
+    nonisolated public func updaterDidNotFindUpdate(_: SPUUpdater, error: Error) {
         if let error = error as NSError? {
-            self.logger.info("No update found: \(error.localizedDescription)")
+            Self.staticLogger.info("No update found: \(error.localizedDescription)")
         } else {
-            self.logger.info("No update available")
+            Self.staticLogger.info("No update available")
         }
     }
 
     // MARK: - SPUStandardUserDriverDelegate
 
     // Called before showing any modal alert
-    public func standardUserDriverWillShowModalAlert() {
-        self.logger.debug("Sparkle will show modal alert")
+    nonisolated public func standardUserDriverWillShowModalAlert() {
+        Self.staticLogger.debug("Sparkle will show modal alert")
     }
 
     // Called after showing any modal alert
-    public func standardUserDriverDidShowModalAlert() {
-        self.logger.debug("Sparkle did show modal alert")
+    nonisolated public func standardUserDriverDidShowModalAlert() {
+        Self.staticLogger.debug("Sparkle did show modal alert")
     }
 
     // Add any other necessary SPUUpdaterDelegate or SPUStandardUserDriverDelegate methods here
