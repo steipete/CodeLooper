@@ -266,6 +266,8 @@ jobs:
               -P "$MACOS_SIGNING_CERTIFICATE_PASSWORD" \
               -T /usr/bin/codesign \
               -T /usr/bin/security \
+              -T /usr/bin/productbuild \
+              -x \
               -A; then
               echo "Certificate import succeeded"
             else
@@ -276,15 +278,29 @@ jobs:
             # Set keychain partition list to allow codesign access
             security set-key-partition-list -S apple-tool:,apple: -s -k "$TEMP_KEYCHAIN_PASSWORD" "$TEMP_KEYCHAIN"
             
-            # Debug: Show all identities (not just codesigning)
+            # Debug: Check what's in the keychain
+            echo "Certificates in keychain:"
+            security find-certificate -a "$TEMP_KEYCHAIN" | grep -E "alis|labl" | head -20
+            
             echo "All identities in keychain:"
             security find-identity -v "$TEMP_KEYCHAIN"
+            
+            # Try to dump certificate info
+            echo "Certificate details:"
+            security find-certificate -c "Developer" "$TEMP_KEYCHAIN" -p | openssl x509 -text -noout | grep -E "Subject:|Issuer:|Not" | head -10 || true
             
             # Find the signing identity
             echo "Listing all certificates in keychain:"
             security find-identity -v -p codesigning "$TEMP_KEYCHAIN"
             
-            SIGNING_IDENTITY=$(security find-identity -v -p codesigning "$TEMP_KEYCHAIN" | grep -E "(Developer ID Application|Mac Developer ID Application)" | head -1 | grep -o '"[^"]*"' | sed 's/"//g')
+            # Try multiple approaches to find the identity
+            SIGNING_IDENTITY=$(security find-identity -v -p codesigning "$TEMP_KEYCHAIN" | grep -E "(Developer|Development|Distribution)" | head -1 | grep -o '"[^"]*"' | sed 's/"//g')
+            
+            # If that fails, try without the codesigning policy
+            if [ -z "$SIGNING_IDENTITY" ]; then
+              echo "No codesigning identity found, trying without policy filter..."
+              SIGNING_IDENTITY=$(security find-identity -v "$TEMP_KEYCHAIN" | grep -E "(Developer|Development|Distribution)" | head -1 | grep -o '"[^"]*"' | sed 's/"//g')
+            fi
             
             if [ -z "$SIGNING_IDENTITY" ]; then
               echo "::error::Could not find Developer ID Application certificate in keychain"
