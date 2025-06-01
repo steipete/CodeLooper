@@ -75,6 +75,12 @@ public enum AppError: Error, LocalizedError, CustomStringConvertible {
     case systemPermissionDenied(permission: String)
     case systemOperationFailed(operation: String, underlying: Error?)
 
+    // MARK: - Code Signing/Notarization Errors
+    
+    case codeSigningFailed(reason: String, underlying: Error?)
+    case notarizationFailed(reason: String, statusCode: Int?)
+    case certificateMissing(type: String)
+
     // MARK: - Unknown/Generic Errors
 
     case unknown(underlying: Error)
@@ -169,6 +175,13 @@ public enum AppError: Error, LocalizedError, CustomStringConvertible {
             "System permission denied: \(permission)"
         case let .systemOperationFailed(operation, underlying):
             "System operation '\(operation)' failed\(underlying.map { ": \($0.localizedDescription)" } ?? "")"
+        // Code Signing/Notarization Errors
+        case let .codeSigningFailed(reason, underlying):
+            "Code signing failed: \(reason)\(underlying.map { " (\($0.localizedDescription))" } ?? "")"
+        case let .notarizationFailed(reason, statusCode):
+            "Notarization failed: \(reason)\(statusCode.map { " (status: \($0))" } ?? "")"
+        case let .certificateMissing(type):
+            "Certificate missing: \(type)"
         // Unknown/Generic Errors
         case let .unknown(underlying):
             "Unknown error: \(underlying.localizedDescription)"
@@ -196,7 +209,8 @@ public enum AppError: Error, LocalizedError, CustomStringConvertible {
              let .defaultsAccessFailed(_, underlying),
              let .directoryCreationFailed(_, underlying),
              let .networkConnectionFailed(_, underlying),
-             let .systemOperationFailed(_, underlying):
+             let .systemOperationFailed(_, underlying),
+             let .codeSigningFailed(_, underlying):
             underlying
         case let .unknown(underlying):
             underlying
@@ -220,6 +234,12 @@ public enum AppError: Error, LocalizedError, CustomStringConvertible {
             "Check your internet connection and try again"
         case .configurationMissing:
             "Please check your settings and ensure all required fields are filled"
+        case .certificateMissing:
+            "Install a valid Developer ID Application certificate in your keychain"
+        case .codeSigningFailed:
+            "Ensure your Developer ID certificate is valid and accessible"
+        case .notarizationFailed:
+            "Check your App Store Connect credentials and try again"
         default:
             nil
         }
@@ -249,6 +269,8 @@ public enum AppError: Error, LocalizedError, CustomStringConvertible {
         case .invalidInput, .missingRequiredField, .valueOutOfRange:
             .validation
         case .systemResourceExhausted, .systemPermissionDenied, .systemOperationFailed:
+            .system
+        case .codeSigningFailed, .notarizationFailed, .certificateMissing:
             .system
         case .unknown, .internalInconsistency:
             .unknown

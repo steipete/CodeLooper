@@ -1,5 +1,20 @@
 name: macOS CodeLooper App
 
+# Code Signing Setup Instructions:
+# 1. Export Developer ID Application certificate from Keychain Access:
+#    - Open Keychain Access
+#    - Find "Developer ID Application: [Your Name]" certificate
+#    - Expand to show private key
+#    - Select BOTH certificate and private key
+#    - Right-click → Export Items → Save as .p12 with password
+# 2. Convert to base64: base64 -i certificate.p12 | pbcopy
+# 3. Add GitHub Secrets:
+#    - MACOS_SIGNING_CERTIFICATE_P12_BASE64: The base64 string
+#    - MACOS_SIGNING_CERTIFICATE_PASSWORD: The P12 password
+#    - APP_STORE_CONNECT_API_KEY_P8: Your API key content
+#    - APP_STORE_CONNECT_KEY_ID: Your API key ID
+#    - APP_STORE_CONNECT_ISSUER_ID: Your issuer ID
+
 permissions:
   contents: read
   packages: write
@@ -258,6 +273,10 @@ jobs:
             echo "P12 file size: $(ls -la "$MACOS_SIGNING_P12_FILE_PATH" | awk '{print $5}') bytes"
             echo "P12 file info:"
             file "$MACOS_SIGNING_P12_FILE_PATH"
+            
+            # Additional debugging for certificate issues
+            echo "Checking P12 contents (without exposing sensitive data):"
+            openssl pkcs12 -in "$MACOS_SIGNING_P12_FILE_PATH" -info -passin pass:"$MACOS_SIGNING_CERTIFICATE_PASSWORD" -noout 2>&1 | grep -E "MAC:|Certificate:|Private Key:" || echo "Unable to parse P12 file"
             
             # Import certificate - ensure we import both cert and private key
             echo "Importing certificate..."
