@@ -162,9 +162,7 @@ jobs:
           echo "Preparing App Store Connect API Key (.p8) file..."
           mkdir -p .private_keys
           P8_FILE_PATH="${{ github.workspace }}/.private_keys/AuthKey_ci_rcodesign.p8"
-          cat <<EOF > "$P8_FILE_PATH"
-$P8_KEY_CONTENT
-EOF
+          printf "%s\n" "$P8_KEY_CONTENT" > "$P8_FILE_PATH"
           if [ $? -ne 0 ] || [ ! -s "$P8_FILE_PATH" ]; then
             echo "::error::Failed to write APP_STORE_CONNECT_API_KEY_P8 secret to $P8_FILE_PATH"
             echo "p8_file_path=" >> $GITHUB_OUTPUT
