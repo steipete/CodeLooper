@@ -305,9 +305,11 @@ jobs:
             if [ -z "$SIGNING_IDENTITY" ]; then
               echo "::warning::Could not find Developer ID Application certificate in keychain"
               echo "Available certificates:"
-              security find-identity -v -p codesigning "$TEMP_KEYCHAIN"
+              security find-identity -v -p codesigning "$TEMP_KEYCHAIN" || true
               echo "::warning::Continuing without code signing"
               SKIP_CODESIGN=true
+            else
+              SKIP_CODESIGN=false
             fi
             
             if [ "$SKIP_CODESIGN" != "true" ]; then
