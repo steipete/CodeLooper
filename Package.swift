@@ -14,7 +14,7 @@ let package = Package(
         // Core UI and settings
         .package(url: "https://github.com/sindresorhus/Defaults", .upToNextMajor(from: "9.0.3")),
         .package(url: "https://github.com/siteline/SwiftUI-Introspect.git", from: "1.3.0"),
-        .package(url: "https://github.com/sindresorhus/KeyboardShortcuts", .upToNextMajor(from: "2.3.0")),
+        .package(path: "LocalPackages/KeyboardShortcuts"),
         // Logging
         .package(url: "https://github.com/apple/swift-log.git", from: "1.6.3"),
         // User experience - launch at login
@@ -94,6 +94,7 @@ let package = Package(
                 "DesignSystem",
                 "Tests",
                 "TestResults.xcresult",
+                "LocalPackages",
             ],
             sources: ["App", "Core", "Features"],
             resources: [
