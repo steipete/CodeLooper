@@ -33,7 +33,7 @@ let project = Project(
         .local(path: "AXorcist"),
         .local(path: "AXpector"),
         .local(path: "DesignSystem"),
-        .local(path: "/Users/steipete/Projects/Demark"),
+        .remote(url: "https://github.com/steipete/Demark", requirement: .upToNextMajor(from: "1.0.0")),
     ],
     settings: .settings(
         base: [
