@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE dictionary SYSTEM "file://localhost/System/Library/DTDs/sdef.dtd">
+<dictionary title="CodeLooper Terminology">
+    <suite name="CodeLooper Suite" code="CLpr" description="Commands for controlling CodeLooper">
+        
+        <command name="show welcome window" code="CLprSwlc" description="Show the welcome window">
+            <cocoa class="NSScriptCommand" method="handleShowWelcomeCommand:"/>
+        </command>
+        
+        <command name="show settings window" code="CLprSset" description="Show the settings window">
+            <cocoa class="NSScriptCommand" method="showSettingsWindowForScripting"/>
+        </command>
+        
+        <command name="get monitoring status" code="CLprGmst" description="Get the current monitoring status">
+            <cocoa class="NSScriptCommand" method="handleGetMonitoringStatusCommand:"/>
+            <result type="boolean" description="Whether monitoring is enabled"/>
+        </command>
+        
+        <class name="application" code="capp" description="CodeLooper application">
+            <cocoa class="NSApplication"/>
+            <property name="monitoring enabled" code="CLme" type="boolean" access="r" 
+                description="Whether global monitoring is enabled">
+                <cocoa method="isMonitoringEnabled"/>
+            </property>
+        </class>
+        
+    </suite>
+</dictionary>

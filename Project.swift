@@ -151,9 +151,7 @@ let project = Project(
             bundleId: "me.steipete.codelooper.tests",
             deploymentTargets: .macOS("14.0"),
             sources: ["Tests/**"],
-            resources: [
-                "Tests/Resources/**",
-            ],
+            resources: [],
             dependencies: [
                 .target(name: "CodeLooper"),
                 .target(name: "Diagnostics"),
