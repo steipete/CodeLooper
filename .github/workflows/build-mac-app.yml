@@ -363,8 +363,19 @@ jobs:
           # Create DMG file
           echo "Creating DMG..."
           mkdir -p artifacts
+          
+          # Create a temporary directory for DMG contents
+          DMG_TEMP="dmg-temp"
+          mkdir -p "$DMG_TEMP"
+          cp -R binary/CodeLooper.app "$DMG_TEMP/"
+          ln -s /Applications "$DMG_TEMP/Applications"
+          
+          # Create DMG with app and Applications symlink
           DMG_NAME="CodeLooper-macOS-${APP_VERSION_FOR_SCRIPT}.dmg"
-          hdiutil create -volname "CodeLooper" -srcfolder binary/CodeLooper.app -ov -format UDZO "artifacts/$DMG_NAME"
+          hdiutil create -volname "CodeLooper" -srcfolder "$DMG_TEMP" -ov -format UDZO "artifacts/$DMG_NAME"
+          
+          # Clean up
+          rm -rf "$DMG_TEMP"
           
           echo "✅ Build, sign, notarize, and DMG creation completed successfully."
 
