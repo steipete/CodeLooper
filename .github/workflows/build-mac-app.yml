@@ -362,7 +362,7 @@ EOF
             echo "notarization_status=skipped_no_creds" >> $GITHUB_OUTPUT
           fi
           
-          # Create DMG
+          # Create DMG file
           echo "Creating DMG..."
           mkdir -p artifacts
           DMG_NAME="CodeLooper-macOS-${APP_VERSION_FOR_SCRIPT}.dmg"
