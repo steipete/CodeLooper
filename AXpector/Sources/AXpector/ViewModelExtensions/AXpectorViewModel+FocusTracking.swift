@@ -27,12 +27,16 @@ extension AXpectorViewModel {
                 object: nil,
                 queue: .main
             ) { [weak self] notification in
+                // Extract notification data before crossing actor boundary
+                guard let activatedApp = notification
+                    .userInfo?[NSWorkspace.applicationUserInfoKey] as? NSRunningApplication
+                else {
+                    return
+                }
+                
                 Task { @MainActor in // Run the whole handler on MainActor
                     guard let self else { return }
-                    guard self.isFocusTrackingModeActive,
-                          let activatedApp = notification
-                          .userInfo?[NSWorkspace.applicationUserInfoKey] as? NSRunningApplication
-                    else {
+                    guard self.isFocusTrackingModeActive else {
                         return
                     }
                     axInfoLog(

@@ -55,12 +55,14 @@ extension AXpectorViewModel {
             axInfoLog("Application terminated: \(RunningApplicationHelper.displayName(for: app))")
 
             // If the terminated app was selected, clear selection
-            if self.selectedApplicationPID == appPID {
-                self.selectedApplicationPID = nil
+            Task { @MainActor in
+                if self.selectedApplicationPID == appPID {
+                    self.selectedApplicationPID = nil
+                }
+                
+                // Refresh the list
+                self.fetchRunningApplications()
             }
-
-            // Refresh the list
-            self.fetchRunningApplications()
         }
     }
 }

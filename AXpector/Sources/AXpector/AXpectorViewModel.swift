@@ -2,6 +2,7 @@ import AppKit
 import AXorcist
 import Combine
 import Defaults
+@preconcurrency import ObjectiveC
 import SwiftUI
 
 // Define the key locally if not accessible from main app target's DefaultsKeys
@@ -47,24 +48,26 @@ class AXpectorViewModel: ObservableObject {
     }
 
     deinit {
-        permissionCheckTimer?.invalidate()
-        permissionCheckTimer = nil
-        permissionTask?.cancel()
-        permissionTask = nil
-
-        // Remove app observers
-        if let observer = appLaunchObserver {
-            NotificationCenter.default.removeObserver(observer)
-        }
-        if let observer = appTerminateObserver {
-            NotificationCenter.default.removeObserver(observer)
-        }
-
-        windowRefreshTimer?.invalidate()
-        windowRefreshTimer = nil
-
         Task { @MainActor [weak self] in
             guard let self else { return }
+            
+            // Clean up timers and tasks
+            self.permissionCheckTimer?.invalidate()
+            self.permissionCheckTimer = nil
+            self.permissionTask?.cancel()
+            self.permissionTask = nil
+            
+            // Remove app observers
+            if let observer = self.appLaunchObserver {
+                NotificationCenter.default.removeObserver(observer)
+            }
+            if let observer = self.appTerminateObserver {
+                NotificationCenter.default.removeObserver(observer)
+            }
+            
+            self.windowRefreshTimer?.invalidate()
+            self.windowRefreshTimer = nil
+            
             self.stopHoverMonitoring()
             self.stopFocusTrackingMonitoring()
         }
