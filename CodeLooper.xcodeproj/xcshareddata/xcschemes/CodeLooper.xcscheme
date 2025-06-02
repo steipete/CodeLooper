@@ -29,15 +29,6 @@
       shouldUseLaunchSchemeArgsEnv = "YES"
       codeCoverageEnabled = "YES"
       onlyGenerateCoverageForSpecifiedTargets = "YES">
-      <CodeCoverageTargets>
-         <BuildableReference
-            BuildableIdentifier = "primary"
-            BlueprintIdentifier = "C1361A92D9A8D2B373F76CB0"
-            BuildableName = "CodeLooper.app"
-            BlueprintName = "CodeLooper"
-            ReferencedContainer = "container:CodeLooper.xcodeproj">
-         </BuildableReference>
-      </CodeCoverageTargets>
       <Testables>
          <TestableReference
             skipped = "NO"
@@ -51,6 +42,15 @@
             </BuildableReference>
          </TestableReference>
       </Testables>
+      <CodeCoverageTargets>
+         <BuildableReference
+            BuildableIdentifier = "primary"
+            BlueprintIdentifier = "C1361A92D9A8D2B373F76CB0"
+            BuildableName = "CodeLooper.app"
+            BlueprintName = "CodeLooper"
+            ReferencedContainer = "container:CodeLooper.xcodeproj">
+         </BuildableReference>
+      </CodeCoverageTargets>
    </TestAction>
    <LaunchAction
       buildConfiguration = "Debug"

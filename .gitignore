@@ -109,3 +109,4 @@ TestResults.xcresult
 
 # Sparkle private keys
 private/
+*.profraw

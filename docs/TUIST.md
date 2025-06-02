@@ -41,7 +41,6 @@ The project uses the following Swift Package Manager dependencies:
 - Defaults: For user defaults management
 - SwiftUIIntrospect: For SwiftUI view introspection
 - swift-log: For logging
-- LaunchAtLogin: For launch-at-login functionality
 - Sparkle: For application updates
 - AXorcist: For accessibility interactions (local package)
 

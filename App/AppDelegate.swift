@@ -42,16 +42,8 @@ public final class AppDelegate: NSObject, NSApplicationDelegate, ObservableObjec
     // MARK: - Cleanup
 
     deinit {
-        MainActor.assumeIsolated {
-            for observer in notificationObservers {
-                NotificationCenter.default.removeObserver(observer)
-            }
-            notificationObservers.removeAll()
-
-            self.logger.info("AppDelegate deinit - notification resources cleaned up")
-        }
-
-        self.logger.info("AppDelegate deinit - resources cleaned up")
+        // Notification observers will be cleaned up automatically when the object is deallocated.
+        // We cannot safely access @MainActor-isolated properties from deinit.
     }
 
     // MARK: Public
@@ -74,6 +66,8 @@ public final class AppDelegate: NSObject, NSApplicationDelegate, ObservableObjec
         // Single instance check - skip for Xcode previews
         let isXcodePreview = ProcessInfo.processInfo.environment["XCODE_RUNNING_FOR_PREVIEWS"] == "1"
 
+        // Single instance check - skip for Xcode previews and DEBUG builds
+        #if !DEBUG
         if !isXcodePreview {
             singleInstanceLock = SingleInstanceLock(identifier: "me.steipete.codelooper.instance")
 
@@ -81,14 +75,14 @@ public final class AppDelegate: NSObject, NSApplicationDelegate, ObservableObjec
             Task { @MainActor [weak self] in
                 guard let self else { return }
 
-                // Give the SingleInstanceLock time to check
-                try? await Task.sleep(for: .seconds(TimingConfiguration.shortDelay)) // 0.6 seconds
+                // Give the SingleInstanceLock time to check (reduced from 0.6 to 0.2 seconds)
+                try? await Task.sleep(for: .milliseconds(200))
 
                 guard let singleInstanceLock = self.singleInstanceLock else { return }
 
                 if !singleInstanceLock.isPrimaryInstance {
                     self.logger.warning("Another instance of CodeLooper is already running. Terminating this instance.")
-                    // Bring the other instance to the front
+                    // Bring the other instance to the front and show settings
                     singleInstanceLock.activateExistingInstance()
                     NSApp.terminate(nil)
                 }
@@ -96,6 +90,9 @@ public final class AppDelegate: NSObject, NSApplicationDelegate, ObservableObjec
         } else {
             logger.info("Running in Xcode preview mode - skipping single instance check")
         }
+        #else
+        logger.info("DEBUG build: Single instance check is disabled")
+        #endif
 
         // Initialize core services FIRST
         initializeServices() // Ensure windowManager and other services are ready
@@ -363,8 +360,15 @@ public final class AppDelegate: NSObject, NSApplicationDelegate, ObservableObjec
         logger.info("Setting up notification observers")
 
         let highlightMenuBarObserver = setupHighlightMenuBarObserver()
-
         notificationObservers.append(highlightMenuBarObserver)
+        
+        // Observer for showing settings when another instance is launched
+        DistributedNotificationCenter.default().addObserver(
+            self,
+            selector: #selector(handleShowSettingsNotification),
+            name: NSNotification.Name("me.steipete.codelooper.showSettings"),
+            object: nil
+        )
 
         // Observer for showing AXpector Window
         let axpectorObserver = NotificationCenter.default.addObserver(
@@ -396,6 +400,14 @@ public final class AppDelegate: NSObject, NSApplicationDelegate, ObservableObjec
                 self?.logger.info("Highlighting menu bar icon based on notification (.highlightMenuBarIcon received)")
                 AppIconStateController.shared.flashIcon()
             }
+        }
+    }
+    
+    @objc private func handleShowSettingsNotification() {
+        Task { @MainActor in
+            logger.info("Received request to show settings from another instance")
+            SettingsService.openSettingsSubject.send()
+            NSApp.activate(ignoringOtherApps: true)
         }
     }
 

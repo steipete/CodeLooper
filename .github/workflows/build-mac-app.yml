@@ -1,5 +1,20 @@
 name: macOS CodeLooper App
 
+# Code Signing Setup Instructions:
+# 1. Export Developer ID Application certificate from Keychain Access:
+#    - Open Keychain Access
+#    - Find "Developer ID Application: [Your Name]" certificate
+#    - Expand to show private key
+#    - Select BOTH certificate and private key
+#    - Right-click → Export Items → Save as .p12 with password
+# 2. Convert to base64: base64 -i certificate.p12 | pbcopy
+# 3. Add GitHub Secrets:
+#    - MACOS_SIGNING_CERTIFICATE_P12_BASE64: The base64 string
+#    - MACOS_SIGNING_CERTIFICATE_PASSWORD: The P12 password
+#    - APP_STORE_CONNECT_API_KEY_P8: Your API key content
+#    - APP_STORE_CONNECT_KEY_ID: Your API key ID
+#    - APP_STORE_CONNECT_ISSUER_ID: Your issuer ID
+
 permissions:
   contents: read
   packages: write
@@ -111,27 +126,29 @@ jobs:
             ${{ runner.os }}-spm-${{ hashFiles('Package.swift') }}-
             ${{ runner.os }}-spm-
 
-      - name: Cache build artifacts
-        id: cache-build
-        uses: actions/cache@v4
-        with:
-          path: |
-            binary
-          key: ${{ runner.os }}-binary-${{ hashFiles('Sources/**/*.swift', 'Package.swift', 'scripts/build.sh') }}-${{ steps.set-version.outputs.swift_version }}
-          restore-keys: |
-            ${{ runner.os }}-binary-${{ hashFiles('Sources/**/*.swift') }}-
-            ${{ runner.os }}-binary-
+      # Temporarily disabled to ensure fresh signed builds
+      # - name: Cache build artifacts
+      #   id: cache-build
+      #   uses: actions/cache@v4
+      #   with:
+      #     path: |
+      #       binary
+      #     key: ${{ runner.os }}-binary-${{ hashFiles('Sources/**/*.swift', 'Package.swift', 'scripts/build.sh') }}-${{ steps.set-version.outputs.swift_version }}-signed-v2
+      #     restore-keys: |
+      #       ${{ runner.os }}-binary-${{ hashFiles('Sources/**/*.swift') }}-
+      #       ${{ runner.os }}-binary-
 
-      - name: Cache Xcode DerivedData
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/Library/Developer/Xcode/DerivedData
-            ~/Library/Caches/org.swift.swiftpm
-          key: ${{ runner.os }}-xcode-${{ hashFiles('Package.swift') }}-${{ github.sha }}
-          restore-keys: |
-            ${{ runner.os }}-xcode-${{ hashFiles('Package.swift') }}-
-            ${{ runner.os }}-xcode-
+      # Temporarily disabled to ensure fresh builds
+      # - name: Cache Xcode DerivedData
+      #   uses: actions/cache@v4
+      #   with:
+      #     path: |
+      #       ~/Library/Developer/Xcode/DerivedData
+      #       ~/Library/Caches/org.swift.swiftpm
+      #     key: ${{ runner.os }}-xcode-${{ hashFiles('Package.swift') }}-${{ github.sha }}
+      #     restore-keys: |
+      #       ${{ runner.os }}-xcode-${{ hashFiles('Package.swift') }}-
+      #       ${{ runner.os }}-xcode-
 
       - name: Prepare P12 Certificate File from Secret
         id: prepare_p12_cert
@@ -162,7 +179,8 @@ jobs:
           echo "Preparing App Store Connect API Key (.p8) file..."
           mkdir -p .private_keys
           P8_FILE_PATH="${{ github.workspace }}/.private_keys/AuthKey_ci_rcodesign.p8"
-          printf "%s\n" "$P8_KEY_CONTENT" > "$P8_FILE_PATH"
+          # Write P8 key content directly
+          echo "$P8_KEY_CONTENT" > "$P8_FILE_PATH"
           if [ $? -ne 0 ] || [ ! -s "$P8_FILE_PATH" ]; then
             echo "::error::Failed to write APP_STORE_CONNECT_API_KEY_P8 secret to $P8_FILE_PATH"
             echo "p8_file_path=" >> $GITHUB_OUTPUT
@@ -259,6 +277,10 @@ jobs:
             echo "P12 file info:"
             file "$MACOS_SIGNING_P12_FILE_PATH"
             
+            # Additional debugging for certificate issues
+            echo "Checking P12 contents (without exposing sensitive data):"
+            openssl pkcs12 -in "$MACOS_SIGNING_P12_FILE_PATH" -info -passin pass:"$MACOS_SIGNING_CERTIFICATE_PASSWORD" -noout 2>&1 | grep -E "MAC:|Certificate:|Private Key:" || echo "Unable to parse P12 file"
+            
             # Import certificate - ensure we import both cert and private key
             echo "Importing certificate..."
             if security import "$MACOS_SIGNING_P12_FILE_PATH" \
@@ -314,7 +336,19 @@ jobs:
             
             if [ "$SKIP_CODESIGN" != "true" ]; then
               echo "Found signing identity: $SIGNING_IDENTITY"
-              echo "Signing with hardened runtime..."
+              
+              # Sign embedded frameworks and helpers first
+              echo "Signing embedded frameworks and helpers..."
+              find binary/CodeLooper.app -name "*.framework" -o -name "*.dylib" -o -name "*.bundle" | while read -r item; do
+                echo "Signing: $item"
+                codesign --force --options runtime \
+                  --sign "$SIGNING_IDENTITY" \
+                  --keychain "$TEMP_KEYCHAIN" \
+                  "$item" || echo "Warning: Failed to sign $item"
+              done
+              
+              # Sign the main app with deep signing
+              echo "Signing main app with hardened runtime..."
               codesign --force --deep --options runtime \
                 --sign "$SIGNING_IDENTITY" \
                 --keychain "$TEMP_KEYCHAIN" \
@@ -340,11 +374,21 @@ jobs:
             mv tools/rcodesign/rcodesign tools/rcodesign/bin/
             
             # Create API key JSON
-            tools/rcodesign/bin/rcodesign encode-app-store-connect-api-key \
+            if tools/rcodesign/bin/rcodesign encode-app-store-connect-api-key \
               "$APP_STORE_CONNECT_ISSUER_ID" \
               "$APP_STORE_CONNECT_KEY_ID" \
               "$APP_STORE_CONNECT_P8_FILE_PATH" \
-              --output-path /tmp/api_key.json
+              --output-path /tmp/api_key.json; then
+              echo "API key JSON created successfully"
+            else
+              echo "::warning::Failed to create API key JSON. The P8 key might not be in the correct PEM format."
+              echo "::warning::Please ensure APP_STORE_CONNECT_API_KEY_P8 secret contains the full P8 file content including:"
+              echo "::warning::-----BEGIN PRIVATE KEY-----"
+              echo "::warning::[key content]"
+              echo "::warning::-----END PRIVATE KEY-----"
+              echo "notarization_status=failed_api_key" >> $GITHUB_OUTPUT
+              exit 0
+            fi
             
             # Submit for notarization
             tools/rcodesign/bin/rcodesign notary-submit \

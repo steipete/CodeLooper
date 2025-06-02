@@ -8,7 +8,6 @@ let dependencies = Package.Dependencies(
                 url: "https://github.com/kishikawakatsumi/KeychainAccess.git",
                 requirement: .upToNextMajor(from: "4.2.2")
             ),
-            .remote(url: "https://github.com/sindresorhus/LaunchAtLogin", requirement: .upToNextMajor(from: "5.0.2")),
             .remote(
                 url: "https://github.com/siteline/SwiftUI-Introspect.git",
                 requirement: .upToNextMajor(from: "1.3.0")

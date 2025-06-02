@@ -29,7 +29,9 @@ struct CodeLooperApp: App {
         // Perform one-time setup for the logging system.
         Diagnostics.Logger.bootstrap(destination: .console, minLevel: .debug)
 
-        logger.info("CodeLooperApp initialized")
+        // Use temporary logger since the instance property isn't available yet
+        let initLogger = Logger(category: .app)
+        initLogger.info("CodeLooperApp initialized")
 
         // Check MCP extension versions on startup
         Task {

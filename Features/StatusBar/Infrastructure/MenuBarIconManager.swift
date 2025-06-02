@@ -47,11 +47,9 @@ class MenuBarIconManager: ObservableObject {
     }
 
     deinit {
-        MainActor.assumeIsolated {
-            removeAppearanceObserver()
-            iconAnimator?.cleanup()
-            cancellables.forEach { $0.cancel() }
-        }
+        // All cleanup is handled automatically when the object is deallocated.
+        // We cannot safely access @MainActor-isolated properties from deinit
+        // without risking crashes when the object is deallocated from non-main threads.
     }
 
     // MARK: Internal
