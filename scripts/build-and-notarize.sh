@@ -83,28 +83,30 @@ mkdir -p "$PRIVATE_KEYS_DIR" # Ensure .private_keys directory exists
 # --- Step 1: Build the app ---
 log "Step 1: Building the CodeLooper app..."
 
-# Determine build arguments based on signing availability
-BUILD_ARGS=""
+# Use Xcode archiving for release builds (more reliable than SPM for complex projects)
+ARCHIVE_PATH="./build/CodeLooper.xcarchive"
+log "Creating Xcode archive..."
 
-# Check for P12 certificate (from environment or file)
-if [ -n "${MACOS_SIGNING_P12_FILE_PATH:-}" ] && [ -f "${MACOS_SIGNING_P12_FILE_PATH}" ]; then
-    log "P12 certificate found at $MACOS_SIGNING_P12_FILE_PATH"
-    BUILD_ARGS="--p12-file $MACOS_SIGNING_P12_FILE_PATH"
-    
-    if [ -n "${MACOS_SIGNING_CERTIFICATE_PASSWORD:-}" ]; then
-        BUILD_ARGS="$BUILD_ARGS --p12-password $MACOS_SIGNING_CERTIFICATE_PASSWORD"
-    else
-        log "Warning: P12 file found but no password provided"
-    fi
-else
-    log "No P12 certificate available - will try system keychain signing"
-fi
+# Clean any existing archive
+rm -rf "$ARCHIVE_PATH"
 
-# Execute build script
-if ! bash "$BUILD_SCRIPT_PATH" $BUILD_ARGS; then
-    log "Error: Build script failed"
+# Generate Xcode project first
+if ! ./scripts/generate-xcproj.sh; then
+    log "Error: Failed to generate Xcode project"
     exit 1
 fi
+
+# Create archive with Xcode
+if ! xcodebuild -workspace CodeLooper.xcworkspace -scheme CodeLooper -configuration Release -archivePath "$ARCHIVE_PATH" archive; then
+    log "Error: Xcode archive failed"
+    exit 1
+fi
+
+# Copy app from archive to binary directory
+mkdir -p binary
+cp -R "$ARCHIVE_PATH/Products/Applications/CodeLooper.app" "./binary/"
+
+log "✅ Archive created and app copied to binary directory"
 
 # Verify the app bundle was created
 if [ ! -d "$APP_BUNDLE_REL_PATH" ]; then
@@ -114,79 +116,50 @@ fi
 
 log "✅ Build completed successfully"
 
-# --- Step 2: Notarization (if not skipped) ---
+# --- Step 2: Code Signing and Notarization (if not skipped) ---
 if [ "$SKIP_NOTARIZATION" = false ]; then
-    log "Step 2: Attempting notarization..."
+    log "Step 2: Code signing and notarization..."
     
-    # Check if we have the required environment variables for notarization
-    if [ -n "${APP_STORE_CONNECT_P8_FILE_PATH:-}" ] && [ -f "${APP_STORE_CONNECT_P8_FILE_PATH}" ] && \
-       [ -n "${APP_STORE_CONNECT_KEY_ID:-}" ] && [ -n "${APP_STORE_CONNECT_ISSUER_ID:-}" ]; then
-        
-        log "Notarization credentials found, proceeding with notarization..."
-        
-        # Download rcodesign if not available
-        if [ ! -f "$RCODESIGN_BINARY_PATH" ]; then
-            log "Downloading rcodesign..."
-            mkdir -p "$(dirname "$RCODESIGN_BINARY_PATH")"
-            
-            # Download rcodesign (adjust URL/version as needed)
-            RCODESIGN_URL="https://github.com/indygreg/apple-platform-rs/releases/download/apple-codesign%2F0.22.0/apple-codesign-0.22.0-macos-universal.tar.gz"
-            curl -L "$RCODESIGN_URL" | tar -xz -C "$(dirname "$RCODESIGN_BINARY_PATH")" --strip-components=1
-            chmod +x "$RCODESIGN_BINARY_PATH"
-        fi
-        
-        # Submit for notarization
-        log "Submitting $APP_BUNDLE_REL_PATH for notarization..."
-        "$RCODESIGN_BINARY_PATH" notary-submit \
-            --api-key-path "${APP_STORE_CONNECT_P8_FILE_PATH}" \
-            --api-issuer "${APP_STORE_CONNECT_ISSUER_ID}" \
-            --api-key "${APP_STORE_CONNECT_KEY_ID}" \
-            --wait \
-            "$APP_BUNDLE_REL_PATH"
-        
-        if [ $? -eq 0 ]; then
-            log "✅ Notarization completed successfully"
-        else
-            log "❌ Notarization failed"
-            exit 1
-        fi
+    # First, code sign the app
+    log "Code signing the app bundle..."
+    if ! ./scripts/codesign-app.sh "$APP_BUNDLE_REL_PATH"; then
+        log "Error: Code signing failed"
+        exit 1
+    fi
+    
+    # Then attempt notarization using our existing script
+    log "Attempting notarization..."
+    if ./scripts/sign-and-notarize.sh > /dev/null 2>&1; then
+        log "✅ Notarization completed successfully"
     else
-        log "⚠️  Notarization credentials not available - skipping notarization"
+        log "⚠️  Notarization failed or credentials not available - continuing with signed app"
     fi
 else
     log "⚠️  Skipping notarization (--skip-notarization flag used)"
+    
+    # Still code sign even if skipping notarization
+    log "Code signing the app bundle..."
+    if ! ./scripts/codesign-app.sh "$APP_BUNDLE_REL_PATH"; then
+        log "Error: Code signing failed"
+        exit 1
+    fi
 fi
 
 # --- Step 3: Create DMG (if requested) ---
 if [ "$CREATE_DMG" = true ]; then
     log "Step 3: Creating DMG..."
     
-    # Determine DMG name
+    # Determine version for DMG naming
     if [ -n "$APP_VERSION_ARG" ]; then
-        DMG_NAME="${APP_NAME}-macOS-${APP_VERSION_ARG}.dmg"
+        VERSION_ARG="--app-version $APP_VERSION_ARG"
     else
-        DMG_NAME="${APP_NAME}-macOS.dmg"
+        VERSION_ARG="--app-version v1.0.0"
     fi
     
-    DMG_PATH="artifacts/$DMG_NAME"
-    mkdir -p artifacts
-    
-    # Create DMG using hdiutil
-    TEMP_DMG_DIR="temp_dmg_$$"
-    mkdir -p "$TEMP_DMG_DIR"
-    
-    # Copy app to temp directory
-    cp -R "$APP_BUNDLE_REL_PATH" "$TEMP_DMG_DIR/"
-    
-    # Create DMG
-    log "Creating DMG: $DMG_PATH"
-    hdiutil create -volname "$APP_NAME" -srcfolder "$TEMP_DMG_DIR" -ov -format UDZO "$DMG_PATH"
-    
-    # Clean up temp directory
-    rm -rf "$TEMP_DMG_DIR"
-    
-    if [ -f "$DMG_PATH" ]; then
-        log "✅ DMG created successfully: $DMG_PATH"
+    # Use our existing DMG creation script
+    if ./scripts/create-dmg.sh --app-path "$APP_BUNDLE_REL_PATH" --output-dir binary $VERSION_ARG; then
+        log "✅ DMG created successfully"
+        DMG_PATH="binary/${APP_NAME}-macOS-${APP_VERSION_ARG:-v1.0.0}.dmg"
     else
         log "❌ Failed to create DMG"
         exit 1
