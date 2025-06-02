@@ -336,7 +336,19 @@ jobs:
             
             if [ "$SKIP_CODESIGN" != "true" ]; then
               echo "Found signing identity: $SIGNING_IDENTITY"
-              echo "Signing with hardened runtime..."
+              
+              # Sign embedded frameworks and helpers first
+              echo "Signing embedded frameworks and helpers..."
+              find binary/CodeLooper.app -name "*.framework" -o -name "*.dylib" -o -name "*.bundle" | while read -r item; do
+                echo "Signing: $item"
+                codesign --force --options runtime \
+                  --sign "$SIGNING_IDENTITY" \
+                  --keychain "$TEMP_KEYCHAIN" \
+                  "$item" || echo "Warning: Failed to sign $item"
+              done
+              
+              # Sign the main app with deep signing
+              echo "Signing main app with hardened runtime..."
               codesign --force --deep --options runtime \
                 --sign "$SIGNING_IDENTITY" \
                 --keychain "$TEMP_KEYCHAIN" \
