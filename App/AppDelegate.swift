@@ -153,21 +153,6 @@ public final class AppDelegate: NSObject, NSApplicationDelegate, ObservableObjec
         #endif
     }
 
-    public func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
-        // For a menu bar app, we should generally not terminate automatically
-        // Only terminate if explicitly requested by the user
-        logger.info("Application termination requested")
-        
-        // If this is a system-initiated termination (like automatic termination), prevent it
-        // We can check if there's a menu item action or explicit user request
-        if sender.currentEvent?.type == .systemDefined {
-            logger.info("Preventing system-initiated termination for menu bar app")
-            return .terminateCancel
-        }
-        
-        return .terminateNow
-    }
-    
     public func applicationWillTerminate(_: Notification) {
         logger.info("Application is terminating")
 
