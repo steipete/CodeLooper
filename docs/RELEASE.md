@@ -193,10 +193,187 @@ To test the Sparkle update mechanism:
 - Rotate API keys periodically
 - Always notarize releases for Gatekeeper
 
+## Changelog and Release Notes System
+
+### Overview
+CodeLooper uses a dual changelog system for maximum compatibility:
+
+1. **CHANGELOG.md** - Markdown format for developers and GitHub
+2. **CHANGELOG.html** - Styled HTML for Sparkle release notes
+3. **Inline HTML in appcast.xml** - Fallback for immediate display
+
+### Updating Release Notes
+
+#### 1. Update CHANGELOG.md
+Add new version entry in Markdown format:
+
+```markdown
+## [1.1.0] - 2025-06-03
+
+### 🎉 New Release
+
+### Added
+- **New Feature**: Description of what was added
+- **Enhancement**: Improvement to existing functionality
+
+### Fixed
+- Bug fix descriptions
+
+### Security
+- Security improvements
+```
+
+#### 2. Update CHANGELOG.html
+Copy content from CHANGELOG.md and convert to styled HTML:
+
+```html
+<div class="version">
+    <h2>[1.1.0] - 2025-06-03</h2>
+    <div class="release-type">🎉 New Release</div>
+</div>
+
+<div class="category">
+    <h3>✨ Added</h3>
+    <ul>
+        <li><strong>New Feature</strong>: Description</li>
+    </ul>
+</div>
+```
+
+#### 3. Update appcast.xml
+Update the inline HTML description:
+
+```xml
+<description><![CDATA[
+    <h2>🎉 CodeLooper 1.1.0 - New Release</h2>
+    
+    <h3>✨ Added</h3>
+    <ul>
+        <li><strong>New Feature</strong>: Description</li>
+    </ul>
+    
+    <p><a href="https://github.com/steipete/CodeLooper">View on GitHub</a></p>
+]]></description>
+```
+
+### GitHub Pages Setup
+Release notes are served via GitHub Pages for proper HTML rendering:
+
+- **Location**: `docs/CHANGELOG.html`
+- **URL**: `https://steipete.github.io/CodeLooper/CHANGELOG.html`
+- **Fallback**: Inline HTML in appcast.xml for immediate display
+
+The system automatically uses GitHub Pages when available, with appcast.xml inline content as fallback.
+
+### Automatic Update Checks
+The app now checks for updates automatically:
+
+- **On Startup**: Checks for updates 2 seconds after launch (background)
+- **Automatic**: Sparkle checks periodically based on user preferences
+- **Manual**: Users can trigger via Settings > About > Check for Updates
+
+Configuration in `SparkleUpdaterManager.swift`:
+```swift
+// Enable automatic update checks
+controller.updater.automaticallyChecksForUpdates = true
+
+// Check for updates on startup
+Task { @MainActor in
+    try? await Task.sleep(for: .seconds(2))
+    controller.updater.checkForUpdatesInBackground()
+}
+```
+
+## EdDSA Key Management
+
+### Key Storage and Backup
+- **Primary**: macOS Keychain (service: "https://sparkle-project.org", account: "ed25519")
+- **Backup Location**: `/Users/steipete/Library/CloudStorage/Dropbox/certificates/May2025/CodeLooper/`
+- **Public Key**: `oIgha2beQWnyCXgOIlB8+oaUzFNtWgkqq6jKXNNDhv4=`
+- **Private Key**: `Q+Mf0guV/149574+2YMM5njgGxDVoy5nNMnjN6Wl05I=`
+
+### Restoring Keys
+If keys are lost from Keychain, restore from backup:
+
+```bash
+# Restore private key to keychain
+security add-generic-password \
+    -s "https://sparkle-project.org" \
+    -a "ed25519" \
+    -w "Q+Mf0guV/149574+2YMM5njgGxDVoy5nNMnjN6Wl05I=" \
+    -D "private key" \
+    -j "Public key (SUPublicEDKey value) for this key is: oIgha2beQWnyCXgOIlB8+oaUzFNtWgkqq6jKXNNDhv4=" \
+    -T "" -U
+```
+
+### Signing Process
+The signing process has been streamlined:
+
+```bash
+# Using built-in Sparkle tools
+./.build/artifacts/sparkle/Sparkle/bin/sign_update binary/CodeLooper-macOS-v1.0.0.dmg
+
+# Output format:
+# sparkle:edSignature="..." length="..."
+```
+
+### DMG Volume Naming
+DMG volumes are now named simply "CodeLooper" (not "CodeLooper Installer") for cleaner user experience:
+
+```bash
+./scripts/create-dmg.sh \
+    --volume-name "CodeLooper" \
+    --app-path binary/CodeLooper.app \
+    --output-dir binary
+```
+
+## Complete Release Checklist
+
+### Pre-Release
+- [ ] Update version numbers in Info.plist files
+- [ ] Update CHANGELOG.md with new version
+- [ ] Update CHANGELOG.html with styled content
+- [ ] Update appcast.xml with inline HTML description
+- [ ] Test build and functionality
+
+### Build and Sign
+- [ ] Generate Xcode project: `./scripts/generate-xcproj.sh`
+- [ ] Build with full notarization: `./scripts/build-and-notarize.sh --create-dmg --app-version vX.X.X`
+- [ ] Verify DMG volume name is "CodeLooper"
+- [ ] Sign DMG with EdDSA: `./.build/artifacts/sparkle/Sparkle/bin/sign_update`
+
+### Release
+- [ ] Update appcast.xml with signature and file size
+- [ ] Commit and push changelog updates
+- [ ] Create GitHub release with signed DMG
+- [ ] Test Sparkle update from previous version
+- [ ] Verify release notes display correctly in Sparkle dialog
+
+### Post-Release
+- [ ] Test automatic update check on startup
+- [ ] Verify GitHub Pages serves CHANGELOG.html correctly
+- [ ] Monitor for any update issues or user reports
+- [ ] Update documentation if needed
+
 ## Backup
 
 Important files to backup:
-- Sparkle private key (in Keychain)
-- Developer ID certificate (.p12)
-- App Store Connect API key (.p8)
-- Current location: `/Users/steipete/Library/CloudStorage/Dropbox/certificates/May2025/`
+- **Sparkle EdDSA Keys**: In Keychain + `/Users/steipete/Library/CloudStorage/Dropbox/certificates/May2025/CodeLooper/`
+- **Developer ID Certificate**: (.p12) in Dropbox
+- **App Store Connect API Key**: (.p8) in Dropbox
+- **Release Scripts**: All scripts in `/scripts/` directory
+- **Appcast**: `appcast.xml` (version controlled)
+- **Changelog Files**: `CHANGELOG.md` and `docs/CHANGELOG.html`
+
+### Backup Verification
+Regularly verify backup integrity:
+```bash
+# Check Keychain key
+security find-generic-password -s "https://sparkle-project.org" -a "ed25519" -g
+
+# Check Dropbox backup files
+ls -la "/Users/steipete/Library/CloudStorage/Dropbox/certificates/May2025/CodeLooper/"
+
+# Verify public key matches app
+grep -A1 "SUPublicEDKey" App/Info.plist
+```
