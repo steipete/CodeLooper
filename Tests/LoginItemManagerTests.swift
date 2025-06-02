@@ -1,6 +1,5 @@
 @testable import CodeLooper
 import Foundation
-import LaunchAtLogin
 import XCTest
 
 class LoginItemManagerTests: XCTestCase {

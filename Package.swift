@@ -18,7 +18,6 @@ let package = Package(
         // Logging
         .package(url: "https://github.com/apple/swift-log.git", from: "1.6.3"),
         // User experience - launch at login
-        .package(url: "https://github.com/sindresorhus/LaunchAtLogin", .upToNextMajor(from: "5.0.2")),
         // Keychain access
         .package(url: "https://github.com/kishikawakatsumi/KeychainAccess.git", .upToNextMajor(from: "4.2.2")),
         // Accessibility utilities
@@ -53,7 +52,6 @@ let package = Package(
             name: "CodeLooper",
             dependencies: [
                 "Defaults",
-                "LaunchAtLogin",
                 "KeyboardShortcuts",
                 "KeychainAccess",
                 "Diagnostics",

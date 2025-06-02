@@ -2,11 +2,11 @@ import Combine
 import Defaults
 import Diagnostics
 @preconcurrency import Foundation
-import LaunchAtLogin
+import ServiceManagement
 import os.log
 
 /// Manages the app's login item settings for starting at login
-/// Uses the LaunchAtLogin library for simplified management
+/// Uses the native SMAppService API (requires macOS 13+)
 @MainActor
 public final class LoginItemManager: ObservableObject {
     // MARK: Lifecycle
@@ -19,8 +19,7 @@ public final class LoginItemManager: ObservableObject {
         // On initialization, sync the status to ensure UserDefaults matches system state
         syncWithSystemState()
 
-        // Register for internal LaunchAtLogin status change notifications
-        // Use block-based API for better safety with queue specification
+        // Register for login item status change notifications
         notificationToken = NotificationCenter.default.addObserver(
             forName: Self.statusChangedNotification,
             object: nil,
@@ -28,8 +27,6 @@ public final class LoginItemManager: ObservableObject {
         ) { [weak self] _ in
             // Update preferences to match system state when status changes
             guard let self else { return }
-            // Since we need to call a MainActor method in a notification handler,
-            // we need to explicitly use Task to properly hop to the main actor
             Task { @MainActor in
                 self.syncWithSystemState()
             }
@@ -37,8 +34,6 @@ public final class LoginItemManager: ObservableObject {
     }
 
     deinit {
-        // Since deinit is not MainActor-isolated but notification removal requires main thread,
-        // we use direct main thread dispatch to avoid concurrency issues
         // Make a strong copy of the token to avoid thread issues
         let tokenCopy = notificationToken
         DispatchQueue.main.async {
@@ -63,16 +58,18 @@ public final class LoginItemManager: ObservableObject {
     @discardableResult
     @MainActor
     func toggleStartAtLogin() -> Bool {
-        logger.info("Toggling login item from \(LaunchAtLogin.isEnabled) to \(!LaunchAtLogin.isEnabled)")
+        let currentState = isEnabled()
+        let newState = !currentState
+        logger.info("Toggling login item from \(currentState) to \(!currentState)")
 
-        // Toggle the LaunchAtLogin setting
-        LaunchAtLogin.isEnabled.toggle()
+        // Toggle the login item setting
+        setEnabled(newState)
 
         // Update our preference to match
-        Defaults[.startAtLogin] = LaunchAtLogin.isEnabled
+        Defaults[.startAtLogin] = newState
 
-        logger.info("Login item toggled to: \(LaunchAtLogin.isEnabled)")
-        return LaunchAtLogin.isEnabled
+        logger.info("Login item toggled to: \(newState)")
+        return newState
     }
 
     /// Set the login item status directly
@@ -84,13 +81,13 @@ public final class LoginItemManager: ObservableObject {
         logger.info("Setting login item to \(enabled)")
 
         // First read the current state to see if it needs updating
-        let currentState = LaunchAtLogin.isEnabled
+        let currentState = isEnabled()
         if currentState != enabled {
-            // Update LaunchAtLogin
-            LaunchAtLogin.isEnabled = enabled
+            // Update login item
+            setEnabled(enabled)
 
             // Verify the change took effect and only update UserDefaults if successful
-            if LaunchAtLogin.isEnabled == enabled {
+            if isEnabled() == enabled {
                 // Update preference to match system state after confirming change was successful
                 Defaults[.startAtLogin] = enabled
                 logger.info("Login item set to: \(enabled) successfully, UserDefaults updated")
@@ -105,8 +102,8 @@ public final class LoginItemManager: ObservableObject {
             logger.info("Login item already set to: \(enabled), UserDefaults synced")
         }
 
-        logger.info("Final state - Login item: \(LaunchAtLogin.isEnabled), UserDefaults: \(Defaults[.startAtLogin])")
-        return LaunchAtLogin.isEnabled == enabled
+        logger.info("Final state - Login item: \(isEnabled()), UserDefaults: \(Defaults[.startAtLogin])")
+        return isEnabled() == enabled
     }
 
     /// Check if the app is currently set to start at login
@@ -115,7 +112,7 @@ public final class LoginItemManager: ObservableObject {
     func startsAtLogin() -> Bool {
         // First sync with system to ensure we have the latest state
         syncWithSystemState()
-        return LaunchAtLogin.isEnabled
+        return isEnabled()
     }
 
     /// Ensure the login item status matches the preference
@@ -125,7 +122,7 @@ public final class LoginItemManager: ObservableObject {
     func syncLoginItemWithPreference() -> Bool {
         // First check if system matches our preference
         let shouldStartAtLogin = Defaults[.startAtLogin]
-        let currentStatus = LaunchAtLogin.isEnabled
+        let currentStatus = isEnabled()
 
         logger
             .info(
@@ -134,16 +131,16 @@ public final class LoginItemManager: ObservableObject {
 
         // If there's a mismatch, use the preference value and apply to system
         if shouldStartAtLogin != currentStatus {
-            // Update LaunchAtLogin to match preference
-            LaunchAtLogin.isEnabled = shouldStartAtLogin
+            // Update login item to match preference
+            setEnabled(shouldStartAtLogin)
 
             // Verify the change
-            if LaunchAtLogin.isEnabled != shouldStartAtLogin {
+            if isEnabled() != shouldStartAtLogin {
                 logger.error("Failed to set launch at login state to match preference: \(shouldStartAtLogin)")
 
                 // If system state couldn't be updated, update the preference instead
-                Defaults[.startAtLogin] = LaunchAtLogin.isEnabled
-                logger.info("Updated preference to match system state: \(LaunchAtLogin.isEnabled)")
+                Defaults[.startAtLogin] = isEnabled()
+                logger.info("Updated preference to match system state: \(isEnabled())")
                 return false
             }
 
@@ -169,7 +166,7 @@ public final class LoginItemManager: ObservableObject {
         ) { _ in
             // Since we're on the main queue and this is a simple boolean callback,
             // it's safe to call the handler directly
-            handler(LaunchAtLogin.isEnabled)
+            handler(self.isEnabled())
         }
 
         // Create an observation that removes the observer when cancelled
@@ -187,11 +184,44 @@ public final class LoginItemManager: ObservableObject {
     // Store notification observation token for proper cleanup
     private var notificationToken: NSObjectProtocol?
 
+    /// Check if login item is enabled
+    @MainActor
+    private func isEnabled() -> Bool {
+        SMAppService.mainApp.status == .enabled
+    }
+
+    /// Set login item enabled state
+    @MainActor
+    private func setEnabled(_ enabled: Bool) {
+        do {
+            if enabled {
+                if SMAppService.mainApp.status == .enabled {
+                    logger.debug("Login item already enabled")
+                    return
+                }
+                try SMAppService.mainApp.register()
+                logger.info("Successfully enabled login item")
+            } else {
+                if SMAppService.mainApp.status == .notRegistered {
+                    logger.debug("Login item already disabled")
+                    return
+                }
+                try SMAppService.mainApp.unregister()
+                logger.info("Successfully disabled login item")
+            }
+            
+            // Post notification after successful change
+            NotificationCenter.default.post(name: Self.statusChangedNotification, object: nil)
+        } catch {
+            logger.error("Failed to \(enabled ? "enable" : "disable") login item: \(error.localizedDescription)")
+        }
+    }
+
     /// Sync UserDefaults with the actual system state
     /// This ensures the UI correctly reflects the actual system status
     @MainActor
     private func syncWithSystemState() {
-        let systemState = LaunchAtLogin.isEnabled
+        let systemState = isEnabled()
         let userDefaultsState = Defaults[.startAtLogin]
 
         if systemState != userDefaultsState {

@@ -63,27 +63,28 @@ public struct MonitoredWindowInfo: Identifiable {
 
     // Private helper to generate a more stable key for persisted settings
     private func getPersistentSettingsKeyPrefix() -> String {
-        // Attempt to use PID + documentPath for better stability if documentPath exists
-        // The original `self.id` is derived from PID, title, and index by CursorMonitor
-        // For document windows, title might change less often than index, but documentPath is best.
+        // For document windows, use PID + document path hash for stability
         if let docPath = self.documentPath, !docPath.isEmpty {
             // Try to extract PID from the original id string, assuming format "<PID>-window-..."
             let components = self.id.split(separator: "-")
             if let pidString = components.first, let pid = Int32(pidString) {
                 // Use a combination of PID and a hash of the document path for stability
-                return "WindowSettingsPid\(pid)DocHash\(docPath.hashValue)"
-            } else {
-                // Fallback if PID cannot be extracted from id (should not happen with current id format)
-                // In this case, use the original id, but this part of the key won't be as stable for doc windows.
-                return "WindowSettingsId\(self.id.hashValue)DocHash\(docPath.hashValue)"
+                return "WindowSettingsPid\(pid)DocHash\(abs(docPath.hashValue))"
             }
-        } else {
-            // For windows without a document path, fall back to using the runtime ID.
-            // This retains the original level of stability (or instability) for these windows.
-            // Remove any dots from the id to comply with Defaults key requirements
-            let sanitizedId = self.id.replacingOccurrences(of: ".", with: "")
-            return "WindowSettingsId\(sanitizedId)"
         }
+        
+        // For non-document windows or as fallback, use a hash of the window ID
+        // This ensures we always get valid ASCII characters without special symbols
+        let idHash = abs(self.id.hashValue)
+        
+        // If we can extract the PID, include it for better debugging
+        let components = self.id.split(separator: "-")
+        if let pidString = components.first, let pid = Int32(pidString) {
+            return "WindowSettingsPid\(pid)Hash\(idHash)"
+        }
+        
+        // Ultimate fallback - just use the hash
+        return "WindowSettingsHash\(idHash)"
     }
 
     public init(id: String, windowTitle: String?, axElement: Element? = nil, documentPath: String? = nil, isPaused: Bool = false) {

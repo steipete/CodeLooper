@@ -1,6 +1,5 @@
 @testable import CodeLooper
 import Foundation
-import LaunchAtLogin
 import SwiftUI
 import XCTest
 
