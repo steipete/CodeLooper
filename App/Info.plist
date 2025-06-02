@@ -59,5 +59,7 @@
 	<true/>
 	<key>LSUIElement</key>
 	<true/>
+	<key>NSSupportsAutomaticTermination</key>
+	<false/>
 </dict>
 </plist>

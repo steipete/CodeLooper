@@ -116,18 +116,6 @@ public final class AppDelegate: NSObject, NSApplicationDelegate, ObservableObjec
         // Ensure shared instance is set up for other parts of the app that might need it early.
         // However, direct access should be minimized in favor of dependency injection or notifications.
         // Self.shared = self // This is incorrect; shared is a get-only computed property.
-        
-        // NOTE: Automatic termination is disabled in CodeLooperApp.init() to ensure it happens
-        // before any window restoration that might re-enable it
-        
-        // Re-disable automatic termination after all initialization is complete
-        // This is crucial because window restoration re-enables it
-        Task { @MainActor in
-            // Wait a moment for window restoration to complete
-            try? await Task.sleep(for: .milliseconds(100))
-            ProcessInfo.processInfo.disableAutomaticTermination("CodeLooper is a menu bar app - post initialization")
-            self.logger.info("Re-disabled automatic termination after window restoration")
-        }
 
         #if DEBUG
             startCursorAXObservation()
