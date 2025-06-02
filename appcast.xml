@@ -10,7 +10,7 @@
             <sparkle:version>100</sparkle:version>
             <sparkle:shortVersionString>1.0.0</sparkle:shortVersionString>
             <link>https://github.com/steipete/CodeLooper</link>
-            <sparkle:releaseNotesLink>https://raw.githubusercontent.com/steipete/CodeLooper/main/CHANGELOG.html</sparkle:releaseNotesLink>
+            <sparkle:releaseNotesLink>https://steipete.github.io/CodeLooper/CHANGELOG.html</sparkle:releaseNotesLink>
             <pubDate>Mon, 02 Jun 2025 23:30:00 +0000</pubDate>
             <sparkle:minimumSystemVersion>15.0</sparkle:minimumSystemVersion>
             <enclosure 
