@@ -126,16 +126,17 @@ jobs:
             ${{ runner.os }}-spm-${{ hashFiles('Package.swift') }}-
             ${{ runner.os }}-spm-
 
-      - name: Cache build artifacts
-        id: cache-build
-        uses: actions/cache@v4
-        with:
-          path: |
-            binary
-          key: ${{ runner.os }}-binary-${{ hashFiles('Sources/**/*.swift', 'Package.swift', 'scripts/build.sh') }}-${{ steps.set-version.outputs.swift_version }}-signed-v2
-          restore-keys: |
-            ${{ runner.os }}-binary-${{ hashFiles('Sources/**/*.swift') }}-
-            ${{ runner.os }}-binary-
+      # Temporarily disabled to ensure fresh signed builds
+      # - name: Cache build artifacts
+      #   id: cache-build
+      #   uses: actions/cache@v4
+      #   with:
+      #     path: |
+      #       binary
+      #     key: ${{ runner.os }}-binary-${{ hashFiles('Sources/**/*.swift', 'Package.swift', 'scripts/build.sh') }}-${{ steps.set-version.outputs.swift_version }}-signed-v2
+      #     restore-keys: |
+      #       ${{ runner.os }}-binary-${{ hashFiles('Sources/**/*.swift') }}-
+      #       ${{ runner.os }}-binary-
 
       - name: Cache Xcode DerivedData
         uses: actions/cache@v4
