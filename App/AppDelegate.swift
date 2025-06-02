@@ -42,16 +42,13 @@ public final class AppDelegate: NSObject, NSApplicationDelegate, ObservableObjec
     // MARK: - Cleanup
 
     deinit {
-        MainActor.assumeIsolated {
-            for observer in notificationObservers {
-                NotificationCenter.default.removeObserver(observer)
-            }
-            notificationObservers.removeAll()
-
-            self.logger.info("AppDelegate deinit - notification resources cleaned up")
+        // Clean up notification observers
+        for observer in notificationObservers {
+            NotificationCenter.default.removeObserver(observer)
         }
-
-        self.logger.info("AppDelegate deinit - resources cleaned up")
+        notificationObservers.removeAll()
+        
+        logger.info("AppDelegate deinit - resources cleaned up")
     }
 
     // MARK: Public

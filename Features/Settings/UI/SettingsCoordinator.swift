@@ -25,11 +25,9 @@ public final class MainSettingsCoordinator: NSObject {
     // MARK: - Cleanup
 
     deinit {
-        // Use MainActor.assumeIsolated to safely access MainActor-isolated properties
-        MainActor.assumeIsolated {
-            cancellables.removeAll()
-            logger.info("Settings coordinator deinitialized")
-        }
+        // Clean up cancellables
+        cancellables.removeAll()
+        logger.info("Settings coordinator deinitialized")
     }
 
     // MARK: Public
