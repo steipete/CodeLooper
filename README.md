@@ -1,4 +1,4 @@
-# CodeLooper 🔄
+# CodeLooper 🔄 
 
 <p align="center">
   <img src="assets/banner.png" alt="CodeLooper Banner">
