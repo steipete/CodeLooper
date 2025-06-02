@@ -71,18 +71,18 @@ public struct MonitoredWindowInfo: Identifiable {
             let components = self.id.split(separator: "-")
             if let pidString = components.first, let pid = Int32(pidString) {
                 // Use a combination of PID and a hash of the document path for stability
-                return "windowsettings_pid\(pid)_docHash\(docPath.hashValue)"
+                return "WindowSettingsPid\(pid)DocHash\(docPath.hashValue)"
             } else {
                 // Fallback if PID cannot be extracted from id (should not happen with current id format)
                 // In this case, use the original id, but this part of the key won't be as stable for doc windows.
-                return "windowsettings_id\(self.id.hashValue)_docHash\(docPath.hashValue)"
+                return "WindowSettingsId\(self.id.hashValue)DocHash\(docPath.hashValue)"
             }
         } else {
             // For windows without a document path, fall back to using the runtime ID.
             // This retains the original level of stability (or instability) for these windows.
             // Remove any dots from the id to comply with Defaults key requirements
-            let sanitizedId = self.id.replacingOccurrences(of: ".", with: "_")
-            return "windowsettings_id\(sanitizedId)"
+            let sanitizedId = self.id.replacingOccurrences(of: ".", with: "")
+            return "WindowSettingsId\(sanitizedId)"
         }
     }
 
@@ -102,8 +102,8 @@ public struct MonitoredWindowInfo: Identifiable {
         }
 
         let settingsKeyPrefix = getPersistentSettingsKeyPrefix()
-        let liveWatchingKey = Defaults.Key<Bool>("\(settingsKeyPrefix)_live_watching", default: false)
-        let aiIntervalKey = Defaults.Key<Int>("\(settingsKeyPrefix)_ai_interval", default: 10)
+        let liveWatchingKey = Defaults.Key<Bool>("\(settingsKeyPrefix)LiveWatching", default: false)
+        let aiIntervalKey = Defaults.Key<Int>("\(settingsKeyPrefix)AIInterval", default: 10)
 
         self.isLiveWatchingEnabled = Defaults[liveWatchingKey]
         self.aiAnalysisIntervalSeconds = Defaults[aiIntervalKey]
@@ -117,8 +117,8 @@ public struct MonitoredWindowInfo: Identifiable {
 
     public func saveAISettings() {
         let settingsKeyPrefix = getPersistentSettingsKeyPrefix()
-        let liveWatchingKey = Defaults.Key<Bool>("\(settingsKeyPrefix)_live_watching", default: false)
-        let aiIntervalKey = Defaults.Key<Int>("\(settingsKeyPrefix)_ai_interval", default: 10)
+        let liveWatchingKey = Defaults.Key<Bool>("\(settingsKeyPrefix)LiveWatching", default: false)
+        let aiIntervalKey = Defaults.Key<Int>("\(settingsKeyPrefix)AIInterval", default: 10)
 
         Defaults[liveWatchingKey] = self.isLiveWatchingEnabled
         Defaults[aiIntervalKey] = self.aiAnalysisIntervalSeconds
