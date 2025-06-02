@@ -114,7 +114,7 @@ public final class AppDelegate: NSObject, NSApplicationDelegate, ObservableObjec
         
         // IMPORTANT: Disable automatic termination for menu bar apps
         // Without this, macOS will terminate the app after ~1 second if no windows are open
-        NSApp.disableAutomaticTermination("CodeLooper is a menu bar app")
+        ProcessInfo.processInfo.disableAutomaticTermination("CodeLooper is a menu bar app")
 
         #if DEBUG
             startCursorAXObservation()
