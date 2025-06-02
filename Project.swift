@@ -18,7 +18,6 @@ let project = Project(
         .remote(url: "https://github.com/sindresorhus/Defaults", requirement: .upToNextMajor(from: "9.0.2")),
         .remote(url: "https://github.com/siteline/SwiftUI-Introspect.git", requirement: .upToNextMajor(from: "0.9.0")),
         .remote(url: "https://github.com/apple/swift-log.git", requirement: .upToNextMajor(from: "1.5.0")),
-        .remote(url: "https://github.com/sindresorhus/LaunchAtLogin", requirement: .upToNextMajor(from: "5.0.0")),
         .remote(
             url: "https://github.com/kishikawakatsumi/KeychainAccess.git",
             requirement: .upToNextMajor(from: "4.2.2")
@@ -106,7 +105,6 @@ let project = Project(
             dependencies: [
                 .target(name: "Diagnostics"),
                 .package(product: "Defaults"),
-                .package(product: "LaunchAtLogin"),
                 .package(product: "KeychainAccess"),
                 .package(product: "SwiftUIIntrospect"),
                 .package(product: "Logging"),

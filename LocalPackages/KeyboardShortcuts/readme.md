@@ -227,5 +227,4 @@ No. However, there is nothing stopping you from using Swift Package Manager for 
 ## Related
 
 - [Defaults](https://github.com/sindresorhus/Defaults) - Swifty and modern UserDefaults
-- [LaunchAtLogin](https://github.com/sindresorhus/LaunchAtLogin) - Add "Launch at Login" functionality to your macOS app
 - [More…](https://github.com/search?q=user%3Asindresorhus+language%3Aswift+archived%3Afalse&type=repositories)

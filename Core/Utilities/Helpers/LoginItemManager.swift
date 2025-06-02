@@ -183,7 +183,7 @@ public final class LoginItemManager: ObservableObject {
 
     // MARK: Private
 
-    private static let statusChangedNotification = Notification.Name("LaunchAtLoginStatusChanged")
+    private static let statusChangedNotification = Notification.Name("LoginItemStatusChanged")
 
     private let logger = Logger(category: .utilities)
 

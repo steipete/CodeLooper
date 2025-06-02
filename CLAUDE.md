@@ -189,7 +189,6 @@ logger.error("Failed to connect: \(error)")
 
 Key dependencies managed via Swift Package Manager:
 - **Defaults**: User preferences management
-- **LaunchAtLogin**: Launch at login functionality
 - **Sparkle**: Auto-update system
 - **AXorcist**: Accessibility automation (local package)
 - **AXpector**: Accessibility inspector (local package)
