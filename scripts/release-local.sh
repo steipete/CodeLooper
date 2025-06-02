@@ -87,8 +87,7 @@ main() {
                -configuration Release \
                -derivedDataPath DerivedData \
                clean build \
-               ONLY_ACTIVE_ARCH=NO \
-               CODE_SIGN_IDENTITY="Developer ID Application"
+               ONLY_ACTIVE_ARCH=NO
     
     # Step 4: Copy app to binary directory
     log "Copying app bundle..."
