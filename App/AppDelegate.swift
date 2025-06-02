@@ -112,9 +112,8 @@ public final class AppDelegate: NSObject, NSApplicationDelegate, ObservableObjec
         // However, direct access should be minimized in favor of dependency injection or notifications.
         // Self.shared = self // This is incorrect; shared is a get-only computed property.
         
-        // IMPORTANT: Disable automatic termination for menu bar apps
-        // Without this, macOS will terminate the app after ~1 second if no windows are open
-        ProcessInfo.processInfo.disableAutomaticTermination("CodeLooper is a menu bar app")
+        // NOTE: Automatic termination is disabled in CodeLooperApp.init() to ensure it happens
+        // before any window restoration that might re-enable it
 
         #if DEBUG
             startCursorAXObservation()

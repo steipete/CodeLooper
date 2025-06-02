@@ -26,10 +26,16 @@ struct CodeLooperApp: App {
     // MARK: - Initialization
 
     init() {
+        // IMPORTANT: Disable automatic termination immediately for menu bar apps
+        // This must be the FIRST thing we do to prevent macOS from terminating the app
+        ProcessInfo.processInfo.disableAutomaticTermination("CodeLooper is a menu bar app")
+        
         // Perform one-time setup for the logging system.
         Diagnostics.Logger.bootstrap(destination: .console, minLevel: .debug)
 
-        logger.info("CodeLooperApp initialized")
+        // Use temporary logger since the instance property isn't available yet
+        let initLogger = Logger(category: .app)
+        initLogger.info("CodeLooperApp initialized with automatic termination disabled")
 
         // Check MCP extension versions on startup
         Task {
