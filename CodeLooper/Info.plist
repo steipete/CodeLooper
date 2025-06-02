@@ -56,7 +56,7 @@
     <key>SUFeedURL</key>
     <string>https://raw.githubusercontent.com/steipete/CodeLooper/main/appcast.xml</string>
     <key>SUPublicEDKey</key>
-    <string>MCowBQYDK2VwAyEA9U/Q1DuuYocTDtSxT767VOZg5K8+40CwpQjSVA0IRVg=</string>
+    <string>oIgha2beQWnyCXgOIlB8+oaUzFNtWgkqq6jKXNNDhv4=</string>
     <key>SUEnableAutomaticChecks</key>
     <true/> <!-- This can be overridden by user preferences -->
 

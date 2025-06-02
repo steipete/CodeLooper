@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<rss version="2.0" xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle" xmlns:dc="http://purl.org/dc/elements/1.1/">
+    <channel>
+        <title>CodeLooper</title>
+        <link>https://raw.githubusercontent.com/steipete/CodeLooper/main/appcast.xml</link>
+        <description>Most recent changes with links to updates.</description>
+        <language>en</language>
+        <item>
+            <title>Version 2025.5.29</title>
+            <sparkle:version>2</sparkle:version>
+            <sparkle:shortVersionString>2025.5.29</sparkle:shortVersionString>
+            <link>https://github.com/steipete/CodeLooper</link>
+            <sparkle:releaseNotesLink>https://github.com/steipete/CodeLooper/releases/tag/v2025.5.29</sparkle:releaseNotesLink>
+            <pubDate>Mon, 02 Jun 2025 20:20:43 +0000</pubDate>
+            <sparkle:minimumSystemVersion>15.0</sparkle:minimumSystemVersion>
+            <enclosure 
+                url="https://github.com/steipete/CodeLooper/releases/download/v2025.5.29/CodeLooper-macOS-2025.5.29-notarized.dmg" 
+                type="application/octet-stream"
+                sparkle:edSignature="09VOTw+hODILZOSzT04rVrhNN0Z5K5LwADr8FX3vIYy8tusmAW/CjFbssXhc7w7DIkf/CjX5lIdKjqAsBLJ0Bw=="
+                length="3963433"
+            />
+        </item>
+    </channel>
+</rss>

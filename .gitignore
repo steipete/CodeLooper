@@ -110,3 +110,13 @@ TestResults.xcresult
 # Sparkle private keys
 private/
 *.profraw
+
+# Release artifacts
+releases/
+*.dmg
+*.zip
+sign_dmg.sh
+
+# Temporary notarization files
+*-notarize.zip
+*-notarized.dmg

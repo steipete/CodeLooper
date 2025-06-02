@@ -42,15 +42,14 @@ public class SparkleUpdaterManager: NSObject, SPUUpdaterDelegate, SPUStandardUse
     // Use lazy var to initialize after self is available
     public lazy var updaterController: SPUStandardUpdaterController = {
         let controller = SPUStandardUpdaterController(
-            startingUpdater: false,
+            startingUpdater: true,
             updaterDelegate: self,
             userDriverDelegate: self
         )
 
-        // TEMPORARY: Disable automatic update checks and initial startup until appcast.xml is properly configured
-        // This prevents the "Unable to Check For Updates" error dialog
-        controller.updater.automaticallyChecksForUpdates = false
-        self.logger.warning("Automatic update checks temporarily disabled - appcast.xml not configured")
+        // Enable automatic update checks
+        controller.updater.automaticallyChecksForUpdates = true
+        self.logger.info("Automatic update checks enabled")
 
         self.logger.info("SparkleUpdaterManager: SPUStandardUpdaterController initialized with self as delegates.")
         return controller
