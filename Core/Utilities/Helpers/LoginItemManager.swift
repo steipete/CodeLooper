@@ -2,8 +2,8 @@ import Combine
 import Defaults
 import Diagnostics
 @preconcurrency import Foundation
-import ServiceManagement
 import os.log
+import ServiceManagement
 
 /// Manages the app's login item settings for starting at login
 /// Uses the native SMAppService API (requires macOS 13+)
@@ -163,10 +163,13 @@ public final class LoginItemManager: ObservableObject {
             forName: Self.statusChangedNotification,
             object: nil,
             queue: .main
-        ) { _ in
+        ) { [weak self] _ in
             // Since we're on the main queue and this is a simple boolean callback,
             // it's safe to call the handler directly
-            handler(self.isEnabled())
+            guard let self else { return }
+            Task { @MainActor in
+                handler(self.isEnabled())
+            }
         }
 
         // Create an observation that removes the observer when cancelled
