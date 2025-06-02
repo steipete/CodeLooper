@@ -6,18 +6,17 @@
         <description>Most recent changes with links to updates.</description>
         <language>en</language>
         <item>
-            <title>Version 2025.5.29</title>
-            <sparkle:version>2</sparkle:version>
-            <sparkle:shortVersionString>2025.5.29</sparkle:shortVersionString>
+            <title>Version 1.0.0</title>
+            <sparkle:version>100</sparkle:version>
+            <sparkle:shortVersionString>1.0.0</sparkle:shortVersionString>
             <link>https://github.com/steipete/CodeLooper</link>
-            <sparkle:releaseNotesLink>https://github.com/steipete/CodeLooper/releases/tag/v2025.5.29</sparkle:releaseNotesLink>
-            <pubDate>Mon, 02 Jun 2025 20:20:43 +0000</pubDate>
+            <sparkle:releaseNotesLink>https://github.com/steipete/CodeLooper/releases/tag/v1.0.0</sparkle:releaseNotesLink>
+            <pubDate>Mon, 02 Jun 2025 23:30:00 +0000</pubDate>
             <sparkle:minimumSystemVersion>15.0</sparkle:minimumSystemVersion>
             <enclosure 
-                url="https://github.com/steipete/CodeLooper/releases/download/v2025.5.29/CodeLooper-macOS-2025.5.29-notarized.dmg" 
+                url="https://github.com/steipete/CodeLooper/releases/download/v1.0.0/CodeLooper-macOS-v1.0.0.dmg" 
                 type="application/octet-stream"
-                sparkle:edSignature="09VOTw+hODILZOSzT04rVrhNN0Z5K5LwADr8FX3vIYy8tusmAW/CjFbssXhc7w7DIkf/CjX5lIdKjqAsBLJ0Bw=="
-                length="3963433"
+                length="13096727"
             />
         </item>
     </channel>
