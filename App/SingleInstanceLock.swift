@@ -12,8 +12,16 @@ public final class SingleInstanceLock {
         self.identifier = identifier
 
         #if !DEBUG // Only enforce single instance lock in Release builds
+            // Set up observers first before checking
+            setupObservers()
+            
             Task {
                 self.isPrimaryInstance = await checkIfPrimaryInstance()
+                
+                // If we're not the primary instance, remove observers
+                if !self.isPrimaryInstance {
+                    self.removeObservers()
+                }
             }
         #else // For DEBUG builds, always assume primary instance
             self.isPrimaryInstance = true
@@ -65,7 +73,7 @@ public final class SingleInstanceLock {
     /// A continuation to handle the async check for other instances
     private var checkContinuation: CheckedContinuation<Bool, Never>?
 
-    private func checkIfPrimaryInstance() async -> Bool {
+    private func setupObservers() {
         // Register to respond to instance check notifications
         DistributedNotificationCenter.default().addObserver(
             self,
@@ -81,18 +89,29 @@ public final class SingleInstanceLock {
             name: NSNotification.Name(Self.responseNotificationName),
             object: nil
         )
+        
+        logger.debug("Single instance observers set up")
+    }
+    
+    private func removeObservers() {
+        DistributedNotificationCenter.default().removeObserver(self)
+        logger.debug("Single instance observers removed")
+    }
+    
+    private func checkIfPrimaryInstance() async -> Bool {
 
         // Send a notification to check if another instance is running
-        logger.info("Checking for other running instances...")
+        logger.info("Checking for other running instances... (PID: \(ProcessInfo.processInfo.processIdentifier))")
 
         return await withCheckedContinuation { continuation in
             self.checkContinuation = continuation
 
             // Post notification to check for other instances
+            logger.debug("Posting instance check notification with identifier: \(identifier)")
             DistributedNotificationCenter.default().postNotificationName(
                 NSNotification.Name(Self.notificationName),
                 object: nil,
-                userInfo: ["identifier": identifier],
+                userInfo: ["identifier": identifier, "checkingPID": ProcessInfo.processInfo.processIdentifier],
                 deliverImmediately: true
             )
 
@@ -112,19 +131,22 @@ public final class SingleInstanceLock {
 
     @objc private func handleInstanceCheckNotification(_ notification: Notification) {
         // Only respond if we're already established as the primary instance
-        guard isPrimaryInstance else { return }
+        guard isPrimaryInstance else {
+            logger.debug("Ignoring instance check - not yet established as primary")
+            return
+        }
 
         if let userInfo = notification.userInfo,
            let notificationIdentifier = userInfo["identifier"] as? String,
            notificationIdentifier == identifier
         {
-            logger.info("Received instance check from another instance. Responding...")
+            logger.info("Received instance check from another instance. Current PID: \(ProcessInfo.processInfo.processIdentifier). Responding...")
 
             // Send response that we're already running
             DistributedNotificationCenter.default().postNotificationName(
                 NSNotification.Name(Self.responseNotificationName),
                 object: nil,
-                userInfo: ["identifier": identifier],
+                userInfo: ["identifier": identifier, "pid": ProcessInfo.processInfo.processIdentifier],
                 deliverImmediately: true
             )
         }
@@ -135,7 +157,16 @@ public final class SingleInstanceLock {
            let notificationIdentifier = userInfo["identifier"] as? String,
            notificationIdentifier == identifier
         {
-            logger.info("Received response from existing instance.")
+            let respondingPID = userInfo["pid"] as? Int ?? -1
+            let ourPID = ProcessInfo.processInfo.processIdentifier
+            
+            logger.info("Received response from existing instance. Their PID: \(respondingPID), Our PID: \(ourPID)")
+            
+            // Ignore if this is our own response (shouldn't happen but let's be safe)
+            if respondingPID == ourPID {
+                logger.warning("Ignoring response from ourselves! This shouldn't happen.")
+                return
+            }
 
             // Another instance is already running
             checkContinuation?.resume(returning: false)
