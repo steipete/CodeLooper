@@ -14,9 +14,9 @@
             <pubDate>Mon, 02 Jun 2025 23:30:00 +0000</pubDate>
             <sparkle:minimumSystemVersion>15.0</sparkle:minimumSystemVersion>
             <enclosure 
-                url="https://github.com/steipete/CodeLooper/releases/download/v1.0.0/CodeLooper-macOS-v1.0.0.dmg" 
+                url="https://github.com/steipete/CodeLooper/releases/download/v1.0.0/CodeLooper-macOS-v1.0.0-notarized.dmg" 
                 type="application/octet-stream"
-                length="13093014"
+                length="13098809"
             />
         </item>
     </channel>

@@ -118,21 +118,17 @@ log "✅ Build completed successfully"
 
 # --- Step 2: Code Signing and Notarization (if not skipped) ---
 if [ "$SKIP_NOTARIZATION" = false ]; then
-    log "Step 2: Code signing and notarization..."
+    log "Step 2: Complete code signing and notarization..."
     
-    # First, code sign the app
-    log "Code signing the app bundle..."
-    if ! ./scripts/codesign-app.sh "$APP_BUNDLE_REL_PATH"; then
-        log "Error: Code signing failed"
-        exit 1
-    fi
-    
-    # Then attempt notarization using our existing script
-    log "Attempting notarization..."
-    if ./scripts/sign-and-notarize.sh > /dev/null 2>&1; then
-        log "✅ Notarization completed successfully"
+    # Use our comprehensive notarization script
+    if ./scripts/notarize-app.sh "$APP_BUNDLE_REL_PATH"; then
+        log "✅ Complete notarization process succeeded"
     else
-        log "⚠️  Notarization failed or credentials not available - continuing with signed app"
+        log "❌ Notarization failed - falling back to basic code signing"
+        if ! ./scripts/codesign-app.sh "$APP_BUNDLE_REL_PATH"; then
+            log "Error: Basic code signing also failed"
+            exit 1
+        fi
     fi
 else
     log "⚠️  Skipping notarization (--skip-notarization flag used)"
