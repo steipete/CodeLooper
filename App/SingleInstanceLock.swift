@@ -35,12 +35,21 @@ public final class SingleInstanceLock {
     /// Whether this is the primary (first) instance
     public private(set) var isPrimaryInstance: Bool = false
 
-    /// Attempts to activate the existing instance
+    /// Attempts to activate the existing instance and show settings
     public func activateExistingInstance() {
+        // First, notify the existing instance to show settings
+        DistributedNotificationCenter.default().postNotificationName(
+            NSNotification.Name("me.steipete.codelooper.showSettings"),
+            object: nil,
+            userInfo: nil,
+            deliverImmediately: true
+        )
+        
+        // Then activate the app
         if let runningApp = NSRunningApplication.runningApplications(
             withBundleIdentifier: Bundle.main.bundleIdentifier ?? ""
         ).first(where: { $0 != NSRunningApplication.current }) {
-            logger.info("Activating existing instance...")
+            logger.info("Activating existing instance and requesting settings window...")
             runningApp.activate(options: [.activateAllWindows])
         }
     }
@@ -89,7 +98,7 @@ public final class SingleInstanceLock {
 
             // Wait a brief moment for responses
             Task {
-                try? await Task.sleep(for: .milliseconds(500)) // 0.5 seconds
+                try? await Task.sleep(for: .milliseconds(100)) // 0.1 seconds - much faster
 
                 // If no response received, we're the primary instance
                 if self.checkContinuation != nil {

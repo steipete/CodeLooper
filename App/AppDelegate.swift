@@ -73,14 +73,14 @@ public final class AppDelegate: NSObject, NSApplicationDelegate, ObservableObjec
             Task { @MainActor [weak self] in
                 guard let self else { return }
 
-                // Give the SingleInstanceLock time to check
-                try? await Task.sleep(for: .seconds(TimingConfiguration.shortDelay)) // 0.6 seconds
+                // Give the SingleInstanceLock time to check (reduced from 0.6 to 0.2 seconds)
+                try? await Task.sleep(for: .milliseconds(200))
 
                 guard let singleInstanceLock = self.singleInstanceLock else { return }
 
                 if !singleInstanceLock.isPrimaryInstance {
                     self.logger.warning("Another instance of CodeLooper is already running. Terminating this instance.")
-                    // Bring the other instance to the front
+                    // Bring the other instance to the front and show settings
                     singleInstanceLock.activateExistingInstance()
                     NSApp.terminate(nil)
                 }
@@ -114,6 +114,15 @@ public final class AppDelegate: NSObject, NSApplicationDelegate, ObservableObjec
         
         // NOTE: Automatic termination is disabled in CodeLooperApp.init() to ensure it happens
         // before any window restoration that might re-enable it
+        
+        // Re-disable automatic termination after all initialization is complete
+        // This is crucial because window restoration re-enables it
+        Task { @MainActor in
+            // Wait a moment for window restoration to complete
+            try? await Task.sleep(for: .milliseconds(100))
+            ProcessInfo.processInfo.disableAutomaticTermination("CodeLooper is a menu bar app - post initialization")
+            self.logger.info("Re-disabled automatic termination after window restoration")
+        }
 
         #if DEBUG
             startCursorAXObservation()
@@ -139,6 +148,21 @@ public final class AppDelegate: NSObject, NSApplicationDelegate, ObservableObjec
         #endif
     }
 
+    public func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
+        // For a menu bar app, we should generally not terminate automatically
+        // Only terminate if explicitly requested by the user
+        logger.info("Application termination requested")
+        
+        // If this is a system-initiated termination (like automatic termination), prevent it
+        // We can check if there's a menu item action or explicit user request
+        if sender.currentEvent?.type == .systemDefined {
+            logger.info("Preventing system-initiated termination for menu bar app")
+            return .terminateCancel
+        }
+        
+        return .terminateNow
+    }
+    
     public func applicationWillTerminate(_: Notification) {
         logger.info("Application is terminating")
 
@@ -358,8 +382,15 @@ public final class AppDelegate: NSObject, NSApplicationDelegate, ObservableObjec
         logger.info("Setting up notification observers")
 
         let highlightMenuBarObserver = setupHighlightMenuBarObserver()
-
         notificationObservers.append(highlightMenuBarObserver)
+        
+        // Observer for showing settings when another instance is launched
+        DistributedNotificationCenter.default().addObserver(
+            self,
+            selector: #selector(handleShowSettingsNotification),
+            name: NSNotification.Name("me.steipete.codelooper.showSettings"),
+            object: nil
+        )
 
         // Observer for showing AXpector Window
         let axpectorObserver = NotificationCenter.default.addObserver(
@@ -391,6 +422,14 @@ public final class AppDelegate: NSObject, NSApplicationDelegate, ObservableObjec
                 self?.logger.info("Highlighting menu bar icon based on notification (.highlightMenuBarIcon received)")
                 AppIconStateController.shared.flashIcon()
             }
+        }
+    }
+    
+    @objc private func handleShowSettingsNotification() {
+        Task { @MainActor in
+            logger.info("Received request to show settings from another instance")
+            SettingsService.openSettingsSubject.send()
+            NSApp.activate(ignoringOtherApps: true)
         }
     }
 
