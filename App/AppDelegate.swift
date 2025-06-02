@@ -42,13 +42,8 @@ public final class AppDelegate: NSObject, NSApplicationDelegate, ObservableObjec
     // MARK: - Cleanup
 
     deinit {
-        // Clean up notification observers
-        for observer in notificationObservers {
-            NotificationCenter.default.removeObserver(observer)
-        }
-        notificationObservers.removeAll()
-        
-        logger.info("AppDelegate deinit - resources cleaned up")
+        // Notification observers will be cleaned up automatically when the object is deallocated.
+        // We cannot safely access @MainActor-isolated properties from deinit.
     }
 
     // MARK: Public

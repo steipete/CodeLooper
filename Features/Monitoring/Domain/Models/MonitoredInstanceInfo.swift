@@ -72,17 +72,17 @@ public struct MonitoredWindowInfo: Identifiable {
                 return "WindowSettingsPid\(pid)DocHash\(abs(docPath.hashValue))"
             }
         }
-        
+
         // For non-document windows or as fallback, use a hash of the window ID
         // This ensures we always get valid ASCII characters without special symbols
         let idHash = abs(self.id.hashValue)
-        
+
         // If we can extract the PID, include it for better debugging
         let components = self.id.split(separator: "-")
         if let pidString = components.first, let pid = Int32(pidString) {
             return "WindowSettingsPid\(pid)Hash\(idHash)"
         }
-        
+
         // Ultimate fallback - just use the hash
         return "WindowSettingsHash\(idHash)"
     }
