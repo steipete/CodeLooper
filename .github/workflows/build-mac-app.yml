@@ -138,16 +138,17 @@ jobs:
       #       ${{ runner.os }}-binary-${{ hashFiles('Sources/**/*.swift') }}-
       #       ${{ runner.os }}-binary-
 
-      - name: Cache Xcode DerivedData
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/Library/Developer/Xcode/DerivedData
-            ~/Library/Caches/org.swift.swiftpm
-          key: ${{ runner.os }}-xcode-${{ hashFiles('Package.swift') }}-${{ github.sha }}
-          restore-keys: |
-            ${{ runner.os }}-xcode-${{ hashFiles('Package.swift') }}-
-            ${{ runner.os }}-xcode-
+      # Temporarily disabled to ensure fresh builds
+      # - name: Cache Xcode DerivedData
+      #   uses: actions/cache@v4
+      #   with:
+      #     path: |
+      #       ~/Library/Developer/Xcode/DerivedData
+      #       ~/Library/Caches/org.swift.swiftpm
+      #     key: ${{ runner.os }}-xcode-${{ hashFiles('Package.swift') }}-${{ github.sha }}
+      #     restore-keys: |
+      #       ${{ runner.os }}-xcode-${{ hashFiles('Package.swift') }}-
+      #       ${{ runner.os }}-xcode-
 
       - name: Prepare P12 Certificate File from Secret
         id: prepare_p12_cert
