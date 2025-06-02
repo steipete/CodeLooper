@@ -48,10 +48,6 @@
 	<string>CodeLooper needs screen recording access to capture Cursor window screenshots for AI analysis without shadows.</string>
 	<key>NSUserNotificationsUsageDescription</key>
 	<string>CodeLooper sends notifications to inform you about automation rule executions and important events during Cursor supervision.</string>
-	<key>NSMainNibFile</key>
-	<string>MainMenu</string>
-	<key>NSMainStoryboardFile</key>
-	<string></string>
 	<key>NSPrincipalClass</key>
 	<string>NSApplication</string>
 	<!-- Sparkle Update Framework Configuration -->
@@ -60,6 +56,8 @@
 	<key>SUPublicEDKey</key>
 	<string>MCowBQYDK2VwAyEA9U/Q1DuuYocTDtSxT767VOZg5K8+40CwpQjSVA0IRVg=</string>
 	<key>SUEnableAutomaticChecks</key>
+	<true/>
+	<key>LSUIElement</key>
 	<true/>
 </dict>
 </plist>
