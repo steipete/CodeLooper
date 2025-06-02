@@ -66,8 +66,8 @@ public final class AppDelegate: NSObject, NSApplicationDelegate, ObservableObjec
         // Single instance check - skip for Xcode previews
         let isXcodePreview = ProcessInfo.processInfo.environment["XCODE_RUNNING_FOR_PREVIEWS"] == "1"
 
-        // TEMPORARILY DISABLE single instance check to debug the termination issue
-        #if false
+        // Single instance check - skip for Xcode previews and DEBUG builds
+        #if !DEBUG
         if !isXcodePreview {
             singleInstanceLock = SingleInstanceLock(identifier: "me.steipete.codelooper.instance")
 
@@ -91,7 +91,7 @@ public final class AppDelegate: NSObject, NSApplicationDelegate, ObservableObjec
             logger.info("Running in Xcode preview mode - skipping single instance check")
         }
         #else
-        logger.info("Single instance check temporarily disabled for debugging")
+        logger.info("DEBUG build: Single instance check is disabled")
         #endif
 
         // Initialize core services FIRST
