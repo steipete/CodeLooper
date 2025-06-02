@@ -36,7 +36,7 @@ struct GeneralSettingsView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: Spacing.xLarge) {
             // App Section (using design system)
-            DSSettingsSection("App") {
+            DSSettingsSection("") {
                 // Current Version Info
                 HStack {
                     VStack(alignment: .leading, spacing: Spacing.xSmall) {

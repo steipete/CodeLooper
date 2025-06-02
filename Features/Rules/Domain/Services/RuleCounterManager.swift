@@ -79,7 +79,17 @@ public class RuleCounterManager: ObservableObject {
 
     private func loadCounters() {
         if let saved = UserDefaults.standard.object(forKey: "ruleExecutionCounters") as? [String: Int] {
-            ruleCounters = saved
+            // Filter out test data that shouldn't be in production
+            let filteredCounters = saved.filter { key, _ in
+                !["rule1", "rule2", "rule3"].contains(key)
+            }
+            ruleCounters = filteredCounters
+            
+            // If we filtered out test data, save the cleaned version
+            if filteredCounters.count != saved.count {
+                saveCounters()
+                logger.info("Cleaned \(saved.count - filteredCounters.count) test rule counters from UserDefaults")
+            }
         }
     }
 }
