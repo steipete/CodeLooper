@@ -16,7 +16,8 @@
             <enclosure 
                 url="https://github.com/steipete/CodeLooper/releases/download/v1.0.0/CodeLooper-macOS-v1.0.0-notarized.dmg" 
                 type="application/octet-stream"
-                length="13098809"
+                length="13099189"
+                sparkle:edSignature="mhAzEfVnonRfjMhwnfLf7gkdsIF9MVW/op5t6NBxKxnv2ITPgHkmiSydFIdjweAaspvCcIoaGhhJ03ZFYH8CAQ=="
             />
         </item>
     </channel>
