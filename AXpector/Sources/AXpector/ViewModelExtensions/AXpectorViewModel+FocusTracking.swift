@@ -33,7 +33,7 @@ extension AXpectorViewModel {
                 else {
                     return
                 }
-                
+
                 Task { @MainActor in // Run the whole handler on MainActor
                     guard let self else { return }
                     guard self.isFocusTrackingModeActive else {
