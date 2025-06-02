@@ -10,7 +10,36 @@
             <sparkle:version>100</sparkle:version>
             <sparkle:shortVersionString>1.0.0</sparkle:shortVersionString>
             <link>https://github.com/steipete/CodeLooper</link>
-            <sparkle:releaseNotesLink>https://steipete.github.io/CodeLooper/CHANGELOG.html</sparkle:releaseNotesLink>
+            <description><![CDATA[
+                <h2>🎉 CodeLooper 1.0.0 - First Production Release</h2>
+                
+                <h3>✨ Added</h3>
+                <ul>
+                    <li><strong>Complete Sparkle Integration</strong>: Fully working auto-update system</li>
+                    <li><strong>Full App Notarization</strong>: Complete hardened runtime with deep signing</li>
+                    <li><strong>Production Build Pipeline</strong>: Automated build, sign, and release workflow</li>
+                    <li><strong>Professional DMG Distribution</strong>: Clean installer with no security warnings</li>
+                    <li><strong>Seamless Updates</strong>: One-click update installation via Sparkle framework</li>
+                </ul>
+                
+                <h3>🚀 Enhanced</h3>
+                <ul>
+                    <li><strong>Cursor Monitoring</strong>: Robust AI-assisted coding session supervision</li>
+                    <li><strong>AI-Powered Diagnostics</strong>: Intelligent intervention and error recovery</li>
+                    <li><strong>Advanced Settings</strong>: Comprehensive configuration and preferences</li>
+                    <li><strong>Session Analytics</strong>: Detailed monitoring and reporting capabilities</li>
+                </ul>
+                
+                <h3>🔒 Security</h3>
+                <ul>
+                    <li>Apple notarization with zero Gatekeeper warnings</li>
+                    <li>Cryptographic EdDSA signing for all updates</li>
+                    <li>Secure update delivery via HTTPS</li>
+                    <li>Tamper-proof update verification</li>
+                </ul>
+                
+                <p><a href="https://github.com/steipete/CodeLooper">View on GitHub</a></p>
+            ]]></description>
             <pubDate>Mon, 02 Jun 2025 23:30:00 +0000</pubDate>
             <sparkle:minimumSystemVersion>15.0</sparkle:minimumSystemVersion>
             <enclosure 
