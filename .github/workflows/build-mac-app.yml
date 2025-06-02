@@ -337,6 +337,10 @@ jobs:
             if [ "$SKIP_CODESIGN" != "true" ]; then
               echo "Found signing identity: $SIGNING_IDENTITY"
               
+              # Remove LaunchAtLogin helper zips that cause notarization issues
+              echo "Removing LaunchAtLogin helper zips (for macOS 12 and older)..."
+              find binary/CodeLooper.app -name "LaunchAtLoginHelper*.zip" -delete
+              
               # Sign embedded frameworks and helpers first
               echo "Signing embedded frameworks and helpers..."
               find binary/CodeLooper.app -name "*.framework" -o -name "*.dylib" -o -name "*.bundle" | while read -r item; do
