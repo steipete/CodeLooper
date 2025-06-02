@@ -5,6 +5,57 @@ All notable changes to CodeLooper will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.0] - 2025-06-02
+
+### 🎉 First Production Release
+
+This is the first stable production release of CodeLooper with full notarization and auto-update support.
+
+### Added
+- ✅ **Complete Sparkle Integration**: Fully working auto-update system from v0.9.0 → v1.0.0
+- 🔒 **Full App Notarization**: Complete hardened runtime with deep signing of all components
+- 🏗️ **Production Build Pipeline**: Automated build, sign, and release workflow
+- 📦 **Professional DMG Distribution**: Clean installer with no security warnings
+- 🔄 **Seamless Updates**: One-click update installation via Sparkle framework
+
+### Enhanced
+- 🚀 **Cursor Monitoring**: Robust AI-assisted coding session supervision
+- 🤖 **AI-Powered Diagnostics**: Intelligent intervention and error recovery
+- ⚙️ **Advanced Settings**: Comprehensive configuration and preferences
+- 📊 **Session Analytics**: Detailed monitoring and reporting capabilities
+
+### Technical
+- Swift 6 strict concurrency throughout entire codebase
+- Complete XPC services signing for Sparkle framework
+- Hardened runtime with proper entitlements configuration
+- Professional code signing with Developer ID certificates
+
+### Security
+- Apple notarization with zero Gatekeeper warnings
+- Cryptographic EdDSA signing for all updates
+- Secure update delivery via HTTPS
+- Tamper-proof update verification
+
+---
+
+## [0.9.0] - 2025-06-02
+
+### 🧪 Testing Release
+
+Beta release for testing Sparkle auto-update functionality and notarization workflow.
+
+### Added
+- 🔬 **Update Testing**: Release specifically for testing v0.9.0 → v1.0.0 updates
+- 🔐 **Notarization Validation**: Confirms complete notarization pipeline works
+- 📋 **Release Notes Testing**: Validates Sparkle UI and release note display
+
+### Fixed
+- ✅ Resolved all notarization errors and Gatekeeper warnings
+- ✅ Complete signing of Sparkle framework components
+- ✅ Proper hardened runtime configuration
+
+---
+
 ## [2025.5.29] - 2025-05-29
 
 ### Added
