@@ -177,7 +177,14 @@ jobs:
           echo "Preparing App Store Connect API Key (.p8) file..."
           mkdir -p .private_keys
           P8_FILE_PATH="${{ github.workspace }}/.private_keys/AuthKey_ci_rcodesign.p8"
-          printf "%s\n" "$P8_KEY_CONTENT" > "$P8_FILE_PATH"
+          # Ensure P8 key has proper PEM format
+          if [[ "$P8_KEY_CONTENT" == -----BEGIN* ]]; then
+            printf "%s\n" "$P8_KEY_CONTENT" > "$P8_FILE_PATH"
+          else
+            echo "-----BEGIN PRIVATE KEY-----" > "$P8_FILE_PATH"
+            printf "%s\n" "$P8_KEY_CONTENT" >> "$P8_FILE_PATH"
+            echo "-----END PRIVATE KEY-----" >> "$P8_FILE_PATH"
+          fi
           if [ $? -ne 0 ] || [ ! -s "$P8_FILE_PATH" ]; then
             echo "::error::Failed to write APP_STORE_CONNECT_API_KEY_P8 secret to $P8_FILE_PATH"
             echo "p8_file_path=" >> $GITHUB_OUTPUT
@@ -359,11 +366,21 @@ jobs:
             mv tools/rcodesign/rcodesign tools/rcodesign/bin/
             
             # Create API key JSON
-            tools/rcodesign/bin/rcodesign encode-app-store-connect-api-key \
+            if tools/rcodesign/bin/rcodesign encode-app-store-connect-api-key \
               "$APP_STORE_CONNECT_ISSUER_ID" \
               "$APP_STORE_CONNECT_KEY_ID" \
               "$APP_STORE_CONNECT_P8_FILE_PATH" \
-              --output-path /tmp/api_key.json
+              --output-path /tmp/api_key.json; then
+              echo "API key JSON created successfully"
+            else
+              echo "::warning::Failed to create API key JSON. The P8 key might not be in the correct PEM format."
+              echo "::warning::Please ensure APP_STORE_CONNECT_API_KEY_P8 secret contains the full P8 file content including:"
+              echo "::warning::-----BEGIN PRIVATE KEY-----"
+              echo "::warning::[key content]"
+              echo "::warning::-----END PRIVATE KEY-----"
+              echo "notarization_status=failed_api_key" >> $GITHUB_OUTPUT
+              exit 0
+            fi
             
             # Submit for notarization
             tools/rcodesign/bin/rcodesign notary-submit \
