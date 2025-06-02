@@ -132,7 +132,7 @@ jobs:
         with:
           path: |
             binary
-          key: ${{ runner.os }}-binary-${{ hashFiles('Sources/**/*.swift', 'Package.swift', 'scripts/build.sh') }}-${{ steps.set-version.outputs.swift_version }}
+          key: ${{ runner.os }}-binary-${{ hashFiles('Sources/**/*.swift', 'Package.swift', 'scripts/build.sh') }}-${{ steps.set-version.outputs.swift_version }}-signed-v2
           restore-keys: |
             ${{ runner.os }}-binary-${{ hashFiles('Sources/**/*.swift') }}-
             ${{ runner.os }}-binary-
