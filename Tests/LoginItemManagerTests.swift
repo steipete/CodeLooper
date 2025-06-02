@@ -76,16 +76,24 @@ class LoginItemManagerTests: XCTestCase {
         XCTAssertTrue(true) // If we get here, no crashes occurred
     }
 
-    func testLaunchAtLoginIntegration() async throws {
-        // Test that LaunchAtLogin framework is available and functional
-        let initialStatus = LaunchAtLogin.isEnabled
+    func testServiceManagementIntegration() async throws {
+        // Test that the native SMAppService is available and functional
+        let manager = await LoginItemManager.shared
+        let initialStatus = await manager.startsAtLogin()
 
         // Status should be either true or false
         XCTAssertEqual(initialStatus, true || initialStatus == false)
 
-        // Test that observable is available (for SwiftUI integration)
-        let observable = LaunchAtLogin.observable
-        XCTAssertTrue(true) // observable exists
+        // Test that we can observe changes
+        let observation = await manager.observeLoginItemStatus { newStatus in
+            // This would be called on status changes
+            _ = newStatus
+        }
+        
+        // Cancel observation to clean up
+        observation.cancel()
+        
+        XCTAssertTrue(true) // If we get here, no crashes occurred
     }
 
     func testLoginItemErrorHandling() async throws {

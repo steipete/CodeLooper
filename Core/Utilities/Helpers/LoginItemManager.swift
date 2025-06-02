@@ -16,9 +16,6 @@ public final class LoginItemManager: ObservableObject {
     private init() {
         // Restricted initializer for singleton
 
-        // On initialization, sync the status to ensure UserDefaults matches system state
-        syncWithSystemState()
-
         // Register for login item status change notifications
         notificationToken = NotificationCenter.default.addObserver(
             forName: Self.statusChangedNotification,
@@ -30,6 +27,12 @@ public final class LoginItemManager: ObservableObject {
             Task { @MainActor in
                 self.syncWithSystemState()
             }
+        }
+        
+        // Defer initial sync to ensure object is fully initialized
+        Task { @MainActor in
+            // On initialization, sync the status to ensure UserDefaults matches system state
+            self.syncWithSystemState()
         }
     }
 
