@@ -46,6 +46,12 @@ final class AppSupervisionCoordinator: Loggable {
             WindowAIDiagnosticsManager.shared.enableLiveWatchingForAllWindows()
             logger.info("✅ Enabled AI live watching for existing windows at startup")
         }
+        
+        // Start Claude monitoring if enabled
+        if Defaults[.enableClaudeMonitoring] {
+            logger.info("🚀 Starting Claude monitoring")
+            ClaudeMonitorService.shared.startMonitoring(enableTitleOverride: Defaults[.enableClaudeTitleOverride])
+        }
     }
 
     /// Toggle monitoring state programmatically
@@ -66,6 +72,9 @@ final class AppSupervisionCoordinator: Loggable {
 
         // Stop JavaScript hooks
         JSHookService.shared.stopAllHooks()
+        
+        // Stop Claude monitoring
+        ClaudeMonitorService.shared.stopMonitoring()
 
         logger.info("✅ Supervision stopped")
     }

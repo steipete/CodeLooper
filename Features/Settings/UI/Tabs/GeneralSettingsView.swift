@@ -13,6 +13,8 @@ struct GeneralSettingsView: View {
     @Default(.showInDock)
     var showInDock
     @Default(.gitClientApp) var gitClientApp
+    @Default(.enableClaudeMonitoring) var enableClaudeMonitoring
+    @Default(.enableClaudeTitleOverride) var enableClaudeTitleOverride
     @ObservedObject var updaterViewModel: UpdaterViewModel
 
     @State private var appIcon: NSImage?
@@ -143,6 +145,38 @@ struct GeneralSettingsView: View {
                 }
             }
 
+            // Claude Monitoring
+            DSSettingsSection("Claude Monitoring") {
+                DSToggle(
+                    "Monitor Claude instances",
+                    isOn: $enableClaudeMonitoring,
+                    description: "Show running Claude instances in the status menu"
+                )
+                .onChange(of: enableClaudeMonitoring) { _, newValue in
+                    if newValue {
+                        ClaudeMonitorService.shared.startMonitoring(enableTitleOverride: enableClaudeTitleOverride)
+                    } else {
+                        ClaudeMonitorService.shared.stopMonitoring()
+                    }
+                }
+                
+                if enableClaudeMonitoring {
+                    DSDivider()
+                    
+                    DSToggle(
+                        "Override Claude terminal titles",
+                        isOn: $enableClaudeTitleOverride,
+                        description: "Show folder name and status in Claude terminal window titles"
+                    )
+                    .onChange(of: enableClaudeTitleOverride) { _, newValue in
+                        if enableClaudeMonitoring {
+                            ClaudeMonitorService.shared.stopMonitoring()
+                            ClaudeMonitorService.shared.startMonitoring(enableTitleOverride: newValue)
+                        }
+                    }
+                }
+            }
+            
             // Git Integration
             DSSettingsSection("Git Integration") {
                 VStack(alignment: .leading, spacing: Spacing.small) {

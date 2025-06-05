@@ -80,6 +80,12 @@ struct MainPopoverView: View {
                 }
             }
 
+            // Claude instances section (if enabled)
+            if enableClaudeMonitoring {
+                DSDivider()
+                ClaudeInstancesList()
+            }
+
             DSDivider()
 
             // Rule execution stats
@@ -131,9 +137,11 @@ struct MainPopoverView: View {
 
     @ObservedObject private var cursorMonitor = CursorMonitor.shared
     @ObservedObject private var diagnosticsManager = WindowAIDiagnosticsManager.shared
+    @ObservedObject private var claudeMonitor = ClaudeMonitorService.shared
     @StateObject private var ruleCounter = RuleCounterManager.shared
 
     @Default(.isGlobalMonitoringEnabled) private var isGlobalMonitoringEnabled
+    @Default(.enableClaudeMonitoring) private var enableClaudeMonitoring
 }
 
 // MARK: - Preview

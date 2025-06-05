@@ -56,7 +56,7 @@ public class SparkleUpdaterManager: NSObject, SPUUpdaterDelegate, SPUStandardUse
             // Wait a moment for the app to finish launching before checking
             try? await Task.sleep(for: .seconds(2))
             self.logger.info("Checking for updates on startup")
-            controller.updater.checkForUpdatesInBackground()
+            //controller.updater.checkForUpdatesInBackground()
         }
 
         self.logger.info("SparkleUpdaterManager: SPUStandardUpdaterController initialized with self as delegates.")
