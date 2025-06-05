@@ -19,6 +19,19 @@ import SwiftUI
 /// without opening the full settings window.
 struct MainPopoverView: View {
     // MARK: Internal
+    
+    /// App display name that includes pre-release indicator if applicable
+    private var appDisplayName: String {
+        let baseName = "CodeLooper"
+        
+        // Check if this is a pre-release build
+        if let prereleaseFlag = Bundle.main.object(forInfoDictionaryKey: "IS_PRERELEASE_BUILD") as? String,
+           prereleaseFlag.lowercased() == "yes" || prereleaseFlag == "1" {
+            return "\(baseName) (Pre-release)"
+        }
+        
+        return baseName
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: Spacing.medium) {
@@ -35,7 +48,7 @@ struct MainPopoverView: View {
                         .foregroundColor(ColorPalette.loopTint)
                 }
 
-                Text("CodeLooper")
+                Text(appDisplayName)
                     .font(Typography.title3(.medium))
                     .foregroundColor(ColorPalette.text)
 

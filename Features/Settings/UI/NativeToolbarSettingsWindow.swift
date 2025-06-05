@@ -7,6 +7,21 @@ import SwiftUI
 /// Settings window with native NSToolbar implementation
 @MainActor
 final class NativeToolbarSettingsWindow: NSWindow {
+    // MARK: Properties
+    
+    /// Computed window title that includes pre-release indicator if applicable
+    private static var windowTitle: String {
+        let baseTitle = "CodeLooper"
+        
+        // Check if this is a pre-release build
+        if let prereleaseFlag = Bundle.main.object(forInfoDictionaryKey: "IS_PRERELEASE_BUILD") as? String,
+           prereleaseFlag.lowercased() == "yes" || prereleaseFlag == "1" {
+            return "\(baseTitle) (Pre-release)"
+        }
+        
+        return baseTitle
+    }
+    
     // MARK: Lifecycle
 
     init(loginItemManager: LoginItemManager, updaterViewModel: UpdaterViewModel) {
@@ -23,7 +38,7 @@ final class NativeToolbarSettingsWindow: NSWindow {
         )
 
         // Configure window
-        self.title = "CodeLooper"
+        self.title = Self.windowTitle
         self.titlebarAppearsTransparent = false
         self.titleVisibility = .hidden // Hide the default title
         self.identifier = NSUserInterfaceItemIdentifier("settings")

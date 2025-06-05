@@ -6,6 +6,19 @@ import SwiftUI
 struct AboutSettingsTab: View {
     // Use @Bindable for consistency, though this view doesn't directly bind to properties
     @Bindable var viewModel: MainSettingsViewModel
+    
+    /// App display name that includes pre-release indicator if applicable
+    private var appDisplayName: String {
+        let baseName = Constants.appName
+        
+        // Check if this is a pre-release build
+        if let prereleaseFlag = Bundle.main.object(forInfoDictionaryKey: "IS_PRERELEASE_BUILD") as? String,
+           prereleaseFlag.lowercased() == "yes" || prereleaseFlag == "1" {
+            return "\(baseName) (Pre-release)"
+        }
+        
+        return baseName
+    }
 
     var body: some View {
         ScrollView {
@@ -21,7 +34,7 @@ struct AboutSettingsTab: View {
                         .frame(width: 100, height: 100)
 
                     // App Name and Version
-                    Text(Constants.appName)
+                    Text(appDisplayName)
                         .font(.title)
                         .bold()
 
