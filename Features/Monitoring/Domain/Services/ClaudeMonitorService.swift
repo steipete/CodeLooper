@@ -116,22 +116,11 @@ public final class ClaudeMonitorService: ObservableObject, Sendable {
                     let argsString = String(data: argsData, encoding: .utf8) ?? ""
                     
                     // Check if this is a Claude process
-                    // Claude CLI typically has "claude" in the command line arguments
-                    let lowerArgs = argsString.lowercased()
-                    let isClaude = lowerArgs.contains("claude") || 
-                                   lowerArgs.contains("claude-cli") ||
-                                   lowerArgs.contains("@anthropic") ||
-                                   lowerArgs.contains("anthropic") ||
-                                   argsString.contains("/claude/") ||
-                                   argsString.contains("\\claude\\")
-                    
-                    if cmd == "node" && !isClaude {
-                        // Log first part of args for debugging (only in debug mode)
-                        #if DEBUG
-                        let preview = String(argsString.prefix(200)).replacingOccurrences(of: "\n", with: " ")
-                        logger.debug("Node process PID=\(pid) args preview: \(preview)")
-                        #endif
-                    }
+                    // Look for the specific Claude installation path pattern
+                    let isClaude = argsString.contains("/.claude/local/node_modules/.bin/claude") ||
+                                   argsString.contains("\\.claude\\local\\node_modules\\.bin\\claude") ||
+                                   argsString.lowercased().contains("anthropic") ||
+                                   (argsString.contains("node_modules") && argsString.contains("claude"))
                     
                     guard isClaude else { continue }
                     
@@ -147,8 +136,18 @@ public final class ClaudeMonitorService: ObservableObject, Sendable {
                         }
                         let folderName = URL(fileURLWithPath: workingDir).lastPathComponent
                         
-                        // Find TTY
-                        var ttyPath: String?
+                        // Extract more info from args if possible
+                        var status: String? = nil
+                        if argsString.contains("claude code") || argsString.contains("--dangerously-skip-permissions") {
+                            status = "Claude Code"
+                        } else if argsString.contains("claude chat") {
+                            status = "Claude Chat"
+                        } else {
+                            status = "Claude CLI"
+                        }
+                        
+                        // Find TTY if available (optional)
+                        var ttyPath = ""
                         var dev = stat()
                         for n in 0...999 {
                             let p = String(format: "/dev/ttys%03d", n)
@@ -158,26 +157,16 @@ public final class ClaudeMonitorService: ObservableObject, Sendable {
                             }
                         }
                         
-                        if let tty = ttyPath {
-                            // Extract more info from args if possible
-                            var status: String? = nil
-                            if argsString.contains("claude code") {
-                                status = "Claude Code"
-                            } else if argsString.contains("claude chat") {
-                                status = "Claude Chat"
-                            }
-                            
-                            let instance = ClaudeInstance(
-                                pid: pid,
-                                ttyPath: tty,
-                                workingDirectory: workingDir,
-                                folderName: folderName,
-                                status: status
-                            )
-                            newInstances.append(instance)
-                            
-                            logger.info("Found Claude instance: PID=\(pid), workingDir=\(workingDir), tty=\(tty)")
-                        }
+                        let instance = ClaudeInstance(
+                            pid: pid,
+                            ttyPath: ttyPath,
+                            workingDirectory: workingDir,
+                            folderName: folderName,
+                            status: status
+                        )
+                        newInstances.append(instance)
+                        
+                        logger.info("Found Claude instance: PID=\(pid), workingDir=\(workingDir), status=\(status ?? "unknown")")
                     }
                 }
                 
