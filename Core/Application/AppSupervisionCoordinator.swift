@@ -47,13 +47,9 @@ final class AppSupervisionCoordinator: Loggable {
             logger.info("✅ Enabled AI live watching for existing windows at startup")
         }
         
-        // Start Claude monitoring if enabled
-        if Defaults[.enableClaudeMonitoring] {
-            logger.info("🚀 Starting Claude monitoring (enabled=\(Defaults[.enableClaudeMonitoring]), titleOverride=\(Defaults[.enableClaudeTitleOverride]))")
-            ClaudeMonitorService.shared.startMonitoring(enableTitleOverride: Defaults[.enableClaudeTitleOverride])
-        } else {
-            logger.info("Claude monitoring is disabled in settings")
-        }
+        // Sync Claude monitoring state with user defaults
+        logger.info("🔄 Syncing Claude monitoring state with user preferences")
+        ClaudeMonitorService.shared.syncWithUserDefaults()
     }
 
     /// Toggle monitoring state programmatically

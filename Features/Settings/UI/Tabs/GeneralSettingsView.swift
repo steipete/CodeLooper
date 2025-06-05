@@ -154,11 +154,8 @@ struct GeneralSettingsView: View {
                 )
                 .onChange(of: enableClaudeMonitoring) { _, newValue in
                     Task { @MainActor in
-                        if newValue {
-                            ClaudeMonitorService.shared.startMonitoring(enableTitleOverride: enableClaudeTitleOverride)
-                        } else {
-                            ClaudeMonitorService.shared.stopMonitoring()
-                        }
+                        // Use syncWithUserDefaults to ensure state consistency
+                        ClaudeMonitorService.shared.syncWithUserDefaults()
                     }
                 }
                 
@@ -172,10 +169,8 @@ struct GeneralSettingsView: View {
                     )
                     .onChange(of: enableClaudeTitleOverride) { _, newValue in
                         Task { @MainActor in
-                            if enableClaudeMonitoring {
-                                ClaudeMonitorService.shared.stopMonitoring()
-                                ClaudeMonitorService.shared.startMonitoring(enableTitleOverride: newValue)
-                            }
+                            // Use syncWithUserDefaults to ensure state consistency
+                            ClaudeMonitorService.shared.syncWithUserDefaults()
                         }
                     }
                 }
