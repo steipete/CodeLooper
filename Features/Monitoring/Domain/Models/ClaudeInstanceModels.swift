@@ -1,6 +1,5 @@
 import Foundation
 
-@MainActor
 public struct ClaudeInstance: Identifiable, Sendable {
     public let id: UUID = UUID()
     public let pid: Int32

@@ -97,7 +97,7 @@ public final class ClaudeMonitorService: ObservableObject, Sendable {
                     let pathLen = proc_pidpath(pid, &pathBuf, UInt32(pathBuf.count))
                     
                     if pathLen > 0 {
-                        let processPath = String(cString: pathBuf)
+                        let processPath = String(decoding: pathBuf[0..<Int(pathLen)], as: UTF8.self)
                         let workingDir = URL(fileURLWithPath: processPath).deletingLastPathComponent().path
                         let folderName = URL(fileURLWithPath: workingDir).lastPathComponent
                         
