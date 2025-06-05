@@ -74,6 +74,20 @@ private struct ClaudeInstanceRow: View {
                             .foregroundColor(ColorPalette.textTertiary)
                             .lineLimit(1)
                     }
+                    
+                    // Current activity if available
+                    if let activity = instance.currentActivity {
+                        HStack(spacing: Spacing.xxSmall) {
+                            Image(systemName: "waveform")
+                                .font(.caption2)
+                                .foregroundColor(ColorPalette.success)
+                            
+                            Text(activity)
+                                .font(Typography.caption2(.medium))
+                                .foregroundColor(ColorPalette.success)
+                                .lineLimit(2)
+                        }
+                    }
                 }
                 
                 Spacer()

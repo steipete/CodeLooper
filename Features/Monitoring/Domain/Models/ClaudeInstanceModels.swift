@@ -7,6 +7,7 @@ public struct ClaudeInstance: Identifiable, Sendable {
     public let workingDirectory: String
     public let folderName: String
     public let status: String?
+    public let currentActivity: String? // The live status line from terminal
     public let lastUpdated: Date
     
     public init(
@@ -15,6 +16,7 @@ public struct ClaudeInstance: Identifiable, Sendable {
         workingDirectory: String,
         folderName: String,
         status: String?,
+        currentActivity: String? = nil,
         lastUpdated: Date = Date()
     ) {
         self.pid = pid
@@ -22,6 +24,7 @@ public struct ClaudeInstance: Identifiable, Sendable {
         self.workingDirectory = workingDirectory
         self.folderName = folderName
         self.status = status
+        self.currentActivity = currentActivity
         self.lastUpdated = lastUpdated
     }
 }

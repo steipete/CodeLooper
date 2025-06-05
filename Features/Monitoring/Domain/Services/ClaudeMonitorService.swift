@@ -189,12 +189,16 @@ public final class ClaudeMonitorService: ObservableObject, Sendable {
                             }
                         }
                         
+                        // Try to get current activity status
+                        let currentActivity = extractClaudeStatusSync(ttyPath: ttyPath, pid: pid)
+                        
                         let instance = ClaudeInstance(
                             pid: pid,
                             ttyPath: ttyPath,
                             workingDirectory: workingDir,
                             folderName: folderName,
-                            status: status
+                            status: status,
+                            currentActivity: currentActivity
                         )
                         newInstances.append(instance)
                         
@@ -245,12 +249,17 @@ public final class ClaudeMonitorService: ObservableObject, Sendable {
                 // Get current Claude status from terminal
                 let claudeStatus = self.extractClaudeStatus(from: instance)
                 
+                logger.debug("Extracted Claude status for PID \(instance.pid): '\(claudeStatus ?? "nil")'")
+                
                 // Create dynamic title: "FolderName — Claude — Status"
                 // If we have Claude status (e.g., "✶ Branching… (1604s · ⚒ 9.0k tokens)"), use it
                 // Otherwise fall back to basic status (e.g., "Claude CLI")
                 var title = "\(instance.folderName) — \(instance.status ?? "Claude")"
                 if let status = claudeStatus, !status.isEmpty {
                     title = "\(instance.folderName) — \(status)"
+                    logger.info("Using dynamic title for PID \(instance.pid): '\(title)'")
+                } else {
+                    logger.debug("Using fallback title for PID \(instance.pid): '\(title)'")
                 }
                 
                 // Terminal escape sequence to set window title
@@ -284,27 +293,58 @@ public final class ClaudeMonitorService: ObservableObject, Sendable {
     
     private func extractClaudeStatus(from instance: ClaudeInstance) -> String? {
         // Try to read the terminal buffer to extract Claude's current status
-        guard !instance.ttyPath.isEmpty else { return nil }
+        guard !instance.ttyPath.isEmpty else { 
+            logger.debug("No TTY path for Claude instance PID \(instance.pid)")
+            return nil
+        }
+        
+        logger.info("Extracting Claude status for PID \(instance.pid) from TTY \(instance.ttyPath)")
         
         // Method 1: Try to read recent terminal output
         if let status = readTerminalBuffer(ttyPath: instance.ttyPath) {
+            logger.info("Found status from terminal buffer for PID \(instance.pid): '\(status)'")
             return status
         }
         
         // Method 2: Try AppleScript approach for terminal apps
         if let status = getTerminalContentViaAppleScript(pid: instance.pid) {
+            logger.info("Found status from accessibility API for PID \(instance.pid): '\(status)'")
             return status
         }
         
         // Method 3: Parse process output/stderr if available
         if let status = parseProcessOutput(pid: instance.pid) {
+            logger.info("Found status from process output for PID \(instance.pid): '\(status)'")
             return status
         }
         
+        logger.debug("No Claude status found for PID \(instance.pid)")
         return nil
     }
     
-    private func readTerminalBuffer(ttyPath: String) -> String? {
+    private nonisolated func extractClaudeStatusSync(ttyPath: String, pid: Int32) -> String? {
+        // Synchronous version for use during scanning
+        guard !ttyPath.isEmpty else { return nil }
+        
+        logger.debug("Trying to extract Claude status sync for PID \(pid) from TTY \(ttyPath)")
+        
+        // Try the simpler methods that don't require async
+        if let status = readTerminalBuffer(ttyPath: ttyPath) {
+            logger.info("Found sync status from terminal buffer for PID \(pid): '\(status)'")
+            return status
+        }
+        
+        // Try reading process environment or command line for clues
+        if let status = readProcessCommandLine(pid: pid) {
+            logger.info("Found sync status from process command line for PID \(pid): '\(status)'")
+            return status
+        }
+        
+        // For now, skip accessibility API in sync mode as it's more complex
+        return nil
+    }
+    
+    private nonisolated func readTerminalBuffer(ttyPath: String) -> String? {
         // Try to read recent terminal output by monitoring the PTY
         // This approach tries to read from system logs or proc filesystem
         
@@ -321,9 +361,11 @@ public final class ClaudeMonitorService: ObservableObject, Sendable {
         return nil
     }
     
-    private func readFromSystemLogs(ttyPath: String) -> String? {
+    private nonisolated func readFromSystemLogs(ttyPath: String) -> String? {
         // Extract TTY number from path (e.g., "/dev/ttys003" -> "ttys003")
         let ttyName = URL(fileURLWithPath: ttyPath).lastPathComponent
+        
+        logger.debug("Attempting to read system logs for TTY: \(ttyName)")
         
         // Use 'last' command or system logs to get recent terminal activity
         let process = Process()
@@ -341,9 +383,13 @@ public final class ClaudeMonitorService: ObservableObject, Sendable {
             let data = pipe.fileHandleForReading.readDataToEndOfFile()
             let output = String(data: data, encoding: .utf8) ?? ""
             
+            logger.debug("System logs output for \(ttyName): '\(String(output.prefix(200)))'")
+            
             // Look for Claude-related patterns in the output
             if output.contains("esc to interrupt") || output.contains("Reticulating") {
-                return parseClaudeStatusLine(output)
+                let status = parseClaudeStatusLine(output)
+                logger.info("Parsed Claude status from system logs: '\(status ?? "nil")'")
+                return status
             }
         } catch {
             logger.debug("Failed to read system logs for \(ttyPath): \(error)")
@@ -352,7 +398,7 @@ public final class ClaudeMonitorService: ObservableObject, Sendable {
         return nil
     }
     
-    private func readFromMasterPTY(slavePath: String) -> String? {
+    private nonisolated func readFromMasterPTY(slavePath: String) -> String? {
         // This is a more advanced approach that would require finding the master PTY
         // associated with the slave TTY and reading from it.
         // This is complex and may not work reliably across different terminal apps.
@@ -526,46 +572,89 @@ public final class ClaudeMonitorService: ObservableObject, Sendable {
         return nil
     }
     
-    private func parseClaudeStatusLine(_ text: String) -> String? {
+    private nonisolated func parseClaudeStatusLine(_ text: String) -> String? {
         // Parse the Claude status line to extract the complete status
         // Example input: "claude: ✶ Branching… (1604s · ⚒ 9.0k tokens · esc to interrupt)"
         // Desired output: "✶ Branching… (1604s · ⚒ 9.0k tokens)"
         
+        logger.debug("Parsing Claude status from text: '\(String(text.prefix(300)))'")
+        
         let lines = text.components(separatedBy: .newlines)
         
         // Look through all lines for the one containing "esc to interrupt"
-        for line in lines {
+        for (index, line) in lines.enumerated() {
             let cleanLine = line.trimmingCharacters(in: .whitespacesAndNewlines)
             
             // Skip empty lines
             guard !cleanLine.isEmpty else { continue }
             
+            logger.debug("Checking line \(index): '\(cleanLine)'")
+            
             // Look for the line with "esc to interrupt"
             if cleanLine.contains("esc to interrupt") {
+                logger.info("Found 'esc to interrupt' in line: '\(cleanLine)'")
+                
                 if let range = cleanLine.range(of: "esc to interrupt") {
                     let beforeEsc = cleanLine[..<range.lowerBound]
                     var status = String(beforeEsc).trimmingCharacters(in: .whitespacesAndNewlines)
                     
+                    logger.debug("Before esc: '\(status)'")
+                    
                     // Remove the final separator before "esc to interrupt" (like " · " or " ・ ")
                     if status.hasSuffix("·") || status.hasSuffix("・") {
                         status = String(status.dropLast()).trimmingCharacters(in: .whitespacesAndNewlines)
+                        logger.debug("After removing separator: '\(status)'")
                     }
                     
                     // Clean up any prefix like "claude:" or bullet points if present
                     if let colonIndex = status.firstIndex(of: ":") {
                         status = String(status[status.index(after: colonIndex)...]).trimmingCharacters(in: .whitespacesAndNewlines)
+                        logger.debug("After removing prefix: '\(status)'")
                     }
                     
                     // Remove leading bullet points or symbols but keep the actual content
                     status = status.replacingOccurrences(of: "^[●•○]\\s*", with: "", options: .regularExpression)
                     status = status.trimmingCharacters(in: .whitespacesAndNewlines)
                     
+                    logger.debug("Final parsed status: '\(status)'")
+                    
                     // Return the cleaned status if we have meaningful content
                     if !status.isEmpty && status.count > 1 {
+                        logger.info("Successfully parsed Claude status: '\(status)'")
                         return status
                     }
                 }
             }
+        }
+        
+        logger.debug("No Claude status found in text")
+        return nil
+    }
+    
+    private nonisolated func readProcessCommandLine(pid: Int32) -> String? {
+        // Try to read the process command line to see if it contains status info
+        let process = Process()
+        process.executableURL = URL(fileURLWithPath: "/bin/ps")
+        process.arguments = ["-p", "\(pid)", "-o", "command"]
+        
+        let pipe = Pipe()
+        process.standardOutput = pipe
+        process.standardError = pipe
+        
+        do {
+            try process.run()
+            process.waitUntilExit()
+            
+            let data = pipe.fileHandleForReading.readDataToEndOfFile()
+            let output = String(data: data, encoding: .utf8) ?? ""
+            
+            logger.debug("Process command line for PID \(pid): '\(output)'")
+            
+            // For now, this is just for debugging - we don't expect to find the live status here
+            // but it might give us clues about what Claude is doing
+            return nil
+        } catch {
+            logger.debug("Failed to read process command line for PID \(pid): \(error)")
         }
         
         return nil
