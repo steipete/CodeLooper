@@ -51,10 +51,12 @@ struct MainPopoverView: View {
                 isOn: $isGlobalMonitoringEnabled
             )
             .onChange(of: isGlobalMonitoringEnabled) { _, newValue in
-                if newValue {
-                    diagnosticsManager.enableLiveWatchingForAllWindows()
-                } else {
-                    diagnosticsManager.disableLiveWatchingForAllWindows()
+                Task { @MainActor in
+                    if newValue {
+                        diagnosticsManager.enableLiveWatchingForAllWindows()
+                    } else {
+                        diagnosticsManager.disableLiveWatchingForAllWindows()
+                    }
                 }
             }
 

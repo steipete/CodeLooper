@@ -19,7 +19,9 @@ public final class ClaudeMonitorService: ObservableObject, Sendable {
     private var titleProxyProcess: Process?
     private let processQueue = DispatchQueue(label: "com.codelooper.claude-monitor", qos: .background)
     
-    private init() {}
+    private init() {
+        logger.info("ClaudeMonitorService initialized")
+    }
     
     public func startMonitoring(enableTitleOverride: Bool = true) {
         guard !isMonitoring else { return }
@@ -65,6 +67,7 @@ public final class ClaudeMonitorService: ObservableObject, Sendable {
     }
     
     private func scanForClaudeInstances() async {
+        logger.info("Starting Claude instance scan...")
         await withCheckedContinuation { continuation in
             processQueue.async { [weak self] in
                 guard let self = self else {
@@ -73,6 +76,7 @@ public final class ClaudeMonitorService: ObservableObject, Sendable {
                 }
                 
                 var newInstances: [ClaudeInstance] = []
+                var nodeProcessCount = 0
                 
                 var pids = [pid_t](repeating: 0, count: 4096)
                 let size = proc_listallpids(&pids, Int32(MemoryLayout<pid_t>.size * pids.count))
@@ -96,6 +100,8 @@ public final class ClaudeMonitorService: ObservableObject, Sendable {
                     
                     // Check for node processes (also check for "node" in lowercase)
                     guard cmd == "node" || cmd.lowercased() == "node" else { continue }
+                    
+                    nodeProcessCount += 1
                     
                     // Get process arguments to check if it's Claude
                     var argsMax = 0
@@ -122,7 +128,10 @@ public final class ClaudeMonitorService: ObservableObject, Sendable {
                                    argsString.lowercased().contains("anthropic") ||
                                    (argsString.contains("node_modules") && argsString.contains("claude"))
                     
-                    guard isClaude else { continue }
+                    guard isClaude else { 
+                        logger.debug("Node process PID=\(pid) not Claude: \(String(argsString.prefix(100)))")
+                        continue 
+                    }
                     
                     logger.info("Found potential Claude process: PID=\(pid)")
                     
@@ -169,6 +178,8 @@ public final class ClaudeMonitorService: ObservableObject, Sendable {
                         logger.info("Found Claude instance: PID=\(pid), workingDir=\(workingDir), status=\(status ?? "unknown")")
                     }
                 }
+                
+                logger.info("Scan complete: found \(nodeProcessCount) Node processes, \(newInstances.count) Claude instances")
                 
                 Task { @MainActor [weak self] in
                     self?.instances = newInstances

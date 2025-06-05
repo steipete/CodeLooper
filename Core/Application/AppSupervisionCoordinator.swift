@@ -49,8 +49,10 @@ final class AppSupervisionCoordinator: Loggable {
         
         // Start Claude monitoring if enabled
         if Defaults[.enableClaudeMonitoring] {
-            logger.info("🚀 Starting Claude monitoring")
+            logger.info("🚀 Starting Claude monitoring (enabled=\(Defaults[.enableClaudeMonitoring]), titleOverride=\(Defaults[.enableClaudeTitleOverride]))")
             ClaudeMonitorService.shared.startMonitoring(enableTitleOverride: Defaults[.enableClaudeTitleOverride])
+        } else {
+            logger.info("Claude monitoring is disabled in settings")
         }
     }
 

@@ -153,10 +153,12 @@ struct GeneralSettingsView: View {
                     description: "Show running Claude instances in the status menu"
                 )
                 .onChange(of: enableClaudeMonitoring) { _, newValue in
-                    if newValue {
-                        ClaudeMonitorService.shared.startMonitoring(enableTitleOverride: enableClaudeTitleOverride)
-                    } else {
-                        ClaudeMonitorService.shared.stopMonitoring()
+                    Task { @MainActor in
+                        if newValue {
+                            ClaudeMonitorService.shared.startMonitoring(enableTitleOverride: enableClaudeTitleOverride)
+                        } else {
+                            ClaudeMonitorService.shared.stopMonitoring()
+                        }
                     }
                 }
                 
@@ -169,9 +171,11 @@ struct GeneralSettingsView: View {
                         description: "Show folder name and status in Claude terminal window titles"
                     )
                     .onChange(of: enableClaudeTitleOverride) { _, newValue in
-                        if enableClaudeMonitoring {
-                            ClaudeMonitorService.shared.stopMonitoring()
-                            ClaudeMonitorService.shared.startMonitoring(enableTitleOverride: newValue)
+                        Task { @MainActor in
+                            if enableClaudeMonitoring {
+                                ClaudeMonitorService.shared.stopMonitoring()
+                                ClaudeMonitorService.shared.startMonitoring(enableTitleOverride: newValue)
+                            }
                         }
                     }
                 }
