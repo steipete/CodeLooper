@@ -17,6 +17,7 @@ public final class ClaudeMonitorService: ObservableObject, Sendable {
     
     private var monitoringTask: Task<Void, Never>?
     private var titleProxyProcess: Process?
+    private var titleOverrideEnabled = false
     private let processQueue = DispatchQueue(label: "com.codelooper.claude-monitor", qos: .background)
     
     private init() {
@@ -26,9 +27,10 @@ public final class ClaudeMonitorService: ObservableObject, Sendable {
     public func startMonitoring(enableTitleOverride: Bool = true) {
         guard !isMonitoring else { return }
         
-        logger.info("Starting Claude monitoring")
+        logger.info("Starting Claude monitoring (titleOverride: \(enableTitleOverride))")
         isMonitoring = true
         state = .monitoring
+        titleOverrideEnabled = enableTitleOverride
         
         if enableTitleOverride {
             startTitleProxy()
@@ -53,12 +55,8 @@ public final class ClaudeMonitorService: ObservableObject, Sendable {
     }
     
     private func startTitleProxy() {
-        // For now, we'll log that title proxy would be started
-        // In a real implementation, this would either:
-        // 1. Embed the title proxy logic directly here
-        // 2. Compile and bundle a separate executable
-        // 3. Use a different approach for title modification
-        logger.info("Claude title proxy feature enabled (implementation pending)")
+        logger.info("Starting Claude title override functionality")
+        // Title overriding is now handled per-instance in updateTitles()
     }
     
     private func stopTitleProxy() {
@@ -182,7 +180,68 @@ public final class ClaudeMonitorService: ObservableObject, Sendable {
                 logger.info("Scan complete: found \(nodeProcessCount) Node processes, \(newInstances.count) Claude instances")
                 
                 Task { @MainActor [weak self] in
-                    self?.instances = newInstances
+                    guard let self = self else { return }
+                    self.instances = newInstances
+                    
+                    // Update terminal titles if title override is enabled
+                    if self.isMonitoring && self.titleOverrideEnabled {
+                        Task {
+                            await self.updateTerminalTitles(for: newInstances)
+                        }
+                    }
+                }
+                
+                continuation.resume()
+            }
+        }
+    }
+    
+    private func updateTerminalTitles(for instances: [ClaudeInstance]) async {
+        logger.info("Updating terminal titles for \(instances.count) Claude instances")
+        
+        for instance in instances {
+            guard !instance.ttyPath.isEmpty else {
+                logger.debug("Skipping title update for PID \(instance.pid) - no TTY")
+                continue
+            }
+            
+            await updateTitle(for: instance)
+        }
+    }
+    
+    private func updateTitle(for instance: ClaudeInstance) async {
+        await withCheckedContinuation { continuation in
+            processQueue.async { [weak self] in
+                guard let self = self else {
+                    continuation.resume()
+                    return
+                }
+                
+                // Create the new title: "FolderName — Claude Code"
+                let title = "\(instance.folderName) — \(instance.status ?? "Claude")"
+                
+                // Terminal escape sequence to set window title
+                let esc = "\u{001B}]2;"
+                let bel = "\u{0007}"
+                let titleCommand = esc + title + bel
+                
+                // Try to write to the TTY
+                let fd = open(instance.ttyPath, O_WRONLY | O_NONBLOCK)
+                if fd >= 0 {
+                    defer { close(fd) }
+                    
+                    let data = titleCommand.data(using: .utf8) ?? Data()
+                    let bytesWritten = data.withUnsafeBytes { bytes in
+                        write(fd, bytes.baseAddress, bytes.count)
+                    }
+                    
+                    if bytesWritten > 0 {
+                        logger.info("Updated terminal title for \(instance.folderName) (PID: \(instance.pid)): \(title)")
+                    } else {
+                        logger.warning("Failed to write title to TTY \(instance.ttyPath) for PID \(instance.pid)")
+                    }
+                } else {
+                    logger.warning("Could not open TTY \(instance.ttyPath) for PID \(instance.pid)")
                 }
                 
                 continuation.resume()
