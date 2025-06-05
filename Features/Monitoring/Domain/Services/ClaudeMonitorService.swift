@@ -3,6 +3,10 @@ import Diagnostics
 
 private let logger = Logger(category: .supervision)
 
+// sysctl constants for getting process arguments
+private let CTL_KERN: Int32 = 1
+private let KERN_PROCARGS2: Int32 = 49
+
 @MainActor
 public final class ClaudeMonitorService: ObservableObject, Sendable {
     public static let shared = ClaudeMonitorService()
@@ -90,15 +94,57 @@ public final class ClaudeMonitorService: ObservableObject, Sendable {
                         $0.withMemoryRebound(to: CChar.self, capacity: Int(MAXCOMLEN)) { String(cString: $0) }
                     }
                     
-                    guard cmd.hasPrefix("claude") else { continue }
+                    // Check for node processes (also check for "node" in lowercase)
+                    guard cmd == "node" || cmd.lowercased() == "node" else { continue }
                     
-                    // Get process path
-                    var pathBuf = [UInt8](repeating: 0, count: Int(MAXPATHLEN))
-                    let pathLen = proc_pidpath(pid, &pathBuf, UInt32(pathBuf.count))
+                    // Get process arguments to check if it's Claude
+                    var argsMax = 0
+                    var argsPtr: UnsafeMutablePointer<CChar>?
                     
-                    if pathLen > 0 {
-                        let processPath = String(decoding: pathBuf[0..<Int(pathLen)], as: UTF8.self)
-                        let workingDir = URL(fileURLWithPath: processPath).deletingLastPathComponent().path
+                    var mib: [Int32] = [CTL_KERN, KERN_PROCARGS2, pid]
+                    if sysctl(&mib, 3, nil, &argsMax, nil, 0) == -1 { continue }
+                    
+                    guard argsMax > 0 else { continue }
+                    argsPtr = UnsafeMutablePointer<CChar>.allocate(capacity: argsMax)
+                    defer { argsPtr?.deallocate() }
+                    
+                    if sysctl(&mib, 3, argsPtr, &argsMax, nil, 0) == -1 { continue }
+                    
+                    // Parse the arguments
+                    guard let args = argsPtr else { continue }
+                    let argsData = Data(bytes: args, count: argsMax)
+                    let argsString = String(data: argsData, encoding: .utf8) ?? ""
+                    
+                    // Check if this is a Claude process
+                    // Claude CLI typically has "claude" in the command line arguments
+                    let lowerArgs = argsString.lowercased()
+                    let isClaude = lowerArgs.contains("claude") || 
+                                   lowerArgs.contains("claude-cli") ||
+                                   lowerArgs.contains("@anthropic") ||
+                                   lowerArgs.contains("anthropic") ||
+                                   argsString.contains("/claude/") ||
+                                   argsString.contains("\\claude\\")
+                    
+                    if cmd == "node" && !isClaude {
+                        // Log first part of args for debugging (only in debug mode)
+                        #if DEBUG
+                        let preview = String(argsString.prefix(200)).replacingOccurrences(of: "\n", with: " ")
+                        logger.debug("Node process PID=\(pid) args preview: \(preview)")
+                        #endif
+                    }
+                    
+                    guard isClaude else { continue }
+                    
+                    logger.info("Found potential Claude process: PID=\(pid)")
+                    
+                    // Get process's current working directory
+                    var vinfo = proc_vnodepathinfo()
+                    let vinfoSize = proc_pidinfo(pid, PROC_PIDVNODEPATHINFO, 0, &vinfo, Int32(MemoryLayout<proc_vnodepathinfo>.size))
+                    
+                    if vinfoSize > 0 {
+                        let workingDir = withUnsafePointer(to: &vinfo.pvi_cdir.vip_path) {
+                            $0.withMemoryRebound(to: CChar.self, capacity: Int(MAXPATHLEN)) { String(cString: $0) }
+                        }
                         let folderName = URL(fileURLWithPath: workingDir).lastPathComponent
                         
                         // Find TTY
@@ -113,14 +159,24 @@ public final class ClaudeMonitorService: ObservableObject, Sendable {
                         }
                         
                         if let tty = ttyPath {
+                            // Extract more info from args if possible
+                            var status: String? = nil
+                            if argsString.contains("claude code") {
+                                status = "Claude Code"
+                            } else if argsString.contains("claude chat") {
+                                status = "Claude Chat"
+                            }
+                            
                             let instance = ClaudeInstance(
                                 pid: pid,
                                 ttyPath: tty,
                                 workingDirectory: workingDir,
                                 folderName: folderName,
-                                status: nil // Will be updated by title proxy
+                                status: status
                             )
                             newInstances.append(instance)
+                            
+                            logger.info("Found Claude instance: PID=\(pid), workingDir=\(workingDir), tty=\(tty)")
                         }
                     }
                 }
