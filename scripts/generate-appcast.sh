@@ -204,14 +204,24 @@ generate_appcast_content() {
 EOF
 
     # Process releases
-    local jq_filter="."
+    local jq_filter
     if [[ "$include_prereleases" == "false" ]]; then
-        jq_filter=".[] | select(.prerelease == false)"
+        jq_filter="map(select(.prerelease == false))"
     else
-        jq_filter=".[]"
+        jq_filter="."
     fi
     
-    echo "$releases_json" | jq -r "$jq_filter" | while IFS= read -r release; do
+    # Use jq -c for compact single-line output and proper array iteration
+    local filtered_releases
+    filtered_releases=$(echo "$releases_json" | jq -c "$jq_filter")
+    
+    # Get array length for iteration
+    local release_count
+    release_count=$(echo "$filtered_releases" | jq length)
+    
+    for ((i=0; i<release_count; i++)); do
+        local release
+        release=$(echo "$filtered_releases" | jq -c ".[$i]")
         local tag_name
         local name
         local published_at
