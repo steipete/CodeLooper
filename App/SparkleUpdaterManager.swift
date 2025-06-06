@@ -52,12 +52,13 @@ public class SparkleUpdaterManager: NSObject, SPUUpdaterDelegate, SPUStandardUse
         self.logger.info("Automatic update checks enabled")
 
         // Check for updates on startup after app launch
+        let updater = controller.updater
         Task {
             // Wait a moment for the app to finish launching before checking
             try? await Task.sleep(for: .seconds(2))
             await MainActor.run {
                 self.logger.info("Checking for updates on startup")
-                controller.updater.checkForUpdatesInBackground()
+                updater.checkForUpdatesInBackground()
             }
         }
 
