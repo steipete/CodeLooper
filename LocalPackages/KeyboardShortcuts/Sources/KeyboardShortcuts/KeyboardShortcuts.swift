@@ -36,6 +36,7 @@ public enum KeyboardShortcuts {
 		return Set(shortcuts)
 	}
 
+	@MainActor
 	private static var shortcutsForHandlers: Set<Shortcut> {
 		shortcutsForLegacyHandlers.union(shortcutsForStreamHandlers)
 	}
@@ -119,6 +120,7 @@ public enum KeyboardShortcuts {
 	/**
 	Register the shortcut for the given name if it has a shortcut.
 	*/
+	@MainActor
 	private static func registerShortcutIfNeeded(for name: Name) {
 		guard let shortcut = getShortcut(for: name) else {
 			return
@@ -127,6 +129,7 @@ public enum KeyboardShortcuts {
 		register(shortcut)
 	}
 
+	@MainActor
 	private static func unregister(_ shortcut: Shortcut) {
 		CarbonKeyboardShortcuts.unregister(shortcut)
 		registeredShortcuts.remove(shortcut)
@@ -154,6 +157,7 @@ public enum KeyboardShortcuts {
 		unregisterIfNeeded(shortcut)
 	}
 
+	@MainActor
 	private static func unregisterAll() {
 		CarbonKeyboardShortcuts.unregisterAll()
 		registeredShortcuts.removeAll()
@@ -367,6 +371,7 @@ public enum KeyboardShortcuts {
 
 	You would usually not need this as the user would be the one setting the shortcut in a settings user-interface, but it can be useful when, for example, migrating from a different keyboard shortcuts package.
 	*/
+	@MainActor
 	public static func setShortcut(_ shortcut: Shortcut?, for name: Name) {
 		if let shortcut {
 			userDefaultsSet(name: name, shortcut: shortcut)
@@ -468,6 +473,7 @@ public enum KeyboardShortcuts {
 	}
 	```
 	*/
+	@MainActor
 	public static func onKeyDown(for name: Name, action: @escaping () -> Void) {
 		legacyKeyDownHandlers[name, default: []].append(action)
 		registerShortcutIfNeeded(for: name)
@@ -496,6 +502,7 @@ public enum KeyboardShortcuts {
 	}
 	```
 	*/
+	@MainActor
 	public static func onKeyUp(for name: Name, action: @escaping () -> Void) {
 		legacyKeyUpHandlers[name, default: []].append(action)
 		registerShortcutIfNeeded(for: name)
@@ -511,6 +518,7 @@ public enum KeyboardShortcuts {
 		NotificationCenter.default.post(name: .shortcutByNameDidChange, object: nil, userInfo: ["name": name])
 	}
 
+	@MainActor
 	static func userDefaultsSet(name: Name, shortcut: Shortcut) {
 		guard let encoded = try? JSONEncoder().encode(shortcut).toString else {
 			return
@@ -525,6 +533,7 @@ public enum KeyboardShortcuts {
 		userDefaultsDidChange(name: name)
 	}
 
+	@MainActor
 	static func userDefaultsDisable(name: Name) {
 		guard let shortcut = getShortcut(for: name) else {
 			return
@@ -535,6 +544,7 @@ public enum KeyboardShortcuts {
 		userDefaultsDidChange(name: name)
 	}
 
+	@MainActor
 	static func userDefaultsRemove(name: Name) {
 		guard let shortcut = getShortcut(for: name) else {
 			return

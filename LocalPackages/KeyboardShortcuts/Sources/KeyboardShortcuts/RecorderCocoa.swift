@@ -121,16 +121,16 @@ extension KeyboardShortcuts {
 
 		private func setUpEvents() {
 			shortcutsNameChangeObserver = NotificationCenter.default.addObserver(forName: .shortcutByNameDidChange, object: nil, queue: nil) { [weak self] notification in
-				MainActor.assumeIsolated {
+				MainActor.assumeIsolated { [weak self] in
 					guard
 						let self,
 						let nameInNotification = notification.userInfo?["name"] as? KeyboardShortcuts.Name,
-						nameInNotification == shortcutName
+						nameInNotification == self.shortcutName
 					else {
 						return
 					}
 
-					setStringValue(name: nameInNotification)
+					self.setStringValue(name: nameInNotification)
 				}
 			}
 		}
@@ -184,7 +184,7 @@ extension KeyboardShortcuts {
 			// Ensures the recorder stops when the window is hidden.
 			// This is especially important for Settings windows, which as of macOS 13.5, only hides instead of closes when you click the close button.
 			windowDidResignKeyObserver = NotificationCenter.default.addObserver(forName: NSWindow.didResignKeyNotification, object: window, queue: nil) { [weak self] _ in
-				MainActor.assumeIsolated {
+				MainActor.assumeIsolated { [weak self] in
 					guard
 						let self,
 						let window = self.window
@@ -192,7 +192,7 @@ extension KeyboardShortcuts {
 						return
 					}
 
-					endRecording()
+					self.endRecording()
 					window.makeFirstResponder(nil)
 				}
 			}

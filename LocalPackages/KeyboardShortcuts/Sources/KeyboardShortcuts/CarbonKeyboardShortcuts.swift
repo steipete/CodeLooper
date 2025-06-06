@@ -64,6 +64,7 @@ enum CarbonKeyboardShortcuts {
 		return nil
 	}
 
+	@MainActor
 	private static func setUpEventHandlerIfNeeded() {
 		guard
 			eventHandler == nil,
@@ -94,6 +95,7 @@ enum CarbonKeyboardShortcuts {
 		updateEventHandler()
 	}
 
+	@MainActor
 	static func updateEventHandler() {
 		guard eventHandler != nil else {
 			return
@@ -168,6 +170,7 @@ enum CarbonKeyboardShortcuts {
 		setUpEventHandlerIfNeeded()
 	}
 
+	@MainActor
 	private static func softRegisterAll() {
 		for hotKey in hotKeys.values {
 			guard hotKey.carbonHotKey == nil else {
