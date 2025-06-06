@@ -152,7 +152,6 @@ let project = Project(
             dependencies: [
                 .target(name: "CodeLooper"),
                 .target(name: "Diagnostics"),
-                .package(product: "Testing"),
             ],
             settings: .settings(
                 base: [

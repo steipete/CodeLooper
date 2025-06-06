@@ -81,7 +81,6 @@ let package = Package(
                 "scripts",
                 "docs",
                 "assets",
-                "Resources",
                 "Sources",
                 "CodeLooper",
                 "AXorcist",
@@ -90,6 +89,19 @@ let package = Package(
                 "Tests",
                 "TestResults.xcresult",
                 "LocalPackages",
+                "README.md",
+                "LICENSE",
+                "CHANGELOG.md",
+                "CHANGELOG.html",
+                "CLAUDE.md",
+                "RELEASE.md",
+                "appcast.xml",
+                "appcast-prerelease.xml",
+                "project.yml",
+                "Tuist.swift",
+                "*.sh",
+                "test-runner.sh",
+                "lint.sh",
             ],
             sources: ["App", "Core", "Features"],
             resources: [
@@ -116,10 +128,7 @@ let package = Package(
                 "CodeLooper",
                 "Diagnostics",
             ],
-            path: "Tests",
-            resources: [
-                .copy("Resources"),
-            ]
+            path: "Tests"
         ),
     ]
 )

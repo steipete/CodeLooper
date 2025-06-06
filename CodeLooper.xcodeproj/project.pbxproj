@@ -162,7 +162,6 @@
 		970B3A1855D464A4015D21C1 /* Logger.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A63AB70345BBFD326F2CCF7 /* Logger.swift */; };
 		9762650D20B8F2DF934FFF7E /* Logging in Frameworks */ = {isa = PBXBuildFile; productRef = 5258361B849FE66B888D2295 /* Logging */; };
 		979959E33CA67547C8FC6A2A /* TimingConfiguration.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9A5575A3D9264C4228EDE6F9 /* TimingConfiguration.swift */; };
-		987074522BCF3E3C9F2235B2 /* Testing in Frameworks */ = {isa = PBXBuildFile; productRef = 243D75D4BAD54C55DF5DC4EC /* Testing */; };
 		98782C1DDBF715C4D48C5FE7 /* SoundManagerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BDDDC4FCC3588E5E3FC80418 /* SoundManagerTests.swift */; };
 		9A846D47F74106A5D3A77F1F /* WindowManagementTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 089B8E466D888D3A8D6929BE /* WindowManagementTests.swift */; };
 		9CC9842CEE4F37A93200D55A /* MenuBarIconManager+Debug.swift in Sources */ = {isa = PBXBuildFile; fileRef = 285A6724E4720E808D4F76DD /* MenuBarIconManager+Debug.swift */; };
@@ -598,7 +597,6 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				987074522BCF3E3C9F2235B2 /* Testing in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1470,7 +1468,6 @@
 			);
 			name = CodeLooperTests;
 			packageProductDependencies = (
-				243D75D4BAD54C55DF5DC4EC /* Testing */,
 			);
 			productName = CodeLooperTests;
 			productReference = 2B6F1F26DF05152139846594 /* CodeLooperTests.xctest */;
@@ -1536,7 +1533,6 @@
 			packageReferences = (
 				C8F327DDD4E6265D93970A6C /* XCRemoteSwiftPackageReference "OpenAI" */,
 				A9F285E059E774EA69CFE3E4 /* XCRemoteSwiftPackageReference "swift-log" */,
-				BE5120F642B7D3169BB91EFE /* XCRemoteSwiftPackageReference "swift-testing" */,
 				EEC18EC5457F52FFE4EE0759 /* XCRemoteSwiftPackageReference "KeychainAccess" */,
 				5C6849CD25343F2442AD744E /* XCRemoteSwiftPackageReference "ollama-swift" */,
 				41AB18DBE856539B065F5C79 /* XCRemoteSwiftPackageReference "MenuBarExtraAccess" */,
@@ -2315,14 +2311,6 @@
 				minimumVersion = 1.5.0;
 			};
 		};
-		BE5120F642B7D3169BB91EFE /* XCRemoteSwiftPackageReference "swift-testing" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/apple/swift-testing.git";
-			requirement = {
-				kind = upToNextMajorVersion;
-				minimumVersion = 0.12.0;
-			};
-		};
 		C8F327DDD4E6265D93970A6C /* XCRemoteSwiftPackageReference "OpenAI" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/MacPaw/OpenAI";
@@ -2373,10 +2361,6 @@
 		0B727DC7A228F234F413942E /* Ollama */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = Ollama;
-		};
-		243D75D4BAD54C55DF5DC4EC /* Testing */ = {
-			isa = XCSwiftPackageProductDependency;
-			productName = Testing;
 		};
 		35EC1BE62E99DC3A9B3F78F2 /* SwiftUIIntrospect */ = {
 			isa = XCSwiftPackageProductDependency;
