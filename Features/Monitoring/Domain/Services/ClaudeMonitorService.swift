@@ -641,8 +641,136 @@ public final class ClaudeMonitorService: ObservableObject, Sendable {
     }
     
     private func parseProcessOutput(pid: Int32) -> String? {
-        // This is a more advanced approach - we could try to attach to the process
-        // and read its output, but this is complex and may require special permissions
+        // Try to read process output through various methods
+        logger.debug("Attempting to read process output for PID \(pid)")
+        
+        // Method 1: Check if process is running under tmux
+        if let tmuxStatus = readFromTmux(pid: pid) {
+            return tmuxStatus
+        }
+        
+        // Method 2: Look for typescript files from 'script' command
+        if let scriptStatus = readFromScriptFile(pid: pid) {
+            return scriptStatus
+        }
+        
+        // Method 3: Try lsof to find open files that might contain output
+        if let lsofStatus = readProcessFiles(pid: pid) {
+            return lsofStatus
+        }
+        
+        return nil
+    }
+    
+    private nonisolated func readFromTmux(pid: Int32) -> String? {
+        // Check if the process is running in tmux
+        let process = Process()
+        process.executableURL = URL(fileURLWithPath: "/usr/bin/tmux")
+        process.arguments = ["list-panes", "-a", "-F", "#{pane_pid} #{pane_current_command}"]
+        
+        let pipe = Pipe()
+        process.standardOutput = pipe
+        process.standardError = Pipe() // Discard errors
+        
+        do {
+            try process.run()
+            process.waitUntilExit()
+            
+            let data = pipe.fileHandleForReading.readDataToEndOfFile()
+            let output = String(data: data, encoding: .utf8) ?? ""
+            
+            // Find our PID in tmux panes
+            for line in output.components(separatedBy: .newlines) {
+                if line.contains("\(pid)") {
+                    logger.info("Found process in tmux: \(line)")
+                    
+                    // Try to capture the pane content
+                    let captureProcess = Process()
+                    captureProcess.executableURL = URL(fileURLWithPath: "/usr/bin/tmux")
+                    captureProcess.arguments = ["capture-pane", "-p", "-S", "-100"] // Last 100 lines
+                    
+                    let capturePipe = Pipe()
+                    captureProcess.standardOutput = capturePipe
+                    
+                    try captureProcess.run()
+                    captureProcess.waitUntilExit()
+                    
+                    let captureData = capturePipe.fileHandleForReading.readDataToEndOfFile()
+                    let content = String(data: captureData, encoding: .utf8) ?? ""
+                    
+                    if content.contains("esc to interrupt") {
+                        logger.info("Found Claude status in tmux pane")
+                        return parseClaudeStatusLine(content)
+                    }
+                }
+            }
+        } catch {
+            logger.debug("tmux not available or error: \(error)")
+        }
+        
+        return nil
+    }
+    
+    private nonisolated func readFromScriptFile(pid: Int32) -> String? {
+        // Look for typescript files that might contain terminal output
+        let scriptPaths = [
+            "/tmp/typescript",
+            "~/typescript",
+            "/var/tmp/typescript.\(pid)"
+        ].map { NSString(string: $0).expandingTildeInPath }
+        
+        for path in scriptPaths {
+            if FileManager.default.fileExists(atPath: path) {
+                do {
+                    let content = try String(contentsOfFile: path, encoding: .utf8)
+                    if content.contains("esc to interrupt") {
+                        logger.info("Found Claude status in script file: \(path)")
+                        return parseClaudeStatusLine(content)
+                    }
+                } catch {
+                    logger.debug("Could not read script file \(path): \(error)")
+                }
+            }
+        }
+        
+        return nil
+    }
+    
+    private nonisolated func readProcessFiles(pid: Int32) -> String? {
+        // Use lsof to find files opened by the process
+        let process = Process()
+        process.executableURL = URL(fileURLWithPath: "/usr/sbin/lsof")
+        process.arguments = ["-p", "\(pid)", "-Fn"]
+        
+        let pipe = Pipe()
+        process.standardOutput = pipe
+        process.standardError = Pipe()
+        
+        do {
+            try process.run()
+            process.waitUntilExit()
+            
+            let data = pipe.fileHandleForReading.readDataToEndOfFile()
+            let output = String(data: data, encoding: .utf8) ?? ""
+            
+            logger.debug("lsof output for PID \(pid): \(String(output.prefix(500)))")
+            
+            // Look for interesting files like logs or output files
+            for line in output.components(separatedBy: .newlines) {
+                if line.hasPrefix("n") && (line.contains(".log") || line.contains("output")) {
+                    let filePath = String(line.dropFirst())
+                    logger.debug("Found potential output file: \(filePath)")
+                    
+                    if let content = try? String(contentsOfFile: filePath, encoding: .utf8),
+                       content.contains("esc to interrupt") {
+                        return parseClaudeStatusLine(content)
+                    }
+                }
+            }
+        } catch {
+            logger.debug("lsof failed: \(error)")
+        }
+        
         return nil
     }
     
@@ -768,6 +896,13 @@ public final class ClaudeMonitorService: ObservableObject, Sendable {
                 
                 if isTerminal {
                     logger.info("Found terminal window: '\(windowName)' (\(ownerName))")
+                    
+                    // Check if the window name itself contains Claude status
+                    if windowName.contains("—") && windowName.contains("Claude") {
+                        logger.debug("Window name might contain status: '\(windowName)'")
+                        // The window name might already have been updated by our title override
+                        // but it doesn't seem to include the dynamic status
+                    }
                     
                     // Try to capture this window and extract text
                     if let status = captureWindowAndExtractText(windowID: windowID, bounds: bounds) {
