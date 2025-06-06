@@ -65,7 +65,7 @@ concurrency:
 jobs:
   build_and_process_mac_app:
     name: Build, Sign & Optionally Notarize macOS CodeLooper App
-    runs-on: ghcr.io/cirruslabs/macos-runner:sequoia-xxl
+    runs-on: macos-latest
     timeout-minutes: 60
 
     outputs:
@@ -80,11 +80,11 @@ jobs:
           fetch-depth: 0
           submodules: recursive
 
-      # Set up Swift environment - use Xcode 16.4 with Swift 6.0
+      # Set up Swift environment - use latest Xcode with Swift 6.0
       - name: Setup Xcode and Swift 6.0
         run: |
-          # Use Xcode 16.4 which includes Swift 6.0 (pre-installed on Cirrus Sequoia)
-          sudo xcodes select 16.4
+          # Use the latest available Xcode version on GitHub Actions
+          sudo xcode-select -s /Applications/Xcode.app
           swift --version
           xcodebuild -version
 
