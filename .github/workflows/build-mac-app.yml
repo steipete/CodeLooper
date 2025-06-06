@@ -80,16 +80,16 @@ jobs:
           fetch-depth: 0
           submodules: recursive
 
-      # Set up Swift environment - use Xcode 16 which includes Swift 6.0
-      - name: Setup Xcode 16 with Swift 6.0
+      # Set up Swift environment - use Xcode 16.3 which includes Swift 6.0.3
+      - name: Setup Xcode 16.3 with Swift 6.0.3
         run: |
           # List available Xcode versions for debugging
           echo "Available Xcode versions:"
           ls /Applications/ | grep Xcode || true
           
-          # Select Xcode 16.x (macOS 15 runner should have it)
+          # Select Xcode 16.3 (macOS 15 runner should have it)
           # Try multiple versions in order of preference
-          for version in "16.2" "16.1" "16.0"; do
+          for version in "16.3" "16.2" "16.1" "16.0"; do
             if [ -d "/Applications/Xcode_${version}.app" ]; then
               echo "Using Xcode ${version}"
               sudo xcode-select -s "/Applications/Xcode_${version}.app"
