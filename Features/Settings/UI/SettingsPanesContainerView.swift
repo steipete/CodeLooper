@@ -111,7 +111,9 @@ struct SettingsPanesContainerView: View {
             .onPreferenceChange(IdealHeightPreferenceKey.self) { newHeight in
                 if newHeight > 0 { // Ensure we have a valid height
                     // Adjust this offset as needed for TabView chrome and padding
-                    self.idealContentHeight = newHeight + 20
+                    Task { @MainActor in
+                        self.idealContentHeight = newHeight + 20
+                    }
                 }
             }
             .animation(.default, value: idealContentHeight) // Animate height changes
