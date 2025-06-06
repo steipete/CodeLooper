@@ -6,6 +6,8 @@ import Testing
 @Suite("Window Management Tests")
 @MainActor
 struct WindowManagementTests {
+    // MARK: Internal
+
     @Test("Window manager initialization") func windowManagerInitialization() async throws {
         let mockLoginItemManager = createMockLoginItemManager()
         let mockSessionLogger = createMockSessionLogger()
@@ -372,28 +374,30 @@ struct WindowManagementTests {
         #expect(nonExistentRestored == false)
     }
 
-// MARK: - Helper Functions and Mocks
+    // MARK: Private
 
-@MainActor
-private class MockWindowManagerDelegate: WindowManagerDelegate {
-    var didFinishOnboardingCalled = false
+    // MARK: - Helper Functions and Mocks
 
-    func windowManagerDidFinishOnboarding() {
-        didFinishOnboardingCalled = true
+    @MainActor
+    private class MockWindowManagerDelegate: WindowManagerDelegate {
+        var didFinishOnboardingCalled = false
+
+        func windowManagerDidFinishOnboarding() {
+            didFinishOnboardingCalled = true
+        }
+    }
+
+    @MainActor
+    private func createMockLoginItemManager() -> LoginItemManager {
+        LoginItemManager.shared
+    }
+
+    @MainActor
+    private func createMockSessionLogger() -> SessionLogger {
+        SessionLogger.shared
+    }
+
+    private func createMockWindowManagerDelegate() -> MockWindowManagerDelegate {
+        MockWindowManagerDelegate()
     }
 }
-
-@MainActor
-private func createMockLoginItemManager() -> LoginItemManager {
-    LoginItemManager.shared
-}
-
-@MainActor
-private func createMockSessionLogger() -> SessionLogger {
-    SessionLogger.shared
-}
-
-private func createMockWindowManagerDelegate() -> MockWindowManagerDelegate {
-    MockWindowManagerDelegate()
-}
-
