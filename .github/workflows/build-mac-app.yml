@@ -275,6 +275,11 @@ jobs:
             -scheme CodeLooper-Workspace \
             -configuration Debug \
             -destination "platform=macOS" \
+            -skipSigning \
+            -skipPackageSignatureValidation \
+            CODE_SIGN_IDENTITY="" \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGNING_ALLOWED=NO \
             test | xcbeautify || echo "::warning::Some tests failed"
           echo "::endgroup::"
 
