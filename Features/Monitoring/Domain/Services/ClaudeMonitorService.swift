@@ -3,7 +3,7 @@ import Diagnostics
 import Defaults
 import AppKit
 import Vision
-import ScreenCaptureKit
+@preconcurrency import ScreenCaptureKit
 import Darwin
 import CoreImage
 
@@ -68,7 +68,7 @@ public final class ClaudeMonitorService: ObservableObject, Sendable {
         monitoringTask = Task { [weak self] in
             while !Task.isCancelled {
                 await self?.scanForClaudeInstances()
-                try? await Task.sleep(for: .seconds(10)) // Reduced from 3s to 10s to save CPU
+                try? await Task.sleep(for: .seconds(5)) // Match other monitoring intervals
             }
         }
     }
@@ -627,165 +627,115 @@ public final class ClaudeMonitorService: ObservableObject, Sendable {
     private nonisolated func getTerminalContentViaImprovedOCRForInstance(_ instance: ClaudeInstance) async -> String? {
         logger.info("Attempting improved OCR for Claude instance PID \(instance.pid) in \(instance.folderName)")
         
-        // Check if we have screen recording permission
-        let hasPermission = CGPreflightScreenCaptureAccess()
-        if !hasPermission {
-            logger.debug("No screen recording permission for OCR - requesting access")
-            _ = CGRequestScreenCaptureAccess()
-            return nil
-        }
-        
-        // Get list of all windows
-        guard let windowList = CGWindowListCopyWindowInfo(.optionOnScreenOnly, kCGNullWindowID) as? [[String: Any]] else {
-            logger.debug("Failed to get window list for screen capture")
-            return nil
-        }
-        
-        // Look for terminal windows that match our specific instance
-        for window in windowList {
-            if let windowName = window[kCGWindowName as String] as? String,
-               let ownerName = window[kCGWindowOwnerName as String] as? String,
-               let bounds = window[kCGWindowBounds as String] as? [String: Any],
-               let windowID = window[kCGWindowNumber as String] as? CGWindowID {
+        do {
+            // Use ScreenCaptureKit to get available windows
+            let content = try await SCShareableContent.excludingDesktopWindows(false, onScreenWindowsOnly: true)
+            
+            // Look for terminal windows that match our specific instance
+            for window in content.windows {
+                guard let windowTitle = window.title,
+                      let appName = window.owningApplication?.applicationName else { continue }
                 
                 // Check if this looks like a terminal window
-                let isTerminal = ownerName.lowercased().contains("ghostty") ||
-                               ownerName.lowercased().contains("terminal") ||
-                               ownerName.lowercased().contains("iterm") ||
-                               ownerName.lowercased().contains("warp")
+                let isTerminal = appName.lowercased().contains("ghostty") ||
+                               appName.lowercased().contains("terminal") ||
+                               appName.lowercased().contains("iterm") ||
+                               appName.lowercased().contains("warp")
                 
                 // Check if this window might contain our specific Claude instance
                 // Look for folder name or working directory in the window title
-                let matchesInstance = windowName.contains(instance.folderName) ||
-                                    windowName.contains(instance.workingDirectory) ||
-                                    windowName.contains("Claude") // Generic fallback
+                let matchesInstance = windowTitle.contains(instance.folderName) ||
+                                    windowTitle.contains(instance.workingDirectory) ||
+                                    windowTitle.contains("Claude") // Generic fallback
                 
                 if isTerminal && matchesInstance {
-                    logger.info("Found matching terminal window: '\(windowName)' (\(ownerName)) for \(instance.folderName)")
+                    logger.info("Found matching terminal window: '\(windowTitle)' (\(appName)) for \(instance.folderName)")
                     
-                    // Move heavy processing to background thread
-                    if let status = await captureWindowAndExtractImprovedTextAsync(windowID: windowID, bounds: bounds) {
+                    // Capture window using modern ScreenCaptureKit API
+                    if let status = await captureWindowAndExtractTextModern(window: window) {
                         return status
                     }
                 }
             }
+            
+            logger.debug("No matching terminal windows found for instance \(instance.folderName)")
+            return nil
+        } catch {
+            logger.error("Failed to get window content via ScreenCaptureKit: \(error)")
+            return nil
         }
-        
-        logger.debug("No matching terminal windows found for instance \(instance.folderName)")
-        return nil
     }
     
     private nonisolated func getTerminalContentViaImprovedOCR(pid: Int32) async -> String? {
         logger.info("Attempting improved OCR for Claude PID \(pid)")
         
-        // Check if we have screen recording permission
-        let hasPermission = CGPreflightScreenCaptureAccess()
-        if !hasPermission {
-            logger.debug("No screen recording permission for OCR - requesting access")
-            _ = CGRequestScreenCaptureAccess()
-            return nil
-        }
-        
-        // Get list of all windows
-        guard let windowList = CGWindowListCopyWindowInfo(.optionOnScreenOnly, kCGNullWindowID) as? [[String: Any]] else {
-            logger.debug("Failed to get window list for screen capture")
-            return nil
-        }
-        
-        // Look for terminal windows
-        for window in windowList {
-            if let windowName = window[kCGWindowName as String] as? String,
-               let ownerName = window[kCGWindowOwnerName as String] as? String,
-               let bounds = window[kCGWindowBounds as String] as? [String: Any],
-               let windowID = window[kCGWindowNumber as String] as? CGWindowID {
+        do {
+            // Use ScreenCaptureKit to get available windows
+            let content = try await SCShareableContent.excludingDesktopWindows(false, onScreenWindowsOnly: true)
+            
+            // Look for terminal windows
+            for window in content.windows {
+                guard let windowTitle = window.title,
+                      let appName = window.owningApplication?.applicationName else { continue }
                 
                 // Check if this looks like a terminal window
-                let isTerminal = ownerName.lowercased().contains("ghostty") ||
-                               ownerName.lowercased().contains("terminal") ||
-                               ownerName.lowercased().contains("iterm") ||
-                               ownerName.lowercased().contains("warp")
+                let isTerminal = appName.lowercased().contains("ghostty") ||
+                               appName.lowercased().contains("terminal") ||
+                               appName.lowercased().contains("iterm") ||
+                               appName.lowercased().contains("warp")
                 
                 if isTerminal {
-                    logger.info("Found terminal window: '\(windowName)' (\(ownerName))")
+                    logger.info("Found terminal window: '\(windowTitle)' (\(appName))")
                     
-                    // Move heavy processing to background thread
-                    if let status = await captureWindowAndExtractImprovedTextAsync(windowID: windowID, bounds: bounds) {
+                    // Capture window using modern ScreenCaptureKit API
+                    if let status = await captureWindowAndExtractTextModern(window: window) {
                         return status
                     }
                 }
             }
-        }
-        
-        logger.debug("No terminal windows found for screen capture")
-        return nil
-    }
-    
-    private nonisolated func captureWindowAndExtractImprovedText(windowID: CGWindowID, bounds: [String: Any]) -> String? {
-        // Capture the window
-        guard let image = CGWindowListCreateImage(
-            CGRect.null,
-            .optionIncludingWindow,
-            windowID,
-            []
-        ) else {
-            logger.debug("Failed to capture window \(windowID)")
+            
+            logger.debug("No terminal windows found for screen capture")
+            return nil
+        } catch {
+            logger.error("Failed to get window content via ScreenCaptureKit: \(error)")
             return nil
         }
-        
-        logger.debug("Captured window \(windowID), size: \(image.width)x\(image.height)")
-        
-        // Preprocess the image for better OCR results
-        guard let preprocessedImage = preprocessImageForOCR(image) else {
-            logger.debug("Failed to preprocess image")
-            return nil
-        }
-        
-        // Convert to NSImage for Vision framework
-        let nsImage = NSImage(cgImage: preprocessedImage, size: NSSize(width: preprocessedImage.width, height: preprocessedImage.height))
-        
-        // Use Vision framework with improved settings
-        return extractTextFromImageWithImprovedSettings(nsImage)
     }
     
-    private nonisolated func captureWindowAndExtractImprovedTextAsync(windowID: CGWindowID, bounds: [String: Any]) async -> String? {
-        // Move the heavy image processing to a background queue
-        return await withCheckedContinuation { (continuation: CheckedContinuation<String?, Never>) in
-            DispatchQueue.global(qos: .userInitiated).async { [weak self] in
-                guard let self = self else {
-                    continuation.resume(returning: nil)
-                    return
-                }
-                
-                // Capture the window (this is fast)
-                guard let image = CGWindowListCreateImage(
-                    CGRect.null,
-                    .optionIncludingWindow,
-                    windowID,
-                    []
-                ) else {
-                    logger.debug("Failed to capture window \(windowID)")
-                    continuation.resume(returning: nil)
-                    return
-                }
-                
-                logger.debug("Captured window \(windowID) on background thread, size: \(image.width)x\(image.height)")
-                
-                // Preprocess the image for better OCR results (CPU intensive)
-                guard let preprocessedImage = self.preprocessImageForOCR(image) else {
-                    logger.debug("Failed to preprocess image")
-                    continuation.resume(returning: nil)
-                    return
-                }
-                
-                // Convert to NSImage for Vision framework
-                let nsImage = NSImage(cgImage: preprocessedImage, size: NSSize(width: preprocessedImage.width, height: preprocessedImage.height))
-                
-                // Use Vision framework with improved settings (CPU intensive)
-                let result = self.extractTextFromImageWithImprovedSettings(nsImage)
-                
-                logger.debug("OCR processing completed on background thread")
-                continuation.resume(returning: result)
+    private nonisolated func captureWindowAndExtractTextModern(window: SCWindow) async -> String? {
+        do {
+            // Configure capture settings
+            let configuration = SCStreamConfiguration()
+            configuration.width = Int(window.frame.width)
+            configuration.height = Int(window.frame.height)
+            configuration.scalesToFit = true
+            configuration.showsCursor = false
+            
+            // Create content filter for the specific window
+            let filter = SCContentFilter(desktopIndependentWindow: window)
+            
+            // Capture the window using modern ScreenCaptureKit API
+            let image = try await SCScreenshotManager.captureImage(
+                contentFilter: filter,
+                configuration: configuration
+            )
+            
+            logger.debug("Captured window '\(window.title ?? "unknown")' using ScreenCaptureKit, size: \(image.width)x\(image.height)")
+            
+            // Preprocess the image for better OCR results
+            guard let preprocessedImage = preprocessImageForOCR(image) else {
+                logger.debug("Failed to preprocess image")
+                return nil
             }
+            
+            // Convert to NSImage for Vision framework
+            let nsImage = NSImage(cgImage: preprocessedImage, size: NSSize(width: preprocessedImage.width, height: preprocessedImage.height))
+            
+            // Use Vision framework with improved settings
+            return extractTextFromImageWithImprovedSettings(nsImage)
+        } catch {
+            logger.error("Failed to capture window using ScreenCaptureKit: \(error)")
+            return nil
         }
     }
     
