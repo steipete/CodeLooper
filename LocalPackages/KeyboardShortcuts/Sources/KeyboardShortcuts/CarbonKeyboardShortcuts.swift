@@ -134,6 +134,7 @@ enum CarbonKeyboardShortcuts {
 		}
 	}
 
+	@MainActor
 	static func register(
 		_ shortcut: KeyboardShortcuts.Shortcut,
 		onKeyDown: @escaping (KeyboardShortcuts.Shortcut) -> Void,

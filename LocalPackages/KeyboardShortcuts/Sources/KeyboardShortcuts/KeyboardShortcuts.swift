@@ -398,6 +398,7 @@ public enum KeyboardShortcuts {
 		return decoded
 	}
 
+	@MainActor
 	private static func handleOnKeyDown(_ shortcut: Shortcut) {
 		guard !isPaused else {
 			return
@@ -424,6 +425,7 @@ public enum KeyboardShortcuts {
 		}
 	}
 
+	@MainActor
 	private static func handleOnKeyUp(_ shortcut: Shortcut) {
 		guard !isPaused else {
 			return
