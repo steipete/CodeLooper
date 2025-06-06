@@ -138,6 +138,7 @@ public enum KeyboardShortcuts {
 	/**
 	Unregister the given shortcut if it has no handlers.
 	*/
+	@MainActor
 	private static func unregisterIfNeeded(_ shortcut: Shortcut) {
 		guard !shortcutsForHandlers.contains(shortcut) else {
 			return
@@ -149,6 +150,7 @@ public enum KeyboardShortcuts {
 	/**
 	Unregister the shortcut for the given name if it has no handlers.
 	*/
+	@MainActor
 	private static func unregisterShortcutIfNeeded(for name: Name) {
 		guard let shortcut = name.shortcut else {
 			return
@@ -165,16 +167,17 @@ public enum KeyboardShortcuts {
 		// TODO: Should remove user defaults too.
 	}
 
+	@MainActor
 	static func initialize() {
 		guard !isInitialized else {
 			return
 		}
 
-		openMenuObserver = NotificationCenter.default.addObserver(forName: NSMenu.didBeginTrackingNotification, object: nil, queue: nil) { _ in
+		openMenuObserver = NotificationCenter.default.addObserver(forName: NSMenu.didBeginTrackingNotification, object: nil, queue: .main) { _ in
 			isMenuOpen = true
 		}
 
-		closeMenuObserver = NotificationCenter.default.addObserver(forName: NSMenu.didEndTrackingNotification, object: nil, queue: nil) { _ in
+		closeMenuObserver = NotificationCenter.default.addObserver(forName: NSMenu.didEndTrackingNotification, object: nil, queue: .main) { _ in
 			isMenuOpen = false
 		}
 
@@ -188,6 +191,7 @@ public enum KeyboardShortcuts {
 
 	- Note: This method does not affect listeners using ``events(for:)``.
 	*/
+	@MainActor
 	public static func removeAllHandlers() {
 		let shortcutsToUnregister = shortcutsForLegacyHandlers.subtracting(shortcutsForStreamHandlers)
 
@@ -208,6 +212,7 @@ public enum KeyboardShortcuts {
 
 	- Note: This method does not affect listeners using ``events(for:)``.
 	*/
+	@MainActor
 	public static func removeHandler(for name: Name) {
 		legacyKeyDownHandlers[name] = nil
 		legacyKeyUpHandlers[name] = nil
@@ -234,6 +239,7 @@ public enum KeyboardShortcuts {
 
 	- Tip: Use ``disable(_:)-(Name...)`` and ``enable(_:)-(Name...)`` to change the status.
 	*/
+	@MainActor
 	public static func isEnabled(for name: Name) -> Bool {
 		guard
 			isEnabled,
@@ -248,6 +254,7 @@ public enum KeyboardShortcuts {
 	/**
 	Disable the keyboard shortcut for one or more names.
 	*/
+	@MainActor
 	public static func disable(_ names: [Name]) {
 		for name in names {
 			guard let shortcut = getShortcut(for: name) else {
@@ -261,6 +268,7 @@ public enum KeyboardShortcuts {
 	/**
 	Disable the keyboard shortcut for one or more names.
 	*/
+	@MainActor
 	public static func disable(_ names: Name...) {
 		disable(names)
 	}
@@ -268,6 +276,7 @@ public enum KeyboardShortcuts {
 	/**
 	Enable the keyboard shortcut for one or more names.
 	*/
+	@MainActor
 	public static func enable(_ names: [Name]) {
 		for name in names {
 			guard let shortcut = getShortcut(for: name) else {
@@ -281,6 +290,7 @@ public enum KeyboardShortcuts {
 	/**
 	Enable the keyboard shortcut for one or more names.
 	*/
+	@MainActor
 	public static func enable(_ names: Name...) {
 		enable(names)
 	}
@@ -308,6 +318,7 @@ public enum KeyboardShortcuts {
 	}
 	```
 	*/
+	@MainActor
 	public static func reset(_ names: [Name]) {
 		for name in names {
 			setShortcut(name.defaultShortcut, for: name)
@@ -335,6 +346,7 @@ public enum KeyboardShortcuts {
 	}
 	```
 	*/
+	@MainActor
 	public static func reset(_ names: Name...) {
 		reset(names)
 	}
@@ -360,6 +372,7 @@ public enum KeyboardShortcuts {
 	}
 	```
 	*/
+	@MainActor
 	public static func resetAll() {
 		reset(allNames.toArray())
 	}
@@ -515,6 +528,7 @@ public enum KeyboardShortcuts {
 	private static func userDefaultsKey(for shortcutName: Name) -> String { "\(userDefaultsPrefix)\(shortcutName.rawValue)"
 	}
 
+	@MainActor
 	static func userDefaultsDidChange(name: Name) {
 		// TODO: Use proper UserDefaults observation instead of this.
 		NotificationCenter.default.post(name: .shortcutByNameDidChange, object: nil, userInfo: ["name": name])
@@ -601,7 +615,7 @@ extension KeyboardShortcuts {
 		AsyncStream { continuation in
 			let id = UUID()
 
-			DispatchQueue.main.async {
+			Task { @MainActor in
 				streamKeyDownHandlers[name, default: [:]][id] = {
 					continuation.yield(.keyDown)
 				}
@@ -614,7 +628,7 @@ extension KeyboardShortcuts {
 			}
 
 			continuation.onTermination = { _ in
-				DispatchQueue.main.async {
+				Task { @MainActor in
 					streamKeyDownHandlers[name]?[id] = nil
 					streamKeyUpHandlers[name]?[id] = nil
 

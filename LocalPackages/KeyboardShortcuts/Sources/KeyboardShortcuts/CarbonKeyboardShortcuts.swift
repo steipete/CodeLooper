@@ -2,9 +2,8 @@
 import Carbon.HIToolbox
 
 private func carbonKeyboardShortcutsEventHandler(eventHandlerCall: EventHandlerCallRef?, event: EventRef?, userData: UnsafeMutableRawPointer?) -> OSStatus {
-	MainActor.assumeIsolated {
-		CarbonKeyboardShortcuts.handleEvent(event)
-	}
+	// Need to handle the event synchronously since this is a Carbon callback
+	return CarbonKeyboardShortcuts.handleEventSynchronously(event)
 }
 
 enum CarbonKeyboardShortcuts {
@@ -229,6 +228,13 @@ enum CarbonKeyboardShortcuts {
 		}
 	}
 
+	// Synchronous wrapper for Carbon callback
+	fileprivate static func handleEventSynchronously(_ event: EventRef?) -> OSStatus {
+		MainActor.assumeIsolated {
+			handleEvent(event)
+		}
+	}
+	
 	@MainActor
 	fileprivate static func handleEvent(_ event: EventRef?) -> OSStatus {
 		guard let event else {
