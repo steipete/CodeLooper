@@ -108,10 +108,12 @@ struct SettingsPanesContainerView: View {
             .environmentObject(mainSettingsViewModel) // Provide to tabs that need it
             // .frame(maxWidth: .infinity, maxHeight: .infinity) // Remove fixed max height
             .frame(idealHeight: idealContentHeight, maxHeight: idealContentHeight) // Apply dynamic height
-            .onPreferenceChange(IdealHeightPreferenceKey.self) { @MainActor newHeight in
+            .onPreferenceChange(IdealHeightPreferenceKey.self) { newHeight in
                 if newHeight > 0 { // Ensure we have a valid height
                     // Adjust this offset as needed for TabView chrome and padding
-                    self.idealContentHeight = newHeight + 20
+                    Task { @MainActor in
+                        self.idealContentHeight = newHeight + 20
+                    }
                 }
             }
             .animation(.default, value: idealContentHeight) // Animate height changes

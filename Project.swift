@@ -125,6 +125,7 @@ let project = Project(
                     "PRODUCT_BUNDLE_IDENTIFIER": "me.steipete.codelooper",
                     "MARKETING_VERSION": "2025.5.29",
                     "CURRENT_PROJECT_VERSION": "2",
+                    "IS_PRERELEASE_BUILD": "$(IS_PRERELEASE_BUILD)",
                     // Team ID will be inherited from project-level if not specified per target/config
                 ],
                 configurations: [

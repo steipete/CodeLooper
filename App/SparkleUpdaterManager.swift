@@ -51,14 +51,6 @@ public class SparkleUpdaterManager: NSObject, SPUUpdaterDelegate, SPUStandardUse
         controller.updater.automaticallyChecksForUpdates = true
         self.logger.info("Automatic update checks enabled")
 
-        // Check for updates on startup
-        Task { @MainActor in
-            // Wait a moment for the app to finish launching before checking
-            try? await Task.sleep(for: .seconds(2))
-            self.logger.info("Checking for updates on startup")
-            controller.updater.checkForUpdatesInBackground()
-        }
-
         self.logger.info("SparkleUpdaterManager: SPUStandardUpdaterController initialized with self as delegates.")
         return controller
     }() // The () here executes the closure and assigns the result to updaterController

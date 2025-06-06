@@ -65,7 +65,7 @@ concurrency:
 jobs:
   build_and_process_mac_app:
     name: Build, Sign & Optionally Notarize macOS CodeLooper App
-    runs-on: ghcr.io/cirruslabs/macos-runner:sequoia-xxl
+    runs-on: macos-15
     timeout-minutes: 60
 
     outputs:
@@ -80,13 +80,41 @@ jobs:
           fetch-depth: 0
           submodules: recursive
 
-      # Set up Swift environment - use Xcode 16.4 with Swift 6.0
-      - name: Setup Xcode and Swift 6.0
+      # Set up Swift environment - use Xcode 16 which includes Swift 6.0
+      - name: Setup Xcode 16 with Swift 6.0
         run: |
-          # Use Xcode 16.4 which includes Swift 6.0 (pre-installed on Cirrus Sequoia)
-          sudo xcodes select 16.4
+          # List available Xcode versions for debugging
+          echo "Available Xcode versions:"
+          ls /Applications/ | grep Xcode || true
+          
+          # Select Xcode 16.x (macOS 15 runner should have it)
+          # Try multiple versions in order of preference
+          for version in "16.2" "16.1" "16.0"; do
+            if [ -d "/Applications/Xcode_${version}.app" ]; then
+              echo "Using Xcode ${version}"
+              sudo xcode-select -s "/Applications/Xcode_${version}.app"
+              break
+            fi
+          done
+          
+          # Verify we have Swift 6.0
+          echo "Swift version:"
           swift --version
+          
+          echo "Xcode version:"
           xcodebuild -version
+          
+          # Verify Swift tools version
+          SWIFT_TOOLS_VERSION=$(swift package tools-version 2>/dev/null || echo "unknown")
+          echo "Swift tools version required: $SWIFT_TOOLS_VERSION"
+          
+          # Check if Swift version is at least 6.0
+          SWIFT_VERSION=$(swift --version | grep -o 'Swift version [0-9.]*' | grep -o '[0-9.]*' || echo "0.0")
+          MAJOR_VERSION=$(echo $SWIFT_VERSION | cut -d. -f1)
+          if [ "$MAJOR_VERSION" -lt "6" ]; then
+            echo "::error::Swift 6.0 or higher is required, but found Swift $SWIFT_VERSION"
+            exit 1
+          fi
 
       - name: Set build version and cache fingerprints
         id: set-version
