@@ -698,8 +698,6 @@ public final class ClaudeMonitorService: ObservableObject, Sendable {
                let bounds = window[kCGWindowBounds as String] as? [String: Any],
                let windowID = window[kCGWindowNumber as String] as? CGWindowID {
                 
-                logger.debug("Found window: '\(windowName)' owner: '\(ownerName)'")
-                
                 // Check if this looks like a terminal window
                 let isTerminal = ownerName.lowercased().contains("ghostty") ||
                                ownerName.lowercased().contains("terminal") ||

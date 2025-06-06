@@ -41,6 +41,10 @@ final class AppSupervisionCoordinator: Loggable {
         logger.info("🚀 Global monitoring enabled - starting supervision")
 
         Task { @MainActor in
+            // Start the Cursor app lifecycle manager to detect apps
+            logger.info("🔍 Triggering initial Cursor app detection")
+            CursorMonitor.shared.appLifecycleManager.scanForCursorApps()
+            
             // Give the monitoring system time to detect existing windows
             try? await Task.sleep(for: .seconds(TimingConfiguration.shortDelay))
             WindowAIDiagnosticsManager.shared.enableLiveWatchingForAllWindows()
