@@ -2,7 +2,9 @@
 import Carbon.HIToolbox
 
 private func carbonKeyboardShortcutsEventHandler(eventHandlerCall: EventHandlerCallRef?, event: EventRef?, userData: UnsafeMutableRawPointer?) -> OSStatus {
-	CarbonKeyboardShortcuts.handleEvent(event)
+	MainActor.assumeIsolated {
+		CarbonKeyboardShortcuts.handleEvent(event)
+	}
 }
 
 enum CarbonKeyboardShortcuts {
@@ -28,6 +30,7 @@ enum CarbonKeyboardShortcuts {
 		}
 	}
 
+	@MainActor
 	private static var hotKeys = [Int: HotKey]()
 
 	// `SSKS` is just short for `Sindre Sorhus Keyboard Shortcuts`.
@@ -35,7 +38,9 @@ enum CarbonKeyboardShortcuts {
 	// swiftlint:disable:next number_separator
 	private static let hotKeySignature: UInt32 = 1397967699 // OSType => "SSKS"
 
+	@MainActor
 	private static var hotKeyId = 0
+	@MainActor
 	private static var eventHandler: EventHandlerRef?
 
 	private static let hotKeyEventTypes = [
@@ -47,6 +52,7 @@ enum CarbonKeyboardShortcuts {
 		EventTypeSpec(eventClass: OSType(kEventClassKeyboard), eventKind: UInt32(kEventRawKeyUp))
 	]
 
+	@MainActor
 	private static let keyEventMonitor = RunLoopLocalEventMonitor(events: [.keyDown, .keyUp], runLoopMode: .eventTracking) { event in
 		guard
 			let eventRef = OpaquePointer(event.eventRef),
@@ -191,23 +197,27 @@ enum CarbonKeyboardShortcuts {
 		}
 	}
 
+	@MainActor
 	private static func unregisterHotKey(_ hotKey: HotKey) {
 		UnregisterEventHotKey(hotKey.carbonHotKey)
 		hotKeys.removeValue(forKey: hotKey.carbonHotKeyId)
 	}
 
+	@MainActor
 	static func unregister(_ shortcut: KeyboardShortcuts.Shortcut) {
 		for hotKey in hotKeys.values where hotKey.shortcut == shortcut {
 			unregisterHotKey(hotKey)
 		}
 	}
 
+	@MainActor
 	static func unregisterAll() {
 		for hotKey in hotKeys.values {
 			unregisterHotKey(hotKey)
 		}
 	}
 
+	@MainActor
 	private static func softUnregisterAll() {
 		for hotKey in hotKeys.values {
 			UnregisterEventHotKey(hotKey.carbonHotKey)
@@ -215,6 +225,7 @@ enum CarbonKeyboardShortcuts {
 		}
 	}
 
+	@MainActor
 	fileprivate static func handleEvent(_ event: EventRef?) -> OSStatus {
 		guard let event else {
 			return OSStatus(eventNotHandledErr)
@@ -232,6 +243,7 @@ enum CarbonKeyboardShortcuts {
 		return OSStatus(eventNotHandledErr)
 	}
 
+	@MainActor
 	private static func handleHotKeyEvent(_ event: EventRef) -> OSStatus {
 		var eventHotKeyId = EventHotKeyID()
 		let error = GetEventParameter(
@@ -269,6 +281,7 @@ enum CarbonKeyboardShortcuts {
 		return OSStatus(eventNotHandledErr)
 	}
 
+	@MainActor
 	private static func handleRawKeyEvent(_ event: EventRef) -> OSStatus {
 		var eventKeyCode = UInt32()
 		let keyCodeError = GetEventParameter(

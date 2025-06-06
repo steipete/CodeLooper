@@ -26,6 +26,7 @@ extension KeyboardShortcuts {
 	}
 	```
 	*/
+	@MainActor
 	public final class RecorderCocoa: NSSearchField, NSSearchFieldDelegate {
 		private let minimumWidth = 130.0
 		private let onChange: ((_ shortcut: Shortcut?) -> Void)?
@@ -120,15 +121,17 @@ extension KeyboardShortcuts {
 
 		private func setUpEvents() {
 			shortcutsNameChangeObserver = NotificationCenter.default.addObserver(forName: .shortcutByNameDidChange, object: nil, queue: nil) { [weak self] notification in
-				guard
-					let self,
-					let nameInNotification = notification.userInfo?["name"] as? KeyboardShortcuts.Name,
-					nameInNotification == shortcutName
-				else {
-					return
-				}
+				MainActor.assumeIsolated {
+					guard
+						let self,
+						let nameInNotification = notification.userInfo?["name"] as? KeyboardShortcuts.Name,
+						nameInNotification == shortcutName
+					else {
+						return
+					}
 
-				setStringValue(name: nameInNotification)
+					setStringValue(name: nameInNotification)
+				}
 			}
 		}
 
@@ -181,20 +184,24 @@ extension KeyboardShortcuts {
 			// Ensures the recorder stops when the window is hidden.
 			// This is especially important for Settings windows, which as of macOS 13.5, only hides instead of closes when you click the close button.
 			windowDidResignKeyObserver = NotificationCenter.default.addObserver(forName: NSWindow.didResignKeyNotification, object: window, queue: nil) { [weak self] _ in
-				guard
-					let self,
-					let window = self.window
-				else {
-					return
-				}
+				MainActor.assumeIsolated {
+					guard
+						let self,
+						let window = self.window
+					else {
+						return
+					}
 
-				endRecording()
-				window.makeFirstResponder(nil)
+					endRecording()
+					window.makeFirstResponder(nil)
+				}
 			}
 
 			// Ensures the recorder does not receive initial focus when a hidden window becomes unhidden.
 			windowDidBecomeKeyObserver = NotificationCenter.default.addObserver(forName: NSWindow.didBecomeKeyNotification, object: window, queue: nil) { [weak self] _ in
-				self?.preventBecomingKey()
+				MainActor.assumeIsolated {
+					self?.preventBecomingKey()
+				}
 			}
 
 			preventBecomingKey()

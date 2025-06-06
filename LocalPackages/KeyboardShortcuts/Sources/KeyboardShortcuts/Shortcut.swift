@@ -741,10 +741,11 @@ extension KeyboardShortcuts.Shortcut: CustomStringConvertible {
 		return modifiers.presentableDescription + String(keyToCharacter() ?? "�").capitalized
 	}
 
-	@MainActor
 	public var description: String {
 		// TODO: `description` needs to be `nonisolated`
-		presentableDescription
+		MainActor.assumeIsolated {
+			presentableDescription
+		}
 	}
 }
 

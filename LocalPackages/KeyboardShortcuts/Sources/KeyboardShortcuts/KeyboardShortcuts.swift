@@ -5,14 +5,20 @@ import AppKit.NSMenu
 Global keyboard shortcuts for your macOS app.
 */
 public enum KeyboardShortcuts {
+	@MainActor
 	private static var registeredShortcuts = Set<Shortcut>()
 
+	@MainActor
 	private static var legacyKeyDownHandlers = [Name: [() -> Void]]()
+	@MainActor
 	private static var legacyKeyUpHandlers = [Name: [() -> Void]]()
 
+	@MainActor
 	private static var streamKeyDownHandlers = [Name: [UUID: () -> Void]]()
+	@MainActor
 	private static var streamKeyUpHandlers = [Name: [UUID: () -> Void]]()
 
+	@MainActor
 	private static var shortcutsForLegacyHandlers: Set<Shortcut> {
 		let shortcuts = [legacyKeyDownHandlers.keys, legacyKeyUpHandlers.keys]
 			.flatMap { $0 }
@@ -21,6 +27,7 @@ public enum KeyboardShortcuts {
 		return Set(shortcuts)
 	}
 
+	@MainActor
 	private static var shortcutsForStreamHandlers: Set<Shortcut> {
 		let shortcuts = [streamKeyDownHandlers.keys, streamKeyUpHandlers.keys]
 			.flatMap { $0 }
@@ -33,14 +40,18 @@ public enum KeyboardShortcuts {
 		shortcutsForLegacyHandlers.union(shortcutsForStreamHandlers)
 	}
 
+	@MainActor
 	private static var isInitialized = false
 
+	@MainActor
 	private static var openMenuObserver: NSObjectProtocol?
+	@MainActor
 	private static var closeMenuObserver: NSObjectProtocol?
 
 	/**
 	When `true`, event handlers will not be called for registered keyboard shortcuts.
 	*/
+	@MainActor
 	static var isPaused = false
 
 	/**
@@ -48,6 +59,7 @@ public enum KeyboardShortcuts {
 
 	The default is `true`.
 	*/
+	@MainActor
 	public static var isEnabled = true {
 		didSet {
 			guard isEnabled != oldValue else {
@@ -78,6 +90,7 @@ public enum KeyboardShortcuts {
 
 	The main use-case for this is toggling the menu of a menu bar app with a keyboard shortcut.
 	*/
+	@MainActor
 	private(set) static var isMenuOpen = false {
 		didSet {
 			guard isMenuOpen != oldValue else {
@@ -88,6 +101,7 @@ public enum KeyboardShortcuts {
 		}
 	}
 
+	@MainActor
 	private static func register(_ shortcut: Shortcut) {
 		guard !registeredShortcuts.contains(shortcut) else {
 			return

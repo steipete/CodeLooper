@@ -70,7 +70,7 @@ final class LocalEventMonitor {
 	}
 
 	deinit {
-		stop()
+		// stop() will be called manually before deinit if needed
 	}
 
 	@discardableResult
@@ -89,6 +89,7 @@ final class LocalEventMonitor {
 }
 
 
+@MainActor
 final class RunLoopLocalEventMonitor {
 	private let runLoopMode: RunLoop.Mode
 	private let callback: (NSEvent) -> NSEvent?
@@ -133,7 +134,7 @@ final class RunLoopLocalEventMonitor {
 	}
 
 	deinit {
-		stop()
+		// stop() will be called manually before deinit if needed
 	}
 
 	@discardableResult
@@ -396,6 +397,7 @@ extension NSEvent.ModifierFlags {
 
 
 extension NSEvent.SpecialKey {
+	@MainActor
 	static let functionKeys: Set<Self> = [
 		.f1,
 		.f2,
@@ -434,6 +436,7 @@ extension NSEvent.SpecialKey {
 		.f35
 	]
 
+	@MainActor
 	var isFunctionKey: Bool { Self.functionKeys.contains(self) }
 }
 
