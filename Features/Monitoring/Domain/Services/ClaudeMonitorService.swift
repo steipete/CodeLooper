@@ -3,6 +3,7 @@ import Diagnostics
 import Defaults
 import AppKit
 import Vision
+import ScreenCaptureKit
 
 private let logger = Logger(category: .supervision)
 
@@ -313,11 +314,12 @@ public final class ClaudeMonitorService: ObservableObject, Sendable {
             return status
         }
         
-        // Method 3: Try screen capture + OCR for terminals that don't support accessibility (like Ghostty)
-        if let status = getTerminalContentViaScreenCapture(pid: instance.pid) {
-            logger.info("Found status from screen capture OCR for PID \(instance.pid): '\(status)'")
-            return status
-        }
+        // Method 3: Skip OCR - it's too unreliable with terminal fonts
+        // OCR consistently misreads characters (r→p, etc) making it unusable
+        // if let status = getTerminalContentViaScreenCapture(pid: instance.pid) {
+        //     logger.info("Found status from screen capture OCR for PID \(instance.pid): '\(status)'")
+        //     return status
+        // }
         
         // Method 4: Parse process output/stderr if available
         if let status = parseProcessOutput(pid: instance.pid) {
@@ -347,26 +349,31 @@ public final class ClaudeMonitorService: ObservableObject, Sendable {
             return status
         }
         
-        // Try screen capture + OCR for terminals that don't support accessibility
-        if let status = getTerminalContentViaScreenCapture(pid: pid) {
-            logger.info("Found sync status from screen capture OCR for PID \(pid): '\(status)'")
-            return status
-        }
+        // Skip OCR - too unreliable
+        // if let status = getTerminalContentViaScreenCapture(pid: pid) {
+        //     logger.info("Found sync status from screen capture OCR for PID \(pid): '\(status)'")
+        //     return status
+        // }
         
         return nil
     }
     
     private nonisolated func readTerminalBuffer(ttyPath: String) -> String? {
         // Try to read recent terminal output by monitoring the PTY
-        // This approach tries to read from system logs or proc filesystem
+        logger.info("Attempting to read terminal buffer from TTY: \(ttyPath)")
         
-        // Method 1: Try to read from system console logs
-        if let status = readFromSystemLogs(ttyPath: ttyPath) {
+        // Method 1: Try to find the master PTY and read from it
+        if let status = readFromMasterPTY(slavePath: ttyPath) {
             return status
         }
         
-        // Method 2: Try to find the master PTY and read from it
-        if let status = readFromMasterPTY(slavePath: ttyPath) {
+        // Method 2: Try using ioctl to get terminal buffer
+        if let status = readTerminalViaIoctl(ttyPath: ttyPath) {
+            return status
+        }
+        
+        // Method 3: Try to read from system console logs (least likely to work)
+        if let status = readFromSystemLogs(ttyPath: ttyPath) {
             return status
         }
         
@@ -411,11 +418,66 @@ public final class ClaudeMonitorService: ObservableObject, Sendable {
     }
     
     private nonisolated func readFromMasterPTY(slavePath: String) -> String? {
-        // This is a more advanced approach that would require finding the master PTY
-        // associated with the slave TTY and reading from it.
-        // This is complex and may not work reliably across different terminal apps.
+        // Try to find and read from the master PTY
+        logger.debug("Attempting to read from master PTY for slave: \(slavePath)")
         
-        // For now, we'll skip this implementation and rely on accessibility APIs
+        // First, try to find the master PTY
+        if let masterPath = findMasterPTYForSlave(slavePath) {
+            let masterFd = open(masterPath, O_RDONLY | O_NONBLOCK)
+            if masterFd >= 0 {
+                defer { close(masterFd) }
+                
+                var buffer = [CChar](repeating: 0, count: 8192)
+                let bytesRead = read(masterFd, &buffer, 8192)
+                
+                if bytesRead > 0 {
+                    let data = Data(bytes: buffer, count: Int(bytesRead))
+                    let content = String(decoding: data, as: UTF8.self)
+                    logger.info("Read \(bytesRead) bytes from master PTY: '\(String(content.prefix(200)))'")
+                    
+                    if content.contains("esc to interrupt") {
+                        return parseClaudeStatusLine(content)
+                    }
+                }
+            }
+        }
+        
+        // Fallback: Try to read from the slave TTY directly
+        // Sometimes we can read the echo/output from the slave side
+        let slaveFd = open(slavePath, O_RDONLY | O_NONBLOCK)
+        if slaveFd >= 0 {
+            defer { close(slaveFd) }
+            
+            // Try multiple small reads to get recent data
+            var fullContent = ""
+            for _ in 0..<5 {
+                var buffer = [CChar](repeating: 0, count: 1024)
+                let bytesRead = read(slaveFd, &buffer, 1024)
+                
+                if bytesRead > 0 {
+                    let data = Data(bytes: buffer, count: Int(bytesRead))
+                    let chunk = String(decoding: data, as: UTF8.self)
+                    fullContent += chunk
+                    logger.debug("Read chunk (\(bytesRead) bytes) from slave TTY")
+                } else if bytesRead < 0 && errno != EAGAIN && errno != EWOULDBLOCK {
+                    logger.debug("Read error: \(String(cString: strerror(errno)))")
+                    break
+                }
+                
+                // Small delay between reads
+                usleep(10000) // 10ms
+            }
+            
+            if !fullContent.isEmpty {
+                logger.info("Total content read from slave TTY: '\(String(fullContent.prefix(300)))'")
+                if fullContent.contains("esc to interrupt") {
+                    return parseClaudeStatusLine(fullContent)
+                }
+            }
+        } else {
+            logger.debug("Could not open slave TTY for reading: \(String(cString: strerror(errno)))")
+        }
+        
         return nil
     }
     
@@ -720,7 +782,8 @@ public final class ClaudeMonitorService: ObservableObject, Sendable {
     }
     
     private nonisolated func captureWindowAndExtractText(windowID: CGWindowID, bounds: [String: Any]) -> String? {
-        // Capture the specific window
+        // For now, still use the deprecated API with a suppression
+        // TODO: Migrate to ScreenCaptureKit async API when we refactor for async context
         guard let image = CGWindowListCreateImage(
             CGRect.null,
             .optionIncludingWindow,
@@ -779,6 +842,66 @@ public final class ClaudeMonitorService: ObservableObject, Sendable {
         } catch {
             logger.debug("OCR failed: \(error)")
         }
+        
+        return nil
+    }
+    
+    private nonisolated func readTerminalViaIoctl(ttyPath: String) -> String? {
+        logger.debug("Attempting to read terminal via ioctl from: \(ttyPath)")
+        
+        let fd = open(ttyPath, O_RDONLY | O_NONBLOCK)
+        guard fd >= 0 else {
+            logger.debug("Could not open TTY for ioctl: \(String(cString: strerror(errno)))")
+            return nil
+        }
+        defer { close(fd) }
+        
+        // Try TIOCGWINSZ to at least verify we can communicate with the TTY
+        var winsize = winsize()
+        if ioctl(fd, TIOCGWINSZ, &winsize) == 0 {
+            logger.debug("Terminal window size: \(winsize.ws_col)x\(winsize.ws_row)")
+        }
+        
+        // Try to get terminal attributes
+        var termios = termios()
+        if tcgetattr(fd, &termios) == 0 {
+            logger.debug("Successfully got terminal attributes")
+        }
+        
+        // Unfortunately, there's no standard ioctl to read the screen buffer
+        // We'd need terminal-specific APIs for this
+        
+        return nil
+    }
+    
+    private nonisolated func findMasterPTYForSlave(_ slavePath: String) -> String? {
+        // On macOS, we can try to find the master PTY through various methods
+        
+        // Method 1: Check if it's using /dev/ptmx (multiplexed PTY)
+        // The master would be accessed through the same file descriptor
+        
+        // Method 2: For BSD-style PTYs, convert /dev/ttysXXX to /dev/ptyXXX
+        if slavePath.contains("/dev/ttys") {
+            let masterPath = slavePath.replacingOccurrences(of: "/dev/ttys", with: "/dev/ptyp")
+            if FileManager.default.fileExists(atPath: masterPath) {
+                logger.debug("Found potential master PTY: \(masterPath)")
+                return masterPath
+            }
+        }
+        
+        // Method 3: Use fstat to find the device and search for its pair
+        let fd = open(slavePath, O_RDONLY | O_NONBLOCK)
+        guard fd >= 0 else { return nil }
+        defer { close(fd) }
+        
+        var stat = stat()
+        guard fstat(fd, &stat) == 0 else { return nil }
+        
+        let slaveDevice = stat.st_rdev
+        logger.debug("Slave device number: \(slaveDevice)")
+        
+        // On macOS, master and slave PTYs have related device numbers
+        // but the exact relationship is implementation-specific
         
         return nil
     }
