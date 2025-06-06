@@ -50,7 +50,6 @@ public class SparkleUpdaterManager: NSObject, SPUUpdaterDelegate, SPUStandardUse
         // Enable automatic update checks
         controller.updater.automaticallyChecksForUpdates = true
         self.logger.info("Automatic update checks enabled")
-
         self.logger.info("SparkleUpdaterManager: SPUStandardUpdaterController initialized with self as delegates.")
         return controller
     }() // The () here executes the closure and assigns the result to updaterController

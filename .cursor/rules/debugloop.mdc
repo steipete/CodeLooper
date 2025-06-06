@@ -30,7 +30,7 @@ The primary goal was to programmatically find the coordinates and read the text 
 The key breakthrough came from dumping a wider section of the UI tree to a file for manual analysis.
 
 1.  **Query to Dump "RootView" Children**:
-    *   A query was crafted to find an `AXGroup` element whose `AXDOMClassList` contained `"RootView"`.
+    *   A query was crafted to find an `AXGroup` element whose `AXDOMClassList`     contained `"RootView"`.
     *   `attributes_to_fetch` and `fetch_children_attributes` were set to `"all"`.
     *   `max_depth` was set to `15`.
     *   `debugLogging` was set to `true`.

@@ -156,4 +156,8 @@ extension Defaults.Keys {
     }())
     static let useDynamicMenuBarIcon = Key<Bool>("useDynamicMenuBarIcon", default: false)
     static let automaticJSHookInjection = Key<Bool>("automaticJSHookInjection", default: false)
+    
+    // --- Claude Monitoring Settings ---
+    static let enableClaudeMonitoring = Key<Bool>("enableClaudeMonitoring", default: true)
+    static let enableClaudeTitleOverride = Key<Bool>("enableClaudeTitleOverride", default: true)
 }

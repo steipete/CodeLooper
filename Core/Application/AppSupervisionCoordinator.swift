@@ -41,11 +41,19 @@ final class AppSupervisionCoordinator: Loggable {
         logger.info("🚀 Global monitoring enabled - starting supervision")
 
         Task { @MainActor in
+            // Start the Cursor app lifecycle manager to detect apps
+            logger.info("🔍 Triggering initial Cursor app detection")
+            CursorMonitor.shared.appLifecycleManager.scanForCursorApps()
+            
             // Give the monitoring system time to detect existing windows
             try? await Task.sleep(for: .seconds(TimingConfiguration.shortDelay))
             WindowAIDiagnosticsManager.shared.enableLiveWatchingForAllWindows()
             logger.info("✅ Enabled AI live watching for existing windows at startup")
         }
+        
+        // Sync Claude monitoring state with user defaults
+        logger.info("🔄 Syncing Claude monitoring state with user preferences")
+        ClaudeMonitorService.shared.syncWithUserDefaults()
     }
 
     /// Toggle monitoring state programmatically
@@ -66,6 +74,9 @@ final class AppSupervisionCoordinator: Loggable {
 
         // Stop JavaScript hooks
         JSHookService.shared.stopAllHooks()
+        
+        // Stop Claude monitoring
+        ClaudeMonitorService.shared.stopMonitoring()
 
         logger.info("✅ Supervision stopped")
     }

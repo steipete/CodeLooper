@@ -51,10 +51,12 @@ struct MainPopoverView: View {
                 isOn: $isGlobalMonitoringEnabled
             )
             .onChange(of: isGlobalMonitoringEnabled) { _, newValue in
-                if newValue {
-                    diagnosticsManager.enableLiveWatchingForAllWindows()
-                } else {
-                    diagnosticsManager.disableLiveWatchingForAllWindows()
+                Task { @MainActor in
+                    if newValue {
+                        diagnosticsManager.enableLiveWatchingForAllWindows()
+                    } else {
+                        diagnosticsManager.disableLiveWatchingForAllWindows()
+                    }
                 }
             }
 
@@ -78,6 +80,12 @@ struct MainPopoverView: View {
                             .foregroundColor(ColorPalette.textSecondary)
                     }
                 }
+            }
+
+            // Claude instances section (if enabled)
+            if enableClaudeMonitoring {
+                DSDivider()
+                ClaudeInstancesList()
             }
 
             DSDivider()
@@ -131,9 +139,11 @@ struct MainPopoverView: View {
 
     @ObservedObject private var cursorMonitor = CursorMonitor.shared
     @ObservedObject private var diagnosticsManager = WindowAIDiagnosticsManager.shared
+    @ObservedObject private var claudeMonitor = ClaudeMonitorService.shared
     @StateObject private var ruleCounter = RuleCounterManager.shared
 
     @Default(.isGlobalMonitoringEnabled) private var isGlobalMonitoringEnabled
+    @Default(.enableClaudeMonitoring) private var enableClaudeMonitoring
 }
 
 // MARK: - Preview

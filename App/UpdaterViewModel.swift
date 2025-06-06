@@ -36,12 +36,14 @@ public class UpdaterViewModel: ObservableObject {
             print("UpdaterViewModel: SparkleUpdaterManager not available.")
             return
         }
-        // Set update in progress (simplistic, real status comes from Sparkle delegates)
-        isUpdateInProgress = true
-        manager.updaterController.checkForUpdates(nil) // Pass nil for sender
-
-        // For now, just simulate it ending after a delay.
+        
+        // Defer the state update to avoid "Publishing changes from within view updates"
         Task { @MainActor in
+            // Set update in progress (simplistic, real status comes from Sparkle delegates)
+            self.isUpdateInProgress = true
+            manager.updaterController.checkForUpdates(nil) // Pass nil for sender
+
+            // For now, just simulate it ending after a delay.
             try? await Task.sleep(for: .seconds(TimingConfiguration.updateCheckDelay))
             self.isUpdateInProgress = false
             self.lastUpdateCheckDate = Date()

@@ -37,6 +37,11 @@ public class CursorAppLifecycleManager: ObservableObject {
         setupWorkspaceNotificationObservers()
         scanForExistingInstances()
     }
+    
+    public func scanForCursorApps() {
+        logger.info("Manually triggering scan for Cursor apps")
+        scanForExistingInstances()
+    }
 
     public func refreshMonitoredInstances() { // Renaming to refreshRunningApps might be clearer
         logger.debug("Refreshing monitored apps list.")
