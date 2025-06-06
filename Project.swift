@@ -160,6 +160,7 @@ let project = Project(
                     "OTHER_SWIFT_FLAGS": "-strict-concurrency=complete",
                     "ENABLE_STRICT_CONCURRENCY_CHECKS": "YES",
                     "ENABLE_TESTING": "YES",
+                    "ENABLE_TESTING_SEARCH_PATHS": "YES",
                     "FRAMEWORK_SEARCH_PATHS": "$(inherited) $(PLATFORM_DIR)/Developer/Library/Frameworks",
                     // Enable automatic macro trust for Swift Testing
                     "ENABLE_USER_SCRIPT_SANDBOXING": "NO",
