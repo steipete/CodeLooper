@@ -569,7 +569,7 @@ extension Tag {
     @Tag static var intervention: Self
     @Tag static var engine: Self
     @Tag static var recovery: Self
-    @Tag static var enum: Self
+    @Tag static var enumeration: Self
     @Tag static var validation: Self
     @Tag static var serialization: Self
     @Tag static var codable: Self

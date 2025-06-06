@@ -311,7 +311,7 @@ struct CursorMonitorServiceTests {
             #expect(monitor.monitoredApps.count == testAppIds.count, "Should monitor all added apps")
 
             for (index, expectedId) in testAppIds.enumerated() {
-                #expect(monitor.monitoredApps[index].pid == Int32(expectedId), "App \\(index) should have correct PID")
+                #expect(monitor.monitoredApps[index].pid == Int32(expectedId), "App \(index) should have correct PID")
             }
         }
     }
@@ -365,9 +365,9 @@ struct CursorMonitorServiceTests {
             var windows: [MonitoredWindowInfo] = []
             for i in 0 ..< windowCount {
                 let window = await MonitoredWindowInfo(
-                    id: "window-\\(i)",
-                    windowTitle: "Document \\(i).txt",
-                    documentPath: "/path/to/document\\(i).txt"
+                    id: "window-\(i)",
+                    windowTitle: "Document \(i).txt",
+                    documentPath: "/path/to/document\(i).txt"
                 )
                 windows.append(window)
             }
@@ -384,7 +384,7 @@ struct CursorMonitorServiceTests {
 
             monitor.monitoredApps = [appInfo]
 
-            #expect(monitor.monitoredApps.first?.windows.count == windowCount, "Should have \\(windowCount) windows")
+            #expect(monitor.monitoredApps.first?.windows.count == windowCount, "Should have \(windowCount) windows")
         }
     }
 
@@ -507,7 +507,7 @@ struct CursorMonitorServiceTests {
                     group.addTask {
                         let appInfo = await CursorMonitorServiceTests().createTestAppInfo(
                             id: 10000 + i,
-                            displayName: "Concurrent App \\(i)",
+                            displayName: "Concurrent App \(i)",
                             status: .active
                         )
                         monitor.monitoredApps = [appInfo]
@@ -568,7 +568,7 @@ struct CursorMonitorServiceTests {
             for i in 0 ..< 100 {
                 let app = await CursorMonitorServiceTests().createTestAppInfo(
                     id: i,
-                    displayName: "App \\(i)",
+                    displayName: "App \(i)",
                     status: .active
                 )
                 apps.append(app)

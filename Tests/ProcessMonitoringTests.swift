@@ -401,7 +401,7 @@ extension ProcessMonitoringTests {
 
 extension Tag {
     @Tag static var recovery: Self
-    @Tag static var enum: Self
+    @Tag static var enumeration: Self
     @Tag static var status: Self
     @Tag static var state: Self
     @Tag static var transitions: Self
