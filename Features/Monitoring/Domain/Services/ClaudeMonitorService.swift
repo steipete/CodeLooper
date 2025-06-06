@@ -2,6 +2,7 @@ import Foundation
 import Diagnostics
 import Defaults
 import AppKit
+import Vision
 
 private let logger = Logger(category: .supervision)
 
@@ -312,7 +313,13 @@ public final class ClaudeMonitorService: ObservableObject, Sendable {
             return status
         }
         
-        // Method 3: Parse process output/stderr if available
+        // Method 3: Try screen capture + OCR for terminals that don't support accessibility (like Ghostty)
+        if let status = getTerminalContentViaScreenCapture(pid: instance.pid) {
+            logger.info("Found status from screen capture OCR for PID \(instance.pid): '\(status)'")
+            return status
+        }
+        
+        // Method 4: Parse process output/stderr if available
         if let status = parseProcessOutput(pid: instance.pid) {
             logger.info("Found status from process output for PID \(instance.pid): '\(status)'")
             return status
@@ -340,7 +347,12 @@ public final class ClaudeMonitorService: ObservableObject, Sendable {
             return status
         }
         
-        // For now, skip accessibility API in sync mode as it's more complex
+        // Try screen capture + OCR for terminals that don't support accessibility
+        if let status = getTerminalContentViaScreenCapture(pid: pid) {
+            logger.info("Found sync status from screen capture OCR for PID \(pid): '\(status)'")
+            return status
+        }
+        
         return nil
     }
     
@@ -655,6 +667,119 @@ public final class ClaudeMonitorService: ObservableObject, Sendable {
             return nil
         } catch {
             logger.debug("Failed to read process command line for PID \(pid): \(error)")
+        }
+        
+        return nil
+    }
+    
+    private nonisolated func getTerminalContentViaScreenCapture(pid: Int32) -> String? {
+        // Use screen capture + OCR as fallback for terminals that don't support accessibility (like Ghostty)
+        logger.info("Attempting screen capture OCR for Claude PID \(pid)")
+        
+        // Check if we have screen recording permission
+        let hasPermission = CGPreflightScreenCaptureAccess()
+        if !hasPermission {
+            logger.debug("No screen recording permission for OCR - requesting access")
+            // This will trigger a permission prompt
+            _ = CGRequestScreenCaptureAccess()
+            return nil
+        }
+        
+        // Get list of all windows
+        guard let windowList = CGWindowListCopyWindowInfo(.optionOnScreenOnly, kCGNullWindowID) as? [[String: Any]] else {
+            logger.debug("Failed to get window list for screen capture")
+            return nil
+        }
+        
+        // Look for terminal windows (Ghostty, iTerm, Terminal, etc.)
+        for window in windowList {
+            if let windowName = window[kCGWindowName as String] as? String,
+               let ownerName = window[kCGWindowOwnerName as String] as? String,
+               let bounds = window[kCGWindowBounds as String] as? [String: Any],
+               let windowID = window[kCGWindowNumber as String] as? CGWindowID {
+                
+                logger.debug("Found window: '\(windowName)' owner: '\(ownerName)'")
+                
+                // Check if this looks like a terminal window
+                let isTerminal = ownerName.lowercased().contains("ghostty") ||
+                               ownerName.lowercased().contains("terminal") ||
+                               ownerName.lowercased().contains("iterm") ||
+                               ownerName.lowercased().contains("warp")
+                
+                if isTerminal {
+                    logger.info("Found terminal window: '\(windowName)' (\(ownerName))")
+                    
+                    // Try to capture this window and extract text
+                    if let status = captureWindowAndExtractText(windowID: windowID, bounds: bounds) {
+                        return status
+                    }
+                }
+            }
+        }
+        
+        logger.debug("No terminal windows found for screen capture")
+        return nil
+    }
+    
+    private nonisolated func captureWindowAndExtractText(windowID: CGWindowID, bounds: [String: Any]) -> String? {
+        // Capture the specific window
+        guard let image = CGWindowListCreateImage(
+            CGRect.null,
+            .optionIncludingWindow,
+            windowID,
+            []
+        ) else {
+            logger.debug("Failed to capture window \(windowID)")
+            return nil
+        }
+        
+        logger.debug("Captured window \(windowID), size: \(image.width)x\(image.height)")
+        
+        // Convert to NSImage for Vision framework
+        let nsImage = NSImage(cgImage: image, size: NSSize(width: image.width, height: image.height))
+        
+        // Use Vision framework to extract text
+        return extractTextFromImage(nsImage)
+    }
+    
+    private nonisolated func extractTextFromImage(_ image: NSImage) -> String? {
+        guard let tiffData = image.tiffRepresentation,
+              let bitmap = NSBitmapImageRep(data: tiffData),
+              let cgImage = bitmap.cgImage else {
+            logger.debug("Failed to convert image for OCR")
+            return nil
+        }
+        
+        let request = VNRecognizeTextRequest()
+        request.recognitionLevel = .fast // Use fast recognition for better performance
+        request.usesLanguageCorrection = false // Don't auto-correct, we want exact text
+        
+        let handler = VNImageRequestHandler(cgImage: cgImage, options: [:])
+        
+        do {
+            try handler.perform([request])
+            
+            guard let observations = request.results else {
+                logger.debug("No OCR results from image")
+                return nil
+            }
+            
+            // Combine all recognized text
+            let recognizedStrings = observations.compactMap { observation in
+                return observation.topCandidates(1).first?.string
+            }
+            
+            let fullText = recognizedStrings.joined(separator: "\n")
+            logger.debug("OCR extracted text (\(recognizedStrings.count) lines): '\(String(fullText.prefix(200)))'")
+            
+            // Look for Claude status in the extracted text
+            if fullText.contains("esc to interrupt") {
+                logger.info("Found 'esc to interrupt' in OCR text")
+                return parseClaudeStatusLine(fullText)
+            }
+            
+        } catch {
+            logger.debug("OCR failed: \(error)")
         }
         
         return nil
