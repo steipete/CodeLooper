@@ -1,6 +1,6 @@
 @testable import CodeLooper
 import Foundation
-import XCTest
+import Testing
 
 // Helper actor for thread-safe counting
 actor TestCounter {
@@ -42,9 +42,11 @@ actor TestCounter {
     private var results: [String] = []
 }
 
+@Suite("Debouncer Tests")
 @MainActor
-class DebouncerTests: XCTestCase {
-    func testDebouncerSingleCall() async throws {
+struct DebouncerTests {
+    @Test("Single call executes correctly")
+    func debouncerSingleCall() async throws {
         let debouncer = Debouncer(delay: 0.1)
         let counter = TestCounter()
 
@@ -59,10 +61,11 @@ class DebouncerTests: XCTestCase {
 
         // Should have been called exactly once
         let finalCount = await counter.getCount()
-        XCTAssertEqual(finalCount, 1)
+        #expect(finalCount == 1)
     }
 
-    func testDebouncerMultipleRapidCalls() async throws {
+    @Test("Multiple rapid calls result in single execution with last value")
+    func debouncerMultipleRapidCalls() async throws {
         let debouncer = Debouncer(delay: 0.1)
         let counter = TestCounter()
 
@@ -82,11 +85,12 @@ class DebouncerTests: XCTestCase {
 
         // Should only have been called once with the last value
         let (finalCallCount, finalLastValue) = await counter.getCountAndValue()
-        XCTAssertEqual(finalCallCount, 1)
-        XCTAssertEqual(finalLastValue, 5)
+        #expect(finalCallCount == 1)
+        #expect(finalLastValue == 5)
     }
 
-    func testDebouncerCancellation() async throws {
+    @Test("Debouncer cancels previous call when new call is made")
+    func debouncerCancellation() async throws {
         let debouncer = Debouncer(delay: 0.2)
         let counter = TestCounter()
 
@@ -111,10 +115,11 @@ class DebouncerTests: XCTestCase {
 
         // Should only have been called once (the second call)
         let finalCount = await counter.getCount()
-        XCTAssertEqual(finalCount, 1)
+        #expect(finalCount == 1)
     }
 
-    func testDebouncerDifferentDelays() async throws {
+    @Test("Different debouncer instances with different delays work independently")
+    func debouncerDifferentDelays() async throws {
         let shortDebouncer = Debouncer(delay: 0.05)
         let longDebouncer = Debouncer(delay: 0.15)
 
@@ -138,19 +143,20 @@ class DebouncerTests: XCTestCase {
 
         let shortCount1 = await shortCounter.getCount()
         let longCount1 = await longCounter.getCount()
-        XCTAssertEqual(shortCount1, 1)
-        XCTAssertEqual(longCount1, 0)
+        #expect(shortCount1 == 1)
+        #expect(longCount1 == 0)
 
         // Wait for long debouncer to fire
         try await Task.sleep(for: .milliseconds(100))
 
         let shortCount2 = await shortCounter.getCount()
         let longCount2 = await longCounter.getCount()
-        XCTAssertEqual(shortCount2, 1)
-        XCTAssertEqual(longCount2, 1)
+        #expect(shortCount2 == 1)
+        #expect(longCount2 == 1)
     }
 
-    func testDebouncerActionCapturesContext() async throws {
+    @Test("Debouncer action correctly captures context variables")
+    func debouncerActionCapturesContext() async throws {
         let debouncer = Debouncer(delay: 0.05)
         let counter = TestCounter()
 
@@ -164,10 +170,11 @@ class DebouncerTests: XCTestCase {
         try await Task.sleep(for: .milliseconds(80))
 
         let finalResults = await counter.getResults()
-        XCTAssertEqual(finalResults, ["test_context"])
+        #expect(finalResults == ["test_context"])
     }
 
-    func testDebouncerConcurrentAccess() async throws {
+    @Test("Concurrent calls to debouncer result in single execution")
+    func debouncerConcurrentAccess() async throws {
         let debouncer = Debouncer(delay: 0.05)
         let counter = TestCounter()
 
@@ -189,10 +196,11 @@ class DebouncerTests: XCTestCase {
 
         // Should only have been called once despite multiple concurrent calls
         let finalCount = await counter.getCount()
-        XCTAssertEqual(finalCount, 1)
+        #expect(finalCount == 1)
     }
 
-    func testDebouncerZeroDelay() async throws {
+    @Test("Debouncer with zero delay executes immediately")
+    func debouncerZeroDelay() async throws {
         let debouncer = Debouncer(delay: 0.0)
         let counter = TestCounter()
 
@@ -206,10 +214,11 @@ class DebouncerTests: XCTestCase {
         try await Task.sleep(for: .milliseconds(10))
 
         let finalCount = await counter.getCount()
-        XCTAssertEqual(finalCount, 1)
+        #expect(finalCount == 1)
     }
 
-    func testDebouncerMultipleInstancesIndependence() async throws {
+    @Test("Multiple debouncer instances operate independently")
+    func debouncerMultipleInstancesIndependence() async throws {
         let debouncer1 = Debouncer(delay: 0.05)
         let debouncer2 = Debouncer(delay: 0.05)
 
@@ -233,7 +242,7 @@ class DebouncerTests: XCTestCase {
         // Both should have fired independently
         let finalCount1 = await counter1.getCount()
         let finalCount2 = await counter2.getCount()
-        XCTAssertEqual(finalCount1, 1)
-        XCTAssertEqual(finalCount2, 1)
+        #expect(finalCount1 == 1)
+        #expect(finalCount2 == 1)
     }
 }

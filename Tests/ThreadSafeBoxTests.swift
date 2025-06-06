@@ -1,38 +1,42 @@
 @testable import CodeLooper
 import Foundation
-import XCTest
+import Testing
 
-class ThreadSafeBoxTests: XCTestCase {
-    func testThreadSafeBoxBasicOperations() async throws {
+@Suite("ThreadSafeBox Tests")
+struct ThreadSafeBoxTests {
+    @Test("Basic operations work correctly")
+    func threadSafeBoxBasicOperations() async throws {
         let box = ThreadSafeBox(42)
 
         // Test initial value
-        XCTAssertEqual(box.get(), 42)
+        #expect(box.get() == 42)
 
         // Test setting new value
         box.set(100)
-        XCTAssertEqual(box.get(), 100)
+        #expect(box.get() == 100)
 
         // Test updating with transform
         box.update { $0 * 2 }
-        XCTAssertEqual(box.get(), 200)
+        #expect(box.get() == 200)
     }
 
-    func testThreadSafeBoxReadTransform() async throws {
+    @Test("Read transform operations work correctly")
+    func threadSafeBoxReadTransform() async throws {
         let box = ThreadSafeBox("Hello")
 
         // Test read with transform
         let length = box.read { $0.count }
-        XCTAssertEqual(length, 5)
+        #expect(length == 5)
 
         let uppercased = box.read { $0.uppercased() }
-        XCTAssertEqual(uppercased, "HELLO")
+        #expect(uppercased == "HELLO")
 
         // Original value should remain unchanged
-        XCTAssertEqual(box.get(), "Hello")
+        #expect(box.get() == "Hello")
     }
 
-    func testThreadSafeBoxConcurrentAccess() async throws {
+    @Test("Concurrent access is thread-safe")
+    func threadSafeBoxConcurrentAccess() async throws {
         let box = ThreadSafeBox(0)
         let iterations = 1000
 
@@ -46,10 +50,11 @@ class ThreadSafeBoxTests: XCTestCase {
         }
 
         // All increments should have been applied
-        XCTAssertEqual(box.get(), iterations)
+        #expect(box.get() == iterations)
     }
 
-    func testThreadSafeBoxConcurrentReadsAndWrites() async throws {
+    @Test("Concurrent reads and writes work safely")
+    func threadSafeBoxConcurrentReadsAndWrites() async throws {
         let box = ThreadSafeBox(100)
         // Use an actor to collect results safely
         actor ResultCollector {
@@ -85,76 +90,80 @@ class ThreadSafeBoxTests: XCTestCase {
         let readResults = await collector.getResults()
 
         // Should have read some values
-        XCTAssertEqual(readResults.count, 50)
+        #expect(readResults.count == 50)
 
         // All read values should be valid (either initial or one of the written values)
         let validValues = Set([100] + (1 ... 10).map { $0 * 10 })
         for value in readResults {
-            XCTAssertTrue(validValues.contains(value))
+            #expect(validValues.contains(value))
         }
     }
 
-    func testThreadSafeBoxBooleanExtensions() async throws {
+    @Test("Boolean extensions work correctly")
+    func threadSafeBoxBooleanExtensions() async throws {
         let box = ThreadSafeBox(false)
 
         // Test initial value
-        XCTAssertEqual(box.get(), false)
+        #expect(box.get() == false)
 
         // Test toggle
         box.toggle()
-        XCTAssertEqual(box.get(), true)
+        #expect(box.get() == true)
 
         box.toggle()
-        XCTAssertEqual(box.get(), false)
+        #expect(box.get() == false)
 
         // Test setTrue
         box.setTrue()
-        XCTAssertEqual(box.get(), true)
+        #expect(box.get() == true)
 
         // Test setFalse
         box.setFalse()
-        XCTAssertEqual(box.get(), false)
+        #expect(box.get() == false)
     }
 
-    func testThreadSafeBoxNumericExtensions() async throws {
+    @Test("Numeric extensions work correctly")
+    func threadSafeBoxNumericExtensions() async throws {
         let intBox = ThreadSafeBox(10)
 
         // Test increment
         intBox.increment()
-        XCTAssertEqual(intBox.get(), 11)
+        #expect(intBox.get() == 11)
 
         intBox.increment(by: 5)
-        XCTAssertEqual(intBox.get(), 16)
+        #expect(intBox.get() == 16)
 
         // Test decrement
         intBox.decrement()
-        XCTAssertEqual(intBox.get(), 15)
+        #expect(intBox.get() == 15)
 
         intBox.decrement(by: 3)
-        XCTAssertEqual(intBox.get(), 12)
+        #expect(intBox.get() == 12)
 
         // Test with Double
         let doubleBox = ThreadSafeBox(1.5)
         doubleBox.increment(by: 2.5)
-        XCTAssertEqual(doubleBox.get(), 4.0)
+        #expect(doubleBox.get() == 4.0)
 
         doubleBox.decrement(by: 1.0)
-        XCTAssertEqual(doubleBox.get(), 3.0)
+        #expect(doubleBox.get() == 3.0)
     }
 
-    func testThreadSafeBoxEquatableExtensions() async throws {
+    @Test("Equatable extensions work correctly")
+    func threadSafeBoxEquatableExtensions() async throws {
         let box = ThreadSafeBox("test")
 
         // Test equals
-        XCTAssertTrue(box.equals("test"))
-        XCTAssertFalse(box.equals("other"))
+        #expect(box.equals("test"))
+        #expect(!box.equals("other"))
 
         box.set("changed")
-        XCTAssertTrue(box.equals("changed"))
-        XCTAssertFalse(box.equals("test"))
+        #expect(box.equals("changed"))
+        #expect(!box.equals("test"))
     }
 
-    func testThreadSafeBoxComplexDataTypes() async throws {
+    @Test("Complex data types work correctly")
+    func threadSafeBoxComplexDataTypes() async throws {
         struct TestData: Sendable, Equatable {
             let id: Int
             let name: String
@@ -163,24 +172,25 @@ class ThreadSafeBoxTests: XCTestCase {
         let initialData = TestData(id: 1, name: "Initial")
         let box = ThreadSafeBox(initialData)
 
-        XCTAssertEqual(box.get(), initialData)
+        #expect(box.get() == initialData)
 
         let newData = TestData(id: 2, name: "Updated")
         box.set(newData)
-        XCTAssertEqual(box.get(), newData)
+        #expect(box.get() == newData)
 
         // Test with optional
         let optionalBox = ThreadSafeBox<String?>(nil)
-        XCTAssertNil(optionalBox.get())
+        #expect(optionalBox.get() == nil)
 
         optionalBox.set("value")
-        XCTAssertEqual(optionalBox.get(), "value")
+        #expect(optionalBox.get() == "value")
 
         optionalBox.set(nil)
-        XCTAssertNil(optionalBox.get())
+        #expect(optionalBox.get() == nil)
     }
 
-    func testThreadSafeBoxPerformance() async throws {
+    @Test("Performance is acceptable")
+    func threadSafeBoxPerformance() async throws {
         let box = ThreadSafeBox(0)
         let startTime = Date()
 
@@ -194,10 +204,11 @@ class ThreadSafeBoxTests: XCTestCase {
         }
 
         let elapsed = Date().timeIntervalSince(startTime)
-        XCTAssertLessThan(elapsed, 1.0) // Should complete quickly
+        #expect(elapsed < 1.0) // Should complete quickly
     }
 
-    func testThreadSafeBoxMemorySafety() async throws {
+    @Test("Memory safety is maintained")
+    func threadSafeBoxMemorySafety() async throws {
         var boxes: [ThreadSafeBox<Int>] = []
 
         // Create many boxes
@@ -218,15 +229,16 @@ class ThreadSafeBoxTests: XCTestCase {
 
         // Verify all boxes have expected values
         for (index, box) in boxes.enumerated() {
-            XCTAssertEqual(box.get(), index + index) // original + index
+            #expect(box.get() == index + index) // original + index
         }
 
         // Clear references
         boxes.removeAll()
-        XCTAssertTrue(boxes.isEmpty)
+        #expect(boxes.isEmpty)
     }
 
-    func testThreadSafeBoxThreadSafetyWithWeakReferences() async throws {
+    @Test("Thread safety with weak references")
+    func threadSafeBoxThreadSafetyWithWeakReferences() async throws {
         let box = ThreadSafeBox(false)
         let resumedBox = ThreadSafeBox(false)
 
@@ -240,27 +252,29 @@ class ThreadSafeBoxTests: XCTestCase {
             }
         }
 
-        XCTAssertEqual(box.get(), true)
-        XCTAssertEqual(resumedBox.get(), true)
+        #expect(box.get() == true)
+        #expect(resumedBox.get() == true)
     }
 
-    func testThreadSafeBoxErrorConditions() async throws {
+    @Test("Error conditions are handled correctly")
+    func threadSafeBoxErrorConditions() async throws {
         // Test with extreme values
         let maxIntBox = ThreadSafeBox(Int.max)
-        XCTAssertEqual(maxIntBox.get(), Int.max)
+        #expect(maxIntBox.get() == Int.max)
 
         let minIntBox = ThreadSafeBox(Int.min)
-        XCTAssertEqual(minIntBox.get(), Int.min)
+        #expect(minIntBox.get() == Int.min)
 
         // Test with empty string
         let emptyStringBox = ThreadSafeBox("")
-        XCTAssertEqual(emptyStringBox.get(), "")
+        #expect(emptyStringBox.get() == "")
 
         emptyStringBox.update { $0 + "test" }
-        XCTAssertEqual(emptyStringBox.get(), "test")
+        #expect(emptyStringBox.get() == "test")
     }
 
-    func testThreadSafeBoxTypeSafety() async throws {
+    @Test("Type safety is maintained")
+    func threadSafeBoxTypeSafety() async throws {
         // Test that different types work correctly
         let stringBox = ThreadSafeBox("string")
         let intBox = ThreadSafeBox(42)
@@ -268,21 +282,21 @@ class ThreadSafeBoxTests: XCTestCase {
         let arrayBox = ThreadSafeBox([1, 2, 3])
         let dictBox = ThreadSafeBox(["key": "value"])
 
-        XCTAssertEqual(stringBox.get(), "string")
-        XCTAssertEqual(intBox.get(), 42)
-        XCTAssertEqual(boolBox.get(), true)
-        XCTAssertEqual(arrayBox.get(), [1, 2, 3])
-        XCTAssertEqual(dictBox.get(), ["key": "value"])
+        #expect(stringBox.get() == "string")
+        #expect(intBox.get() == 42)
+        #expect(boolBox.get() == true)
+        #expect(arrayBox.get() == [1, 2, 3])
+        #expect(dictBox.get() == ["key": "value"])
 
         // Test type inference works
         arrayBox.update { $0 + [4, 5] }
-        XCTAssertEqual(arrayBox.get(), [1, 2, 3, 4, 5])
+        #expect(arrayBox.get() == [1, 2, 3, 4, 5])
 
         dictBox.update { dict in
             var newDict = dict
             newDict["new"] = "added"
             return newDict
         }
-        XCTAssertEqual(dictBox.get(), ["key": "value", "new": "added"])
+        #expect(dictBox.get() == ["key": "value", "new": "added"])
     }
 }

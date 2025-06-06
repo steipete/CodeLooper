@@ -2,60 +2,64 @@ import AppKit
 @testable import CodeLooper
 import Defaults
 import Foundation
-import XCTest
+import Testing
 
+@Suite("Icon Animation Tests")
 @MainActor
-class IconAnimationTests: XCTestCase {
+struct IconAnimationTests {
     // MARK: - IconAnimator Tests
 
-    func testIconAnimationStart() async throws {
+    @Test("Icon animation start")
+    func iconAnimationStart() async throws {
         let mockStatusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
         let animator = IconAnimator(statusItem: mockStatusItem)
 
         // Test that animator is created without errors
-        XCTAssertNotNil(animator)
+        #expect(animator != nil)
 
         // Test starting animation
         animator.startAnimating()
 
         // Test animation state
         let isAnimating = animator.isCurrentlyAnimating
-        XCTAssertEqual(isAnimating, true || isAnimating == false) // Either state is valid
+        #expect(isAnimating == true || isAnimating == false) // Either state is valid
 
         // Test stopping animation
         animator.stopAnimating()
 
         // Animation should be stopped
         let isStoppedAnimating = animator.isCurrentlyAnimating
-        XCTAssertEqual(isStoppedAnimating, false)
+        #expect(isStoppedAnimating == false)
     }
 
-    func testIconAnimationStop() async throws {
+    @Test("Icon animation stop")
+    func iconAnimationStop() async throws {
         let mockStatusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
         let animator = IconAnimator(statusItem: mockStatusItem)
 
         // Initially not animating
         var isAnimating = animator.isCurrentlyAnimating
-        XCTAssertEqual(isAnimating, false)
+        #expect(isAnimating == false)
 
         // Start animation
         animator.startAnimating()
         isAnimating = animator.isCurrentlyAnimating
-        XCTAssertEqual(isAnimating, true)
+        #expect(isAnimating == true)
 
         // Stop animation
         animator.stopAnimating()
         isAnimating = animator.isCurrentlyAnimating
-        XCTAssertEqual(isAnimating, false)
+        #expect(isAnimating == false)
 
         // Multiple stop calls should be safe
         animator.stopAnimating()
         animator.stopAnimating()
         isAnimating = animator.isCurrentlyAnimating
-        XCTAssertEqual(isAnimating, false)
+        #expect(isAnimating == false)
     }
 
-    func testIconAnimationStateManagement() async throws {
+    @Test("Icon animation state management")
+    func iconAnimationStateManagement() async throws {
         let mockStatusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
         let animator = IconAnimator(statusItem: mockStatusItem)
 
@@ -67,7 +71,7 @@ class IconAnimationTests: XCTestCase {
 
         // Final state should be stopped
         let finalState = animator.isCurrentlyAnimating
-        XCTAssertEqual(finalState, false)
+        #expect(finalState == false)
 
         // Test concurrent state changes
         await withTaskGroup(of: Void.self) { group in
@@ -84,18 +88,19 @@ class IconAnimationTests: XCTestCase {
 
         // Should handle concurrent access gracefully
         let concurrentState = animator.isCurrentlyAnimating
-        XCTAssertEqual(concurrentState, true || concurrentState == false)
+        #expect(concurrentState == true || concurrentState == false)
     }
 
 
     // MARK: - MenuBarIconManager Tests
 
-    func testMenuBarIconManagerCoordination() async throws {
+    @Test("Menu bar icon manager coordination")
+    func menuBarIconManagerCoordination() async throws {
         await MainActor.run {
             let manager = MenuBarIconManager.shared
 
             // Test that manager is created without errors
-            XCTAssertNotNil(manager)
+            #expect(manager != nil)
 
             // Test icon state updates
             manager.setState(.idle)
@@ -103,11 +108,12 @@ class IconAnimationTests: XCTestCase {
             manager.setState(.success)
 
             // Test that state changes don't crash
-            XCTAssertTrue(true)
+            #expect(true)
         }
     }
 
-    func testMenuBarIconManagerRapidChanges() async throws {
+    @Test("Menu bar icon manager rapid changes")
+    func menuBarIconManagerRapidChanges() async throws {
         await MainActor.run {
             let manager = MenuBarIconManager.shared
 
@@ -121,39 +127,42 @@ class IconAnimationTests: XCTestCase {
             }
 
             // Should handle rapid changes gracefully
-            XCTAssertTrue(true)
+            #expect(true)
         }
     }
 
     // MARK: - NSImage Resource Loading Tests
 
-    func testNSImageResourceLoading() async throws {
+    @Test("NSImage resource loading")
+    func nsImageResourceLoading() async throws {
         // Test loading icon resources
         let menuBarIcon = NSImage(named: "menubar")
 
         // Icon may or may not exist in test environment
-        XCTAssertTrue(menuBarIcon != nil || menuBarIcon == nil)
+        #expect(menuBarIcon != nil || menuBarIcon == nil)
 
         // Should not crash regardless of file availability
-        XCTAssertTrue(true)
+        #expect(true)
     }
 
-    func testNSImageMissingResourceHandling() async throws {
+    @Test("NSImage missing resource handling")
+    func nsImageMissingResourceHandling() async throws {
         // Test loading non-existent icon
         let nonExistentIcon = NSImage(named: "definitely_does_not_exist")
-        XCTAssertEqual(nonExistentIcon, nil)
+        #expect(nonExistentIcon == nil)
 
         // Test loading with empty name
         let emptyIcon = NSImage(named: "")
-        XCTAssertEqual(emptyIcon, nil)
+        #expect(emptyIcon == nil)
 
         // Should handle missing resources gracefully
-        XCTAssertTrue(true)
+        #expect(true)
     }
 
     // MARK: - Integration Tests
 
-    func testIconAnimationSystemIntegration() async throws {
+    @Test("Icon animation system integration")
+    func iconAnimationSystemIntegration() async throws {
         await MainActor.run {
             let mockStatusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
             let animator = IconAnimator(statusItem: mockStatusItem)
@@ -167,11 +176,12 @@ class IconAnimationTests: XCTestCase {
             manager.setState(.idle)
 
             // System should work without conflicts
-            XCTAssertTrue(true)
+            #expect(true)
         }
     }
 
-    func testIconAnimationPerformance() async throws {
+    @Test("Icon animation performance")
+    func iconAnimationPerformance() async throws {
         await MainActor.run {
             let manager = MenuBarIconManager.shared
 
@@ -187,11 +197,11 @@ class IconAnimationTests: XCTestCase {
             let duration = endTime.timeIntervalSince(startTime)
 
             // Should complete reasonably quickly (less than 2 seconds for 50 changes)
-            XCTAssertLessThan(duration, 2.0)
+            #expect(duration < 2.0)
 
             // Final state should be valid
             let currentTooltip = manager.currentTooltip
-            XCTAssertTrue(currentTooltip.contains("CodeLooper"))
+            #expect(currentTooltip.contains("CodeLooper"))
         }
     }
 }

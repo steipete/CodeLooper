@@ -2,9 +2,10 @@ import AXorcist
 @testable import CodeLooper
 import Combine
 import Foundation
-import XCTest
+import Testing
 
-class CursorMonitorServiceTests: XCTestCase {
+@Suite("CursorMonitorService Tests")
+struct CursorMonitorServiceTests {
     /// Mock implementations for testing
     class MockSessionLogger {
         var loggedMessages: [(level: LogLevel, message: String)] = []
@@ -31,38 +32,41 @@ class CursorMonitorServiceTests: XCTestCase {
     }
 
     /// Test suite for CursorMonitor service functionality
-    func testCursorMonitorInitialization() async throws {
+    @Test("CursorMonitor initialization")
+    func cursorMonitorInitialization() async throws {
         let sessionLogger = await SessionLogger.shared
-        let _ = MockSessionLogger() // For future use
+        _ = MockSessionLogger() // For future use
 
         let monitor = await createTestMonitor(sessionLogger: sessionLogger)
 
         await MainActor.run {
-            XCTAssertNotNil(monitor.axorcist)
+            #expect(monitor.axorcist != nil)
             // Note: monitoring state may be active due to global state
-            // XCTAssertTrue(!monitor.isMonitoringActivePublic)
-            XCTAssertEqual(monitor.totalAutomaticInterventionsThisSessionDisplay, 0)
+            // #expect(!monitor.isMonitoringActivePublic)
+            #expect(monitor.totalAutomaticInterventionsThisSessionDisplay == 0)
         }
     }
 
-    func testSharedInstanceConfiguration() async throws {
+    @Test("Shared instance configuration")
+    func sharedInstanceConfiguration() async throws {
         let sharedMonitor = await CursorMonitor.shared
 
         await MainActor.run {
             // Note: shared instance may have global state, so we test existence rather than specific values
-            XCTAssertNotNil(sharedMonitor)
-            XCTAssertTrue(sharedMonitor.monitoredApps.count >= 0) // Should be a valid array
-            XCTAssertTrue(sharedMonitor.totalAutomaticInterventionsThisSessionDisplay >= 0) // Should be non-negative
+            #expect(sharedMonitor != nil)
+            #expect(sharedMonitor.monitoredApps.count >= 0) // Should be a valid array
+            #expect(sharedMonitor.totalAutomaticInterventionsThisSessionDisplay >= 0) // Should be non-negative
         }
     }
 
-    func testMonitorLifecycle() async throws {
+    @Test("Monitor lifecycle management")
+    func monitorLifecycle() async throws {
         let sessionLogger = await SessionLogger.shared
         let monitor = await createTestMonitor(sessionLogger: sessionLogger)
 
         // Initially not monitoring
         await MainActor.run {
-            XCTAssertTrue(!monitor.isMonitoringActivePublic)
+            #expect(!monitor.isMonitoringActivePublic)
         }
 
         // Start monitoring
@@ -72,18 +76,19 @@ class CursorMonitorServiceTests: XCTestCase {
         try await Task.sleep(for: .milliseconds(100))
 
         await MainActor.run {
-            XCTAssertTrue(monitor.isMonitoringActivePublic)
+            #expect(monitor.isMonitoringActivePublic)
         }
 
         // Stop monitoring
         await monitor.stopMonitoringLoop()
 
         await MainActor.run {
-            XCTAssertTrue(!monitor.isMonitoringActivePublic)
+            #expect(!monitor.isMonitoringActivePublic)
         }
     }
 
-    func testDuplicateLifecycleRequests() async throws {
+    @Test("Duplicate lifecycle requests handling")
+    func duplicateLifecycleRequests() async throws {
         let sessionLogger = await SessionLogger.shared
         let monitor = await createTestMonitor(sessionLogger: sessionLogger)
 
@@ -94,7 +99,7 @@ class CursorMonitorServiceTests: XCTestCase {
         try await Task.sleep(for: .milliseconds(100))
 
         await MainActor.run {
-            XCTAssertTrue(monitor.isMonitoringActivePublic)
+            #expect(monitor.isMonitoringActivePublic)
         }
 
         // Multiple stop requests
@@ -102,11 +107,12 @@ class CursorMonitorServiceTests: XCTestCase {
         await monitor.stopMonitoringLoop() // Should be ignored
 
         await MainActor.run {
-            XCTAssertTrue(!monitor.isMonitoringActivePublic)
+            #expect(!monitor.isMonitoringActivePublic)
         }
     }
 
-    func testMonitoredAppsManagement() async throws {
+    @Test("Monitored apps management")
+    func monitoredAppsManagement() async throws {
         let sessionLogger = await SessionLogger.shared
         let monitor = await createTestMonitor(sessionLogger: sessionLogger)
 
@@ -126,20 +132,21 @@ class CursorMonitorServiceTests: XCTestCase {
         }
 
         await MainActor.run {
-            XCTAssertEqual(monitor.monitoredApps.count, 1)
-            XCTAssertEqual(monitor.monitoredApps.first?.pid, 12345)
-            XCTAssertEqual(monitor.monitoredApps.first?.displayName, "Test Cursor")
+            #expect(monitor.monitoredApps.count == 1)
+            #expect(monitor.monitoredApps.first?.pid == 12345)
+            #expect(monitor.monitoredApps.first?.displayName == "Test Cursor")
         }
     }
 
-    func testAutoMonitoringBasedOnApps() async throws {
+    @Test("Auto monitoring based on apps")
+    func autoMonitoringBasedOnApps() async throws {
         let sessionLogger = await SessionLogger.shared
         let monitor = await createTestMonitor(sessionLogger: sessionLogger)
 
         // Initially no apps and not monitoring
         await MainActor.run {
-            XCTAssertTrue(monitor.monitoredApps.isEmpty)
-            XCTAssertTrue(!monitor.isMonitoringActivePublic)
+            #expect(monitor.monitoredApps.isEmpty)
+            #expect(!monitor.isMonitoringActivePublic)
         }
 
         // Add an app - should trigger monitoring
@@ -160,7 +167,7 @@ class CursorMonitorServiceTests: XCTestCase {
         try await Task.sleep(for: .milliseconds(100))
 
         await MainActor.run {
-            XCTAssertTrue(monitor.isMonitoringActivePublic)
+            #expect(monitor.isMonitoringActivePublic)
         }
 
         // Remove apps - should stop monitoring
@@ -169,11 +176,12 @@ class CursorMonitorServiceTests: XCTestCase {
         }
 
         await MainActor.run {
-            XCTAssertTrue(!monitor.isMonitoringActivePublic)
+            #expect(!monitor.isMonitoringActivePublic)
         }
     }
 
-    func testInterventionTracking() async throws {
+    @Test("Intervention tracking")
+    func interventionTracking() async throws {
         let sessionLogger = await SessionLogger.shared
         let monitor = await createTestMonitor(sessionLogger: sessionLogger)
 
@@ -182,11 +190,12 @@ class CursorMonitorServiceTests: XCTestCase {
 
         await MainActor.run {
             // Should have some default value
-            XCTAssertGreaterThanOrEqual(monitor.totalAutomaticInterventionsThisSessionDisplay, 0)
+            #expect(monitor.totalAutomaticInterventionsThisSessionDisplay >= 0)
         }
     }
 
-    func testWindowManagement() async throws {
+    @Test("Window management")
+    func windowManagement() async throws {
         let sessionLogger = await SessionLogger.shared
         let monitor = await createTestMonitor(sessionLogger: sessionLogger)
 
@@ -212,13 +221,14 @@ class CursorMonitorServiceTests: XCTestCase {
         }
 
         await MainActor.run {
-            XCTAssertEqual(monitor.monitoredApps.first?.windows.count, 1)
-            XCTAssertEqual(monitor.monitoredApps.first?.windows.first?.windowTitle, "Test Document.txt")
-            XCTAssertEqual(monitor.monitoredApps.first?.windows.first?.documentPath, "/path/to/test.txt")
+            #expect(monitor.monitoredApps.first?.windows.count == 1)
+            #expect(monitor.monitoredApps.first?.windows.first?.windowTitle == "Test Document.txt")
+            #expect(monitor.monitoredApps.first?.windows.first?.documentPath == "/path/to/test.txt")
         }
     }
 
-    func testEmptyMonitoredAppsHandling() async throws {
+    @Test("Empty monitored apps handling")
+    func emptyMonitoredAppsHandling() async throws {
         let sessionLogger = await SessionLogger.shared
         let monitor = await createTestMonitor(sessionLogger: sessionLogger)
 
@@ -229,19 +239,20 @@ class CursorMonitorServiceTests: XCTestCase {
         await monitor.performMonitoringCycle()
 
         // Should not crash
-        XCTAssertTrue(true)
+        #expect(true)
 
         await monitor.stopMonitoringLoop()
     }
 
     #if DEBUG
-        func testPreviewMonitorConfiguration() async throws {
+        @Test("Preview monitor configuration")
+        func previewMonitorConfiguration() async throws {
             let previewMonitor = await CursorMonitor.sharedForPreview
 
             await MainActor.run {
-                XCTAssertTrue(!previewMonitor.monitoredApps.isEmpty)
-                XCTAssertGreaterThan(previewMonitor.totalAutomaticInterventionsThisSessionDisplay, 0)
-                XCTAssertEqual(previewMonitor.monitoredApps.first?.displayName.contains("Preview"), true)
+                #expect(!previewMonitor.monitoredApps.isEmpty)
+                #expect(previewMonitor.totalAutomaticInterventionsThisSessionDisplay > 0)
+                #expect(previewMonitor.monitoredApps.first?.displayName.contains("Preview") == true)
             }
         }
     #endif

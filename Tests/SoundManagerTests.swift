@@ -1,96 +1,107 @@
 import AudioToolbox
 @testable import CodeLooper
 import Foundation
-import XCTest
+import Testing
 
-class SoundManagerTests: XCTestCase {
-    func testSystemSoundEnumCases() async throws {
+@Suite("SoundManager Tests")
+struct SoundManagerTests {
+    @Test("System sound enum cases")
+    func systemSoundEnumCases() async throws {
         // Test that SystemSound enum has the expected cases
         let userAlert = SystemSound.userAlert
         let namedSound = SystemSound.named("Boop.aiff")
 
         // Verify cases can be created
-        XCTAssertNotNil(userAlert)
-        XCTAssertNotNil(namedSound)
+        #expect(userAlert != nil)
+        #expect(namedSound != nil)
     }
 
-    func testSystemSoundNamedSoundCreation() async throws {
+    @Test("System sound named sound creation")
+    func systemSoundNamedSoundCreation() async throws {
         // Test creating named sounds with different file names
         let boopSound = SystemSound.named("Boop.aiff")
         let glassSound = SystemSound.named("Glass.aiff")
         let funkSound = SystemSound.named("Funk.aiff")
 
         // These should all be valid
-        XCTAssertNotNil(boopSound)
-        XCTAssertNotNil(glassSound)
-        XCTAssertNotNil(funkSound)
+        #expect(boopSound != nil)
+        #expect(glassSound != nil)
+        #expect(funkSound != nil)
     }
 
-    func testSystemSoundNamedSoundEmptyString() async throws {
+    @Test("System sound named sound with empty string")
+    func systemSoundNamedSoundEmptyString() async throws {
         // Test creating a named sound with empty string
         let emptySound = SystemSound.named("")
 
         // Should still create the enum case
-        XCTAssertNotNil(emptySound)
+        #expect(emptySound != nil)
     }
 
-    func testSystemSoundNamedSoundSpecialCharacters() async throws {
+    @Test("System sound named sound with special characters")
+    func systemSoundNamedSoundSpecialCharacters() async throws {
         // Test creating named sounds with special characters
         let soundWithSpaces = SystemSound.named("Sound With Spaces.aiff")
         let soundWithNumbers = SystemSound.named("Sound123.aiff")
         let soundWithSymbols = SystemSound.named("Sound-_().aiff")
 
-        XCTAssertNotNil(soundWithSpaces)
-        XCTAssertNotNil(soundWithNumbers)
-        XCTAssertNotNil(soundWithSymbols)
+        #expect(soundWithSpaces != nil)
+        #expect(soundWithNumbers != nil)
+        #expect(soundWithSymbols != nil)
     }
 
-    func testSoundEnginePlayUserAlertSound() async throws {
+    @Test("Sound engine play user alert sound")
+    func soundEnginePlayUserAlertSound() async throws {
         // Test that playing user alert sound doesn't crash
         // Note: This may not produce audible sound in tests but should not crash
         SoundEngine.play(.userAlert)
 
-        XCTAssertTrue(true) // If we get here, the call didn't crash
+        #expect(true) // If we get here, the call didn't crash
     }
 
-    func testSoundEnginePlayNamedSound() async throws {
+    @Test("Sound engine play named sound")
+    func soundEnginePlayNamedSound() async throws {
         // Test that playing a named sound doesn't crash
         SoundEngine.play(.named("Boop.aiff"))
         SoundEngine.play(.named("Glass.aiff"))
         SoundEngine.play(.named("Funk.aiff"))
 
-        XCTAssertTrue(true) // If we get here, the calls didn't crash
+        #expect(true) // If we get here, the calls didn't crash
     }
 
-    func testSoundEnginePlayInvalidNamedSound() async throws {
+    @Test("Sound engine play invalid named sound")
+    func soundEnginePlayInvalidNamedSound() async throws {
         // Test that playing an invalid named sound doesn't crash
         SoundEngine.play(.named("NonExistentSound.aiff"))
         SoundEngine.play(.named(""))
         SoundEngine.play(.named("invalid"))
 
-        XCTAssertTrue(true) // If we get here, the calls didn't crash
+        #expect(true) // If we get here, the calls didn't crash
     }
 
-    func testSoundEngineMultipleSoundPlayback() async throws {
+    @Test("Sound engine multiple sound playback")
+    func soundEngineMultipleSoundPlayback() async throws {
         // Test playing multiple sounds in sequence
         SoundEngine.play(.userAlert)
         SoundEngine.play(.named("Boop.aiff"))
         SoundEngine.play(.userAlert)
         SoundEngine.play(.named("Glass.aiff"))
 
-        XCTAssertTrue(true) // If we get here, multiple playback didn't crash
+        #expect(true) // If we get here, multiple playback didn't crash
     }
 
-    func testSoundEngineRapidSoundPlayback() async throws {
+    @Test("Sound engine rapid sound playback")
+    func soundEngineRapidSoundPlayback() async throws {
         // Test rapid sound playback doesn't cause issues
         for _ in 0 ..< 5 {
             SoundEngine.play(.named("Boop.aiff"))
         }
 
-        XCTAssertTrue(true) // If we get here, rapid playback didn't crash
+        #expect(true) // If we get here, rapid playback didn't crash
     }
 
-    func testSoundEngineConcurrentPlayback() async throws {
+    @Test("Sound engine concurrent playback")
+    func soundEngineConcurrentPlayback() async throws {
         // Test concurrent sound playback from multiple contexts
         await withTaskGroup(of: Void.self) { group in
             for i in 0 ..< 3 {
@@ -100,10 +111,11 @@ class SoundManagerTests: XCTestCase {
             }
         }
 
-        XCTAssertTrue(true) // If we get here, concurrent playback didn't crash
+        #expect(true) // If we get here, concurrent playback didn't crash
     }
 
-    func testSoundEnginePerformance() async throws {
+    @Test("Sound engine performance")
+    func soundEnginePerformance() async throws {
         // Test performance of sound playback
         let startTime = Date()
 
@@ -112,10 +124,11 @@ class SoundManagerTests: XCTestCase {
         }
 
         let elapsed = Date().timeIntervalSince(startTime)
-        XCTAssertLessThan(elapsed, 1.0) // Should complete quickly
+        #expect(elapsed < 1.0) // Should complete quickly
     }
 
-    func testSystemSoundIDValidation() async throws {
+    @Test("System sound ID validation")
+    func systemSoundIDValidation() async throws {
         // Test that system sound IDs are handled correctly
         // Note: Actual SystemSoundID values may vary by system
         SoundEngine.play(.userAlert)
@@ -138,10 +151,11 @@ class SoundManagerTests: XCTestCase {
             SoundEngine.play(.named(soundName))
         }
 
-        XCTAssertTrue(true) // If we get here, all sounds were handled without crash
+        #expect(true) // If we get here, all sounds were handled without crash
     }
 
-    func testSoundEngineFileExtensions() async throws {
+    @Test("Sound engine file extensions")
+    func soundEngineFileExtensions() async throws {
         // Test different file extensions
         SoundEngine.play(.named("Sound.aiff"))
         SoundEngine.play(.named("Sound.aif"))
@@ -149,10 +163,11 @@ class SoundManagerTests: XCTestCase {
         SoundEngine.play(.named("Sound.m4a"))
         SoundEngine.play(.named("Sound"))
 
-        XCTAssertTrue(true) // If we get here, different extensions didn't crash
+        #expect(true) // If we get here, different extensions didn't crash
     }
 
-    func testSoundEngineMemoryUsage() async throws {
+    @Test("Sound engine memory usage")
+    func soundEngineMemoryUsage() async throws {
         // Test that repeated sound playback doesn't leak memory
         var sounds: [SystemSound] = []
 
@@ -162,10 +177,10 @@ class SoundManagerTests: XCTestCase {
             SoundEngine.play(sound)
         }
 
-        XCTAssertEqual(sounds.count, 100)
+        #expect(sounds.count == 100)
 
         // Clear references
         sounds.removeAll()
-        XCTAssertTrue(sounds.isEmpty)
+        #expect(sounds.isEmpty)
     }
 }

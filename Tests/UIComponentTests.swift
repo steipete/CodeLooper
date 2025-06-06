@@ -2,12 +2,13 @@
 import Defaults
 import Foundation
 import SwiftUI
-import XCTest
+import Testing
 
-class UIComponentTests: XCTestCase {
+@Suite("UIComponentTests")
+struct UIComponentTests {
     // MARK: - SettingsCoordinator Tests
 
-    func testMainSettingsCoordinator() async throws {
+    @Test("Main settings coordinator") func mainSettingsCoordinator() {
         // Create mock dependencies
         let mockLoginItemManager = await createMockLoginItemManager()
         let mockUpdaterViewModel = await createMockUpdaterViewModel()
@@ -17,22 +18,22 @@ class UIComponentTests: XCTestCase {
         )
 
         // Test that coordinator is created without errors
-        XCTAssertTrue(true) // Coordinator exists
+        #expect(true) // Coordinator exists
     }
 
-    func testSettingsTabCases() async throws {
+    @Test("Settings tab cases") func settingsTabCases() {
         // Test all settings tabs exist
         let allTabs: [SettingsTab] = [.general, .supervision, .ruleSets, .externalMCPs, .ai, .advanced, .debug]
 
         for tab in allTabs {
-            XCTAssertEqual(tab.id.isEmpty, false)
-            XCTAssertEqual(tab.systemImageName.isEmpty, false)
+            #expect(tab.id.isEmpty == false)
+            #expect(tab.systemImageName.isEmpty == false)
         }
     }
 
     // MARK: - Model Tests
 
-    func testMonitoredInstanceInfo() async throws {
+    @Test("Monitored instance info") func monitoredInstanceInfo() {
         // Test MonitoredWindowInfo creation
         let windowInfo = await MonitoredWindowInfo(
             id: "test-window",
@@ -43,57 +44,57 @@ class UIComponentTests: XCTestCase {
         )
 
         await MainActor.run {
-            XCTAssertEqual(windowInfo.id, "test-window")
-            XCTAssertEqual(windowInfo.windowTitle, "Test Window")
-            XCTAssertEqual(windowInfo.isPaused, false)
+            #expect(windowInfo.id == "test-window")
+            #expect(windowInfo.windowTitle == "Test Window")
+            #expect(windowInfo.isPaused == false)
         }
     }
 
-    func testAIAnalysisStatus() async throws {
+    @Test("A i analysis status") func aIAnalysisStatus() {
         // Test AIAnalysisStatus enum
         let statuses: [AIAnalysisStatus] = [.working, .notWorking, .pending, .error, .off, .unknown]
 
         for status in statuses {
-            XCTAssertEqual(status.displayName.isEmpty, false)
+            #expect(status.displayName.isEmpty == false)
         }
     }
 
     // MARK: - Service Tests
 
-    func testLoginItemManager() async throws {
+    @Test("Login item manager") func testLoginItemManager() {
         let manager = await LoginItemManager.shared
-        XCTAssertTrue(true) // Manager exists
+        #expect(true) // Manager exists
 
         // Test that we can check login item status
         let isEnabled = await manager.startsAtLogin()
-        XCTAssertEqual(isEnabled, true || isEnabled == false) // Either state is valid
+        #expect(isEnabled == true || isEnabled == false) // Either state is valid
     }
 
-    func testDocumentPathTracking() async throws {
+    @Test("Document path tracking") func documentPathTracking() {
         let gitMonitor = await GitRepositoryMonitor()
         let tracker = await DocumentPathTracker(gitRepositoryMonitor: gitMonitor)
 
         // Test document path existence check
         let exists = await tracker.documentPathExists("/nonexistent/path")
-        XCTAssertEqual(exists, false)
+        #expect(exists == false)
 
         // Test with a real path
         let homeExists = await tracker.documentPathExists(NSHomeDirectory())
-        XCTAssertEqual(homeExists, true)
+        #expect(homeExists == true)
     }
 
     // MARK: - Diagnostics Tests
 
-    func testLoggingConfiguration() async throws {
+    @Test("Logging configuration") func loggingConfiguration() {
         // Test that logging is configured properly
         let logger = Logger(category: .ui)
 
         // Logger should exist and be usable
         logger.info("Test log message")
-        XCTAssertTrue(true) // If we get here, logging works
+        #expect(true) // If we get here, logging works
     }
 
-    func testLogCategories() async throws {
+    @Test("Log categories") func logCategories() {
         // Test all log categories exist
         let categories: [LogCategory] = [
             .general, .appDelegate, .appLifecycle, .supervision,
@@ -104,39 +105,39 @@ class UIComponentTests: XCTestCase {
 
         for category in categories {
             let logger = Logger(category: category)
-            XCTAssertTrue(true) // Logger exists
+            #expect(true) // Logger exists
         }
     }
 
     // MARK: - Configuration Tests
 
-    func testDefaultsKeys() async throws {
+    @Test("Defaults keys") func defaultsKeys() {
         // Test that defaults keys are defined
         _ = Defaults.Key<Bool>.isGlobalMonitoringEnabled
         _ = Defaults.Key<Bool>.hasCompletedOnboarding
         _ = Defaults.Key<Bool>.startAtLogin
-        XCTAssertTrue(true) // Keys exist
+        #expect(true) // Keys exist
     }
 
-    func testTimingConfiguration() async throws {
+    @Test("Timing configuration") func timingConfiguration() {
         // Test timing configuration values
-        XCTAssertGreaterThan(TimingConfiguration.monitoringCycleInterval, 0)
-        XCTAssertGreaterThan(TimingConfiguration.heartbeatCheckInterval, 0)
-        XCTAssertGreaterThan(TimingConfiguration.interventionActionDelay, 0)
+        #expect(TimingConfiguration.monitoringCycleInterval > 0)
+        #expect(TimingConfiguration.heartbeatCheckInterval > 0)
+        #expect(TimingConfiguration.interventionActionDelay > 0)
     }
 
     // MARK: - Notification Tests
 
-    func testNotificationNames() async throws {
+    @Test("Notification names") func notificationNames() {
         // Test that notification names are defined
         _ = Notification.Name.ruleCounterUpdated
         _ = Notification.Name.AIServiceConfigured
-        XCTAssertTrue(true) // Notification names exist
+        #expect(true) // Notification names exist
     }
 
     // MARK: - Error Handling Tests
 
-    func testAppErrorTypes() async throws {
+    @Test("App error types") func appErrorTypes() {
         // Test error types
         let errors: [AppError] = [
             .serviceInitializationFailed(service: "Test", underlying: nil),
@@ -146,39 +147,39 @@ class UIComponentTests: XCTestCase {
         ]
 
         for error in errors {
-            XCTAssertEqual(error.localizedDescription.isEmpty, false)
+            #expect(error.localizedDescription.isEmpty == false)
         }
     }
 
     // MARK: - View Tests
 
-    func testMainPopoverView() async throws {
+    @Test("Main popover view") func mainPopoverView() {
         // Test that main views can be instantiated
         await MainActor.run {
             let popoverView = MainPopoverView()
-            XCTAssertTrue(true) // View instantiated without crashes
+            #expect(true) // View instantiated without crashes
         }
     }
 
-    func testSettingsViews() async throws {
+    @Test("Settings views") func settingsViews() {
         // Test settings views
         await MainActor.run {
             let mockUpdaterViewModel = UpdaterViewModel(sparkleUpdaterManager: SparkleUpdaterManager())
             _ = GeneralSettingsView(updaterViewModel: mockUpdaterViewModel)
             _ = CursorSupervisionSettingsView()
             _ = AdvancedSettingsView()
-            XCTAssertTrue(true) // Views instantiated without crashes
+            #expect(true) // Views instantiated without crashes
         }
     }
 
     // MARK: - Icon Tests
 
-    func testStatusIconStates() async throws {
+    @Test("Status icon states") func statusIconStates() {
         // Test status icon states
         let states: [StatusIconState] = [.idle, .syncing, .error, .paused, .success]
 
         for state in states {
-            XCTAssertEqual(state.rawValue.isEmpty, false)
+            #expect(state.rawValue.isEmpty == false)
         }
     }
 

@@ -1,63 +1,64 @@
 @testable import CodeLooper
 import Foundation
 import SwiftUI
-import XCTest
+import Testing
 
-class PermissionsOnboardingTests: XCTestCase {
+@Suite("PermissionsOnboardingTests")
+struct PermissionsOnboardingTests {
     // MARK: - OnboardingCoordinator Tests
 
-    func testOnboardingFlowManagement() async throws {
+    @Test("Onboarding flow management") func onboardingFlowManagement() {
         let coordinator = await WelcomeWindowCoordinator.shared
 
         // Test that coordinator is created without errors
-        XCTAssertNotNil(coordinator)
+        #expect(coordinator != nil)
 
         // Test window management
         await coordinator.showWelcomeWindow()
         await coordinator.dismissWelcomeWindow()
 
         // Should handle window operations without crashes
-        XCTAssertTrue(true)
+        #expect(true)
     }
 
-    func testOnboardingCompletion() async throws {
+    @Test("Onboarding completion") func onboardingCompletion() {
         let loginItemManager = await LoginItemManager.shared
         let viewModel = await WelcomeViewModel(loginItemManager: loginItemManager)
 
         // Test initial state
         await MainActor.run {
-            XCTAssertEqual(viewModel.currentStep, .welcome)
+            #expect(viewModel.currentStep == .welcome)
         }
 
         // Test step progression
         await viewModel.goToNextStep()
 
         await MainActor.run {
-            XCTAssertNotEqual(viewModel.currentStep, .welcome)
+            #expect(viewModel.currentStep != .welcome)
         }
 
         // Should handle completion lifecycle
-        XCTAssertTrue(true)
+        #expect(true)
     }
 
-    func testOnboardingStepValidation() async throws {
+    @Test("Onboarding step validation") func onboardingStepValidation() {
         let loginItemManager = await LoginItemManager.shared
         let viewModel = await WelcomeViewModel(loginItemManager: loginItemManager)
 
         // Test step state
         await MainActor.run {
             let currentStep = viewModel.currentStep
-            XCTAssertTrue(currentStep == .welcome || currentStep == .accessibility || currentStep == .settings ||
+            #expect(currentStep == .welcome || currentStep == .accessibility || currentStep == .settings ||
                 currentStep == .complete)
         }
 
         // Should handle validation checks gracefully
-        XCTAssertTrue(true)
+        #expect(true)
     }
 
     // MARK: - Permission Step Tests
 
-    func testAccessibilityPermissionStep() async throws {
+    @Test("Accessibility permission step") func accessibilityPermissionStep() {
         let loginItemManager = await LoginItemManager.shared
         let viewModel = await WelcomeViewModel(loginItemManager: loginItemManager)
 
@@ -70,63 +71,63 @@ class PermissionsOnboardingTests: XCTestCase {
         let permissionsManager = await PermissionsManager()
         await MainActor.run {
             let hasPermission = permissionsManager.hasAccessibilityPermissions
-            XCTAssertEqual(hasPermission, true || hasPermission == false)
+            #expect(hasPermission == true || hasPermission == false)
         }
 
-        XCTAssertTrue(true)
+        #expect(true)
     }
 
-    func testScreenRecordingPermissionStep() async throws {
+    @Test("Screen recording permission step") func screenRecordingPermissionStep() {
         // Test that screen recording permissions can be checked
         let permissionsManager = await PermissionsManager()
         await MainActor.run {
             let hasPermission = permissionsManager.hasScreenRecordingPermissions
-            XCTAssertEqual(hasPermission, true || hasPermission == false)
+            #expect(hasPermission == true || hasPermission == false)
         }
 
         // Should handle permission check without crashes
-        XCTAssertTrue(true)
+        #expect(true)
     }
 
-    func testNotificationPermissionStep() async throws {
+    @Test("Notification permission step") func notificationPermissionStep() {
         // Test that notification permissions can be checked
         let permissionsManager = await PermissionsManager()
         await MainActor.run {
             let hasPermission = permissionsManager.hasNotificationPermissions
-            XCTAssertEqual(hasPermission, true || hasPermission == false)
+            #expect(hasPermission == true || hasPermission == false)
         }
 
         // Should handle notification permissions gracefully
-        XCTAssertTrue(true)
+        #expect(true)
     }
 
-    func testAutomationPermissionStep() async throws {
+    @Test("Automation permission step") func automationPermissionStep() {
         // Test that automation permissions can be checked
         let permissionsManager = await PermissionsManager()
         await MainActor.run {
             let hasPermission = permissionsManager.hasAutomationPermissions
-            XCTAssertEqual(hasPermission, true || hasPermission == false)
+            #expect(hasPermission == true || hasPermission == false)
         }
 
         // Should provide automation permission flow
-        XCTAssertTrue(true)
+        #expect(true)
     }
 
     // MARK: - UI Component Tests
 
-    func testWelcomeViewDisplay() async throws {
+    @Test("Welcome view display") func welcomeViewDisplay() {
         let loginItemManager = await LoginItemManager.shared
         let viewModel = await WelcomeViewModel(loginItemManager: loginItemManager)
         let welcomeView = WelcomeView(viewModel: viewModel)
 
         // Test that welcome view is created without errors
-        XCTAssertNotNil(welcomeView)
+        #expect(welcomeView != nil)
 
         // Since this is a SwiftUI view, we mainly test it doesn't crash on creation
-        XCTAssertTrue(true)
+        #expect(true)
     }
 
-    func testPermissionCardRendering() async throws {
+    @Test("Permission card rendering") func permissionCardRendering() {
         let permissionCard = await PermissionCard(
             icon: "lock",
             iconColor: .accentColor,
@@ -138,7 +139,7 @@ class PermissionsOnboardingTests: XCTestCase {
         )
 
         // Test that permission card is created without errors
-        XCTAssertNotNil(permissionCard)
+        #expect(permissionCard != nil)
 
         // Test with different icon
         let grantedCard = await PermissionCard(
@@ -151,46 +152,46 @@ class PermissionsOnboardingTests: XCTestCase {
             }
         )
 
-        XCTAssertNotNil(grantedCard)
+        #expect(grantedCard != nil)
     }
 
-    func testProgressBarDisplay() async throws {
+    @Test("Progress bar display") func progressBarDisplay() {
         let progressBar = ProgressBar(currentStep: .settings)
 
         // Test that progress bar is created without errors
-        XCTAssertNotNil(progressBar)
+        #expect(progressBar != nil)
 
         // Test different steps
         let welcomeProgress = ProgressBar(currentStep: .welcome)
         let completionProgress = ProgressBar(currentStep: .complete)
 
-        XCTAssertNotNil(welcomeProgress)
-        XCTAssertNotNil(completionProgress)
+        #expect(welcomeProgress != nil)
+        #expect(completionProgress != nil)
     }
 
     // MARK: - Welcome Flow Tests
 
-    func testWelcomeGuideFlow() async throws {
+    @Test("Welcome guide flow") func welcomeGuideFlow() {
         let welcomeGuide = await WelcomeGuideView {}
 
         // Test that welcome guide is created without errors
-        XCTAssertNotNil(welcomeGuide)
+        #expect(welcomeGuide != nil)
 
         // Should handle welcome flow without crashes
-        XCTAssertTrue(true)
+        #expect(true)
     }
 
-    func testWelcomeViewModelState() async throws {
+    @Test("Welcome view model state") func welcomeViewModelState() {
         let loginItemManager = await LoginItemManager.shared
         let viewModel = await WelcomeViewModel(loginItemManager: loginItemManager)
 
         // Test that view model is created without errors
-        XCTAssertNotNil(viewModel)
+        #expect(viewModel != nil)
 
         // Test state management
         await MainActor.run {
-            XCTAssertEqual(viewModel.currentStep, .welcome)
-            XCTAssertEqual(viewModel.startAtLogin, true || viewModel.startAtLogin == false)
+            #expect(viewModel.currentStep == .welcome)
+            #expect(viewModel.startAtLogin == true || viewModel.startAtLogin == false)
         }
 
         // Test state transitions
@@ -198,131 +199,131 @@ class PermissionsOnboardingTests: XCTestCase {
         await viewModel.goToPreviousStep()
 
         // Should manage state transitions gracefully
-        XCTAssertTrue(true)
+        #expect(true)
     }
 
     // MARK: - Permission Integration Tests
 
-    func testAllPermissionsIntegration() async throws {
+    @Test("All permissions integration") func allPermissionsIntegration() {
         let allPermissionsView = await AllPermissionsView()
 
         // Test that comprehensive permissions view is created
-        XCTAssertNotNil(allPermissionsView)
+        #expect(allPermissionsView != nil)
 
         // Should handle all permissions view creation
-        XCTAssertTrue(true)
+        #expect(true)
     }
 
-    func testPermissionsViewIntegration() async throws {
+    @Test("Permissions view integration") func permissionsViewIntegration() {
         let permissionsView = await PermissionsView()
 
         // Test that permissions view is created without errors
-        XCTAssertNotNil(permissionsView)
+        #expect(permissionsView != nil)
 
         // Should handle permissions monitoring gracefully
-        XCTAssertTrue(true)
+        #expect(true)
     }
 
     // MARK: - Coordinator Integration Tests
 
-    func testWelcomeWindowCoordination() async throws {
+    @Test("Welcome window coordination") func welcomeWindowCoordination() {
         let coordinator = await WelcomeWindowCoordinator.shared
 
         // Test window state management
         await MainActor.run {
             let hasWindow = coordinator.welcomeWindow != nil
-            XCTAssertEqual(hasWindow, true || hasWindow == false)
+            #expect(hasWindow == true || hasWindow == false)
         }
 
         // Test window operations
         await coordinator.showWelcomeWindow()
 
         await MainActor.run {
-            XCTAssertNotNil(coordinator.welcomeWindow)
+            #expect(coordinator.welcomeWindow != nil)
         }
 
         await coordinator.dismissWelcomeWindow()
 
         await MainActor.run {
-            XCTAssertEqual(coordinator.welcomeWindow, nil)
+            #expect(coordinator.welcomeWindow == nil)
         }
     }
 
-    func testOnboardingFullFlow() async throws {
+    @Test("Onboarding full flow") func onboardingFullFlow() {
         let loginItemManager = await LoginItemManager.shared
         let viewModel = await WelcomeViewModel(loginItemManager: loginItemManager)
 
         // Test complete flow
         await MainActor.run {
             // Start at welcome
-            XCTAssertEqual(viewModel.currentStep, .welcome)
+            #expect(viewModel.currentStep == .welcome)
 
             // Move through steps
             viewModel.goToNextStep() // -> accessibility
-            XCTAssertEqual(viewModel.currentStep, .accessibility)
+            #expect(viewModel.currentStep == .accessibility)
 
             viewModel.goToNextStep() // -> settings
-            XCTAssertEqual(viewModel.currentStep, .settings)
+            #expect(viewModel.currentStep == .settings)
 
             viewModel.goToNextStep() // -> complete
-            XCTAssertEqual(viewModel.currentStep, .complete)
+            #expect(viewModel.currentStep == .complete)
         }
 
         // Should complete full onboarding flow
-        XCTAssertTrue(true)
+        #expect(true)
     }
 
-    func testWelcomeStepView() async throws {
+    @Test("Welcome step view") func welcomeStepView() {
         let loginItemManager = await LoginItemManager.shared
         let viewModel = await WelcomeViewModel(loginItemManager: loginItemManager)
         let stepView = WelcomeStepView(viewModel: viewModel)
 
         // Test that step view is created without errors
-        XCTAssertNotNil(stepView)
+        #expect(stepView != nil)
     }
 
-    func testSettingsStepView() async throws {
+    @Test("Settings step view") func settingsStepView() {
         let loginItemManager = await LoginItemManager.shared
         let viewModel = await WelcomeViewModel(loginItemManager: loginItemManager)
         let stepView = SettingsStepView(viewModel: viewModel)
 
         // Test that step view is created without errors
-        XCTAssertNotNil(stepView)
+        #expect(stepView != nil)
     }
 
-    func testCompletionStepView() async throws {
+    @Test("Completion step view") func completionStepView() {
         let loginItemManager = await LoginItemManager.shared
         let viewModel = await WelcomeViewModel(loginItemManager: loginItemManager)
         let stepView = CompletionStepView(viewModel: viewModel)
 
         // Test that step view is created without errors
-        XCTAssertNotNil(stepView)
+        #expect(stepView != nil)
     }
 
-    func testWelcomeWindowView() async throws {
+    @Test("Welcome window view") func welcomeWindowView() {
         let loginItemManager = await LoginItemManager.shared
         let windowView = await WelcomeWindowView(loginItemManager: loginItemManager)
 
         // Test that window view is created without errors
-        XCTAssertNotNil(windowView)
+        #expect(windowView != nil)
     }
 
     // MARK: - Performance Tests
 
-    func testOnboardingPerformance() async throws {
+    @Test("Onboarding performance") func onboardingPerformance() {
         let loginItemManager = await LoginItemManager.shared
 
         // Test performance of creating multiple view models
         let startTime = Date()
 
         for _ in 0 ..< 10 {
-            let _ = await WelcomeViewModel(loginItemManager: loginItemManager)
+            _ = await WelcomeViewModel(loginItemManager: loginItemManager)
         }
 
         let endTime = Date()
         let duration = endTime.timeIntervalSince(startTime)
 
         // Should complete quickly (less than 0.5 seconds for 10 instances)
-        XCTAssertLessThan(duration, 0.5)
+        #expect(duration < 0.5)
     }
 }

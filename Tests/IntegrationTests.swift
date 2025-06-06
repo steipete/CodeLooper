@@ -3,9 +3,10 @@ import AXorcist
 @testable import CodeLooper
 import Defaults
 import Foundation
-import XCTest
+import Testing
 
-class IntegrationTests: XCTestCase {
+@Suite("IntegrationTests")
+struct IntegrationTests {
     // MARK: - Test Utilities
 
     /// Mock application for testing app lifecycle
@@ -42,51 +43,51 @@ class IntegrationTests: XCTestCase {
 
     // MARK: - Application Lifecycle Tests
 
-    func testFullApplicationLifecycle() async throws {
+    @Test("Full application lifecycle") func fullApplicationLifecycle() {
         let app = MockCodeLooperApp()
 
         // Initially not running
-        XCTAssertTrue(!app.isRunning)
-        XCTAssertNil(app.coordinator)
-        XCTAssertNil(app.windowManager)
+        #expect(!app.isRunning)
+        #expect(app.coordinator == nil)
+        #expect(app.windowManager == nil)
 
         // Start application
         await app.startup()
 
-        XCTAssertTrue(app.isRunning)
-        XCTAssertNotNil(app.coordinator)
-        XCTAssertNotNil(app.windowManager)
+        #expect(app.isRunning)
+        #expect(app.coordinator != nil)
+        #expect(app.windowManager != nil)
 
         // Shutdown application
         await app.shutdown()
 
-        XCTAssertTrue(!app.isRunning)
-        XCTAssertNil(app.coordinator)
-        XCTAssertNil(app.windowManager)
+        #expect(!app.isRunning)
+        #expect(app.coordinator == nil)
+        #expect(app.windowManager == nil)
     }
 
-    func testServiceCoordinatorInitialization() async throws {
+    @Test("Service coordinator initialization") func serviceCoordinatorInitialization() {
         let coordinator = await AppServiceCoordinator()
 
         // Verify core services are available
         await MainActor.run {
-            XCTAssertNotNil(coordinator.axorcist)
+            #expect(coordinator.axorcist != nil)
         }
 
         // Test service dependencies
         let monitor = await CursorMonitor.shared
         await MainActor.run {
-            XCTAssertNotNil(monitor.axorcist)
+            #expect(monitor.axorcist != nil)
 
             // Verify initial state
-            XCTAssertTrue(!monitor.isMonitoringActivePublic)
-            XCTAssertTrue(monitor.monitoredApps.isEmpty)
+            #expect(!monitor.isMonitoringActivePublic)
+            #expect(monitor.monitoredApps.isEmpty)
         }
     }
 
     // MARK: - Cursor Detection and Monitoring Tests
 
-    func testCursorDetectionAndMonitoring() async throws {
+    @Test("Cursor detection and monitoring") func cursorDetectionAndMonitoring() {
         let coordinator = await AppServiceCoordinator()
         let monitor = await CursorMonitor.shared
 
@@ -109,8 +110,8 @@ class IntegrationTests: XCTestCase {
 
         // Verify monitoring state
         await MainActor.run {
-            XCTAssertEqual(monitor.monitoredApps.count, 1)
-            XCTAssertEqual(monitor.monitoredApps.first?.displayName, "Cursor Test")
+            #expect(monitor.monitoredApps.count == 1)
+            #expect(monitor.monitoredApps.first?.displayName == "Cursor Test")
         }
 
         // Test monitoring lifecycle with apps
@@ -119,18 +120,18 @@ class IntegrationTests: XCTestCase {
         try await Task.sleep(for: .milliseconds(100))
 
         await MainActor.run {
-            XCTAssertTrue(monitor.isMonitoringActivePublic)
+            #expect(monitor.isMonitoringActivePublic)
         }
 
         // Cleanup
         await monitor.stopMonitoringLoop()
 
         await MainActor.run {
-            XCTAssertTrue(!monitor.isMonitoringActivePublic)
+            #expect(!monitor.isMonitoringActivePublic)
         }
     }
 
-    func testWindowManagementIntegration() async throws {
+    @Test("Window management integration") func windowManagementIntegration() {
         let coordinator = await AppServiceCoordinator()
         let monitor = await CursorMonitor.shared
 
@@ -165,22 +166,22 @@ class IntegrationTests: XCTestCase {
         // Verify window information is preserved
         await MainActor.run {
             let app = monitor.monitoredApps.first
-            XCTAssertEqual(app?.windows.count, 2)
-            XCTAssertEqual(app?.windows.first?.windowTitle, "Main Document.txt")
-            XCTAssertEqual(app?.windows.first?.documentPath, "/path/to/main.txt")
-            XCTAssertEqual(app?.windows.last?.windowTitle, "Settings")
-            XCTAssertNil(app?.windows.last?.documentPath)
+            #expect(app?.windows.count == 2)
+            #expect(app?.windows.first?.windowTitle == "Main Document.txt")
+            #expect(app?.windows.first?.documentPath == "/path/to/main.txt")
+            #expect(app?.windows.last?.windowTitle == "Settings")
+            #expect(app?.windows.last?.documentPath == nil)
         }
     }
 
     // MARK: - Intervention Flow Tests
 
-    func testInterventionFlow() async throws {
+    @Test("Intervention flow") func interventionFlow() {
         let coordinator = await AppServiceCoordinator()
         let monitor = await CursorMonitor.shared
         // Monitor has internal rule execution
         // Just verify monitor exists
-        XCTAssertNotNil(monitor)
+        #expect(monitor != nil)
 
         // Create app that might need intervention
         let appInfo = await MonitoredAppInfo(
@@ -204,26 +205,26 @@ class IntegrationTests: XCTestCase {
 
         // Verify intervention tracking
         await MainActor.run {
-            XCTAssertGreaterThanOrEqual(monitor.totalAutomaticInterventionsThisSessionDisplay, 0)
+            #expect(monitor.totalAutomaticInterventionsThisSessionDisplay >= 0)
         }
 
         // Cleanup
         await monitor.stopMonitoringLoop()
     }
 
-    func testRuleExecutionIntegration() async throws {
+    @Test("Rule execution integration") func ruleExecutionIntegration() {
         let ruleExecutor = await RuleExecutor()
 
         // Test that rule executor can run without errors
         await ruleExecutor.executeEnabledRules()
 
         // Verify no crashes occurred
-        XCTAssertTrue(true) // If we get here, no exception was thrown
+        #expect(true) // If we get here, no exception was thrown
     }
 
     // MARK: - Settings Persistence Tests
 
-    func testSettingsPersistenceIntegration() async throws {
+    @Test("Settings persistence integration") func settingsPersistenceIntegration() {
         // Save original values
         let originalMonitoring = await MainActor.run { Defaults[.isGlobalMonitoringEnabled] }
         let originalMaxInterventions = await MainActor.run { Defaults[.maxInterventionsBeforePause] }
@@ -248,8 +249,8 @@ class IntegrationTests: XCTestCase {
 
         // Verify settings are loaded
         await MainActor.run {
-            XCTAssertEqual(Defaults[.isGlobalMonitoringEnabled], true)
-            XCTAssertEqual(Defaults[.maxInterventionsBeforePause], 10)
+            #expect(Defaults[.isGlobalMonitoringEnabled] == true)
+            #expect(Defaults[.maxInterventionsBeforePause] == 10)
         }
 
         // Create second coordinator instance (simulating restart)
@@ -258,18 +259,18 @@ class IntegrationTests: XCTestCase {
 
         // Verify settings persistence
         await MainActor.run {
-            XCTAssertEqual(Defaults[.isGlobalMonitoringEnabled], true)
-            XCTAssertEqual(Defaults[.maxInterventionsBeforePause], 10)
+            #expect(Defaults[.isGlobalMonitoringEnabled] == true)
+            #expect(Defaults[.maxInterventionsBeforePause] == 10)
         }
 
         // Test settings changes
         await MainActor.run {
             Defaults[.isGlobalMonitoringEnabled] = false
-            XCTAssertEqual(Defaults[.isGlobalMonitoringEnabled], false)
+            #expect(Defaults[.isGlobalMonitoringEnabled] == false)
         }
     }
 
-    func testWindowSettingsPersistence() async throws {
+    @Test("Window settings persistence") func windowSettingsPersistence() {
         // Create window with settings
         var windowInfo = await MonitoredWindowInfo(
             id: "test-window",
@@ -293,8 +294,8 @@ class IntegrationTests: XCTestCase {
 
         // Verify settings were loaded
         await MainActor.run {
-            XCTAssertEqual(newWindowInfo.isLiveWatchingEnabled, true)
-            XCTAssertEqual(newWindowInfo.aiAnalysisIntervalSeconds, 30)
+            #expect(newWindowInfo.isLiveWatchingEnabled == true)
+            #expect(newWindowInfo.aiAnalysisIntervalSeconds == 30)
         }
 
         // Clean up test settings if needed
@@ -304,7 +305,7 @@ class IntegrationTests: XCTestCase {
 
     // MARK: - Permission Flow Tests
 
-    func testPermissionFlowIntegration() async throws {
+    @Test("Permission flow integration") func permissionFlowIntegration() {
         // Test accessibility permissions check
         let permissionsManager = await PermissionsManager()
 
@@ -313,18 +314,18 @@ class IntegrationTests: XCTestCase {
 
         // This should not crash regardless of permission state
         await MainActor.run {
-            XCTAssertEqual(
-                permissionsManager.hasAccessibilityPermissions,
-                true || permissionsManager.hasAccessibilityPermissions == false
+            #expect(
+                permissionsManager.hasAccessibilityPermissions == true || permissionsManager
+                    .hasAccessibilityPermissions == false
             )
         }
     }
 
-    func testAXorcistPermissionIntegration() async throws {
+    @Test("A xorcist permission integration") func aXorcistPermissionIntegration() {
         let axorcist = await AXorcist()
 
         // Test that AXorcist can be created without errors
-        XCTAssertNotNil(axorcist)
+        #expect(axorcist != nil)
 
         // Test basic ping functionality (should work even without full permissions)
         let pingCommand = """
@@ -339,21 +340,21 @@ class IntegrationTests: XCTestCase {
             // In a real test, we'd need to create proper command structures
             // For now, just verify AXorcist can be created
             let result = true
-            XCTAssertNotNil(result)
+            #expect(result != nil)
         } catch {
             // Ping might fail due to permissions, but should not crash
-            XCTAssertNotNil(error)
+            #expect(error != nil)
         }
     }
 
     // MARK: - Cross-Service Integration Tests
 
-    func testServiceCoordination() async throws {
+    @Test("Service coordination") func serviceCoordination() {
         let coordinator = await AppServiceCoordinator()
 
         // Test that all services can be accessed
         let cursorMonitor = await CursorMonitor.shared
-        XCTAssertNotNil(cursorMonitor)
+        #expect(cursorMonitor != nil)
 
         // Test service interaction
         let monitor = await CursorMonitor.shared
@@ -362,10 +363,10 @@ class IntegrationTests: XCTestCase {
         await monitor.performMonitoringCycle()
 
         // Verify no crashes occurred
-        XCTAssertTrue(true)
+        #expect(true)
     }
 
-    func testCrossServiceErrorHandling() async throws {
+    @Test("Cross service error handling") func crossServiceErrorHandling() {
         let coordinator = await AppServiceCoordinator()
         let monitor = await CursorMonitor.shared
 
@@ -386,6 +387,6 @@ class IntegrationTests: XCTestCase {
         // This should not crash
         await monitor.performMonitoringCycle()
 
-        XCTAssertTrue(true) // If we get here, error was handled gracefully
+        #expect(true) // If we get here, error was handled gracefully
     }
 }

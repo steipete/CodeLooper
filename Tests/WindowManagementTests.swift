@@ -3,9 +3,10 @@ import AppKit
 import Foundation
 import Testing
 
-@Test
+@Suite("Window Management Tests")
 @MainActor
-func windowManagerInitialization() async throws {
+struct WindowManagementTests {
+    @Test("Window manager initialization") func windowManagerInitialization() async throws {
     let mockLoginItemManager = createMockLoginItemManager()
     let mockSessionLogger = createMockSessionLogger()
     let mockDelegate = createMockWindowManagerDelegate()
@@ -20,9 +21,7 @@ func windowManagerInitialization() async throws {
     // Remove delegate check as it causes Sendable issues
 }
 
-@Test
-@MainActor
-func windowControllerManagement() async throws {
+    @Test("windowControllerManagement") @MainActor func windowControllerManagement() async throws {
     let mockLoginItemManager = createMockLoginItemManager()
     let mockSessionLogger = createMockSessionLogger()
     let mockDelegate = createMockWindowManagerDelegate()
@@ -38,9 +37,7 @@ func windowControllerManagement() async throws {
     #expect(initialWelcomeController == nil)
 }
 
-@Test
-@MainActor
-func windowManagerDelegate() async throws {
+    @Test("windowManagerDelegate") @MainActor func windowManagerDelegate() async throws {
     // Test delegate protocol methods exist and can be called
     let delegate = MockWindowManagerDelegate()
 
@@ -52,8 +49,7 @@ func windowManagerDelegate() async throws {
     #expect(wasCalled == true)
 }
 
-@Test
-func windowPositionManagerSingleton() async throws {
+    @Test("windowPositionManagerSingleton") func windowPositionManagerSingleton() async throws {
     let manager1 = await WindowPositionManager.shared
     let manager2 = await WindowPositionManager.shared
 
@@ -61,8 +57,7 @@ func windowPositionManagerSingleton() async throws {
     #expect(manager1 === manager2)
 }
 
-@Test
-func windowPositionOperations() async throws {
+    @Test("windowPositionOperations") func windowPositionOperations() async throws {
     let manager = await WindowPositionManager.shared
 
     // Test position and size calculations
@@ -89,8 +84,7 @@ func windowPositionOperations() async throws {
     #expect(resizedFrame.size.height == 400)
 }
 
-@Test
-func positionSavingAndRestoration() async throws {
+    @Test("positionSavingAndRestoration") func positionSavingAndRestoration() async throws {
     let manager = await WindowPositionManager.shared
 
     // Test saving and restoring positions using identifiers
@@ -107,8 +101,7 @@ func positionSavingAndRestoration() async throws {
     #expect(identifier.contains("test-window"))
 }
 
-@Test
-func appleScriptSupportMethods() async throws {
+    @Test("appleScriptSupportMethods") func appleScriptSupportMethods() async throws {
     let manager = await WindowPositionManager.shared
 
     // Test NSNumber to NSPoint conversion
@@ -128,8 +121,7 @@ func appleScriptSupportMethods() async throws {
     #expect(size.height == 600.0)
 }
 
-@Test
-func userDefaultsSerialization() async throws {
+    @Test("userDefaultsSerialization") func userDefaultsSerialization() async throws {
     // Test NSRect to Dictionary conversion (as used in saveToDisk)
     let testRect = NSRect(x: 100, y: 150, width: 400, height: 300)
 
@@ -161,9 +153,7 @@ func userDefaultsSerialization() async throws {
     }
 }
 
-@Test
-@MainActor
-func monitoredWindowInfo() async throws {
+    @Test("monitoredWindowInfo") @MainActor func monitoredWindowInfo() async throws {
     // Test MonitoredWindowInfo creation and properties
     let windowId = "test-window-123"
     let windowTitle = "Test Window"
@@ -184,8 +174,7 @@ func monitoredWindowInfo() async throws {
     #expect(windowInfo.isPaused == false)
 }
 
-@Test
-func windowTitleParsing() async throws {
+    @Test("windowTitleParsing") func windowTitleParsing() async throws {
     // Test various window title scenarios
     let windowTitles = [
         "MyApp - Document.txt",
@@ -208,8 +197,7 @@ func windowTitleParsing() async throws {
     }
 }
 
-@Test
-func documentPathProcessing() async throws {
+    @Test("documentPathProcessing") func documentPathProcessing() async throws {
     // Test various document path formats
     let testPaths = [
         "file:///Users/test/Documents/file.txt",
@@ -231,8 +219,7 @@ func documentPathProcessing() async throws {
     }
 }
 
-@Test
-func displayTextExtraction() async throws {
+    @Test("displayTextExtraction") func displayTextExtraction() async throws {
     // Test the attribute keys used for text extraction
     let primaryAttributeKeys = [
         kAXValueAttribute as String,
@@ -279,8 +266,7 @@ func displayTextExtraction() async throws {
     }
 }
 
-@Test
-func asyncOperations() async throws {
+    @Test("asyncOperations") func asyncOperations() async throws {
     // Test concurrent window processing simulation
     let appCount = 5
     var results: [(Int, String)] = []
@@ -311,8 +297,7 @@ func asyncOperations() async throws {
     }
 }
 
-@Test
-func frameCalculations() async throws {
+    @Test("frameCalculations") func frameCalculations() async throws {
     // Test various frame calculation scenarios
     let originalFrame = NSRect(x: 100, y: 100, width: 400, height: 300)
 
@@ -342,8 +327,7 @@ func frameCalculations() async throws {
     #expect(newFrame.size.height == 500)
 }
 
-@Test
-func windowManagementThreadSafety() async throws {
+    @Test("windowManagementThreadSafety") func windowManagementThreadSafety() async throws {
     // Test concurrent access to window operations
     let windowPositionManager = await WindowPositionManager.shared
 
@@ -368,8 +352,7 @@ func windowManagementThreadSafety() async throws {
     }
 }
 
-@Test
-func errorHandling() async throws {
+    @Test("errorHandling") func errorHandling() async throws {
     // Test graceful handling of nil values
     let manager = await WindowPositionManager.shared
 

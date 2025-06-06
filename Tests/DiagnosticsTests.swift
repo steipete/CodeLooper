@@ -1,74 +1,82 @@
 @testable import Diagnostics
 import Foundation
 import Logging
-import XCTest
+import Testing
 
-class DiagnosticsTests: XCTestCase {
-    func testLoggerInitialization() async throws {
+@Suite("Diagnostics Tests")
+struct DiagnosticsTests {
+    @Test("Logger initialization")
+    func loggerInitialization() async throws {
         let logger = Logger(category: .general)
 
         // Verify logger is properly initialized
-        XCTAssertEqual(logger.logLevel, LoggingSystemSetup.defaultBootstrapLogLevel)
+        #expect(logger.logLevel == LoggingSystemSetup.defaultBootstrapLogLevel)
     }
 
-    func testBootstrapDifferentDestinations() async throws {
+    @Test("Bootstrap different destinations")
+    func bootstrapDifferentDestinations() async throws {
         // Test console destination
         await LoggingSystemSetup.shared.bootstrap(destination: .console, minLevel: .info)
 
         let logger = Logger(category: .diagnostics)
         // Note: actual log level may vary depending on bootstrap configuration
-        XCTAssertTrue(logger.logLevel == .info || logger.logLevel == .debug)
+        #expect(logger.logLevel == .info || logger.logLevel == .debug)
     }
 
-    func testLogLevelManagement() async throws {
+    @Test("Log level management")
+    func logLevelManagement() async throws {
         var logger = Logger(category: .general)
 
         // Test setting different log levels
         logger.logLevel = .warning
-        XCTAssertEqual(logger.logLevel, .warning)
+        #expect(logger.logLevel == .warning)
 
         logger.logLevel = .debug
-        XCTAssertEqual(logger.logLevel, .debug)
+        #expect(logger.logLevel == .debug)
 
         logger.logLevel = .error
-        XCTAssertEqual(logger.logLevel, .error)
+        #expect(logger.logLevel == .error)
     }
 
-    func testCategoryBasedLoggerCreation() async throws {
+    @Test("Category-based logger creation")
+    func categoryBasedLoggerCreation() async throws {
         // Test all categories can be used to create loggers
         for category in LogCategory.allCases {
             let logger = Logger(category: category)
-            XCTAssertNotNil(logger.logLevel)
+            #expect(logger.logLevel != nil)
         }
     }
 
-    func testCustomLabelLoggerCreation() async throws {
+    @Test("Custom label logger creation")
+    func customLabelLoggerCreation() async throws {
         let customLabel = "custom.test.logger"
         let logger = Logger(label: customLabel, category: .general)
 
         // Verify logger is created with custom label
-        XCTAssertNotNil(logger.logLevel)
+        #expect(logger.logLevel != nil)
     }
 
-    func testLogCategoryProperties() async throws {
+    @Test("Log category properties")
+    func logCategoryProperties() async throws {
         // Test display names
-        XCTAssertEqual(LogCategory.general.displayName, "General")
-        XCTAssertEqual(LogCategory.app.displayName, "App")
-        XCTAssertEqual(LogCategory.cursorMonitor.displayName, "CursorMonitor")
+        #expect(LogCategory.general.displayName == "General")
+        #expect(LogCategory.app.displayName == "App")
+        #expect(LogCategory.cursorMonitor.displayName == "CursorMonitor")
 
         // Test verbose-only categories
-        XCTAssertEqual(LogCategory.diagnostics.isVerboseOnly, true)
-        XCTAssertEqual(LogCategory.lifecycle.isVerboseOnly, true)
-        XCTAssertEqual(LogCategory.axorcist.isVerboseOnly, true)
-        XCTAssertEqual(LogCategory.accessibility.isVerboseOnly, true)
+        #expect(LogCategory.diagnostics.isVerboseOnly == true)
+        #expect(LogCategory.lifecycle.isVerboseOnly == true)
+        #expect(LogCategory.axorcist.isVerboseOnly == true)
+        #expect(LogCategory.accessibility.isVerboseOnly == true)
 
         // Test non-verbose categories
-        XCTAssertEqual(LogCategory.general.isVerboseOnly, false)
-        XCTAssertEqual(LogCategory.app.isVerboseOnly, false)
-        XCTAssertEqual(LogCategory.settings.isVerboseOnly, false)
+        #expect(LogCategory.general.isVerboseOnly == false)
+        #expect(LogCategory.app.isVerboseOnly == false)
+        #expect(LogCategory.settings.isVerboseOnly == false)
     }
 
-    func testAllLogLevelsWork() async throws {
+    @Test("All log levels work")
+    func allLogLevelsWork() async throws {
         var logger = Logger(category: .general)
         logger.logLevel = .trace
 
@@ -81,25 +89,27 @@ class DiagnosticsTests: XCTestCase {
         logger.error("Error message")
         logger.critical("Critical message")
 
-        XCTAssertTrue(true) // If we get here, all log levels work
+        #expect(true) // If we get here, all log levels work
     }
 
-    func testMetadataHandling() async throws {
+    @Test("Metadata handling")
+    func metadataHandling() async throws {
         var logger = Logger(category: .general)
 
         // Test metadata setting and getting
         logger[metadataKey: "test_key"] = "test_value"
-        XCTAssertNotNil(logger[metadataKey: "test_key"])
+        #expect(logger[metadataKey: "test_key"] != nil)
 
         logger[metadataKey: "another_key"] = .string("another_value")
-        XCTAssertNotNil(logger[metadataKey: "another_key"])
+        #expect(logger[metadataKey: "another_key"] != nil)
 
         // Test clearing metadata
         logger[metadataKey: "test_key"] = nil
-        XCTAssertNil(logger[metadataKey: "test_key"])
+        #expect(logger[metadataKey: "test_key"] == nil)
     }
 
-    func testLogMessageWithMetadata() async throws {
+    @Test("Log message with metadata")
+    func logMessageWithMetadata() async throws {
         var logger = Logger(category: .general)
         logger.logLevel = .debug
 
@@ -114,10 +124,11 @@ class DiagnosticsTests: XCTestCase {
         logger.info("Info with metadata", metadata: testMetadata)
         logger.error("Error with metadata", metadata: testMetadata)
 
-        XCTAssertTrue(true) // If we get here, metadata logging works
+        #expect(true) // If we get here, metadata logging works
     }
 
-    func testBootstrapMultipleTimesIgnored() async throws {
+    @Test("Bootstrap multiple times ignored")
+    func bootstrapMultipleTimesIgnored() async throws {
         // Bootstrap multiple times with different configurations
         await LoggingSystemSetup.shared.bootstrap(destination: .console, minLevel: .debug)
         await LoggingSystemSetup.shared.bootstrap(destination: .osLog, minLevel: .error) // Should be ignored
@@ -125,10 +136,11 @@ class DiagnosticsTests: XCTestCase {
         // This test verifies that multiple bootstrap calls don't crash
         // The actual verification that subsequent calls are ignored would require
         // capturing console output, which is complex in unit tests
-        XCTAssertTrue(true)
+        #expect(true)
     }
 
-    func testLoggerPerformance() async throws {
+    @Test("Logger performance")
+    func loggerPerformance() async throws {
         var logger = Logger(category: .general)
         logger.logLevel = .error // High level to minimize actual logging overhead
 
@@ -142,16 +154,18 @@ class DiagnosticsTests: XCTestCase {
         let elapsed = Date().timeIntervalSince(startTime)
 
         // Should complete in reasonable time (less than 1 second for 1000 debug messages)
-        XCTAssertLessThan(elapsed, 1.0)
+        #expect(elapsed < 1.0)
     }
 
-    func testDefaultLoggerAvailability() async throws {
+    @Test("Default logger availability")
+    func defaultLoggerAvailability() async throws {
         // Test that default logger is available and functional
         defaultLogger.info("Default logger test")
-        XCTAssertNotNil(defaultLogger.logLevel)
+        #expect(defaultLogger.logLevel != nil)
     }
 
-    func testSourceLocationInformation() async throws {
+    @Test("Source location information")
+    func sourceLocationInformation() async throws {
         let logger = Logger(category: .general)
 
         // Test that logs can include source information
@@ -160,10 +174,11 @@ class DiagnosticsTests: XCTestCase {
 
         // The actual verification of source info would require a custom LogHandler
         // For now, we verify that the API accepts the calls
-        XCTAssertTrue(true)
+        #expect(true)
     }
 
-    func testLogLevelFiltering() async throws {
+    @Test("Log level filtering")
+    func logLevelFiltering() async throws {
         var logger = Logger(category: .general)
 
         // Set high log level to filter out lower level messages
@@ -180,10 +195,11 @@ class DiagnosticsTests: XCTestCase {
         logger.error("Error message")
         logger.critical("Critical message")
 
-        XCTAssertTrue(true) // If we get here, filtering works correctly
+        #expect(true) // If we get here, filtering works correctly
     }
 
-    func testDiagnosticsThreadSafety() async throws {
+    @Test("Diagnostics thread safety")
+    func diagnosticsThreadSafety() async throws {
         let logger = Logger(category: .general)
 
         // Test concurrent logging from multiple tasks
@@ -195,6 +211,6 @@ class DiagnosticsTests: XCTestCase {
             }
         }
 
-        XCTAssertTrue(true) // If we get here, concurrent logging didn't crash
+        #expect(true) // If we get here, concurrent logging didn't crash
     }
 }

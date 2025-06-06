@@ -1,84 +1,85 @@
 @testable import CodeLooper
 import Foundation
-import XCTest
+import Testing
 
-class MCPIntegrationTests: XCTestCase {
+@Suite("MCPIntegrationTests")
+struct MCPIntegrationTests {
     // MARK: - MCPConfigManager Tests
 
-    func testMCPConfigManagerSingleton() async throws {
+    @Test("M c p config manager singleton") func mCPConfigManagerSingleton() {
         await MainActor.run {
             let configService = MCPConfigManager.shared
             // Test that singleton is created without errors
-            XCTAssertTrue(true) // Singleton exists
+            #expect(true) // Singleton exists
         }
     }
 
-    func testMCPConfigurationState() async throws {
+    @Test("M c p configuration state") func mCPConfigurationState() {
         await MainActor.run {
             let configService = MCPConfigManager.shared
 
             // Test reading MCP configuration
             let config = configService.readMCPConfig()
             // Config can be nil if file doesn't exist, which is fine
-            XCTAssertTrue(config != nil || config == nil)
+            #expect(config != nil || config == nil)
         }
     }
 
     // MARK: - MCPVersionService Tests
 
-    func testMCPVersionSingleton() async throws {
+    @Test("M c p version singleton") func mCPVersionSingleton() {
         await MainActor.run {
             let versionService = MCPVersionService.shared
             // Test that singleton is created without errors
-            XCTAssertTrue(true) // Singleton exists
+            #expect(true) // Singleton exists
         }
     }
 
-    func testMCPVersionChecking() async throws {
+    @Test("M c p version checking") func mCPVersionChecking() {
         await MainActor.run {
             let versionService = MCPVersionService.shared
 
             // Test version checking for an MCP extension
             let version = versionService.getLatestVersion(for: .peekaboo)
-            XCTAssertTrue(!version.isEmpty)
+            #expect(!version.isEmpty)
 
             // Check another extension
             let claudeCodeVersion = versionService.getLatestVersion(for: .claudeCode)
-            XCTAssertTrue(!claudeCodeVersion.isEmpty)
+            #expect(!claudeCodeVersion.isEmpty)
         }
     }
 
-    func testMCPInstalledVersions() async throws {
+    @Test("M c p installed versions") func mCPInstalledVersions() {
         await MainActor.run {
             let versionService = MCPVersionService.shared
 
             // Test getting installed version (may return cached or default)
             let installedVersion = versionService.getInstalledVersionCached(for: .terminator)
-            XCTAssertTrue(!installedVersion.isEmpty)
+            #expect(!installedVersion.isEmpty)
         }
     }
 
-    func testMCPAllExtensions() async throws {
+    @Test("M c p all extensions") func mCPAllExtensions() {
         await MainActor.run {
             let versionService = MCPVersionService.shared
 
             // Test all extension types
             for ext in MCPExtensionType.allCases {
                 let version = versionService.getLatestVersion(for: ext)
-                XCTAssertTrue(!version.isEmpty)
+                #expect(!version.isEmpty)
             }
         }
     }
 
     // MARK: - Integration Tests
 
-    func testMCPServiceIntegration() async throws {
+    @Test("M c p service integration") func mCPServiceIntegration() {
         await MainActor.run {
             let configService = MCPConfigManager.shared
             let versionService = MCPVersionService.shared
 
             // Test that both services can work together
-            XCTAssertTrue(true) // Both singletons exist
+            #expect(true) // Both singletons exist
 
             // Test reading config
             _ = configService.readMCPConfig()
@@ -87,28 +88,28 @@ class MCPIntegrationTests: XCTestCase {
             _ = versionService.getLatestVersion(for: .automator)
 
             // This tests that the services don't interfere with each other
-            XCTAssertTrue(true)
+            #expect(true)
         }
     }
 
-    func testMCPExtensionTypes() async throws {
+    @Test("M c p extension types") func mCPExtensionTypes() {
         // Test MCPExtensionType enum
         let allExtensions = MCPExtensionType.allCases
 
-        XCTAssertGreaterThan(allExtensions.count, 0)
-        XCTAssertTrue(allExtensions.contains(.peekaboo))
-        XCTAssertTrue(allExtensions.contains(.terminator))
-        XCTAssertTrue(allExtensions.contains(.claudeCode))
-        XCTAssertTrue(allExtensions.contains(.conduit))
-        XCTAssertTrue(allExtensions.contains(.automator))
+        #expect(allExtensions.count > 0)
+        #expect(allExtensions.contains(.peekaboo))
+        #expect(allExtensions.contains(.terminator))
+        #expect(allExtensions.contains(.claudeCode))
+        #expect(allExtensions.contains(.conduit))
+        #expect(allExtensions.contains(.automator))
 
         // Test identifiable conformance
         for ext in allExtensions {
-            XCTAssertEqual(ext.id, ext.rawValue)
+            #expect(ext.id == ext.rawValue)
         }
     }
 
-    func testMCPVersionServiceProperties() async throws {
+    @Test("M c p version service properties") func mCPVersionServiceProperties() {
         await MainActor.run {
             let versionService = MCPVersionService.shared
 
@@ -119,7 +120,7 @@ class MCPIntegrationTests: XCTestCase {
             _ = versionService.lastCheckDate
             _ = versionService.checkError
 
-            XCTAssertTrue(true) // Properties are accessible
+            #expect(true) // Properties are accessible
         }
     }
 }

@@ -1,69 +1,75 @@
 @testable import CodeLooper
 import Combine
 import Foundation
-import XCTest
+import Testing
 
-class InterventionEngineTests: XCTestCase {
-    func testInterventionTypeEnumCases() async throws {
+@Suite("InterventionEngine Tests")
+struct InterventionEngineTests {
+    @Test("Intervention type enum cases")
+    func interventionTypeEnumCases() async throws {
         // Test that all intervention types are available
         let allCases = CursorInterventionEngine.InterventionType.allCases
-        XCTAssertGreaterThan(allCases.count, 0)
+        #expect(allCases.count > 0)
 
         // Test specific expected cases
-        XCTAssertTrue(allCases.contains(.unknown))
-        XCTAssertTrue(allCases.contains(.noInterventionNeeded))
-        XCTAssertTrue(allCases.contains(.positiveWorkingState))
-        XCTAssertTrue(allCases.contains(.connectionIssue))
-        XCTAssertTrue(allCases.contains(.generalError))
-        XCTAssertTrue(allCases.contains(.unrecoverableError))
-        XCTAssertTrue(allCases.contains(.automatedRecovery))
-        XCTAssertTrue(allCases.contains(.interventionLimitReached))
-        XCTAssertTrue(allCases.contains(.processNotRunning))
+        #expect(allCases.contains(.unknown))
+        #expect(allCases.contains(.noInterventionNeeded))
+        #expect(allCases.contains(.positiveWorkingState))
+        #expect(allCases.contains(.connectionIssue))
+        #expect(allCases.contains(.generalError))
+        #expect(allCases.contains(.unrecoverableError))
+        #expect(allCases.contains(.automatedRecovery))
+        #expect(allCases.contains(.interventionLimitReached))
+        #expect(allCases.contains(.processNotRunning))
     }
 
-    func testInterventionTypeStringValues() async throws {
+    @Test("Intervention type string values")
+    func interventionTypeStringValues() async throws {
         // Test that intervention types have proper string representations
-        XCTAssertEqual(CursorInterventionEngine.InterventionType.unknown.rawValue, "Unknown")
-        XCTAssertEqual(
-            CursorInterventionEngine.InterventionType.noInterventionNeeded.rawValue,
-            "No Intervention Needed"
+        #expect(CursorInterventionEngine.InterventionType.unknown.rawValue == "Unknown")
+        #expect(
+            CursorInterventionEngine.InterventionType.noInterventionNeeded.rawValue ==
+                "No Intervention Needed"
         )
-        XCTAssertEqual(
-            CursorInterventionEngine.InterventionType.positiveWorkingState.rawValue,
-            "Positive Working State"
+        #expect(
+            CursorInterventionEngine.InterventionType.positiveWorkingState.rawValue ==
+                "Positive Working State"
         )
-        XCTAssertEqual(CursorInterventionEngine.InterventionType.connectionIssue.rawValue, "Connection Issue")
-        XCTAssertEqual(CursorInterventionEngine.InterventionType.generalError.rawValue, "General Error")
-        XCTAssertEqual(
-            CursorInterventionEngine.InterventionType.automatedRecovery.rawValue,
-            "Automated Recovery Attempt"
+        #expect(CursorInterventionEngine.InterventionType.connectionIssue.rawValue == "Connection Issue")
+        #expect(CursorInterventionEngine.InterventionType.generalError.rawValue == "General Error")
+        #expect(
+            CursorInterventionEngine.InterventionType.automatedRecovery.rawValue ==
+                "Automated Recovery Attempt"
         )
     }
 
-    func testInterventionTypeCodable() async throws {
+    @Test("Intervention type codable support")
+    func interventionTypeCodable() async throws {
         let interventionType = CursorInterventionEngine.InterventionType.connectionIssue
 
         // Test encoding
         let encoder = JSONEncoder()
         let data = try encoder.encode(interventionType)
-        XCTAssertGreaterThan(data.count, 0)
+        #expect(data.count > 0)
 
         // Test decoding
         let decoder = JSONDecoder()
         let decodedType = try decoder.decode(CursorInterventionEngine.InterventionType.self, from: data)
-        XCTAssertEqual(decodedType, interventionType)
+        #expect(decodedType == interventionType)
     }
 
-    func testInterventionTypeEquality() async throws {
+    @Test("Intervention type equality")
+    func interventionTypeEquality() async throws {
         let type1 = CursorInterventionEngine.InterventionType.connectionIssue
         let type2 = CursorInterventionEngine.InterventionType.connectionIssue
         let type3 = CursorInterventionEngine.InterventionType.generalError
 
-        XCTAssertEqual(type1, type2)
-        XCTAssertNotEqual(type1, type3)
+        #expect(type1 == type2)
+        #expect(type1 != type3)
     }
 
-    func testInterventionTypeCaseIteration() async throws {
+    @Test("Intervention type case iteration")
+    func interventionTypeCaseIteration() async throws {
         var foundUnknown = false
         var foundConnectionIssue = false
         var foundGeneralError = false
@@ -81,12 +87,13 @@ class InterventionEngineTests: XCTestCase {
             }
         }
 
-        XCTAssertTrue(foundUnknown)
-        XCTAssertTrue(foundConnectionIssue)
-        XCTAssertTrue(foundGeneralError)
+        #expect(foundUnknown)
+        #expect(foundConnectionIssue)
+        #expect(foundGeneralError)
     }
 
-    func testInterventionTypeClassification() async throws {
+    @Test("Intervention type classification")
+    func interventionTypeClassification() async throws {
         // Test that intervention types can be classified into groups
         let errorTypes: Set<CursorInterventionEngine.InterventionType> = [
             .connectionIssue,
@@ -100,16 +107,17 @@ class InterventionEngineTests: XCTestCase {
             .sidebarActivityDetected,
         ]
 
-        XCTAssertTrue(errorTypes.contains(.connectionIssue))
-        XCTAssertTrue(errorTypes.contains(.generalError))
-        XCTAssertTrue(!errorTypes.contains(.positiveWorkingState))
+        #expect(errorTypes.contains(.connectionIssue))
+        #expect(errorTypes.contains(.generalError))
+        #expect(!errorTypes.contains(.positiveWorkingState))
 
-        XCTAssertTrue(positiveTypes.contains(.positiveWorkingState))
-        XCTAssertTrue(positiveTypes.contains(.noInterventionNeeded))
-        XCTAssertTrue(!positiveTypes.contains(.connectionIssue))
+        #expect(positiveTypes.contains(.positiveWorkingState))
+        #expect(positiveTypes.contains(.noInterventionNeeded))
+        #expect(!positiveTypes.contains(.connectionIssue))
     }
 
-    func testInterventionTypePriorityClassification() async throws {
+    @Test("Intervention type priority classification")
+    func interventionTypePriorityClassification() async throws {
         // Test intervention types that would require immediate action
         let highPriorityTypes: Set<CursorInterventionEngine.InterventionType> = [
             .unrecoverableError,
@@ -124,16 +132,17 @@ class InterventionEngineTests: XCTestCase {
             .sidebarActivityDetected,
         ]
 
-        XCTAssertGreaterThan(highPriorityTypes.count, 0)
-        XCTAssertGreaterThan(lowPriorityTypes.count, 0)
+        #expect(highPriorityTypes.count > 0)
+        #expect(lowPriorityTypes.count > 0)
 
         // Ensure they don't overlap
         for highPriority in highPriorityTypes {
-            XCTAssertTrue(!lowPriorityTypes.contains(highPriority))
+            #expect(!lowPriorityTypes.contains(highPriority))
         }
     }
 
-    func testInterventionTypeStateManagement() async throws {
+    @Test("Intervention type state management")
+    func interventionTypeStateManagement() async throws {
         // Test states that indicate system health
         let healthyStates: Set<CursorInterventionEngine.InterventionType> = [
             .positiveWorkingState,
@@ -157,25 +166,26 @@ class InterventionEngineTests: XCTestCase {
         ]
 
         // Verify categorization
-        XCTAssertTrue(healthyStates.contains(.positiveWorkingState))
-        XCTAssertTrue(problemStates.contains(.connectionIssue))
-        XCTAssertTrue(controlStates.contains(.manualPause))
+        #expect(healthyStates.contains(.positiveWorkingState))
+        #expect(problemStates.contains(.connectionIssue))
+        #expect(controlStates.contains(.manualPause))
 
         // Ensure no overlap between healthy and problem states
         for healthy in healthyStates {
-            XCTAssertTrue(!problemStates.contains(healthy))
+            #expect(!problemStates.contains(healthy))
         }
     }
 
-    func testInterventionTypeRecoveryStateTransitions() async throws {
+    @Test("Intervention type recovery state transitions")
+    func interventionTypeRecoveryStateTransitions() async throws {
         // Test recovery-related states
         let recoveryStates: Set<CursorInterventionEngine.InterventionType> = [
             .automatedRecovery,
             .awaitingAction,
         ]
 
-        XCTAssertTrue(recoveryStates.contains(.automatedRecovery))
-        XCTAssertTrue(recoveryStates.contains(.awaitingAction))
+        #expect(recoveryStates.contains(.automatedRecovery))
+        #expect(recoveryStates.contains(.awaitingAction))
 
         // These states should be distinct from final states
         let finalStates: Set<CursorInterventionEngine.InterventionType> = [
@@ -185,11 +195,12 @@ class InterventionEngineTests: XCTestCase {
         ]
 
         for recovery in recoveryStates {
-            XCTAssertTrue(!finalStates.contains(recovery))
+            #expect(!finalStates.contains(recovery))
         }
     }
 
-    func testInterventionTypeSerializationConsistency() async throws {
+    @Test("Intervention type serialization consistency")
+    func interventionTypeSerializationConsistency() async throws {
         // Test that all intervention types can be serialized and deserialized
         let encoder = JSONEncoder()
         let decoder = JSONDecoder()
@@ -197,28 +208,30 @@ class InterventionEngineTests: XCTestCase {
         for interventionType in CursorInterventionEngine.InterventionType.allCases {
             let data = try encoder.encode(interventionType)
             let decoded = try decoder.decode(CursorInterventionEngine.InterventionType.self, from: data)
-            XCTAssertEqual(decoded, interventionType)
-            XCTAssertEqual(decoded.rawValue, interventionType.rawValue)
+            #expect(decoded == interventionType)
+            #expect(decoded.rawValue == interventionType.rawValue)
         }
     }
 
-    func testInterventionTypeStringRepresentationQuality() async throws {
+    @Test("Intervention type string representation quality")
+    func interventionTypeStringRepresentationQuality() async throws {
         // Test that all intervention types have meaningful string representations
         for interventionType in CursorInterventionEngine.InterventionType.allCases {
             let rawValue = interventionType.rawValue
 
             // Should not be empty
-            XCTAssertTrue(!rawValue.isEmpty)
+            #expect(!rawValue.isEmpty)
 
             // Should not be just whitespace
-            XCTAssertTrue(!rawValue.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+            #expect(!rawValue.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
 
             // Should be readable (contain letters)
-            XCTAssertNotNil(rawValue.rangeOfCharacter(from: .letters))
+            #expect(rawValue.rangeOfCharacter(from: .letters) != nil)
         }
     }
 
-    func testInterventionTypeTypeSafety() async throws {
+    @Test("Intervention type type safety")
+    func interventionTypeTypeSafety() async throws {
         // Test that intervention types work with type-safe collections
         var typeSet: Set<CursorInterventionEngine.InterventionType> = []
         var typeArray: [CursorInterventionEngine.InterventionType] = []
@@ -228,9 +241,9 @@ class InterventionEngineTests: XCTestCase {
         typeArray.append(.positiveWorkingState)
         typeArray.append(.noInterventionNeeded)
 
-        XCTAssertEqual(typeSet.count, 2)
-        XCTAssertEqual(typeArray.count, 2)
-        XCTAssertTrue(typeSet.contains(.connectionIssue))
-        XCTAssertTrue(typeArray.contains(.positiveWorkingState))
+        #expect(typeSet.count == 2)
+        #expect(typeArray.count == 2)
+        #expect(typeSet.contains(.connectionIssue))
+        #expect(typeArray.contains(.positiveWorkingState))
     }
 }
