@@ -22,14 +22,14 @@ struct IconAnimationTests {
 
         // Test animation state
         let isAnimating = animator.isCurrentlyAnimating
-        #expect(isAnimating == true || isAnimating == false) // Either state is valid
+        #expect(!isAnimating == true || isAnimating) // Either state is valid
 
         // Test stopping animation
         animator.stopAnimating()
 
         // Animation should be stopped
         let isStoppedAnimating = animator.isCurrentlyAnimating
-        #expect(isStoppedAnimating == false)
+        #expect(!isStoppedAnimating)
     }
 
     @Test("Icon animation stop")
@@ -39,23 +39,23 @@ struct IconAnimationTests {
 
         // Initially not animating
         var isAnimating = animator.isCurrentlyAnimating
-        #expect(isAnimating == false)
+        #expect(!isAnimating)
 
         // Start animation
         animator.startAnimating()
         isAnimating = animator.isCurrentlyAnimating
-        #expect(isAnimating == true)
+        #expect(isAnimating)
 
         // Stop animation
         animator.stopAnimating()
         isAnimating = animator.isCurrentlyAnimating
-        #expect(isAnimating == false)
+        #expect(!isAnimating)
 
         // Multiple stop calls should be safe
         animator.stopAnimating()
         animator.stopAnimating()
         isAnimating = animator.isCurrentlyAnimating
-        #expect(isAnimating == false)
+        #expect(!isAnimating)
     }
 
     @Test("Icon animation state management")
@@ -71,7 +71,7 @@ struct IconAnimationTests {
 
         // Final state should be stopped
         let finalState = animator.isCurrentlyAnimating
-        #expect(finalState == false)
+        #expect(!finalState)
 
         // Test concurrent state changes
         await withTaskGroup(of: Void.self) { group in
@@ -88,7 +88,7 @@ struct IconAnimationTests {
 
         // Should handle concurrent access gracefully
         let concurrentState = animator.isCurrentlyAnimating
-        #expect(concurrentState == true || concurrentState == false)
+        #expect(!concurrentState == true || concurrentState)
     }
 
 

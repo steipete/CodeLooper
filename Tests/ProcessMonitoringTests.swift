@@ -121,7 +121,7 @@ struct ProcessMonitoringTests {
             try ProcessMonitoringTestUtilities.validateRecoveryType(type)
             
             // Validate raw values follow convention
-            #expect(type.rawValue.first?.isLowercase == true)
+            #expect(type.rawValue.first?.isLowercase)
             #expect(!type.rawValue.contains(" "))
         }
         

@@ -129,11 +129,11 @@ struct SettingsServiceTests {
         // Test that all basic keys have proper defaults
         #expect(Defaults[.monitoringIntervalSeconds] == 1.0)
         #expect(Defaults[.maxInterventionsBeforePause] == 5)
-        #expect(Defaults[.playSoundOnIntervention] == true)
+        #expect(Defaults[.playSoundOnIntervention])
         #expect(Defaults[.successfulInterventionSoundName] == "Funk")
-        #expect(Defaults[.sendNotificationOnMaxInterventions] == true)
-        #expect(Defaults[.isGlobalMonitoringEnabled] == true)
-        #expect(Defaults[.showInMenuBar] == true)
+        #expect(Defaults[.sendNotificationOnMaxInterventions])
+        #expect(Defaults[.isGlobalMonitoringEnabled])
+        #expect(Defaults[.showInMenuBar])
     }
 
     @Test("Text recovery settings have correct default values")
@@ -144,47 +144,47 @@ struct SettingsServiceTests {
 
     @Test("Recovery feature toggles have correct default values")
     func defaultsKeysRecoveryFeatureToggles() async throws {
-        #expect(Defaults[.enableConnectionIssuesRecovery] == true)
-        #expect(Defaults[.enableCursorForceStoppedRecovery] == true)
-        #expect(Defaults[.enableCursorStopsRecovery] == true)
+        #expect(Defaults[.enableConnectionIssuesRecovery])
+        #expect(Defaults[.enableCursorForceStoppedRecovery])
+        #expect(Defaults[.enableCursorStopsRecovery])
     }
 
     @Test("Onboarding state settings have correct default values")
     func defaultsKeysOnboardingState() async throws {
-        #expect(Defaults[.hasShownWelcomeGuide] == false)
-        #expect(Defaults[.isFirstLaunch] == true)
-        #expect(Defaults[.hasCompletedOnboarding] == false)
-        #expect(Defaults[.showWelcomeScreen] == true)
+        #expect(!Defaults[.hasShownWelcomeGuide])
+        #expect(Defaults[.isFirstLaunch])
+        #expect(!Defaults[.hasCompletedOnboarding])
+        #expect(Defaults[.showWelcomeScreen])
     }
 
     @Test("App behavior settings have correct default values")
     func defaultsKeysAppBehaviorSettings() async throws {
-        #expect(Defaults[.startAtLogin] == true)
-        #expect(Defaults[.showInDock] == false)
-        #expect(Defaults[.showDebugMenu] == false)
-        #expect(Defaults[.debugModeEnabled] == false)
-        #expect(Defaults[.automaticallyCheckForUpdates] == true)
+        #expect(Defaults[.startAtLogin])
+        #expect(!Defaults[.showInDock])
+        #expect(!Defaults[.showDebugMenu])
+        #expect(!Defaults[.debugModeEnabled])
+        #expect(Defaults[.automaticallyCheckForUpdates])
     }
 
     @Test("Counter display settings have correct default values")
     func defaultsKeysCounterDisplaySettings() async throws {
-        #expect(Defaults[.showCopyCounter] == false)
-        #expect(Defaults[.showPasteCounter] == false)
-        #expect(Defaults[.showTotalInterventions] == true)
-        #expect(Defaults[.flashIconOnIntervention] == true)
+        #expect(!Defaults[.showCopyCounter])
+        #expect(!Defaults[.showPasteCounter])
+        #expect(Defaults[.showTotalInterventions])
+        #expect(Defaults[.flashIconOnIntervention])
     }
 
     @Test("Logging configuration settings have correct default values")
     func defaultsKeysLoggingConfiguration() async throws {
         #expect(Defaults[.selectedLogLevel] == "info")
-        #expect(Defaults[.verboseLogging] == false)
-        #expect(Defaults[.enableDetailedLogging] == false)
+        #expect(!Defaults[.verboseLogging])
+        #expect(!Defaults[.enableDetailedLogging])
     }
 
     @Test("MCP configuration settings have correct default values")
     func defaultsKeysMCPConfiguration() async throws {
         #expect(Defaults[.mcpConfigFilePath] == "~/.cursor/mcp_config.json")
-        #expect(Defaults[.autoReloadMCPsOnChanges] == true)
+        #expect(Defaults[.autoReloadMCPsOnChanges])
     }
 
     @Test("Locator JSON settings have correct default values")
@@ -210,9 +210,9 @@ struct SettingsServiceTests {
 
     @Test("Rule settings have correct default values")
     func defaultsKeysRuleSettings() async throws {
-        #expect(Defaults[.showRuleExecutionCounters] == true)
-        #expect(Defaults[.enableRuleNotifications] == true)
-        #expect(Defaults[.enableRuleSounds] == true)
+        #expect(Defaults[.showRuleExecutionCounters])
+        #expect(Defaults[.enableRuleNotifications])
+        #expect(Defaults[.enableRuleSounds])
     }
 
     @Test("Rule-specific sound settings have correct default values")
@@ -225,22 +225,22 @@ struct SettingsServiceTests {
 
     @Test("Rule-specific notification settings have correct default values")
     func defaultsKeysRuleSpecificNotifications() async throws {
-        #expect(Defaults[.stopAfter25LoopsRuleNotification] == true)
-        #expect(Defaults[.plainStopRuleNotification] == false)
-        #expect(Defaults[.connectionIssuesRuleNotification] == false)
-        #expect(Defaults[.editedInAnotherChatRuleNotification] == false)
+        #expect(Defaults[.stopAfter25LoopsRuleNotification])
+        #expect(!Defaults[.plainStopRuleNotification])
+        #expect(!Defaults[.connectionIssuesRuleNotification])
+        #expect(!Defaults[.editedInAnotherChatRuleNotification])
     }
 
     @Test("Debug settings have correct default values")
     func defaultsKeysDebugSettings() async throws {
-        #expect(Defaults[.useDynamicMenuBarIcon] == false)
-        #expect(Defaults[.automaticJSHookInjection] == false)
+        #expect(!Defaults[.useDynamicMenuBarIcon])
+        #expect(!Defaults[.automaticJSHookInjection])
 
         // Debug mode default depends on build configuration
         #if DEBUG
-            #expect(Defaults[.debugMode] == true)
+            #expect(Defaults[.debugMode])
         #else
-            #expect(Defaults[.debugMode] == false)
+            #expect(!Defaults[.debugMode])
         #endif
     }
 

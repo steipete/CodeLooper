@@ -65,7 +65,7 @@ struct SparkleUpdaterTests {
 
             // Test that updater has proper configuration
             let automaticallyChecksForUpdates = updater.automaticallyChecksForUpdates
-            #expect(automaticallyChecksForUpdates == true || automaticallyChecksForUpdates == false)
+            #expect(!automaticallyChecksForUpdates == true || automaticallyChecksForUpdates)
 
             // Test update interval
             let updateCheckInterval = updater.updateCheckInterval
@@ -84,7 +84,7 @@ struct SparkleUpdaterTests {
 
             // Test automatic download configuration
             let automaticallyDownloadsUpdates = updater.automaticallyDownloadsUpdates
-            #expect(automaticallyDownloadsUpdates == true || automaticallyDownloadsUpdates == false)
+            #expect(!automaticallyDownloadsUpdates == true || automaticallyDownloadsUpdates)
 
             // Test update check interval
             #expect(updater.updateCheckInterval >= 0)
@@ -132,7 +132,7 @@ struct SparkleUpdaterTests {
             let viewModel = UpdaterViewModel(sparkleUpdaterManager: manager)
 
             // Test that view model has proper initial state
-            #expect(viewModel.isUpdateInProgress == false)
+            #expect(!viewModel.isUpdateInProgress)
             #expect(viewModel.lastUpdateCheckDate == nil)
         }
         }
@@ -241,7 +241,7 @@ struct SparkleUpdaterTests {
 
             // Test that view model can interact with manager
             viewModel.checkForUpdates()
-            #expect(viewModel.isUpdateInProgress == true)
+            #expect(viewModel.isUpdateInProgress)
         }
         
         @Test("Complete update workflow")

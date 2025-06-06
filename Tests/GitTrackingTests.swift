@@ -10,7 +10,7 @@ struct GitTrackingTests {
         #expect(repo1.dirtyFileCount == 0)
         #expect(repo1.untrackedFileCount == 0)
         #expect(repo1.currentBranch == nil)
-        #expect(repo1.hasChanges == false)
+        #expect(!repo1.hasChanges)
         #expect(repo1.totalChangedFiles == 0)
 
         // Test repository with changes
@@ -24,29 +24,29 @@ struct GitTrackingTests {
         #expect(repo2.dirtyFileCount == 3)
         #expect(repo2.untrackedFileCount == 2)
         #expect(repo2.currentBranch == "main")
-        #expect(repo2.hasChanges == true)
+        #expect(repo2.hasChanges)
         #expect(repo2.totalChangedFiles == 5)
     }
 
     @Test("Git repository change detection") func gitRepositoryChangeDetection() async throws {
         // Test repository without changes
         let cleanRepo = GitRepository(path: "/test", dirtyFileCount: 0, untrackedFileCount: 0)
-        #expect(cleanRepo.hasChanges == false)
+        #expect(!cleanRepo.hasChanges)
         #expect(cleanRepo.totalChangedFiles == 0)
 
         // Test repository with dirty files only
         let dirtyRepo = GitRepository(path: "/test", dirtyFileCount: 5, untrackedFileCount: 0)
-        #expect(dirtyRepo.hasChanges == true)
+        #expect(dirtyRepo.hasChanges)
         #expect(dirtyRepo.totalChangedFiles == 5)
 
         // Test repository with untracked files only
         let untrackedRepo = GitRepository(path: "/test", dirtyFileCount: 0, untrackedFileCount: 3)
-        #expect(untrackedRepo.hasChanges == true)
+        #expect(untrackedRepo.hasChanges)
         #expect(untrackedRepo.totalChangedFiles == 3)
 
         // Test repository with both types of changes
         let mixedRepo = GitRepository(path: "/test", dirtyFileCount: 4, untrackedFileCount: 2)
-        #expect(mixedRepo.hasChanges == true)
+        #expect(mixedRepo.hasChanges)
         #expect(mixedRepo.totalChangedFiles == 6)
     }
 
@@ -158,7 +158,7 @@ struct GitTrackingTests {
             }
 
             for await result in group {
-                #expect(result == true)
+                #expect(result)
             }
         }
     }
@@ -271,7 +271,7 @@ struct GitTrackingTests {
         ]
 
         for repo in repos {
-            #expect(repo.path.isEmpty == false)
+            #expect(!repo.path.isEmpty)
             #expect(repo.currentBranch != nil)
         }
     }

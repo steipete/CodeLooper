@@ -48,7 +48,7 @@ struct WindowManagementTests {
 
         // Use a simple boolean to avoid reflection issues
         let wasCalled = delegate.didFinishOnboardingCalled
-        #expect(wasCalled == true)
+        #expect(wasCalled)
     }
 
     @Test("windowPositionManagerSingleton") func windowPositionManagerSingleton() async throws {
@@ -173,7 +173,7 @@ struct WindowManagementTests {
         #expect(windowInfo.id == windowId)
         #expect(windowInfo.windowTitle == windowTitle)
         #expect(windowInfo.documentPath == documentPath)
-        #expect(windowInfo.isPaused == false)
+        #expect(!windowInfo.isPaused)
     }
 
     @Test("windowTitleParsing") func windowTitleParsing() async throws {
@@ -367,11 +367,11 @@ struct WindowManagementTests {
         // Test position saving/restoring with nil window
         await manager.saveWindowPosition(nil, identifier: "test")
         let restored = await manager.restoreWindowPosition(nil, identifier: "test")
-        #expect(restored == false)
+        #expect(!restored)
 
         // Test restoring non-existent position
         let nonExistentRestored = await manager.restoreWindowPosition(nil, identifier: "non-existent")
-        #expect(nonExistentRestored == false)
+        #expect(!nonExistentRestored)
     }
 
     // MARK: Private

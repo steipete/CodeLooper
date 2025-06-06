@@ -49,8 +49,8 @@ struct JSHookTests {
 
         #expect(withVersion.contains("const port = 8080;"))
         #expect(withVersion.contains("const version = '1.0.0';"))
-        #expect(withVersion.contains("__CODELOOPER_PORT_PLACEHOLDER__" == false))
-        #expect(withVersion.contains("__CODELOOPER_VERSION_PLACEHOLDER__" == false))
+        #expect(!withVersion.contains("__CODELOOPER_PORT_PLACEHOLDER__"))
+        #expect(!withVersion.contains("__CODELOOPER_VERSION_PLACEHOLDER__"))
     }
 
     @Test("J s hook error types") func jSHookErrorTypes() {
@@ -95,7 +95,7 @@ struct JSHookTests {
 
         // Test initial state
         let isConnected = await manager.isConnected
-        #expect(isConnected == false)
+        #expect(!isConnected)
     }
 
     @Test("Port validation") func portValidation() {
@@ -118,7 +118,7 @@ struct JSHookTests {
 
         // Initially not connected
         let initialState = await manager.isConnected
-        #expect(initialState == false)
+        #expect(!initialState)
 
         // Connection state should be testable without actual network operations
         // This tests the state logic without requiring real connections
@@ -130,7 +130,7 @@ struct JSHookTests {
 
         for messageType in messageTypes {
             #expect(messageType.count > 0)
-            #expect(messageType.contains(" " == false))
+            #expect(!messageType.contains(" "))
         }
 
         // Test JSON message structure
@@ -177,7 +177,7 @@ struct JSHookTests {
             }
 
             for await result in group {
-                #expect(result == true)
+                #expect(result)
             }
         }
     }

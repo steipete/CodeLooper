@@ -249,7 +249,7 @@ struct IntegrationTests {
 
         // Verify settings are loaded
         await MainActor.run {
-            #expect(Defaults[.isGlobalMonitoringEnabled] == true)
+            #expect(Defaults[.isGlobalMonitoringEnabled])
             #expect(Defaults[.maxInterventionsBeforePause] == 10)
         }
 
@@ -259,14 +259,14 @@ struct IntegrationTests {
 
         // Verify settings persistence
         await MainActor.run {
-            #expect(Defaults[.isGlobalMonitoringEnabled] == true)
+            #expect(Defaults[.isGlobalMonitoringEnabled])
             #expect(Defaults[.maxInterventionsBeforePause] == 10)
         }
 
         // Test settings changes
         await MainActor.run {
             Defaults[.isGlobalMonitoringEnabled] = false
-            #expect(Defaults[.isGlobalMonitoringEnabled] == false)
+            #expect(!Defaults[.isGlobalMonitoringEnabled])
         }
     }
 
@@ -294,7 +294,7 @@ struct IntegrationTests {
 
         // Verify settings were loaded
         await MainActor.run {
-            #expect(newWindowInfo.isLiveWatchingEnabled == true)
+            #expect(newWindowInfo.isLiveWatchingEnabled)
             #expect(newWindowInfo.aiAnalysisIntervalSeconds == 30)
         }
 

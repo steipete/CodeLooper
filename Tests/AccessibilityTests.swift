@@ -80,7 +80,7 @@ struct AccessibilityTests {
 
             // The permission state should be updated (may be same or different)
             let finalState = manager.hasAccessibilityPermissions
-            #expect(finalState == true || finalState == false)
+            #expect(!finalState == true || finalState)
 
             // Note: In tests, this likely won't change unless running with permissions
             // But the method should complete without crashing
@@ -114,7 +114,7 @@ struct AccessibilityTests {
             let hasPermissions = AXPermissionHelpers.hasAccessibilityPermissions()
 
             // Should return a boolean value (either true or false)
-            #expect(hasPermissions == true || hasPermissions == false)
+            #expect(!hasPermissions == true || hasPermissions)
         }
 
         @Test("AX Permission helpers permission request")
@@ -178,10 +178,10 @@ struct AccessibilityTests {
             let initialNotifications = manager.hasNotificationPermissions
 
             // These should be boolean values, not nil
-            #expect(initialAccessibility == true || initialAccessibility == false)
-            #expect(initialAutomation == true || initialAutomation == false)
-            #expect(initialScreenRecording == true || initialScreenRecording == false)
-            #expect(initialNotifications == true || initialNotifications == false)
+            #expect(!initialAccessibility == true || initialAccessibility)
+            #expect(!initialAutomation == true || initialAutomation)
+            #expect(!initialScreenRecording == true || initialScreenRecording)
+            #expect(!initialNotifications == true || initialNotifications)
         }
 
         @Test("Permissions manager permission monitoring task")

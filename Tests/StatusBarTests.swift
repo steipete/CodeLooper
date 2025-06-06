@@ -71,15 +71,15 @@ struct StatusBarTests {
     }
 
     @Test("Status icon state template image usage") func statusIconStateTemplateImageUsage() {
-        #expect(StatusIconState.idle.useTemplateImage == true)
-        #expect(StatusIconState.syncing.useTemplateImage == true)
-        #expect(StatusIconState.error.useTemplateImage == true)
-        #expect(StatusIconState.warning.useTemplateImage == true)
-        #expect(StatusIconState.success.useTemplateImage == true)
-        #expect(StatusIconState.authenticated.useTemplateImage == true)
-        #expect(StatusIconState.unauthenticated.useTemplateImage == true)
-        #expect(StatusIconState.criticalError.useTemplateImage == true)
-        #expect(StatusIconState.paused.useTemplateImage == true)
+        #expect(StatusIconState.idle.useTemplateImage)
+        #expect(StatusIconState.syncing.useTemplateImage)
+        #expect(StatusIconState.error.useTemplateImage)
+        #expect(StatusIconState.warning.useTemplateImage)
+        #expect(StatusIconState.success.useTemplateImage)
+        #expect(StatusIconState.authenticated.useTemplateImage)
+        #expect(StatusIconState.unauthenticated.useTemplateImage)
+        #expect(StatusIconState.criticalError.useTemplateImage)
+        #expect(StatusIconState.paused.useTemplateImage)
 
         // AI status should not use template image for custom colors
         #expect(StatusIconState.aiStatus(working: 1, notWorking: 2, unknown: 3).useTemplateImage == false)

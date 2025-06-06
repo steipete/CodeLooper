@@ -71,7 +71,7 @@ struct PermissionsOnboardingTests {
         let permissionsManager = await PermissionsManager()
         await MainActor.run {
             let hasPermission = permissionsManager.hasAccessibilityPermissions
-            #expect(hasPermission == true || hasPermission == false)
+            #expect(!hasPermission == true || hasPermission)
         }
 
         #expect(true)
@@ -82,7 +82,7 @@ struct PermissionsOnboardingTests {
         let permissionsManager = await PermissionsManager()
         await MainActor.run {
             let hasPermission = permissionsManager.hasScreenRecordingPermissions
-            #expect(hasPermission == true || hasPermission == false)
+            #expect(!hasPermission == true || hasPermission)
         }
 
         // Should handle permission check without crashes
@@ -94,7 +94,7 @@ struct PermissionsOnboardingTests {
         let permissionsManager = await PermissionsManager()
         await MainActor.run {
             let hasPermission = permissionsManager.hasNotificationPermissions
-            #expect(hasPermission == true || hasPermission == false)
+            #expect(!hasPermission == true || hasPermission)
         }
 
         // Should handle notification permissions gracefully
@@ -106,7 +106,7 @@ struct PermissionsOnboardingTests {
         let permissionsManager = await PermissionsManager()
         await MainActor.run {
             let hasPermission = permissionsManager.hasAutomationPermissions
-            #expect(hasPermission == true || hasPermission == false)
+            #expect(!hasPermission == true || hasPermission)
         }
 
         // Should provide automation permission flow
@@ -191,7 +191,7 @@ struct PermissionsOnboardingTests {
         // Test state management
         await MainActor.run {
             #expect(viewModel.currentStep == .welcome)
-            #expect(viewModel.startAtLogin == true || viewModel.startAtLogin == false)
+            #expect(!viewModel.startAtLogin == true || viewModel.startAtLogin)
         }
 
         // Test state transitions
@@ -232,7 +232,7 @@ struct PermissionsOnboardingTests {
         // Test window state management
         await MainActor.run {
             let hasWindow = coordinator.welcomeWindow != nil
-            #expect(hasWindow == true || hasWindow == false)
+            #expect(!hasWindow == true || hasWindow)
         }
 
         // Test window operations

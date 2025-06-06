@@ -91,15 +91,15 @@ struct DiagnosticsTests {
             #expect(LogCategory.cursorMonitor.displayName == "CursorMonitor")
 
             // Test verbose-only categories
-            #expect(LogCategory.diagnostics.isVerboseOnly == true)
-            #expect(LogCategory.lifecycle.isVerboseOnly == true)
-            #expect(LogCategory.axorcist.isVerboseOnly == true)
-            #expect(LogCategory.accessibility.isVerboseOnly == true)
+            #expect(LogCategory.diagnostics.isVerboseOnly)
+            #expect(LogCategory.lifecycle.isVerboseOnly)
+            #expect(LogCategory.axorcist.isVerboseOnly)
+            #expect(LogCategory.accessibility.isVerboseOnly)
 
             // Test non-verbose categories
-            #expect(LogCategory.general.isVerboseOnly == false)
-            #expect(LogCategory.app.isVerboseOnly == false)
-            #expect(LogCategory.settings.isVerboseOnly == false)
+            #expect(!LogCategory.general.isVerboseOnly)
+            #expect(!LogCategory.app.isVerboseOnly)
+            #expect(!LogCategory.settings.isVerboseOnly)
         }
 
         @Test("All categories have valid properties", arguments: logCategories)

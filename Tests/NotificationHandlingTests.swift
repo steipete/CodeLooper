@@ -75,9 +75,9 @@ struct NotificationHandlingTests {
 
             // Verify hasPermission matches status
             if status == .authorized {
-                #expect(hasPermission == true)
+                #expect(hasPermission)
             } else if status == .denied {
-                #expect(hasPermission == false)
+                #expect(!hasPermission)
             }
         }
     }

@@ -1,6 +1,8 @@
 #if os(macOS)
 import Carbon.HIToolbox
 
+extension EventRef: @retroactive @unchecked Sendable {}
+
 private func carbonKeyboardShortcutsEventHandler(eventHandlerCall: EventHandlerCallRef?, event: EventRef?, userData: UnsafeMutableRawPointer?) -> OSStatus {
 	// Need to handle the event synchronously since this is a Carbon callback
 	return CarbonKeyboardShortcuts.handleEventSynchronously(event)
@@ -230,10 +232,13 @@ enum CarbonKeyboardShortcuts {
 
 	// Synchronous wrapper for Carbon callback
 	fileprivate static func handleEventSynchronously(_ event: EventRef?) -> OSStatus {
-		// Create a copy of the event reference for safe capture
-		let eventRef = event
+		// EventRef is a C pointer type which is safe to pass across actor boundaries
+		guard let event else {
+			return OSStatus(eventNotHandledErr)
+		}
+		
 		return MainActor.assumeIsolated {
-			handleEvent(eventRef)
+			handleEvent(event)
 		}
 	}
 	

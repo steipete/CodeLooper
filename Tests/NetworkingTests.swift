@@ -68,7 +68,7 @@ struct NetworkingTests {
 
         await MainActor.run {
             #expect(manager != nil)
-            #expect(manager.isConnected == false)
+            #expect(!manager.isConnected)
         }
     }
 
@@ -94,7 +94,7 @@ struct NetworkingTests {
 
         // Test connection state
         await MainActor.run {
-            #expect(manager.isConnected == false)
+            #expect(!manager.isConnected)
         }
 
         // Note: Full connection testing would require a real WebSocket client
@@ -394,7 +394,7 @@ struct NetworkingTests {
         // Test reconnection capability
         await MainActor.run {
             #expect(manager != nil)
-            #expect(manager.isConnected == false)
+            #expect(!manager.isConnected)
         }
     }
 

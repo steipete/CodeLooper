@@ -26,8 +26,8 @@ struct UIComponentTests {
         let allTabs: [SettingsTab] = [.general, .supervision, .ruleSets, .externalMCPs, .ai, .advanced, .debug]
 
         for tab in allTabs {
-            #expect(tab.id.isEmpty == false)
-            #expect(tab.systemImageName.isEmpty == false)
+            #expect(!tab.id.isEmpty)
+            #expect(!tab.systemImageName.isEmpty)
         }
     }
 
@@ -46,7 +46,7 @@ struct UIComponentTests {
         await MainActor.run {
             #expect(windowInfo.id == "test-window")
             #expect(windowInfo.windowTitle == "Test Window")
-            #expect(windowInfo.isPaused == false)
+            #expect(!windowInfo.isPaused)
         }
     }
 
@@ -55,7 +55,7 @@ struct UIComponentTests {
         let statuses: [AIAnalysisStatus] = [.working, .notWorking, .pending, .error, .off, .unknown]
 
         for status in statuses {
-            #expect(status.displayName.isEmpty == false)
+            #expect(!status.displayName.isEmpty)
         }
     }
 
@@ -67,7 +67,7 @@ struct UIComponentTests {
 
         // Test that we can check login item status
         let isEnabled = await manager.startsAtLogin()
-        #expect(isEnabled == true || isEnabled == false) // Either state is valid
+        #expect(!isEnabled == true || isEnabled) // Either state is valid
     }
 
     @Test("Document path tracking") func documentPathTracking() {
@@ -76,11 +76,11 @@ struct UIComponentTests {
 
         // Test document path existence check
         let exists = await tracker.documentPathExists("/nonexistent/path")
-        #expect(exists == false)
+        #expect(!exists)
 
         // Test with a real path
         let homeExists = await tracker.documentPathExists(NSHomeDirectory())
-        #expect(homeExists == true)
+        #expect(homeExists)
     }
 
     // MARK: - Diagnostics Tests
@@ -147,7 +147,7 @@ struct UIComponentTests {
         ]
 
         for error in errors {
-            #expect(error.localizedDescription.isEmpty == false)
+            #expect(!error.localizedDescription.isEmpty)
         }
     }
 
@@ -179,7 +179,7 @@ struct UIComponentTests {
         let states: [StatusIconState] = [.idle, .syncing, .error, .paused, .success]
 
         for state in states {
-            #expect(state.rawValue.isEmpty == false)
+            #expect(!state.rawValue.isEmpty)
         }
     }
 

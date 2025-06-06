@@ -41,12 +41,14 @@ extension KeyboardShortcuts {
 			self.rawValue = name
 			self.defaultShortcut = initialShortcut
 
+			let nameForCapture = self
+			
 			if
 				let initialShortcut,
-				!userDefaultsContains(name: self)
+				!userDefaultsContains(name: nameForCapture)
 			{
 				Task { @MainActor in
-					setShortcut(initialShortcut, for: self)
+					setShortcut(initialShortcut, for: nameForCapture)
 					KeyboardShortcuts.initialize()
 				}
 			} else {

@@ -21,12 +21,12 @@ struct LoginItemManagerTests {
         let initialState = await manager.startsAtLogin()
 
         // Test that we can read the state (true or false, both are valid)
-        #expect(initialState == true || initialState == false)
+        #expect(!initialState == true || initialState)
 
         // Test enabling (this is a test, so we won't actually change system settings)
         // Instead, we test that the method doesn't crash
         let result = await manager.setStartAtLogin(enabled: true)
-        #expect(result == true || result == false) // Should return a boolean result
+        #expect(!result == true || result) // Should return a boolean result
     }
 
     @Test("Disable login item")
@@ -36,7 +36,7 @@ struct LoginItemManagerTests {
         // Test disabling (this is a test, so we won't actually change system settings)
         // Instead, we test that the method doesn't crash
         let result = await manager.setStartAtLogin(enabled: false)
-        #expect(result == true || result == false) // Should return a boolean result
+        #expect(!result == true || result) // Should return a boolean result
     }
 
     @Test("Login item status")
@@ -47,14 +47,14 @@ struct LoginItemManagerTests {
         let status = await manager.startsAtLogin()
 
         // Status should be either true or false
-        #expect(status == true || status == false)
+        #expect(!status == true || status)
 
         // Test multiple status checks don't crash
         let status2 = await manager.startsAtLogin()
         let status3 = await manager.startsAtLogin()
 
-        #expect(status2 == true || status2 == false)
-        #expect(status3 == true || status3 == false)
+        #expect(!status2 == true || status2)
+        #expect(!status3 == true || status3)
     }
 
     @Test("Login item state changes")
@@ -89,7 +89,7 @@ struct LoginItemManagerTests {
         let initialStatus = await manager.startsAtLogin()
 
         // Status should be either true or false
-        #expect(initialStatus == true || initialStatus == false)
+        #expect(!initialStatus == true || initialStatus)
 
         // Test that we can observe changes
         let observation = await manager.observeLoginItemStatus { newStatus in
@@ -135,7 +135,7 @@ struct LoginItemManagerTests {
 
         // Test sync functionality
         let syncResult = await manager.syncLoginItemWithPreference()
-        #expect(syncResult == true || syncResult == false) // Should return a boolean
+        #expect(!syncResult == true || syncResult) // Should return a boolean
 
         #expect(true) // If we get here, no crashes occurred
     }
@@ -153,7 +153,7 @@ struct LoginItemManagerTests {
 
         // All results should be valid boolean values
         for result in results {
-            #expect(result == true || result == false)
+            #expect(!result == true || result)
         }
     }
 
@@ -168,7 +168,7 @@ struct LoginItemManagerTests {
         let newState = await manager.toggleStartAtLogin()
 
         // New state should be opposite of initial (or same if system restrictions prevent change)
-        #expect(newState == true || newState == false)
+        #expect(!newState == true || newState)
 
         // Restore original state
         await manager.setStartAtLogin(enabled: initialState)
