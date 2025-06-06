@@ -98,7 +98,9 @@ public final class AppDelegate: NSObject, NSApplicationDelegate, ObservableObjec
         initializeServices() // Ensure windowManager and other services are ready
 
         // Sync login item state with user preference after services are up
-        loginItemManager?.syncLoginItemWithPreference()
+        if !Constants.isTestEnvironment {
+            loginItemManager?.syncLoginItemWithPreference()
+        }
 
         // Setup dock visibility based on user preference
         setupDockVisibility()
