@@ -7,7 +7,7 @@ import Testing
 struct PermissionsOnboardingTests {
     // MARK: - OnboardingCoordinator Tests
 
-    @Test("Onboarding flow management") func onboardingFlowManagement() {
+    @Test("Onboarding flow management") @MainActor func onboardingFlowManagement() async throws {
         let coordinator = await WelcomeWindowCoordinator.shared
 
         // Test that coordinator is created without errors
@@ -21,7 +21,7 @@ struct PermissionsOnboardingTests {
         #expect(true)
     }
 
-    @Test("Onboarding completion") func onboardingCompletion() {
+    @Test("Onboarding completion") @MainActor func onboardingCompletion() async throws {
         let loginItemManager = await LoginItemManager.shared
         let viewModel = await WelcomeViewModel(loginItemManager: loginItemManager)
 
@@ -41,7 +41,7 @@ struct PermissionsOnboardingTests {
         #expect(true)
     }
 
-    @Test("Onboarding step validation") func onboardingStepValidation() {
+    @Test("Onboarding step validation") @MainActor func onboardingStepValidation() async throws {
         let loginItemManager = await LoginItemManager.shared
         let viewModel = await WelcomeViewModel(loginItemManager: loginItemManager)
 
@@ -58,7 +58,7 @@ struct PermissionsOnboardingTests {
 
     // MARK: - Permission Step Tests
 
-    @Test("Accessibility permission step") func accessibilityPermissionStep() {
+    @Test("Accessibility permission step") @MainActor func accessibilityPermissionStep() async throws {
         let loginItemManager = await LoginItemManager.shared
         let viewModel = await WelcomeViewModel(loginItemManager: loginItemManager)
 
@@ -77,7 +77,7 @@ struct PermissionsOnboardingTests {
         #expect(true)
     }
 
-    @Test("Screen recording permission step") func screenRecordingPermissionStep() {
+    @Test("Screen recording permission step") @MainActor func screenRecordingPermissionStep() async throws {
         // Test that screen recording permissions can be checked
         let permissionsManager = await PermissionsManager()
         await MainActor.run {
@@ -89,7 +89,7 @@ struct PermissionsOnboardingTests {
         #expect(true)
     }
 
-    @Test("Notification permission step") func notificationPermissionStep() {
+    @Test("Notification permission step") @MainActor func notificationPermissionStep() async throws {
         // Test that notification permissions can be checked
         let permissionsManager = await PermissionsManager()
         await MainActor.run {
@@ -101,7 +101,7 @@ struct PermissionsOnboardingTests {
         #expect(true)
     }
 
-    @Test("Automation permission step") func automationPermissionStep() {
+    @Test("Automation permission step") @MainActor func automationPermissionStep() async throws {
         // Test that automation permissions can be checked
         let permissionsManager = await PermissionsManager()
         await MainActor.run {
@@ -115,7 +115,7 @@ struct PermissionsOnboardingTests {
 
     // MARK: - UI Component Tests
 
-    @Test("Welcome view display") func welcomeViewDisplay() {
+    @Test("Welcome view display") @MainActor func welcomeViewDisplay() async throws {
         let loginItemManager = await LoginItemManager.shared
         let viewModel = await WelcomeViewModel(loginItemManager: loginItemManager)
         let welcomeView = WelcomeView(viewModel: viewModel)
@@ -127,7 +127,7 @@ struct PermissionsOnboardingTests {
         #expect(true)
     }
 
-    @Test("Permission card rendering") func permissionCardRendering() {
+    @Test("Permission card rendering") @MainActor func permissionCardRendering() async throws {
         let permissionCard = await PermissionCard(
             icon: "lock",
             iconColor: .accentColor,
@@ -155,7 +155,7 @@ struct PermissionsOnboardingTests {
         #expect(grantedCard != nil)
     }
 
-    @Test("Progress bar display") func progressBarDisplay() {
+    @Test("Progress bar display") @MainActor func progressBarDisplay() async throws {
         let progressBar = ProgressBar(currentStep: .settings)
 
         // Test that progress bar is created without errors
@@ -171,7 +171,7 @@ struct PermissionsOnboardingTests {
 
     // MARK: - Welcome Flow Tests
 
-    @Test("Welcome guide flow") func welcomeGuideFlow() {
+    @Test("Welcome guide flow") @MainActor func welcomeGuideFlow() async throws {
         let welcomeGuide = await WelcomeGuideView {}
 
         // Test that welcome guide is created without errors
@@ -181,7 +181,7 @@ struct PermissionsOnboardingTests {
         #expect(true)
     }
 
-    @Test("Welcome view model state") func welcomeViewModelState() {
+    @Test("Welcome view model state") @MainActor func welcomeViewModelState() async throws {
         let loginItemManager = await LoginItemManager.shared
         let viewModel = await WelcomeViewModel(loginItemManager: loginItemManager)
 
@@ -204,7 +204,7 @@ struct PermissionsOnboardingTests {
 
     // MARK: - Permission Integration Tests
 
-    @Test("All permissions integration") func allPermissionsIntegration() {
+    @Test("All permissions integration") @MainActor func allPermissionsIntegration() async throws {
         let allPermissionsView = await AllPermissionsView()
 
         // Test that comprehensive permissions view is created
@@ -214,7 +214,7 @@ struct PermissionsOnboardingTests {
         #expect(true)
     }
 
-    @Test("Permissions view integration") func permissionsViewIntegration() {
+    @Test("Permissions view integration") @MainActor func permissionsViewIntegration() async throws {
         let permissionsView = await PermissionsView()
 
         // Test that permissions view is created without errors
@@ -226,7 +226,7 @@ struct PermissionsOnboardingTests {
 
     // MARK: - Coordinator Integration Tests
 
-    @Test("Welcome window coordination") func welcomeWindowCoordination() {
+    @Test("Welcome window coordination") @MainActor func welcomeWindowCoordination() async throws {
         let coordinator = await WelcomeWindowCoordinator.shared
 
         // Test window state management
@@ -249,7 +249,7 @@ struct PermissionsOnboardingTests {
         }
     }
 
-    @Test("Onboarding full flow") func onboardingFullFlow() {
+    @Test("Onboarding full flow") @MainActor func onboardingFullFlow() async throws {
         let loginItemManager = await LoginItemManager.shared
         let viewModel = await WelcomeViewModel(loginItemManager: loginItemManager)
 
@@ -273,7 +273,7 @@ struct PermissionsOnboardingTests {
         #expect(true)
     }
 
-    @Test("Welcome step view") func welcomeStepView() {
+    @Test("Welcome step view") @MainActor func welcomeStepView() async throws {
         let loginItemManager = await LoginItemManager.shared
         let viewModel = await WelcomeViewModel(loginItemManager: loginItemManager)
         let stepView = WelcomeStepView(viewModel: viewModel)
@@ -282,7 +282,7 @@ struct PermissionsOnboardingTests {
         #expect(stepView != nil)
     }
 
-    @Test("Settings step view") func settingsStepView() {
+    @Test("Settings step view") @MainActor func settingsStepView() async throws {
         let loginItemManager = await LoginItemManager.shared
         let viewModel = await WelcomeViewModel(loginItemManager: loginItemManager)
         let stepView = SettingsStepView(viewModel: viewModel)
@@ -291,7 +291,7 @@ struct PermissionsOnboardingTests {
         #expect(stepView != nil)
     }
 
-    @Test("Completion step view") func completionStepView() {
+    @Test("Completion step view") @MainActor func completionStepView() async throws {
         let loginItemManager = await LoginItemManager.shared
         let viewModel = await WelcomeViewModel(loginItemManager: loginItemManager)
         let stepView = CompletionStepView(viewModel: viewModel)
@@ -300,7 +300,7 @@ struct PermissionsOnboardingTests {
         #expect(stepView != nil)
     }
 
-    @Test("Welcome window view") func welcomeWindowView() {
+    @Test("Welcome window view") @MainActor func welcomeWindowView() async throws {
         let loginItemManager = await LoginItemManager.shared
         let windowView = await WelcomeWindowView(loginItemManager: loginItemManager)
 
@@ -310,7 +310,7 @@ struct PermissionsOnboardingTests {
 
     // MARK: - Performance Tests
 
-    @Test("Onboarding performance") func onboardingPerformance() {
+    @Test("Onboarding performance") @MainActor func onboardingPerformance() async throws {
         let loginItemManager = await LoginItemManager.shared
 
         // Test performance of creating multiple view models

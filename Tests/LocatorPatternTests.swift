@@ -7,7 +7,7 @@ import Testing
 struct LocatorPatternTests {
     // MARK: - LocatorManager Tests
 
-    @Test("Locator manager initialization") func locatorManagerInitialization() {
+    @Test("Locator manager initialization") @MainActor func locatorManagerInitialization() async throws {
         let manager = await LocatorManager.shared
 
         // Manager is always created successfully
@@ -18,14 +18,14 @@ struct LocatorPatternTests {
         #expect(true)
     }
 
-    @Test("Locator types") func locatorTypes() {
+    @Test("Locator types") @MainActor func locatorTypes() async throws {
         // Test all locator types have default locators
         for type in LocatorType.allCases {
             #expect(type.defaultLocator != nil)
         }
     }
 
-    @Test("Locator manager get locator") func locatorManagerGetLocator() {
+    @Test("Locator manager get locator") @MainActor func locatorManagerGetLocator() async throws {
         let manager = await LocatorManager.shared
 
         // Test getting locators for different types
@@ -38,8 +38,8 @@ struct LocatorPatternTests {
 
     // MARK: - DynamicLocatorDiscoverer Tests
 
-    @Test("Dynamic locator discoverer") func dynamicLocatorDiscoverer() {
-        let discoverer = await DynamicLocatorDiscoverer()
+    @Test("Dynamic locator discoverer") @MainActor func dynamicLocatorDiscoverer() async throws {
+        _ = await DynamicLocatorDiscoverer()
 
         // Discoverer is always created successfully
         #expect(true)
@@ -47,7 +47,7 @@ struct LocatorPatternTests {
 
     // MARK: - LocatorType Tests
 
-    @Test("Locator type default locators") func locatorTypeDefaultLocators() {
+    @Test("Locator type default locators") @MainActor func locatorTypeDefaultLocators() async throws {
         // Test that each locator type has a valid default locator
         let allTypes = LocatorType.allCases
 
@@ -57,12 +57,12 @@ struct LocatorPatternTests {
 
             // Check that locator exists (defaultLocator should never be nil)
             if let loc = locator {
-                #expect(loc.criteria != nil)
+                #expect(!loc.criteria.isEmpty)
             }
         }
     }
 
-    @Test("Locator type raw values") func locatorTypeRawValues() {
+    @Test("Locator type raw values") @MainActor func locatorTypeRawValues() async throws {
         // Test that each locator type has a raw value
         let allTypes = LocatorType.allCases
 

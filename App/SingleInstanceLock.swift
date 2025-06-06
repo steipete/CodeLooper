@@ -12,15 +12,25 @@ public final class SingleInstanceLock {
         self.identifier = identifier
 
         #if !DEBUG // Only enforce single instance lock in Release builds
-            // Set up observers first before checking
-            setupObservers()
+            // Skip for test environment
+            let isTestEnvironment = ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] != nil ||
+                ProcessInfo.processInfo.arguments.contains("--test-mode") ||
+                NSClassFromString("XCTest") != nil
             
-            Task {
-                self.isPrimaryInstance = await checkIfPrimaryInstance()
+            if isTestEnvironment {
+                self.isPrimaryInstance = true
+                logger.info("Test environment: Single instance lock is bypassed.")
+            } else {
+                // Set up observers first before checking
+                setupObservers()
                 
-                // If we're not the primary instance, remove observers
-                if !self.isPrimaryInstance {
-                    self.removeObservers()
+                Task {
+                    self.isPrimaryInstance = await checkIfPrimaryInstance()
+                    
+                    // If we're not the primary instance, remove observers
+                    if !self.isPrimaryInstance {
+                        self.removeObservers()
+                    }
                 }
             }
         #else // For DEBUG builds, always assume primary instance

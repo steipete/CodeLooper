@@ -10,6 +10,7 @@ struct IntegrationTests {
     // MARK: - Test Utilities
 
     /// Mock application for testing app lifecycle
+    @MainActor
     class MockCodeLooperApp {
         var isRunning = false
         var coordinator: AppServiceCoordinator?
@@ -43,7 +44,7 @@ struct IntegrationTests {
 
     // MARK: - Application Lifecycle Tests
 
-    @Test("Full application lifecycle") func fullApplicationLifecycle() {
+    @Test("Full application lifecycle") @MainActor func fullApplicationLifecycle() async throws {
         let app = MockCodeLooperApp()
 
         // Initially not running
@@ -66,7 +67,7 @@ struct IntegrationTests {
         #expect(app.windowManager == nil)
     }
 
-    @Test("Service coordinator initialization") func serviceCoordinatorInitialization() {
+    @Test("Service coordinator initialization") @MainActor func serviceCoordinatorInitialization() async throws {
         let coordinator = await AppServiceCoordinator()
 
         // Verify core services are available
@@ -87,7 +88,7 @@ struct IntegrationTests {
 
     // MARK: - Cursor Detection and Monitoring Tests
 
-    @Test("Cursor detection and monitoring") func cursorDetectionAndMonitoring() {
+    @Test("Cursor detection and monitoring") @MainActor func cursorDetectionAndMonitoring() async throws {
         let coordinator = await AppServiceCoordinator()
         let monitor = await CursorMonitor.shared
 
@@ -131,7 +132,7 @@ struct IntegrationTests {
         }
     }
 
-    @Test("Window management integration") func windowManagementIntegration() {
+    @Test("Window management integration") @MainActor func windowManagementIntegration() async throws {
         let coordinator = await AppServiceCoordinator()
         let monitor = await CursorMonitor.shared
 
@@ -176,7 +177,7 @@ struct IntegrationTests {
 
     // MARK: - Intervention Flow Tests
 
-    @Test("Intervention flow") func interventionFlow() {
+    @Test("Intervention flow") @MainActor func interventionFlow() async throws {
         let coordinator = await AppServiceCoordinator()
         let monitor = await CursorMonitor.shared
         // Monitor has internal rule execution
@@ -212,7 +213,7 @@ struct IntegrationTests {
         await monitor.stopMonitoringLoop()
     }
 
-    @Test("Rule execution integration") func ruleExecutionIntegration() {
+    @Test("Rule execution integration") @MainActor func ruleExecutionIntegration() async throws {
         let ruleExecutor = await RuleExecutor()
 
         // Test that rule executor can run without errors
@@ -224,7 +225,7 @@ struct IntegrationTests {
 
     // MARK: - Settings Persistence Tests
 
-    @Test("Settings persistence integration") func settingsPersistenceIntegration() {
+    @Test("Settings persistence integration") @MainActor func settingsPersistenceIntegration() async throws {
         // Save original values
         let originalMonitoring = await MainActor.run { Defaults[.isGlobalMonitoringEnabled] }
         let originalMaxInterventions = await MainActor.run { Defaults[.maxInterventionsBeforePause] }
@@ -270,7 +271,7 @@ struct IntegrationTests {
         }
     }
 
-    @Test("Window settings persistence") func windowSettingsPersistence() {
+    @Test("Window settings persistence") @MainActor func windowSettingsPersistence() async throws {
         // Create window with settings
         var windowInfo = await MonitoredWindowInfo(
             id: "test-window",
@@ -305,7 +306,7 @@ struct IntegrationTests {
 
     // MARK: - Permission Flow Tests
 
-    @Test("Permission flow integration") func permissionFlowIntegration() {
+    @Test("Permission flow integration") @MainActor func permissionFlowIntegration() async throws {
         // Test accessibility permissions check
         let permissionsManager = await PermissionsManager()
 
@@ -321,7 +322,7 @@ struct IntegrationTests {
         }
     }
 
-    @Test("A xorcist permission integration") func aXorcistPermissionIntegration() {
+    @Test("A xorcist permission integration") @MainActor func aXorcistPermissionIntegration() async throws {
         let axorcist = await AXorcist()
 
         // Test that AXorcist can be created without errors
@@ -349,7 +350,7 @@ struct IntegrationTests {
 
     // MARK: - Cross-Service Integration Tests
 
-    @Test("Service coordination") func serviceCoordination() {
+    @Test("Service coordination") @MainActor func serviceCoordination() async throws {
         let coordinator = await AppServiceCoordinator()
 
         // Test that all services can be accessed
@@ -366,7 +367,7 @@ struct IntegrationTests {
         #expect(true)
     }
 
-    @Test("Cross service error handling") func crossServiceErrorHandling() {
+    @Test("Cross service error handling") @MainActor func crossServiceErrorHandling() async throws {
         let coordinator = await AppServiceCoordinator()
         let monitor = await CursorMonitor.shared
 

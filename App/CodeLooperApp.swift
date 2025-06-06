@@ -40,8 +40,10 @@ struct CodeLooperApp: App {
 
         // Opens settings automatically in debug builds for faster development
         #if DEBUG
-            Task { @MainActor in
-                MainSettingsCoordinator.shared.showSettings()
+            if !Constants.isTestEnvironment {
+                Task { @MainActor in
+                    MainSettingsCoordinator.shared.showSettings()
+                }
             }
         #endif
     }

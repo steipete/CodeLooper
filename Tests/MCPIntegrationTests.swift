@@ -6,7 +6,7 @@ import Testing
 struct MCPIntegrationTests {
     // MARK: - MCPConfigManager Tests
 
-    @Test("M c p config manager singleton") func mCPConfigManagerSingleton() {
+    @Test("M c p config manager singleton") @MainActor func mCPConfigManagerSingleton() async throws {
         await MainActor.run {
             let configService = MCPConfigManager.shared
             // Test that singleton is created without errors
@@ -14,7 +14,7 @@ struct MCPIntegrationTests {
         }
     }
 
-    @Test("M c p configuration state") func mCPConfigurationState() {
+    @Test("M c p configuration state") @MainActor func mCPConfigurationState() async throws {
         await MainActor.run {
             let configService = MCPConfigManager.shared
 
@@ -27,7 +27,7 @@ struct MCPIntegrationTests {
 
     // MARK: - MCPVersionService Tests
 
-    @Test("M c p version singleton") func mCPVersionSingleton() {
+    @Test("M c p version singleton") @MainActor func mCPVersionSingleton() async throws {
         await MainActor.run {
             let versionService = MCPVersionService.shared
             // Test that singleton is created without errors
@@ -35,7 +35,7 @@ struct MCPIntegrationTests {
         }
     }
 
-    @Test("M c p version checking") func mCPVersionChecking() {
+    @Test("M c p version checking") @MainActor func mCPVersionChecking() async throws {
         await MainActor.run {
             let versionService = MCPVersionService.shared
 
@@ -49,7 +49,7 @@ struct MCPIntegrationTests {
         }
     }
 
-    @Test("M c p installed versions") func mCPInstalledVersions() {
+    @Test("M c p installed versions") @MainActor func mCPInstalledVersions() async throws {
         await MainActor.run {
             let versionService = MCPVersionService.shared
 
@@ -59,7 +59,7 @@ struct MCPIntegrationTests {
         }
     }
 
-    @Test("M c p all extensions") func mCPAllExtensions() {
+    @Test("M c p all extensions") @MainActor func mCPAllExtensions() async throws {
         await MainActor.run {
             let versionService = MCPVersionService.shared
 
@@ -73,7 +73,7 @@ struct MCPIntegrationTests {
 
     // MARK: - Integration Tests
 
-    @Test("M c p service integration") func mCPServiceIntegration() {
+    @Test("M c p service integration") @MainActor func mCPServiceIntegration() async throws {
         await MainActor.run {
             let configService = MCPConfigManager.shared
             let versionService = MCPVersionService.shared
@@ -92,7 +92,7 @@ struct MCPIntegrationTests {
         }
     }
 
-    @Test("M c p extension types") func mCPExtensionTypes() {
+    @Test("M c p extension types") @MainActor func mCPExtensionTypes() async throws {
         // Test MCPExtensionType enum
         let allExtensions = MCPExtensionType.allCases
 
@@ -109,7 +109,7 @@ struct MCPIntegrationTests {
         }
     }
 
-    @Test("M c p version service properties") func mCPVersionServiceProperties() {
+    @Test("M c p version service properties") @MainActor func mCPVersionServiceProperties() async throws {
         await MainActor.run {
             let versionService = MCPVersionService.shared
 

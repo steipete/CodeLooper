@@ -89,7 +89,7 @@ struct JSHookTests {
         }
     }
 
-    @Test("Web socket manager initialization") func webSocketManagerInitialization() {
+    @Test("Web socket manager initialization") @MainActor func webSocketManagerInitialization() async throws {
         let port: UInt16 = 9999
         let manager = await WebSocketManager(port: port)
 
@@ -98,7 +98,7 @@ struct JSHookTests {
         #expect(!isConnected)
     }
 
-    @Test("Port validation") func portValidation() {
+    @Test("Port validation") @MainActor func portValidation() async throws {
         // Test various port values
         let validPorts: [UInt16] = [8080, 9999, 3000, 1234, 65535]
 
@@ -113,7 +113,7 @@ struct JSHookTests {
         #expect(zeroPortManager != nil)
     }
 
-    @Test("Connection state management") func connectionStateManagement() {
+    @Test("Connection state management") @MainActor func connectionStateManagement() async throws {
         let manager = await WebSocketManager(port: 9998)
 
         // Initially not connected
@@ -124,7 +124,7 @@ struct JSHookTests {
         // This tests the state logic without requiring real connections
     }
 
-    @Test("Message types") func testMessageTypes() {
+    @Test("Message types") @MainActor func testMessageTypes() async throws {
         // Test that we can validate message type constants
         let messageTypes = ["heartbeat", "composerUpdate", "ready"]
 
@@ -162,7 +162,7 @@ struct JSHookTests {
         #expect(heartbeatNotification != composerNotification)
     }
 
-    @Test("Threading and concurrency") func threadingAndConcurrency() {
+    @Test("Threading and concurrency") @MainActor func threadingAndConcurrency() async throws {
         // Test thread-safe operations that don't require actual networking
         let port: UInt16 = 9997
 
@@ -267,7 +267,7 @@ struct JSHookTests {
         #expect(jsonElapsed < 1.0)
     }
 
-    @Test("Memory management") func memoryManagement() {
+    @Test("Memory management") @MainActor func memoryManagement() async throws {
         // Test that managers can be created and released without leaks
         var managers: [WebSocketManager] = []
 
@@ -283,7 +283,7 @@ struct JSHookTests {
         #expect(managers.isEmpty)
     }
 
-    @Test("Error handling robustness") func errorHandlingRobustness() {
+    @Test("Error handling robustness") @MainActor func errorHandlingRobustness() async throws {
         // Test that error conditions are handled gracefully
 
         // Test invalid port handling (conceptually)

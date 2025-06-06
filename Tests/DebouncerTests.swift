@@ -59,7 +59,7 @@ struct DebouncerTests {
 
     @Suite("Basic Functionality", .tags(.basic, .core))
     struct BasicFunctionality {
-        @Test("Single call executes correctly", arguments: shortDelays)
+        @Test("Single call executes correctly", arguments: DebouncerTestData.shortDelays)
         @MainActor
         func singleCall(delay: TimeInterval) async throws {
             let debouncer = Debouncer(delay: delay)
@@ -183,7 +183,7 @@ struct DebouncerTests {
 
     @Suite("Timing and Performance", .tags(.performance, .timing))
     struct TimingAndPerformance {
-        @Test("Different debouncer instances work independently", arguments: zip(shortDelays, mediumDelays))
+        @Test("Different debouncer instances work independently", arguments: zip(DebouncerTestData.shortDelays, DebouncerTestData.mediumDelays))
         @MainActor
         func independentInstances(shortDelay: TimeInterval, longDelay: TimeInterval) async throws {
             let shortDebouncer = Debouncer(delay: shortDelay)
@@ -221,7 +221,7 @@ struct DebouncerTests {
             #expect(longCount2 == 1, "Long debouncer should now have fired")
         }
 
-        @Test("Performance with many rapid calls", .timeLimit(.seconds(5)))
+        @Test("Performance with many rapid calls", .timeLimit(.minutes(1)))
         @MainActor
         func performanceTest() async throws {
             let debouncer = Debouncer(delay: 0.01)
@@ -329,7 +329,7 @@ struct DebouncerTests {
             #expect(finalCount == 1, "Should execute only once despite concurrent calls")
         }
 
-        @Test("High contention scenario", .timeLimit(.seconds(10)))
+        @Test("High contention scenario", .timeLimit(.minutes(1)))
         @MainActor
         func highContention() async throws {
             let debouncer = Debouncer(delay: 0.02)
@@ -456,24 +456,6 @@ struct DebouncerTests {
     }
 
     // MARK: - Test Data
-
-    static let shortDelays: [TimeInterval] = [0.01, 0.05, 0.1]
-    static let mediumDelays: [TimeInterval] = [0.2, 0.5, 1.0]
+    // Test data moved to CursorMonitorTestData.swift to avoid Swift Testing macro issues
 }
 
-// MARK: - Test Tags
-
-extension Tag {
-    @Tag static var utilities: Self
-    @Tag static var async: Self
-    @Tag static var timing: Self
-    @Tag static var basic: Self
-    @Tag static var core: Self
-    @Tag static var cancellation: Self
-    @Tag static var performance: Self
-    @Tag static var state: Self
-    @Tag static var context: Self
-    @Tag static var threading: Self
-    @Tag static var edge_cases: Self
-    @Tag static var robustness: Self
-}

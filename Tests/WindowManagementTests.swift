@@ -8,7 +8,7 @@ import Testing
 struct WindowManagementTests {
     // MARK: Internal
 
-    @Test("Window manager initialization") func windowManagerInitialization() async throws {
+    @Test("Window manager initialization") @MainActor func windowManagerInitialization() async throws {
         let mockLoginItemManager = createMockLoginItemManager()
         let mockSessionLogger = createMockSessionLogger()
         let mockDelegate = createMockWindowManagerDelegate()
@@ -392,9 +392,11 @@ struct WindowManagementTests {
         LoginItemManager.shared
     }
 
-    @MainActor
     private func createMockSessionLogger() -> SessionLogger {
-        SessionLogger.shared
+        // SessionLogger.shared is @MainActor, so we need to access it safely
+        return MainActor.assumeIsolated {
+            SessionLogger.shared
+        }
     }
 
     private func createMockWindowManagerDelegate() -> MockWindowManagerDelegate {

@@ -8,7 +8,7 @@ import Testing
 struct UIComponentTests {
     // MARK: - SettingsCoordinator Tests
 
-    @Test("Main settings coordinator") func mainSettingsCoordinator() {
+    @Test("Main settings coordinator") @MainActor func mainSettingsCoordinator() async throws {
         // Create mock dependencies
         let mockLoginItemManager = await createMockLoginItemManager()
         let mockUpdaterViewModel = await createMockUpdaterViewModel()
@@ -33,7 +33,7 @@ struct UIComponentTests {
 
     // MARK: - Model Tests
 
-    @Test("Monitored instance info") func monitoredInstanceInfo() {
+    @Test("Monitored instance info") @MainActor func monitoredInstanceInfo() async throws {
         // Test MonitoredWindowInfo creation
         let windowInfo = await MonitoredWindowInfo(
             id: "test-window",
@@ -61,7 +61,7 @@ struct UIComponentTests {
 
     // MARK: - Service Tests
 
-    @Test("Login item manager") func testLoginItemManager() {
+    @Test("Login item manager") @MainActor func testLoginItemManager() async throws {
         let manager = await LoginItemManager.shared
         #expect(true) // Manager exists
 
@@ -70,7 +70,7 @@ struct UIComponentTests {
         #expect(!isEnabled == true || isEnabled) // Either state is valid
     }
 
-    @Test("Document path tracking") func documentPathTracking() {
+    @Test("Document path tracking") @MainActor func documentPathTracking() async throws {
         let gitMonitor = await GitRepositoryMonitor()
         let tracker = await DocumentPathTracker(gitRepositoryMonitor: gitMonitor)
 
@@ -153,7 +153,7 @@ struct UIComponentTests {
 
     // MARK: - View Tests
 
-    @Test("Main popover view") func mainPopoverView() {
+    @Test("Main popover view") @MainActor func mainPopoverView() async throws {
         // Test that main views can be instantiated
         await MainActor.run {
             let popoverView = MainPopoverView()
@@ -161,7 +161,7 @@ struct UIComponentTests {
         }
     }
 
-    @Test("Settings views") func settingsViews() {
+    @Test("Settings views") @MainActor func settingsViews() async throws {
         // Test settings views
         await MainActor.run {
             let mockUpdaterViewModel = UpdaterViewModel(sparkleUpdaterManager: SparkleUpdaterManager())

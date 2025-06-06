@@ -92,13 +92,15 @@ struct LoginItemManagerTests {
         #expect(!initialStatus == true || initialStatus)
 
         // Test that we can observe changes
-        let observation = await manager.observeLoginItemStatus { newStatus in
-            // This would be called on status changes
-            _ = newStatus
+        await MainActor.run {
+            let observation = manager.observeLoginItemStatus { newStatus in
+                // This would be called on status changes
+                _ = newStatus
+            }
+            
+            // Cancel observation to clean up
+            observation.cancel()
         }
-
-        // Cancel observation to clean up
-        observation.cancel()
 
         #expect(true) // If we get here, no crashes occurred
     }

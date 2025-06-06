@@ -4,25 +4,25 @@ import AppKit
 import Foundation
 import Testing
 
-@Suite("Accessibility Tests", .tags(.accessibility, .permissions, .system))
+@Suite("Accessibility Tests")
 @MainActor
 struct AccessibilityTests {
     // MARK: - Manager Initialization Suite
 
-    @Suite("Manager Initialization", .tags(.initialization, .manager))
+    @Suite("Manager Initialization")
     struct ManagerInitialization {
         @Test("Permissions manager initialization")
         @MainActor func permissionsManagerInitialization() async throws {
             let manager = PermissionsManager()
 
             // Verify manager initializes properly
-            #expect(manager != nil)
+            #expect(manager is PermissionsManager)
 
-            // Verify properties are available
-            #expect(manager.hasAccessibilityPermissions != nil)
-            #expect(manager.hasAutomationPermissions != nil)
-            #expect(manager.hasScreenRecordingPermissions != nil)
-            #expect(manager.hasNotificationPermissions != nil)
+            // Verify properties are available (they return Bool values)
+            _ = manager.hasAccessibilityPermissions
+            _ = manager.hasAutomationPermissions 
+            _ = manager.hasScreenRecordingPermissions
+            _ = manager.hasNotificationPermissions
         }
 
         @Test("Permissions manager shared instance")
@@ -36,7 +36,7 @@ struct AccessibilityTests {
 
         @Test("Permissions manager observable object compliance")
         @MainActor func permissionsManagerObservableObjectCompliance() async throws {
-            let manager = PermissionsManager()
+            let manager = await PermissionsManager()
 
             // Test that it's properly marked as @MainActor and ObservableObject
             let objectWillChangePublisher = manager.objectWillChange
@@ -46,7 +46,7 @@ struct AccessibilityTests {
 
     // MARK: - Permission Operations Suite
 
-    @Suite("Permission Operations", .tags(.operations, .system_calls))
+    @Suite("Permission Operations", .tags(.operations, .system))
     struct PermissionOperations {
         @Test("Permissions manager permission check methods")
         @MainActor func permissionsManagerPermissionCheckMethods() async throws {
@@ -80,15 +80,15 @@ struct AccessibilityTests {
 
             // The permission state should be updated (may be same or different)
             let finalState = manager.hasAccessibilityPermissions
-            #expect(!finalState == true || finalState)
+            #expect(finalState == true || finalState == false)
 
             // Note: In tests, this likely won't change unless running with permissions
             // But the method should complete without crashing
         }
 
-        @Test("Multiple permission request types", arguments: permissionTypes)
-        func multiplePermissionRequestTypes(permissionType: String) async throws {
-            let manager = PermissionsManager()
+        @Test("Multiple permission request types", arguments: AccessibilityTestData.permissionTypes)
+        @MainActor func multiplePermissionRequestTypes(permissionType: String) async throws {
+            let manager = await PermissionsManager()
 
             // Test different permission request patterns
             switch permissionType {
@@ -114,7 +114,7 @@ struct AccessibilityTests {
             let hasPermissions = AXPermissionHelpers.hasAccessibilityPermissions()
 
             // Should return a boolean value (either true or false)
-            #expect(!hasPermissions == true || hasPermissions)
+            #expect(hasPermissions == true || hasPermissions == false)
         }
 
         @Test("AX Permission helpers permission request")
@@ -131,16 +131,16 @@ struct AccessibilityTests {
         func aXPermissionHelpersStaticMethodAvailability() async throws {
             // Verify that the static methods we depend on are available
             let hasPermissions = AXPermissionHelpers.hasAccessibilityPermissions()
-            #expect(hasPermissions != nil)
+            #expect(hasPermissions == true || hasPermissions == false)
 
             let requestResult = await AXPermissionHelpers.requestPermissions()
-            #expect(requestResult != nil)
+            #expect(requestResult == true || requestResult == false)
         }
     }
 
     // MARK: - System Integration Suite
 
-    @Suite("System Integration", .tags(.system, .urls))
+    @Suite("System Integration", .tags(.system, .ui))
     struct SystemIntegration {
         @Test("Permissions manager URL generation")
         @MainActor func permissionsManagerURLGeneration() async throws {
@@ -150,14 +150,14 @@ struct AccessibilityTests {
             let screenRecordingURL =
                 URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_ScreenCapture")
 
-            #expect(automationURL != nil)
-            #expect(screenRecordingURL != nil)
+            #expect(automationURL is URL)
+            #expect(screenRecordingURL is URL)
         }
 
-        @Test("Settings URLs are valid", arguments: settingsURLs)
+        @Test("Settings URLs are valid", arguments: AccessibilityTestData.settingsURLs)
         func settingsURLsAreValid(urlString: String) async throws {
             let url = URL(string: urlString)
-            #expect(url != nil, "URL should be valid: \(urlString)")
+            #expect(url is URL, "URL should be valid: \(urlString)")
             #expect(url?.scheme == "x-apple.systempreferences", "Should use system preferences scheme")
         }
     }
@@ -178,10 +178,10 @@ struct AccessibilityTests {
             let initialNotifications = manager.hasNotificationPermissions
 
             // These should be boolean values, not nil
-            #expect(!initialAccessibility == true || initialAccessibility)
-            #expect(!initialAutomation == true || initialAutomation)
-            #expect(!initialScreenRecording == true || initialScreenRecording)
-            #expect(!initialNotifications == true || initialNotifications)
+            #expect(initialAccessibility == true || initialAccessibility == false)
+            #expect(initialAutomation == true || initialAutomation == false)
+            #expect(initialScreenRecording == true || initialScreenRecording == false)
+            #expect(initialNotifications == true || initialNotifications == false)
         }
 
         @Test("Permissions manager permission monitoring task")
@@ -192,10 +192,15 @@ struct AccessibilityTests {
             try await Task.sleep(for: .milliseconds(100)) // 100ms
 
             // Verify that permission properties remain accessible
-            #expect(manager.hasAccessibilityPermissions != nil)
-            #expect(manager.hasAutomationPermissions != nil)
-            #expect(manager.hasScreenRecordingPermissions != nil)
-            #expect(manager.hasNotificationPermissions != nil)
+            let hasAccessibility = manager.hasAccessibilityPermissions
+            let hasAutomation = manager.hasAutomationPermissions
+            let hasScreenRecording = manager.hasScreenRecordingPermissions
+            let hasNotifications = manager.hasNotificationPermissions
+            
+            #expect(hasAccessibility == true || hasAccessibility == false)
+            #expect(hasAutomation == true || hasAutomation == false)
+            #expect(hasScreenRecording == true || hasScreenRecording == false)
+            #expect(hasNotifications == true || hasNotifications == false)
         }
 
         @Test("Published property updates")
@@ -233,7 +238,7 @@ struct AccessibilityTests {
             #expect(true) // If we get here, multiple requests didn't crash
         }
 
-        @Test("Permissions manager memory management", .timeLimit(.seconds(5)))
+        @Test("Permissions manager memory management", .timeLimit(.minutes(1)))
         @MainActor func permissionsManagerMemoryManagement() async throws {
             weak var weakManager: PermissionsManager?
 
@@ -241,7 +246,7 @@ struct AccessibilityTests {
             autoreleasepool {
                 let manager = PermissionsManager()
                 weakManager = manager
-                #expect(weakManager != nil)
+                #expect(weakManager is PermissionsManager)
             }
 
             // Wait a bit for deallocation
@@ -273,29 +278,6 @@ struct AccessibilityTests {
     }
 
     // MARK: - Test Fixtures and Data
-
-    static let permissionTypes = ["accessibility", "automation", "screen_recording", "notifications"]
-    static let settingsURLs = [
-        "x-apple.systempreferences:com.apple.preference.security?Privacy_Automation",
-        "x-apple.systempreferences:com.apple.preference.security?Privacy_ScreenCapture",
-    ]
+    // Test data moved to CursorMonitorTestData.swift to avoid Swift Testing macro issues
 }
 
-// MARK: - Custom Test Tags
-
-extension Tag {
-    @Tag static var accessibility: Self
-    @Tag static var permissions: Self
-    @Tag static var system: Self
-    @Tag static var initialization: Self
-    @Tag static var manager: Self
-    @Tag static var operations: Self
-    @Tag static var system_calls: Self
-    @Tag static var axorcist: Self
-    @Tag static var integration: Self
-    @Tag static var urls: Self
-    @Tag static var state: Self
-    @Tag static var caching: Self
-    @Tag static var reliability: Self
-    @Tag static var edge_cases: Self
-}

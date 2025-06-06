@@ -319,16 +319,3 @@ struct SettingsServiceTests {
     }
 }
 
-// MARK: - Custom Test Tags
-
-extension Tag {
-    @Tag static var settings: Self
-    @Tag static var persistence: Self
-    @Tag static var configuration: Self
-    @Tag static var service: Self
-    @Tag static var publishers: Self
-    @Tag static var defaults: Self
-    @Tag static var mutations: Self
-    @Tag static var edge_cases: Self
-    @Tag static var robustness: Self
-}

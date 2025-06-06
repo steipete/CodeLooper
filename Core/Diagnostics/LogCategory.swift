@@ -10,7 +10,7 @@ import Foundation
 ///
 /// Categories are organized by functional area (app lifecycle, core features,
 /// UI components, utilities) to make debugging and log analysis more efficient.
-public enum LogCategory: String, CaseIterable {
+public enum LogCategory: String, CaseIterable, Sendable {
     // Application lifecycle and general app events
     case app = "App"
     case appDelegate = "AppDelegate"

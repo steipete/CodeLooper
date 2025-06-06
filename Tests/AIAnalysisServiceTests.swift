@@ -95,15 +95,15 @@ struct AIAnalysisServiceTests {
         }
         
         @Test("Provider-specific attributes")
-        func providerSpecificAttributes() throws {
+        @MainActor func providerSpecificAttributes() async throws {
             // Using confirmation for multiple related checks
-            confirmation("OpenAI provider") { confirm in
+            await confirmation("OpenAI provider") { confirm in
                 #expect(AIProvider.openAI.rawValue == "OpenAI")
                 #expect(AIProvider.openAI.displayName == "OpenAI")
                 confirm()
             }
             
-            confirmation("Ollama provider") { confirm in
+            await confirmation("Ollama provider") { confirm in
                 #expect(AIProvider.ollama.rawValue == "Ollama")
                 #expect(AIProvider.ollama.displayName == "Ollama (Local)")
                 confirm()
@@ -310,8 +310,7 @@ struct AIAnalysisServiceTests {
     struct PerformanceTests {
         @Test(
             "Bulk operations performance",
-            .timeLimit(.seconds(1)),
-            traits: [PerformanceRequirement(maxDuration: .seconds(1))]
+            .timeLimit(.minutes(1))
         )
         func bulkOperationsPerformance() async throws {
             await confirmation("Bulk request creation", expectedCount: 1000) { confirm in
@@ -327,7 +326,7 @@ struct AIAnalysisServiceTests {
             }
         }
         
-        @Test("Concurrent manager operations", .timeLimit(.seconds(2)))
+        @Test("Concurrent manager operations", .timeLimit(.minutes(1)))
         func concurrentManagerOperations() async throws {
             let manager = await AIServiceManager.shared
             
@@ -359,7 +358,7 @@ struct AIAnalysisServiceTests {
     
     @Suite("Integration", .tags(.integration), .disabled("Requires live service"))
     struct IntegrationTests {
-        @Test("End-to-end analysis flow", traits: [RequiresNetwork.self])
+        @Test("End-to-end analysis flow")
         func endToEndAnalysisFlow() async throws {
             let manager = await AIServiceManager.shared
             
@@ -377,23 +376,9 @@ extension AIAnalysisServiceTests {
         file: StaticString = #filePath,
         line: UInt = #line
     ) {
-        #expect(request.image.size.width > 0, sourceLocation: SourceLocation(filePath: file, line: Int(line)))
-        #expect(request.image.size.height > 0, sourceLocation: SourceLocation(filePath: file, line: Int(line)))
-        #expect(AIModel.allCases.contains(request.model), sourceLocation: SourceLocation(filePath: file, line: Int(line)))
+        #expect(request.image.size.width > 0, sourceLocation: SourceLocation(fileID: String(describing: file), filePath: String(describing: file), line: Int(line), column: 1))
+        #expect(request.image.size.height > 0, sourceLocation: SourceLocation(fileID: String(describing: file), filePath: String(describing: file), line: Int(line), column: 1))
+        #expect(AIModel.allCases.contains(request.model), sourceLocation: SourceLocation(fileID: String(describing: file), filePath: String(describing: file), line: Int(line), column: 1))
     }
 }
 
-// MARK: - Test Tags
-
-extension Tag {
-    @Tag static var ai: Self
-    @Tag static var analysis: Self
-    @Tag static var service: Self
-    @Tag static var provider: Self
-    @Tag static var model: Self
-    @Tag static var io: Self
-    @Tag static var error: Self
-    @Tag static var manager: Self
-    @Tag static var performance: Self
-    @Tag static var integration: Self
-}

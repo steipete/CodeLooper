@@ -63,12 +63,12 @@ public final class AppDelegate: NSObject, NSApplicationDelegate, ObservableObjec
         logger.info("Application finished launching.")
         sessionLogger.log(level: .info, message: "Application finished launching.")
 
-        // Single instance check - skip for Xcode previews
+        // Single instance check - skip for Xcode previews and tests
         let isXcodePreview = ProcessInfo.processInfo.environment["XCODE_RUNNING_FOR_PREVIEWS"] == "1"
 
-        // Single instance check - skip for Xcode previews and DEBUG builds
+        // Single instance check - skip for Xcode previews, tests, and DEBUG builds
         #if !DEBUG
-        if !isXcodePreview {
+        if !isXcodePreview && !Constants.isTestEnvironment {
             singleInstanceLock = SingleInstanceLock(identifier: "me.steipete.codelooper.instance")
 
             // Check single instance asynchronously
@@ -88,7 +88,7 @@ public final class AppDelegate: NSObject, NSApplicationDelegate, ObservableObjec
                 }
             }
         } else {
-            logger.info("Running in Xcode preview mode - skipping single instance check")
+            logger.info("Running in Xcode preview mode or test environment - skipping single instance check")
         }
         #else
         logger.info("DEBUG build: Single instance check is disabled")
@@ -118,25 +118,27 @@ public final class AppDelegate: NSObject, NSApplicationDelegate, ObservableObjec
         // Self.shared = self // This is incorrect; shared is a get-only computed property.
 
         #if DEBUG
-            startCursorAXObservation()
+            if !Constants.isTestEnvironment {
+                startCursorAXObservation()
 
-            // Automatically open settings for faster debugging in DEBUG builds
-            Task { @MainActor in
-                // Ensure windowManager is available and settings can be opened.
-                // This assumes windowManager is initialized and ready.
-                // If settings are part of a scene that's always available, that's easier.
-                // For now, directly call a method on windowManager if available.
-                // Need to ensure windowManager is properly initialized before this timer fires.
-                // A more robust way for scenes: NSApp.openSettings()
-                // but if your settings is custom window, use windowManager.
-                // Let's assume showSettingsWindow() exists on AppDelegate or WindowManager.
-                // If using standard SwiftUI Settings scene:
-                // NSApp.sendAction(Selector(("showSettingsWindow:")), to: nil, from: nil)
-                // Or for custom window via windowManager:
-                // self.windowManager?.openSettings() // Incorrect method name
-                // NSApp.sendAction(Selector(("showSettingsWindow:")), to: nil, from: nil)
-                SettingsService.openSettingsSubject.send()
-                self.logger.info("DEBUG: Requested settings open via SettingsService.")
+                // Automatically open settings for faster debugging in DEBUG builds
+                Task { @MainActor in
+                    // Ensure windowManager is available and settings can be opened.
+                    // This assumes windowManager is initialized and ready.
+                    // If settings are part of a scene that's always available, that's easier.
+                    // For now, directly call a method on windowManager if available.
+                    // Need to ensure windowManager is properly initialized before this timer fires.
+                    // A more robust way for scenes: NSApp.openSettings()
+                    // but if your settings is custom window, use windowManager.
+                    // Let's assume showSettingsWindow() exists on AppDelegate or WindowManager.
+                    // If using standard SwiftUI Settings scene:
+                    // NSApp.sendAction(Selector(("showSettingsWindow:")), to: nil, from: nil)
+                    // Or for custom window via windowManager:
+                    // self.windowManager?.openSettings() // Incorrect method name
+                    // NSApp.sendAction(Selector(("showSettingsWindow:")), to: nil, from: nil)
+                    SettingsService.openSettingsSubject.send()
+                    self.logger.info("DEBUG: Requested settings open via SettingsService.")
+                }
             }
         #endif
     }
@@ -368,12 +370,14 @@ public final class AppDelegate: NSObject, NSApplicationDelegate, ObservableObjec
         notificationObservers.append(highlightMenuBarObserver)
         
         // Observer for showing settings when another instance is launched
-        DistributedNotificationCenter.default().addObserver(
-            self,
-            selector: #selector(handleShowSettingsNotification),
-            name: NSNotification.Name("me.steipete.codelooper.showSettings"),
-            object: nil
-        )
+        if !Constants.isTestEnvironment {
+            DistributedNotificationCenter.default().addObserver(
+                self,
+                selector: #selector(handleShowSettingsNotification),
+                name: NSNotification.Name("me.steipete.codelooper.showSettings"),
+                object: nil
+            )
+        }
 
         // Observer for showing AXpector Window
         let axpectorObserver = NotificationCenter.default.addObserver(

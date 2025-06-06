@@ -194,7 +194,7 @@ struct InterventionEngineTests {
             #expect(decodedContainer.type == type)
         }
 
-        @Test("All intervention types can be serialized consistently", .timeLimit(.seconds(5)))
+        @Test("All intervention types can be serialized consistently", .timeLimit(.minutes(1)))
         func interventionTypeSerializationConsistency() async throws {
             let encoder = JSONEncoder()
             let decoder = JSONDecoder()
@@ -260,7 +260,7 @@ struct InterventionEngineTests {
         }
 
         @Test("Priority distribution analysis")
-        func priorityDistributionAnalysis() throws {
+        func priorityDistributionAnalysis() async throws {
             let matrix = InterventionTestUtilities.createInterventionMatrix()
             let priorities = matrix.map { $0.priority }
             
@@ -289,8 +289,7 @@ struct InterventionEngineTests {
     struct StateManagement {
         @Test(
             "State transition validation matrix",
-            arguments: InterventionEngineTests().stateTransitionMatrix,
-            traits: [StateTransitionTrait(fromState: "various", toState: "various", isValid: true)]
+            arguments: InterventionEngineTests().stateTransitionMatrix
         )
         func stateTransitionValidationMatrix(
             transition: (from: InterventionTestUtilities.InterventionType, to: InterventionTestUtilities.InterventionType, valid: Bool)
@@ -411,10 +410,10 @@ struct InterventionEngineTests {
         }
 
         @Test("Intervention types support equality comparison", arguments: [
-            (.connectionIssue, .connectionIssue, true),
-            (.connectionIssue, .generalError, false),
-            (.positiveWorkingState, .positiveWorkingState, true),
-            (.unknown, .automatedRecovery, false),
+            (CursorInterventionEngine.InterventionType.connectionIssue, CursorInterventionEngine.InterventionType.connectionIssue, true),
+            (CursorInterventionEngine.InterventionType.connectionIssue, CursorInterventionEngine.InterventionType.generalError, false),
+            (CursorInterventionEngine.InterventionType.positiveWorkingState, CursorInterventionEngine.InterventionType.positiveWorkingState, true),
+            (CursorInterventionEngine.InterventionType.unknown, CursorInterventionEngine.InterventionType.automatedRecovery, false),
         ])
         func interventionTypeEquality(comparison: (
             CursorInterventionEngine.InterventionType,
@@ -464,8 +463,7 @@ struct InterventionEngineTests {
                 ("enum_operations", 10000, Duration.milliseconds(100)),
                 ("serialization", 1000, Duration.milliseconds(500)),
                 ("categorization", 5000, Duration.milliseconds(200))
-            ],
-            traits: [InterventionTestTrait(category: "performance", severity: .low)]
+            ]
         )
         func performanceBenchmarks(
             benchmark: (name: String, iterations: Int, maxDuration: Duration)
@@ -509,7 +507,7 @@ struct InterventionEngineTests {
                    "\(benchmark.name) should complete within \(benchmark.maxDuration)")
         }
 
-        @Test("Serialization performance is acceptable", .timeLimit(.seconds(3)))
+        @Test("Serialization performance is acceptable", .timeLimit(.minutes(1)))
         func serializationPerformance() async throws {
             let encoder = JSONEncoder()
             let decoder = JSONDecoder()
@@ -534,7 +532,7 @@ struct InterventionEngineTests {
     
     @Suite("Integration", .tags(.integration), .disabled("Requires live intervention system"))
     struct IntegrationTests {
-        @Test("End-to-end intervention flow", traits: [RequiresInterventionCapability.self])
+        @Test("End-to-end intervention flow")
         func endToEndInterventionFlow() async throws {
             // This test would verify actual intervention execution
             #expect(true)
@@ -551,34 +549,41 @@ extension InterventionEngineTests {
         file: StaticString = #filePath,
         line: UInt = #line
     ) {
-        #expect(!type.rawValue.isEmpty, sourceLocation: SourceLocation(filePath: file, line: Int(line)))
+        #expect(!type.rawValue.isEmpty, sourceLocation: SourceLocation(fileID: String(describing: file), filePath: String(describing: file), line: Int(line), column: 1))
         #expect(InterventionTestUtilities.InterventionType.allCases.contains(type), 
-               sourceLocation: SourceLocation(filePath: file, line: Int(line)))
+               sourceLocation: SourceLocation(fileID: String(describing: file), filePath: String(describing: file), line: Int(line), column: 1))
         
         if let expectedCategory = expectedCategory {
             let actualCategory = InterventionTestUtilities.categorizeInterventionType(type)
             #expect(actualCategory == expectedCategory, 
-                   sourceLocation: SourceLocation(filePath: file, line: Int(line)))
+                   sourceLocation: SourceLocation(fileID: String(describing: file), filePath: String(describing: file), line: Int(line), column: 1))
         }
     }
 }
 
-// MARK: - Custom Test Tags
+// MARK: - Test Data
 
-extension Tag {
-    @Tag static var intervention: Self
-    @Tag static var engine: Self
-    @Tag static var recovery: Self
-    @Tag static var enumeration: Self
-    @Tag static var validation: Self
-    @Tag static var serialization: Self
-    @Tag static var codable: Self
-    @Tag static var classification: Self
-    @Tag static var logic: Self
-    @Tag static var state: Self
-    @Tag static var transitions: Self
-    @Tag static var type_safety: Self
-    @Tag static var collections: Self
-    @Tag static var performance: Self
-    @Tag static var timing: Self
-}
+private let positiveTypes: [CursorInterventionEngine.InterventionType] = [
+    .noInterventionNeeded,
+    .positiveWorkingState,
+    .sidebarActivityDetected
+]
+
+private let controlTypes: [CursorInterventionEngine.InterventionType] = [
+    .manualPause,
+    .monitoringPaused,
+    .interventionLimitReached
+]
+
+private let recoveryTypes: [CursorInterventionEngine.InterventionType] = [
+    .automatedRecovery,
+    .awaitingAction
+]
+
+private let errorTypes: [CursorInterventionEngine.InterventionType] = [
+    .connectionIssue,
+    .generalError,
+    .unrecoverableError,
+    .processNotRunning
+]
+

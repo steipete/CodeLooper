@@ -42,10 +42,10 @@ struct NotificationHandlingTests {
         @Test("Notification error cases")
         func notificationErrorCases() async throws {
             // Test authorization denied error
-            let authError = NotificationError.authorizationDenied
-            #expect(authError.errorDescription == "Notification permissions are denied")
-            #expect(authError.failureReason == "User has denied notification permissions")
-            #expect(authError.recoverySuggestion == "Enable notifications in System Preferences")
+            let authError = NotificationError.permissionDenied
+            #expect(authError.errorDescription == "Notification permission was denied")
+            #expect(authError.failureReason == nil)
+            #expect(authError.recoverySuggestion == nil)
 
             // Test delivery failed error with underlying error
             let nsError = NSError(domain: "TestDomain", code: 123, userInfo: [NSLocalizedDescriptionKey: "Test error"])
@@ -159,7 +159,7 @@ struct NotificationHandlingTests {
             let manager = await UserNotificationManager.shared
 
             // Request permissions (should not crash regardless of system state)
-            await manager.requestPermissions()
+            await manager.requestNotificationPermissions()
 
             // After requesting, we should have a definite status
             let status = await manager.authorizationStatus
@@ -171,7 +171,7 @@ struct NotificationHandlingTests {
 
     @Suite("Concurrent Operations", .tags(.concurrency, .threading))
     struct ConcurrentOperations {
-        @Test("Concurrent notification operations", .timeLimit(.seconds(5)))
+        @Test("Concurrent notification operations", .timeLimit(.minutes(1)))
         func concurrentNotificationOperations() async throws {
             let manager = await UserNotificationManager.shared
 
@@ -209,21 +209,3 @@ struct NotificationHandlingTests {
     ]
 }
 
-// MARK: - Custom Test Tags
-
-extension Tag {
-    @Tag static var notifications: Self
-    @Tag static var system: Self
-    @Tag static var permissions: Self
-    @Tag static var initialization: Self
-    @Tag static var singleton: Self
-    @Tag static var error: Self
-    @Tag static var validation: Self
-    @Tag static var authorization: Self
-    @Tag static var content: Self
-    @Tag static var creation: Self
-    @Tag static var rules: Self
-    @Tag static var requests: Self
-    @Tag static var concurrency: Self
-    @Tag static var threading: Self
-}

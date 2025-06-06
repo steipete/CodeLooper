@@ -165,6 +165,9 @@ let project = Project(
                     // Enable automatic macro trust for Swift Testing
                     "ENABLE_USER_SCRIPT_SANDBOXING": "NO",
                     "SWIFT_PACKAGE_MACRO_VALIDATION": "NO",
+                    // Configure test host
+                    "TEST_HOST": "$(BUILT_PRODUCTS_DIR)/CodeLooper.app/Contents/MacOS/CodeLooper",
+                    "BUNDLE_LOADER": "$(TEST_HOST)",
                 ]
             )
         ),

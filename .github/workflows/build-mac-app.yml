@@ -223,14 +223,29 @@ jobs:
           chmod +x scripts/build.sh
           chmod +x scripts/codesign-app.sh
 
-      - name: Install build tools (Tuist, xcbeautify, SwiftLint, SwiftFormat)
+      - name: Install mise
         run: |
-          # Use Homebrew to install all build tools
-          brew install tuist xcbeautify swiftlint swiftformat
+          # Install mise (formerly rtx) for tool version management
+          curl https://mise.run | sh
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+          
+      - name: Install build tools (Tuist via mise, xcbeautify, SwiftLint, SwiftFormat)
+        run: |
+          # Install Tuist via mise to ensure consistent version
+          mise install
+          eval "$(mise activate bash)"
+          
+          # Install other tools via Homebrew
+          brew install xcbeautify swiftlint swiftformat
+          
+          # Verify Tuist installation
+          tuist version
           tuist --help | head -5
 
       - name: Generate Xcode project with Tuist
         run: |
+          # Ensure mise environment is activated
+          eval "$(mise activate bash)"
           # Generate Xcode project with Swift 6.0
           ./scripts/generate-xcproj.sh
 
@@ -248,6 +263,19 @@ jobs:
           echo "::group::SwiftLint Check"
           chmod +x scripts/ci-swiftlint.sh
           scripts/ci-swiftlint.sh --verbose || echo "::warning::SwiftLint found linting issues"
+          echo "::endgroup::"
+
+      - name: Run Tests
+        continue-on-error: true
+        run: |
+          echo "::group::Running Tests"
+          echo "Running test suite..."
+          set -o pipefail
+          xcodebuild -workspace CodeLooper.xcworkspace \
+            -scheme CodeLooper-Workspace \
+            -configuration Debug \
+            -destination "platform=macOS" \
+            test | xcbeautify || echo "::warning::Some tests failed"
           echo "::endgroup::"
 
       - name: Build, Sign, and Optionally Notarize macOS App

@@ -62,7 +62,7 @@ struct NetworkingTests {
 
     // MARK: - WebSocketManager Tests
 
-    @Test("Web socket manager initialization") func webSocketManagerInitialization() {
+    @Test("Web socket manager initialization") @MainActor func webSocketManagerInitialization() async throws {
         let port: UInt16 = 9876
         let manager = await WebSocketManager(port: port)
 
@@ -72,7 +72,7 @@ struct NetworkingTests {
         }
     }
 
-    @Test("Web socket manager lifecycle") func webSocketManagerLifecycle() {
+    @Test("Web socket manager lifecycle") @MainActor func webSocketManagerLifecycle() async throws {
         let port: UInt16 = 9877
         let manager = await WebSocketManager(port: port)
 
@@ -88,7 +88,7 @@ struct NetworkingTests {
         #expect(true)
     }
 
-    @Test("Web socket connection handling") func webSocketConnectionHandling() {
+    @Test("Web socket connection handling") @MainActor func webSocketConnectionHandling() async throws {
         let port: UInt16 = 9878
         let manager = await WebSocketManager(port: port)
 
@@ -102,7 +102,7 @@ struct NetworkingTests {
 
     // MARK: - API Key Service Tests
 
-    @Test("Api key service initialization") func apiKeyServiceInitialization() {
+    @Test("Api key service initialization") @MainActor func apiKeyServiceInitialization() async throws {
         // Create API key service
         let apiKeyService = await APIKeyService.shared
 
@@ -112,12 +112,12 @@ struct NetworkingTests {
 
     // MARK: - MCP Version Service Tests
 
-    @Test("Mcp version service initialization") func mcpVersionServiceInitialization() {
+    @Test("Mcp version service initialization") @MainActor func mcpVersionServiceInitialization() async throws {
         let service = await MCPVersionService.shared
         #expect(service != nil)
     }
 
-    @Test("Mcp version service retrieval") func mcpVersionServiceRetrieval() {
+    @Test("Mcp version service retrieval") @MainActor func mcpVersionServiceRetrieval() async throws {
         let service = await MCPVersionService.shared
 
         // Test version checking
@@ -247,7 +247,7 @@ struct NetworkingTests {
 
     // MARK: - Mock Testing
 
-    @Test("Mock u r l session success") func mockURLSessionSuccess() {
+    @Test("Mock u r l session success") @MainActor func mockURLSessionSuccess() async throws {
         let session = MockURLSession()
         let expectedData = "Test response".data(using: .utf8)!
         let expectedResponse = HTTPURLResponse(
@@ -267,7 +267,7 @@ struct NetworkingTests {
         #expect((response as? HTTPURLResponse)?.statusCode == 200)
     }
 
-    @Test("Mock u r l session error") func mockURLSessionError() {
+    @Test("Mock u r l session error") @MainActor func mockURLSessionError() async throws {
         let session = MockURLSession()
         session.mockError = URLError(.notConnectedToInternet)
 
@@ -281,7 +281,7 @@ struct NetworkingTests {
         }
     }
 
-    @Test("Mock u r l session timeout") func mockURLSessionTimeout() {
+    @Test("Mock u r l session timeout") @MainActor func mockURLSessionTimeout() async throws {
         let session = MockURLSession()
         session.shouldTimeout = true
 
@@ -303,7 +303,7 @@ struct NetworkingTests {
 
     // MARK: - Port Management Tests
 
-    @Test("Port manager allocation") func portManagerAllocation() {
+    @Test("Port manager allocation") @MainActor func portManagerAllocation() async throws {
         let portManager = await PortManager()
         let port = await portManager.getOrAssignPort(for: "test-window")
 
@@ -311,7 +311,7 @@ struct NetworkingTests {
         #expect(port <= 65535)
     }
 
-    @Test("Port manager duplication") func portManagerDuplication() {
+    @Test("Port manager duplication") @MainActor func portManagerDuplication() async throws {
         let portManager = await PortManager()
 
         let port1 = await portManager.getOrAssignPort(for: "window1")
@@ -333,7 +333,7 @@ struct NetworkingTests {
         monitor.cancel()
     }
 
-    @Test("Network path status") func networkPathStatus() {
+    @Test("Network path status") func networkPathStatus() async throws {
         let monitor = NWPathMonitor()
         let queue = DispatchQueue(label: "test.network.monitor")
 
@@ -343,6 +343,10 @@ struct NetworkingTests {
 
             func markUpdated() {
                 pathUpdated = true
+            }
+            
+            func getPathUpdated() -> Bool {
+                pathUpdated
             }
         }
 
@@ -362,13 +366,13 @@ struct NetworkingTests {
         monitor.cancel()
 
         // Should have received at least one path update
-        let wasUpdated = await tracker.pathUpdated
+        let wasUpdated = await tracker.getPathUpdated()
         #expect(wasUpdated)
     }
 
     // MARK: - WebSocket Communication Tests
 
-    @Test("Web socket message encoding") func webSocketMessageEncoding() {
+    @Test("Web socket message encoding") @MainActor func webSocketMessageEncoding() async throws {
         let message = ["command": "test", "data": "value"]
         let data = try JSONSerialization.data(withJSONObject: message)
         let string = String(data: data, encoding: .utf8)
@@ -377,7 +381,7 @@ struct NetworkingTests {
         #expect(string?.contains("command") == true)
     }
 
-    @Test("Web socket message decoding") func webSocketMessageDecoding() {
+    @Test("Web socket message decoding") @MainActor func webSocketMessageDecoding() async throws {
         let jsonString = """
         {"status": "success", "result": "test"}
         """
@@ -388,7 +392,7 @@ struct NetworkingTests {
         #expect(decoded?["result"] as? String == "test")
     }
 
-    @Test("Web socket reconnection") func webSocketReconnection() {
+    @Test("Web socket reconnection") @MainActor func webSocketReconnection() async throws {
         let manager = await WebSocketManager(port: 9880)
 
         // Test reconnection capability
@@ -400,7 +404,7 @@ struct NetworkingTests {
 
     // MARK: - Integration Tests
 
-    @Test("Networking stack integration") func networkingStackIntegration() {
+    @Test("Networking stack integration") @MainActor func networkingStackIntegration() async throws {
         // Test that all networking components can work together
         let webSocketManager = await WebSocketManager(port: 9881)
         let apiKeyService = await APIKeyService.shared
@@ -412,7 +416,7 @@ struct NetworkingTests {
         #expect(mcpVersionService != nil)
     }
 
-    @Test("Concurrent network operations") func concurrentNetworkOperations() {
+    @Test("Concurrent network operations") @MainActor func concurrentNetworkOperations() async throws {
         // Test concurrent network operations
         await withTaskGroup(of: Void.self) { group in
             // Simulate multiple network operations
@@ -436,7 +440,7 @@ struct NetworkingTests {
 
     // MARK: - Performance Tests
 
-    @Test("Networking performance") func networkingPerformance() {
+    @Test("Networking performance") @MainActor func networkingPerformance() async throws {
         let startTime = Date()
 
         // Test creating multiple WebSocket managers

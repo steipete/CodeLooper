@@ -70,7 +70,8 @@ final class LocalEventMonitor {
 	}
 
 	deinit {
-		// stop() will be called manually before deinit if needed
+		// Cannot call stop() here due to MainActor isolation in Swift 6
+		// stop() must be called manually before deinit to clean up resources
 	}
 
 	@discardableResult
@@ -134,7 +135,8 @@ final class RunLoopLocalEventMonitor {
 	}
 
 	deinit {
-		// stop() will be called manually before deinit if needed
+		// Cannot call stop() here due to MainActor isolation in Swift 6
+		// stop() must be called manually before deinit to clean up resources
 	}
 
 	@discardableResult

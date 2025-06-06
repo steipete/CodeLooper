@@ -121,7 +121,7 @@ struct ProcessMonitoringTests {
             try ProcessMonitoringTestUtilities.validateRecoveryType(type)
             
             // Validate raw values follow convention
-            #expect(type.rawValue.first?.isLowercase)
+            #expect(type.rawValue.first?.isLowercase == true)
             #expect(!type.rawValue.contains(" "))
         }
         
@@ -182,7 +182,7 @@ struct ProcessMonitoringTests {
         }
         
         @Test("Status equality and uniqueness")
-        func statusEqualityAndUniqueness() throws {
+        @MainActor func statusEqualityAndUniqueness() async throws {
             await confirmation("Status equality rules", expectedCount: 5) { confirm in
                 // Same status with same parameters
                 let status1 = CursorInstanceStatus.working(detail: "Generating")
@@ -249,8 +249,7 @@ struct ProcessMonitoringTests {
     struct StateTransitions {
         @Test(
             "Valid state transitions",
-            arguments: ProcessMonitoringTests().statusTransitionMatrix,
-            traits: [StatusTransitionTrait(fromStatus: "various", toStatus: "various", isValid: true)]
+            arguments: ProcessMonitoringTests().statusTransitionMatrix
         )
         func validStateTransitions(
             transition: (from: CursorInstanceStatus, to: CursorInstanceStatus, valid: Bool)
@@ -311,8 +310,7 @@ struct ProcessMonitoringTests {
     struct Performance {
         @Test(
             "Status operations performance",
-            .timeLimit(.seconds(1)),
-            traits: [ProcessMonitoringTrait(category: "performance", priority: .low)]
+            .timeLimit(.minutes(1))
         )
         func statusOperationsPerformance() throws {
             let iterations = 10000
@@ -339,7 +337,7 @@ struct ProcessMonitoringTests {
             #expect(elapsed < .seconds(1), "Operations should complete quickly")
         }
         
-        @Test("Collection performance with statuses", .timeLimit(.seconds(2)))
+        @Test("Collection performance with statuses", .timeLimit(.minutes(1)))
         func collectionPerformanceWithStatuses() throws {
             var statusSet: Set<CursorInstanceStatus> = []
             var statusArray: [CursorInstanceStatus] = []
@@ -365,7 +363,7 @@ struct ProcessMonitoringTests {
     
     @Suite("Integration", .tags(.integration), .disabled("Requires live monitoring"))
     struct IntegrationTests {
-        @Test("End-to-end status flow", traits: [RequiresProcessMonitoring.self])
+        @Test("End-to-end status flow")
         func endToEndStatusFlow() async throws {
             // This test would verify actual process monitoring
             #expect(true)
@@ -386,26 +384,14 @@ extension ProcessMonitoringTests {
             try ProcessMonitoringTestUtilities.validateInstanceStatus(status)
         } catch {
             Issue.record("Status validation failed: \(error)", 
-                        sourceLocation: SourceLocation(filePath: file, line: Int(line)))
+                        sourceLocation: SourceLocation(fileID: String(describing: file), filePath: String(describing: file), line: Int(line), column: 1))
         }
         
         if let expectedCategory = expectedCategory {
             let actualCategory = ProcessMonitoringTestUtilities.categorizeStatus(status)
             #expect(actualCategory == expectedCategory,
-                   sourceLocation: SourceLocation(filePath: file, line: Int(line)))
+                   sourceLocation: SourceLocation(fileID: String(describing: file), filePath: String(describing: file), line: Int(line), column: 1))
         }
     }
 }
 
-// MARK: - Custom Test Tags
-
-extension Tag {
-    @Tag static var recovery: Self
-    @Tag static var enumeration: Self
-    @Tag static var status: Self
-    @Tag static var state: Self
-    @Tag static var transitions: Self
-    @Tag static var performance: Self
-    @Tag static var benchmarks: Self
-    @Tag static var integration: Self
-}

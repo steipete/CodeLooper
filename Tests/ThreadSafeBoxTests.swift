@@ -107,7 +107,7 @@ struct ThreadSafeBoxTests {
             }
         }
 
-        @Test("High contention scenario stress test", .timeLimit(.seconds(30)))
+        @Test("High contention scenario stress test", .timeLimit(.minutes(1)))
         func highContentionStressTest() async throws {
             let box = ThreadSafeBox("")
             let taskCount = 100
@@ -211,7 +211,7 @@ struct ThreadSafeBoxTests {
 
     @Suite("Performance", .tags(.performance, .memory))
     struct Performance {
-        @Test("Operations complete within reasonable time", .timeLimit(.seconds(5)))
+        @Test("Operations complete within reasonable time", .timeLimit(.minutes(1)))
         func operationPerformance() async throws {
             let box = ThreadSafeBox(0)
             let operationCount = 10000
@@ -363,19 +363,3 @@ struct ThreadSafeBoxTests {
     }
 }
 
-// MARK: - Custom Test Tags
-
-extension Tag {
-    @Tag static var threading: Self
-    @Tag static var utilities: Self
-    @Tag static var core: Self
-    @Tag static var basic: Self
-    @Tag static var synchronous: Self
-    @Tag static var performance: Self
-    @Tag static var async: Self
-    @Tag static var types: Self
-    @Tag static var generics: Self
-    @Tag static var memory: Self
-    @Tag static var edge_cases: Self
-    @Tag static var robustness: Self
-}

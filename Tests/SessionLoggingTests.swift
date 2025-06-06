@@ -23,7 +23,7 @@ struct SessionLoggingTests {
 
     // MARK: - SessionLogger Tests
 
-    @Test("Session logger initialization") func sessionLoggerInitialization() {
+    @Test("Session logger initialization") @MainActor func sessionLoggerInitialization() async throws {
         let logger = await Diagnostics.SessionLogger.shared
 
         // Test that logger is created without errors
@@ -36,13 +36,13 @@ struct SessionLoggingTests {
         }
     }
 
-    @Test("Session logger unique session ids") func sessionLoggerUniqueSessionIds() {
+    @Test("Session logger unique session ids") @MainActor func sessionLoggerUniqueSessionIds() async throws {
         // Skip this test since SessionLogger has a private init and is a singleton
         // The concept of unique session IDs per instance no longer applies
         #expect(true)
     }
 
-    @Test("Log entry creation") func logEntryCreation() {
+    @Test("Log entry creation") @MainActor func logEntryCreation() async throws {
         let logger = await Diagnostics.SessionLogger.shared
 
         await MainActor.run {
@@ -59,7 +59,7 @@ struct SessionLoggingTests {
         }
     }
 
-    @Test("Session logger concurrent logging") func sessionLoggerConcurrentLogging() {
+    @Test("Session logger concurrent logging") @MainActor func sessionLoggerConcurrentLogging() async throws {
         let logger = await Diagnostics.SessionLogger.shared
 
         // Test concurrent logging from multiple tasks
@@ -86,7 +86,7 @@ struct SessionLoggingTests {
 
     // MARK: - FileLogger Tests
 
-    @Test("File logger writing") func fileLoggerWriting() {
+    @Test("File logger writing") @MainActor func fileLoggerWriting() async throws {
         // FileLogger is now a singleton actor that uses OSLog
         let fileLogger = await Diagnostics.FileLogger.shared
 
@@ -113,7 +113,7 @@ struct SessionLoggingTests {
         #expect(true)
     }
 
-    @Test("File logger error handling") func fileLoggerErrorHandling() {
+    @Test("File logger error handling") @MainActor func fileLoggerErrorHandling() async throws {
         // FileLogger is now a singleton and always valid
         let fileLogger = await Diagnostics.FileLogger.shared
 
@@ -135,7 +135,7 @@ struct SessionLoggingTests {
 
     // MARK: - LogLevel Tests
 
-    @Test("Log level types") func logLevelTypes() {
+    @Test("Log level types") @MainActor func logLevelTypes() async throws {
         // Test all log levels exist
         let levels: [Diagnostics.LogLevel] = [.debug, .info, .warning, .error]
 
@@ -146,7 +146,7 @@ struct SessionLoggingTests {
 
     // MARK: - LogManager Tests
 
-    @Test("Log management") func logManagement() {
+    @Test("Log management") @MainActor func logManagement() async throws {
         let logManager = await Diagnostics.LogManager.shared
 
         // Test that log manager is created without errors
@@ -162,7 +162,7 @@ struct SessionLoggingTests {
         }
     }
 
-    @Test("Log manager categories") func logManagerCategories() {
+    @Test("Log manager categories") @MainActor func logManagerCategories() async throws {
         let logManager = await Diagnostics.LogManager.shared
 
         // Test that we can get loggers for categories
@@ -182,7 +182,7 @@ struct SessionLoggingTests {
 
     // MARK: - Logger Factory Tests
 
-    @Test("Logger factory") func loggerFactory() {
+    @Test("Logger factory") @MainActor func loggerFactory() async throws {
         // Test creating loggers for different types
         let logger1 = LoggerFactory.logger(for: SessionLoggingTests.self)
         let logger2 = LoggerFactory.logger(for: SessionLoggingTests.self, category: .supervision)
@@ -199,7 +199,7 @@ struct SessionLoggingTests {
 
     // MARK: - Integration Tests
 
-    @Test("Logging system integration") func loggingSystemIntegration() {
+    @Test("Logging system integration") @MainActor func loggingSystemIntegration() async throws {
         // Test integration of all logging components
         let sessionLogger = await Diagnostics.SessionLogger.shared
         let logManager = await Diagnostics.LogManager.shared
@@ -258,7 +258,7 @@ struct SessionLoggingTests {
         #expect(true) // Integration should work without conflicts
     }
 
-    @Test("Logging performance") func loggingPerformance() {
+    @Test("Logging performance") @MainActor func loggingPerformance() async throws {
         let sessionLogger = await Diagnostics.SessionLogger.shared
 
         // Test logging performance with many entries
