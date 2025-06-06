@@ -27,7 +27,9 @@ extension KeyboardShortcuts {
 		public var shortcut: Shortcut? {
 			get { KeyboardShortcuts.getShortcut(for: self) }
 			nonmutating set {
-				KeyboardShortcuts.setShortcut(newValue, for: self)
+				Task { @MainActor in
+					KeyboardShortcuts.setShortcut(newValue, for: self)
+				}
 			}
 		}
 
@@ -43,10 +45,15 @@ extension KeyboardShortcuts {
 				let initialShortcut,
 				!userDefaultsContains(name: self)
 			{
-				setShortcut(initialShortcut, for: self)
+				Task { @MainActor in
+					setShortcut(initialShortcut, for: self)
+					KeyboardShortcuts.initialize()
+				}
+			} else {
+				Task { @MainActor in
+					KeyboardShortcuts.initialize()
+				}
 			}
-
-			KeyboardShortcuts.initialize()
 		}
 	}
 }

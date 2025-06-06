@@ -122,14 +122,21 @@ extension KeyboardShortcuts {
 		private func setUpEvents() {
 			shortcutsNameChangeObserver = NotificationCenter.default.addObserver(forName: .shortcutByNameDidChange, object: nil, queue: .main) { [weak self] notification in
 				guard
-					let self,
-					let nameInNotification = notification.userInfo?["name"] as? KeyboardShortcuts.Name,
-					nameInNotification == self.shortcutName
+					let nameInNotification = notification.userInfo?["name"] as? KeyboardShortcuts.Name
 				else {
 					return
 				}
+				
+				Task { @MainActor in
+					guard
+						let self,
+						nameInNotification == self.shortcutName
+					else {
+						return
+					}
 
-				self.setStringValue(name: nameInNotification)
+					self.setStringValue(name: nameInNotification)
+				}
 			}
 		}
 
@@ -182,20 +189,24 @@ extension KeyboardShortcuts {
 			// Ensures the recorder stops when the window is hidden.
 			// This is especially important for Settings windows, which as of macOS 13.5, only hides instead of closes when you click the close button.
 			windowDidResignKeyObserver = NotificationCenter.default.addObserver(forName: NSWindow.didResignKeyNotification, object: window, queue: .main) { [weak self] _ in
-				guard
-					let self,
-					let window = self.window
-				else {
-					return
-				}
+				Task { @MainActor in
+					guard
+						let self,
+						let window = self.window
+					else {
+						return
+					}
 
-				self.endRecording()
-				window.makeFirstResponder(nil)
+					self.endRecording()
+					window.makeFirstResponder(nil)
+				}
 			}
 
 			// Ensures the recorder does not receive initial focus when a hidden window becomes unhidden.
 			windowDidBecomeKeyObserver = NotificationCenter.default.addObserver(forName: NSWindow.didBecomeKeyNotification, object: window, queue: .main) { [weak self] _ in
-				self?.preventBecomingKey()
+				Task { @MainActor in
+					self?.preventBecomingKey()
+				}
 			}
 
 			preventBecomingKey()

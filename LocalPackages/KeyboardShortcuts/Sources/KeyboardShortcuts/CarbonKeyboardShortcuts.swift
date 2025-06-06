@@ -230,8 +230,10 @@ enum CarbonKeyboardShortcuts {
 
 	// Synchronous wrapper for Carbon callback
 	fileprivate static func handleEventSynchronously(_ event: EventRef?) -> OSStatus {
-		MainActor.assumeIsolated {
-			handleEvent(event)
+		// Create a copy of the event reference for safe capture
+		let eventRef = event
+		return MainActor.assumeIsolated {
+			handleEvent(eventRef)
 		}
 	}
 	
