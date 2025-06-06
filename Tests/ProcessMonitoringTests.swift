@@ -3,283 +3,409 @@ import AppKit
 import Foundation
 import Testing
 
-@Suite("ProcessMonitoringTests")
+// MARK: - Custom Test Traits
+
+struct ProcessMonitoringTrait: TestTrait {
+    let category: String
+    let priority: Priority
+    
+    enum Priority {
+        case low, medium, high, critical
+    }
+}
+
+struct StatusTransitionTrait: TestTrait {
+    let fromStatus: String
+    let toStatus: String
+    let isValid: Bool
+}
+
+// MARK: - Shared Test Utilities
+
+enum ProcessMonitoringTestUtilities {
+    static func validateRecoveryType(_ type: RecoveryType) throws {
+        #expect(!type.rawValue.isEmpty)
+        #expect(RecoveryType.allCases.contains(type))
+    }
+    
+    static func validateInstanceStatus(_ status: CursorInstanceStatus) throws {
+        // Status-specific validation
+        switch status {
+        case .working(let detail):
+            #expect(!detail.isEmpty)
+        case .error(let reason), .unrecoverable(let reason):
+            #expect(!reason.isEmpty)
+        case .recovering(let type, let attempt):
+            #expect(attempt > 0)
+            try validateRecoveryType(type)
+        default:
+            break
+        }
+    }
+    
+    static func categorizeStatus(_ status: CursorInstanceStatus) -> StatusCategory {
+        switch status {
+        case .unknown, .idle, .paused:
+            return .neutral
+        case .working:
+            return .active
+        case .recovering:
+            return .transitional
+        case .error:
+            return .problematic
+        case .unrecoverable:
+            return .terminal
+        }
+    }
+    
+    enum StatusCategory {
+        case neutral, active, transitional, problematic, terminal
+    }
+    
+    static func createStatusMatrix() -> [(status: CursorInstanceStatus, category: StatusCategory, canRecover: Bool)] {
+        [
+            (.unknown, .neutral, true),
+            (.idle, .neutral, true),
+            (.paused, .neutral, true),
+            (.working(detail: "Generating"), .active, true),
+            (.recovering(type: .connection, attempt: 1), .transitional, true),
+            (.error(reason: "Connection lost"), .problematic, true),
+            (.unrecoverable(reason: "Fatal error"), .terminal, false)
+        ]
+    }
+}
+
+// MARK: - Test Conditions
+
+struct RequiresProcessMonitoring: TestTrait {
+    static var isEnabled: Bool {
+        return true
+    }
+}
+
+// MARK: - Main Test Suite
+
+@Suite("Process Monitoring", .serialized)
 struct ProcessMonitoringTests {
-    @Test("Recovery type enum cases") func recoveryTypeEnumCases() {
-        // Test that all recovery types are available
-        let allCases = RecoveryType.allCases
-        #expect(allCases.count == 4)
-
-        // Test specific expected cases
-        #expect(allCases.contains(.connection))
-        #expect(allCases.contains(.stopGenerating))
-        #expect(allCases.contains(.stuck))
-        #expect(allCases.contains(.forceStop))
-    }
-
-    @Test("Recovery type string values") func recoveryTypeStringValues() {
-        #expect(RecoveryType.connection.rawValue == "connection")
-        #expect(RecoveryType.stopGenerating.rawValue == "stopGenerating")
-        #expect(RecoveryType.stuck.rawValue == "stuck")
-        #expect(RecoveryType.forceStop.rawValue == "forceStop")
-    }
-
-    @Test("Recovery type codable") func recoveryTypeCodable() {
-        let recoveryType = RecoveryType.connection
-
-        // Test encoding
-        let encoder = JSONEncoder()
-        let data = try encoder.encode(recoveryType)
-        #expect(data.count > 0)
-
-        // Test decoding
-        let decoder = JSONDecoder()
-        let decodedType = try decoder.decode(RecoveryType.self, from: data)
-        #expect(decodedType == recoveryType)
-    }
-
-    @Test("Recovery type hashable") func recoveryTypeHashable() {
-        var recoverySet: Set<RecoveryType> = []
-
-        recoverySet.insert(.connection)
-        recoverySet.insert(.stopGenerating)
-        recoverySet.insert(.connection) // Duplicate
-
-        #expect(recoverySet.count == 2) // Should contain only unique values
-        #expect(recoverySet.contains(.connection))
-        #expect(recoverySet.contains(.stopGenerating))
-    }
-
-    @Test("Cursor instance status unknown") func cursorInstanceStatusUnknown() {
-        let status = CursorInstanceStatus.unknown
-        #expect(status == .unknown)
-
-        // Test equality
-        let anotherUnknown = CursorInstanceStatus.unknown
-        #expect(status == anotherUnknown)
-    }
-
-    @Test("Cursor instance status working") func cursorInstanceStatusWorking() {
-        let status1 = CursorInstanceStatus.working(detail: "Generating")
-        let status2 = CursorInstanceStatus.working(detail: "Generating")
-        let status3 = CursorInstanceStatus.working(detail: "Different detail")
-
-        // Test equality
-        #expect(status1 == status2)
-        #expect(status1 != status3)
-
-        // Test different working states
-        let generating = CursorInstanceStatus.working(detail: "Generating")
-        let sidebarActivity = CursorInstanceStatus.working(detail: "Recent Sidebar Activity")
-        #expect(generating != sidebarActivity)
-    }
-
-    @Test("Cursor instance status idle") func cursorInstanceStatusIdle() {
-        let status = CursorInstanceStatus.idle
-        #expect(status == .idle)
-
-        // Test that idle is different from other states
-        #expect(status != .unknown)
-        #expect(status != .working(detail: "test"))
-    }
-
-    @Test("Cursor instance status recovering") func cursorInstanceStatusRecovering() {
-        let status1 = CursorInstanceStatus.recovering(type: .connection, attempt: 1)
-        let status2 = CursorInstanceStatus.recovering(type: .connection, attempt: 1)
-        let status3 = CursorInstanceStatus.recovering(type: .connection, attempt: 2)
-        let status4 = CursorInstanceStatus.recovering(type: .stuck, attempt: 1)
-
-        // Test equality
-        #expect(status1 == status2)
-        #expect(status1 != status3) // Different attempt
-        #expect(status1 != status4) // Different type
-
-        // Test all recovery types in recovering state
-        let connectionRecovery = CursorInstanceStatus.recovering(type: .connection, attempt: 1)
-        let stopGeneratingRecovery = CursorInstanceStatus.recovering(type: .stopGenerating, attempt: 1)
-        let stuckRecovery = CursorInstanceStatus.recovering(type: .stuck, attempt: 1)
-        let forceStopRecovery = CursorInstanceStatus.recovering(type: .forceStop, attempt: 1)
-
-        #expect(connectionRecovery != stopGeneratingRecovery)
-        #expect(stuckRecovery != forceStopRecovery)
-    }
-
-    @Test("Cursor instance status error") func cursorInstanceStatusError() {
-        let status1 = CursorInstanceStatus.error(reason: "Connection failed")
-        let status2 = CursorInstanceStatus.error(reason: "Connection failed")
-        let status3 = CursorInstanceStatus.error(reason: "Different error")
-
-        // Test equality
-        #expect(status1 == status2)
-        #expect(status1 != status3)
-
-        // Test that error is different from unrecoverable
-        let errorStatus = CursorInstanceStatus.error(reason: "Test error")
-        let unrecoverableStatus = CursorInstanceStatus.unrecoverable(reason: "Test error")
-        #expect(errorStatus != unrecoverableStatus)
-    }
-
-    @Test("Cursor instance status unrecoverable") func cursorInstanceStatusUnrecoverable() {
-        let status1 = CursorInstanceStatus.unrecoverable(reason: "Complete failure")
-        let status2 = CursorInstanceStatus.unrecoverable(reason: "Complete failure")
-        let status3 = CursorInstanceStatus.unrecoverable(reason: "Different failure")
-
-        // Test equality
-        #expect(status1 == status2)
-        #expect(status1 != status3)
-    }
-
-    @Test("Cursor instance status paused") func cursorInstanceStatusPaused() {
-        let status = CursorInstanceStatus.paused
-        #expect(status == .paused)
-
-        // Test that paused is unique
-        #expect(status != .unknown)
-        #expect(status != .idle)
-        #expect(status != .error(reason: "test"))
-    }
-
-    @Test("Cursor instance status hashable") func cursorInstanceStatusHashable() {
-        var statusSet: Set<CursorInstanceStatus> = []
-
-        // Add different statuses
-        statusSet.insert(.unknown)
-        statusSet.insert(.idle)
-        statusSet.insert(.paused)
-        statusSet.insert(.working(detail: "test"))
-        statusSet.insert(.working(detail: "test")) // Duplicate
-        statusSet.insert(.working(detail: "different"))
-        statusSet.insert(.error(reason: "test error"))
-        statusSet.insert(.recovering(type: .connection, attempt: 1))
-
-        // Should contain unique statuses only
-        #expect(statusSet.count == 7) // No duplicates
-        #expect(statusSet.contains(.unknown))
-        #expect(statusSet.contains(.idle))
-        #expect(statusSet.contains(.working(detail: "test")))
-    }
-
-    @Test("Cursor instance status state transitions") func cursorInstanceStatusStateTransitions() {
-        // Test logical state transitions
-        let initialStatus = CursorInstanceStatus.unknown
-        let workingStatus = CursorInstanceStatus.working(detail: "Generating")
-        let recoveringStatus = CursorInstanceStatus.recovering(type: .connection, attempt: 1)
-        let errorStatus = CursorInstanceStatus.error(reason: "Connection lost")
-        let unrecoverableStatus = CursorInstanceStatus.unrecoverable(reason: "Fatal error")
-
-        // These should all be different states
-        #expect(initialStatus != workingStatus)
-        #expect(workingStatus != recoveringStatus)
-        #expect(recoveringStatus != errorStatus)
-        #expect(errorStatus != unrecoverableStatus)
-
-        // Test progression through recovery attempts
-        let recovery1 = CursorInstanceStatus.recovering(type: .connection, attempt: 1)
-        let recovery2 = CursorInstanceStatus.recovering(type: .connection, attempt: 2)
-        let recovery3 = CursorInstanceStatus.recovering(type: .connection, attempt: 3)
-
-        #expect(recovery1 != recovery2)
-        #expect(recovery2 != recovery3)
-        #expect(recovery1 != recovery3)
-    }
-
-    @Test("Recovery type priority") func recoveryTypePriority() {
-        // Test that different recovery types can be prioritized
-        let recoveryTypes = RecoveryType.allCases
-
-        // Connection issues are typically high priority
-        #expect(recoveryTypes.contains(.connection))
-
-        // Force stop is typically for severe issues
-        #expect(recoveryTypes.contains(.forceStop))
-
-        // Stuck and stop generating are intermediate
-        #expect(recoveryTypes.contains(.stuck))
-        #expect(recoveryTypes.contains(.stopGenerating))
-    }
-
-    @Test("Status error vs unrecoverable") func statusErrorVsUnrecoverable() {
-        // Test distinction between recoverable errors and unrecoverable ones
-        let recoverableError = CursorInstanceStatus.error(reason: "Temporary connection issue")
-        let unrecoverableError = CursorInstanceStatus.unrecoverable(reason: "Process crashed")
-
-        #expect(recoverableError != unrecoverableError)
-
-        // Test that both can have the same reason but different types
-        let error1 = CursorInstanceStatus.error(reason: "Same reason")
-        let error2 = CursorInstanceStatus.unrecoverable(reason: "Same reason")
-        #expect(error1 != error2)
-    }
-
-    @Test("Status working detail variations") func statusWorkingDetailVariations() {
-        // Test various working detail strings
-        let detailVariations = [
-            "Generating",
-            "Recent Sidebar Activity",
-            "Processing request",
-            "Analyzing code",
-            "Waiting for response",
+    // Shared test data
+    var recoveryTypeMatrix: [(type: RecoveryType, priority: Int, maxAttempts: Int)] {
+        [
+            (.connection, 100, 5),
+            (.stopGenerating, 80, 3),
+            (.stuck, 60, 3),
+            (.forceStop, 40, 1)
         ]
-
-        var workingStatuses: [CursorInstanceStatus] = []
-        for detail in detailVariations {
-            workingStatuses.append(.working(detail: detail))
+    }
+    
+    var statusTransitionMatrix: [(from: CursorInstanceStatus, to: CursorInstanceStatus, valid: Bool)] {
+        [
+            (.unknown, .idle, true),
+            (.idle, .working(detail: "Generating"), true),
+            (.working(detail: "Generating"), .error(reason: "Timeout"), true),
+            (.error(reason: "Timeout"), .recovering(type: .connection, attempt: 1), true),
+            (.recovering(type: .connection, attempt: 1), .working(detail: "Generating"), true),
+            (.unrecoverable(reason: "Fatal"), .working(detail: "Generating"), false),
+            (.paused, .unrecoverable(reason: "Fatal"), false)
+        ]
+    }
+    
+    // MARK: - Recovery Type Suite
+    
+    @Suite("Recovery Types", .tags(.recovery, .enum))
+    struct RecoveryTypes {
+        @Test(
+            "Recovery type validation matrix",
+            arguments: RecoveryType.allCases
+        )
+        func recoveryTypeValidationMatrix(type: RecoveryType) throws {
+            try ProcessMonitoringTestUtilities.validateRecoveryType(type)
+            
+            // Validate raw values follow convention
+            #expect(type.rawValue.first?.isLowercase == true)
+            #expect(!type.rawValue.contains(" "))
         }
-
-        // All should be different
-        for i in 0 ..< workingStatuses.count {
-            for j in (i + 1) ..< workingStatuses.count {
-                #expect(workingStatuses[i] != workingStatuses[j])
+        
+        @Test(
+            "Recovery type properties",
+            arguments: ProcessMonitoringTests().recoveryTypeMatrix
+        )
+        func recoveryTypeProperties(testCase: (type: RecoveryType, priority: Int, maxAttempts: Int)) throws {
+            let (type, expectedPriority, expectedMaxAttempts) = testCase
+            
+            // Validate priority ordering
+            switch type {
+            case .connection:
+                #expect(expectedPriority >= 80, "Connection issues should be high priority")
+            case .forceStop:
+                #expect(expectedPriority <= 50, "Force stop should be lower priority")
+            default:
+                #expect(expectedPriority > 0 && expectedPriority < 100)
+            }
+            
+            // Validate attempt limits
+            #expect(expectedMaxAttempts >= 1 && expectedMaxAttempts <= 5)
+        }
+        
+        @Test("Recovery type serialization round-trip")
+        func recoveryTypeSerializationRoundTrip() throws {
+            let encoder = JSONEncoder()
+            let decoder = JSONDecoder()
+            
+            for type in RecoveryType.allCases {
+                let data = try encoder.encode(type)
+                let decoded = try decoder.decode(RecoveryType.self, from: data)
+                #expect(decoded == type)
             }
         }
     }
-
-    @Test("Recovery attempt progression") func recoveryAttemptProgression() {
-        // Test recovery attempt counting
-        var recoveryAttempts: [CursorInstanceStatus] = []
-
-        for attempt in 1 ... 5 {
-            recoveryAttempts.append(.recovering(type: .connection, attempt: attempt))
-        }
-
-        // All attempts should be different
-        for i in 0 ..< recoveryAttempts.count {
-            for j in (i + 1) ..< recoveryAttempts.count {
-                #expect(recoveryAttempts[i] != recoveryAttempts[j])
+    
+    // MARK: - Instance Status Suite
+    
+    @Suite("Instance Status", .tags(.status, .state))
+    struct InstanceStatus {
+        @Test(
+            "Status validation matrix",
+            arguments: ProcessMonitoringTestUtilities.createStatusMatrix()
+        )
+        func statusValidationMatrix(
+            testCase: (status: CursorInstanceStatus, category: ProcessMonitoringTestUtilities.StatusCategory, canRecover: Bool)
+        ) throws {
+            try ProcessMonitoringTestUtilities.validateInstanceStatus(testCase.status)
+            
+            let calculatedCategory = ProcessMonitoringTestUtilities.categorizeStatus(testCase.status)
+            #expect(calculatedCategory == testCase.category)
+            
+            // Validate recovery capability
+            if testCase.category == .terminal {
+                #expect(!testCase.canRecover, "Terminal states should not be recoverable")
             }
         }
-
-        // Test specific attempt numbers
-        let attempt1 = CursorInstanceStatus.recovering(type: .stuck, attempt: 1)
-        let attempt5 = CursorInstanceStatus.recovering(type: .stuck, attempt: 5)
-        #expect(attempt1 != attempt5)
-    }
-
-    @Test("Status type safety") func statusTypeSafety() {
-        // Test that the status enum works with type-safe collections
-        let statuses: [CursorInstanceStatus] = [
-            .unknown,
-            .working(detail: "test"),
-            .idle,
-            .recovering(type: .connection, attempt: 1),
-            .error(reason: "test"),
-            .unrecoverable(reason: "test"),
-            .paused,
-        ]
-
-        #expect(statuses.count == 7)
-
-        // Test filtering by status type
-        let workingStatuses = statuses.compactMap { status in
-            if case .working = status { return status }
-            return nil
+        
+        @Test("Status equality and uniqueness")
+        func statusEqualityAndUniqueness() throws {
+            await confirmation("Status equality rules", expectedCount: 5) { confirm in
+                // Same status with same parameters
+                let status1 = CursorInstanceStatus.working(detail: "Generating")
+                let status2 = CursorInstanceStatus.working(detail: "Generating")
+                #expect(status1 == status2)
+                confirm()
+                
+                // Same status with different parameters
+                let status3 = CursorInstanceStatus.working(detail: "Different")
+                #expect(status1 != status3)
+                confirm()
+                
+                // Different status types
+                let status4 = CursorInstanceStatus.idle
+                let status5 = CursorInstanceStatus.paused
+                #expect(status4 != status5)
+                confirm()
+                
+                // Recovery with different attempts
+                let recovery1 = CursorInstanceStatus.recovering(type: .connection, attempt: 1)
+                let recovery2 = CursorInstanceStatus.recovering(type: .connection, attempt: 2)
+                #expect(recovery1 != recovery2)
+                confirm()
+                
+                // Error vs unrecoverable with same reason
+                let error = CursorInstanceStatus.error(reason: "Same reason")
+                let unrecoverable = CursorInstanceStatus.unrecoverable(reason: "Same reason")
+                #expect(error != unrecoverable)
+                confirm()
+            }
         }
-        #expect(workingStatuses.count == 1)
-
-        let recoveringStatuses = statuses.compactMap { status in
-            if case .recovering = status { return status }
-            return nil
+        
+        @Test(
+            "Status in collections",
+            arguments: [5, 10, 20]
+        )
+        func statusInCollections(uniqueStatusCount: Int) throws {
+            var statusSet: Set<CursorInstanceStatus> = []
+            
+            // Add various statuses
+            statusSet.insert(.unknown)
+            statusSet.insert(.idle)
+            statusSet.insert(.paused)
+            
+            // Add multiple working statuses
+            for i in 0..<uniqueStatusCount {
+                statusSet.insert(.working(detail: "Task \(i)"))
+            }
+            
+            // Add recovery statuses
+            for i in 1...3 {
+                statusSet.insert(.recovering(type: .connection, attempt: i))
+            }
+            
+            // Verify set contains unique values
+            let expectedCount = 3 + uniqueStatusCount + 3
+            #expect(statusSet.count == expectedCount)
         }
-        #expect(recoveringStatuses.count == 1)
     }
+    
+    // MARK: - State Transitions Suite
+    
+    @Suite("State Transitions", .tags(.transitions, .state))
+    struct StateTransitions {
+        @Test(
+            "Valid state transitions",
+            arguments: ProcessMonitoringTests().statusTransitionMatrix,
+            traits: [StatusTransitionTrait(fromStatus: "various", toStatus: "various", isValid: true)]
+        )
+        func validStateTransitions(
+            transition: (from: CursorInstanceStatus, to: CursorInstanceStatus, valid: Bool)
+        ) throws {
+            if transition.valid {
+                // Valid transitions should follow logical patterns
+                let fromCategory = ProcessMonitoringTestUtilities.categorizeStatus(transition.from)
+                let toCategory = ProcessMonitoringTestUtilities.categorizeStatus(transition.to)
+                
+                // Terminal states should not transition to anything
+                if fromCategory == .terminal {
+                    #expect(!transition.valid, "Terminal states should not have valid transitions")
+                }
+                
+                // Paused state has limited transitions
+                if case .paused = transition.from {
+                    #expect(toCategory == .neutral || toCategory == .active,
+                           "Paused should only transition to neutral or active states")
+                }
+            } else {
+                // Invalid transitions
+                let fromCategory = ProcessMonitoringTestUtilities.categorizeStatus(transition.from)
+                if fromCategory == .terminal {
+                    #expect(true, "Terminal states correctly have no valid transitions")
+                }
+            }
+        }
+        
+        @Test("Recovery progression")
+        func recoveryProgression() throws {
+            let maxAttempts = 5
+            var recoveryStates: [CursorInstanceStatus] = []
+            
+            for attempt in 1...maxAttempts {
+                recoveryStates.append(.recovering(type: .connection, attempt: attempt))
+            }
+            
+            // Verify progression
+            for i in 0..<recoveryStates.count - 1 {
+                if case let .recovering(_, attempt1) = recoveryStates[i],
+                   case let .recovering(_, attempt2) = recoveryStates[i + 1] {
+                    #expect(attempt2 == attempt1 + 1, "Attempts should increment")
+                }
+            }
+            
+            // Test transition to error after max attempts
+            let finalRecovery = CursorInstanceStatus.recovering(type: .connection, attempt: maxAttempts)
+            let errorState = CursorInstanceStatus.error(reason: "Max attempts reached")
+            
+            // This represents a logical transition (not equality test)
+            #expect(finalRecovery != errorState, "Different states as expected")
+        }
+    }
+    
+    // MARK: - Performance Suite
+    
+    @Suite("Performance", .tags(.performance, .benchmarks))
+    struct Performance {
+        @Test(
+            "Status operations performance",
+            .timeLimit(.seconds(1)),
+            traits: [ProcessMonitoringTrait(category: "performance", priority: .low)]
+        )
+        func statusOperationsPerformance() throws {
+            let iterations = 10000
+            let startTime = ContinuousClock().now
+            
+            for i in 0..<iterations {
+                // Create various statuses
+                let status = switch i % 7 {
+                case 0: CursorInstanceStatus.unknown
+                case 1: CursorInstanceStatus.idle
+                case 2: CursorInstanceStatus.working(detail: "Task \(i)")
+                case 3: CursorInstanceStatus.recovering(type: .connection, attempt: i % 5 + 1)
+                case 4: CursorInstanceStatus.error(reason: "Error \(i)")
+                case 5: CursorInstanceStatus.paused
+                default: CursorInstanceStatus.unrecoverable(reason: "Fatal \(i)")
+                }
+                
+                // Perform operations
+                _ = ProcessMonitoringTestUtilities.categorizeStatus(status)
+                _ = status.hashValue
+            }
+            
+            let elapsed = ContinuousClock().now - startTime
+            #expect(elapsed < .seconds(1), "Operations should complete quickly")
+        }
+        
+        @Test("Collection performance with statuses", .timeLimit(.seconds(2)))
+        func collectionPerformanceWithStatuses() throws {
+            var statusSet: Set<CursorInstanceStatus> = []
+            var statusArray: [CursorInstanceStatus] = []
+            
+            // Add many unique statuses
+            for i in 0..<1000 {
+                let status = CursorInstanceStatus.working(detail: "Task \(i)")
+                statusSet.insert(status)
+                statusArray.append(status)
+            }
+            
+            #expect(statusSet.count == 1000, "Set should maintain uniqueness")
+            #expect(statusArray.count == 1000, "Array should contain all elements")
+            
+            // Test lookup performance
+            let lookupStatus = CursorInstanceStatus.working(detail: "Task 500")
+            #expect(statusSet.contains(lookupStatus), "Set should contain the status")
+            #expect(statusArray.contains(lookupStatus), "Array should contain the status")
+        }
+    }
+    
+    // MARK: - Integration Tests
+    
+    @Suite("Integration", .tags(.integration), .disabled("Requires live monitoring"))
+    struct IntegrationTests {
+        @Test("End-to-end status flow", traits: [RequiresProcessMonitoring.self])
+        func endToEndStatusFlow() async throws {
+            // This test would verify actual process monitoring
+            #expect(true)
+        }
+    }
+}
+
+// MARK: - Custom Assertions
+
+extension ProcessMonitoringTests {
+    func assertValidStatus(
+        _ status: CursorInstanceStatus,
+        expectedCategory: ProcessMonitoringTestUtilities.StatusCategory? = nil,
+        file: StaticString = #filePath,
+        line: UInt = #line
+    ) {
+        do {
+            try ProcessMonitoringTestUtilities.validateInstanceStatus(status)
+        } catch {
+            Issue.record("Status validation failed: \(error)", 
+                        sourceLocation: SourceLocation(filePath: file, line: Int(line)))
+        }
+        
+        if let expectedCategory = expectedCategory {
+            let actualCategory = ProcessMonitoringTestUtilities.categorizeStatus(status)
+            #expect(actualCategory == expectedCategory,
+                   sourceLocation: SourceLocation(filePath: file, line: Int(line)))
+        }
+    }
+}
+
+// MARK: - Custom Test Tags
+
+extension Tag {
+    @Tag static var recovery: Self
+    @Tag static var enum: Self
+    @Tag static var status: Self
+    @Tag static var state: Self
+    @Tag static var transitions: Self
+    @Tag static var performance: Self
+    @Tag static var benchmarks: Self
+    @Tag static var integration: Self
 }

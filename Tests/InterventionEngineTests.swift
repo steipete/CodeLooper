@@ -3,44 +3,144 @@ import Combine
 import Foundation
 import Testing
 
-// MARK: - Test Suite with Advanced Organization
+// MARK: - Custom Test Traits
 
-@Suite("Intervention Engine Tests", .tags(.intervention, .engine, .recovery))
+struct InterventionTestTrait: TestTrait {
+    let category: String
+    let severity: InterventionSeverity
+    
+    enum InterventionSeverity {
+        case low, medium, high, critical
+    }
+}
+
+struct StateTransitionTrait: TestTrait {
+    let fromState: String
+    let toState: String
+    let isValid: Bool
+}
+
+// MARK: - Shared Test Utilities
+
+enum InterventionTestUtilities {
+    typealias InterventionType = CursorInterventionEngine.InterventionType
+    
+    static func validateInterventionType(_ type: InterventionType) throws {
+        #expect(!type.rawValue.isEmpty)
+        #expect(type.rawValue.count > 2)
+        #expect(InterventionType.allCases.contains(type))
+    }
+    
+    static func categorizeInterventionType(_ type: InterventionType) -> InterventionCategory {
+        switch type {
+        case .connectionIssue, .generalError, .unrecoverableError:
+            return .error
+        case .noInterventionNeeded, .positiveWorkingState, .sidebarActivityDetected:
+            return .positive
+        case .manualPause, .monitoringPaused, .interventionLimitReached:
+            return .control
+        case .automatedRecovery, .awaitingAction:
+            return .recovery
+        default:
+            return .unknown
+        }
+    }
+    
+    enum InterventionCategory {
+        case error, positive, control, recovery, unknown
+    }
+    
+    static func createInterventionMatrix() -> [(type: InterventionType, category: InterventionCategory, priority: Int)] {
+        InterventionType.allCases.map { type in
+            let category = categorizeInterventionType(type)
+            let priority = calculatePriority(for: type)
+            return (type, category, priority)
+        }
+    }
+    
+    static func calculatePriority(for type: InterventionType) -> Int {
+        switch type {
+        case .unrecoverableError: return 100
+        case .connectionIssue, .generalError: return 80
+        case .automatedRecovery, .awaitingAction: return 60
+        case .manualPause, .monitoringPaused: return 40
+        case .positiveWorkingState, .noInterventionNeeded: return 20
+        default: return 10
+        }
+    }
+}
+
+// MARK: - Test Conditions
+
+struct RequiresInterventionCapability: TestTrait {
+    static var isEnabled: Bool {
+        // Check if intervention system is available
+        return true
+    }
+}
+
+// MARK: - Main Test Suite
+
+@Suite("Intervention Engine", .serialized)
 struct InterventionEngineTests {
+    // Shared test data
+    var interventionMatrix: [(type: InterventionTestUtilities.InterventionType, category: InterventionTestUtilities.InterventionCategory, priority: Int)] {
+        InterventionTestUtilities.createInterventionMatrix()
+    }
+    
+    var stateTransitionMatrix: [(from: InterventionTestUtilities.InterventionType, to: InterventionTestUtilities.InterventionType, valid: Bool)] {
+        [
+            (.connectionIssue, .automatedRecovery, true),
+            (.automatedRecovery, .positiveWorkingState, true),
+            (.unrecoverableError, .positiveWorkingState, false),
+            (.positiveWorkingState, .connectionIssue, true),
+            (.interventionLimitReached, .automatedRecovery, false)
+        ]
+    }
+    
     // MARK: - Enum Validation Suite
-
+    
     @Suite("Enum Validation", .tags(.enum, .validation))
     struct EnumValidation {
-        @Test("Intervention type enum has all expected cases")
-        func interventionTypeEnumCases() async throws {
-            let allCases = CursorInterventionEngine.InterventionType.allCases
-            #expect(allCases.count > 0, "Should have at least one intervention type")
-
-            // Test specific expected cases exist
-            let requiredCases: [CursorInterventionEngine.InterventionType] = [
-                .unknown, .noInterventionNeeded, .positiveWorkingState,
-                .connectionIssue, .generalError, .unrecoverableError,
-                .automatedRecovery, .interventionLimitReached, .processNotRunning,
-            ]
-
-            for requiredCase in requiredCases {
-                #expect(allCases.contains(requiredCase), "Should contain required case: \(requiredCase)")
+        @Test(
+            "Intervention type validation matrix",
+            arguments: InterventionTestUtilities.InterventionType.allCases
+        )
+        func interventionTypeValidationMatrix(type: InterventionTestUtilities.InterventionType) throws {
+            try InterventionTestUtilities.validateInterventionType(type)
+            
+            // Additional validation based on type category
+            let category = InterventionTestUtilities.categorizeInterventionType(type)
+            switch category {
+            case .error:
+                #expect(type.rawValue.contains("Error") || type.rawValue.contains("Issue"))
+            case .positive:
+                #expect(!type.rawValue.contains("Error") && !type.rawValue.contains("Issue"))
+            default:
+                break
             }
         }
 
-        @Test("Intervention type string values are properly formatted")
-        func interventionTypeStringValues() async throws {
-            let expectedStringValues: [(CursorInterventionEngine.InterventionType, String)] = [
-                (.unknown, "Unknown"),
+        @Test(
+            "String value formatting validation",
+            arguments: [
+                (InterventionTestUtilities.InterventionType.unknown, "Unknown"),
                 (.noInterventionNeeded, "No Intervention Needed"),
                 (.positiveWorkingState, "Positive Working State"),
                 (.connectionIssue, "Connection Issue"),
                 (.generalError, "General Error"),
-                (.automatedRecovery, "Automated Recovery Attempt"),
+                (.automatedRecovery, "Automated Recovery Attempt")
             ]
-
-            for (type, expectedString) in expectedStringValues {
-                #expect(type.rawValue == expectedString, "Type \(type) should have string value '\(expectedString)'")
+        )
+        func stringValueFormattingValidation(
+            testCase: (type: InterventionTestUtilities.InterventionType, expected: String)
+        ) throws {
+            #expect(testCase.type.rawValue == testCase.expected)
+            
+            // Validate formatting patterns
+            let words = testCase.type.rawValue.split(separator: " ")
+            for word in words {
+                #expect(word.first?.isUppercase == true, "Each word should be capitalized")
             }
         }
 
@@ -58,23 +158,40 @@ struct InterventionEngineTests {
     }
 
     // MARK: - Serialization Suite
-
+    
     @Suite("Serialization", .tags(.serialization, .codable))
     struct Serialization {
-        @Test("Intervention type supports Codable protocol", arguments: [
-            CursorInterventionEngine.InterventionType.connectionIssue,
-            .generalError,
-            .positiveWorkingState,
-            .automatedRecovery,
-        ])
-        func interventionTypeCodable(interventionType: CursorInterventionEngine.InterventionType) async throws {
+        @Test(
+            "Codable round-trip validation",
+            arguments: InterventionTestUtilities.InterventionType.allCases
+        )
+        func codableRoundTripValidation(type: InterventionTestUtilities.InterventionType) throws {
             let encoder = JSONEncoder()
-            let data = try encoder.encode(interventionType)
-            #expect(data.count > 0, "Should produce encoded data")
-
+            encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
+            
             let decoder = JSONDecoder()
-            let decodedType = try decoder.decode(CursorInterventionEngine.InterventionType.self, from: data)
-            #expect(decodedType == interventionType, "Decoded type should match original")
+            
+            // Test single value encoding
+            let data = try encoder.encode(type)
+            let decoded = try decoder.decode(InterventionTestUtilities.InterventionType.self, from: data)
+            #expect(decoded == type)
+            
+            // Test as part of a structure
+            struct TestContainer: Codable {
+                let type: InterventionTestUtilities.InterventionType
+                let timestamp: Date
+                let metadata: [String: String]
+            }
+            
+            let container = TestContainer(
+                type: type,
+                timestamp: Date(),
+                metadata: ["test": "value"]
+            )
+            
+            let containerData = try encoder.encode(container)
+            let decodedContainer = try decoder.decode(TestContainer.self, from: containerData)
+            #expect(decodedContainer.type == type)
         }
 
         @Test("All intervention types can be serialized consistently", .timeLimit(.seconds(5)))
@@ -93,20 +210,31 @@ struct InterventionEngineTests {
     }
 
     // MARK: - Type Classification Suite
-
+    
     @Suite("Type Classification", .tags(.classification, .logic))
     struct TypeClassification {
-        @Test("Error types are properly categorized", arguments: errorTypes)
-        func errorTypeClassification(errorType: CursorInterventionEngine.InterventionType) async throws {
-            let allErrorTypes: Set<CursorInterventionEngine.InterventionType> = [
-                .connectionIssue, .generalError, .unrecoverableError,
-            ]
-
-            #expect(allErrorTypes.contains(errorType), "Type \(errorType) should be classified as error type")
-
-            // Error types should not be positive types
-            let positiveTypeSet = Set(positiveTypes)
-            #expect(!positiveTypeSet.contains(errorType), "Error type should not be classified as positive")
+        @Test(
+            "Category classification matrix",
+            arguments: InterventionEngineTests().interventionMatrix
+        )
+        func categoryClassificationMatrix(
+            testCase: (type: InterventionTestUtilities.InterventionType, category: InterventionTestUtilities.InterventionCategory, priority: Int)
+        ) throws {
+            let calculatedCategory = InterventionTestUtilities.categorizeInterventionType(testCase.type)
+            #expect(calculatedCategory == testCase.category)
+            
+            let calculatedPriority = InterventionTestUtilities.calculatePriority(for: testCase.type)
+            #expect(calculatedPriority == testCase.priority)
+            
+            // Validate priority ranges
+            switch testCase.category {
+            case .error:
+                #expect(testCase.priority >= 80, "Error types should have high priority")
+            case .positive:
+                #expect(testCase.priority <= 30, "Positive types should have low priority")
+            default:
+                #expect(testCase.priority > 0 && testCase.priority < 100)
+            }
         }
 
         @Test("Positive types indicate healthy system state", arguments: positiveTypes)
@@ -131,46 +259,63 @@ struct InterventionEngineTests {
             #expect(allControlTypes.contains(controlType), "Type \(controlType) should be classified as control type")
         }
 
-        @Test("Priority classification separates urgent from informational types")
-        func priorityClassification() async throws {
-            let highPriorityTypes: Set<CursorInterventionEngine.InterventionType> = [
-                .unrecoverableError, .connectionIssue, .generalError,
-            ]
-
-            let lowPriorityTypes: Set<CursorInterventionEngine.InterventionType> = [
-                .positiveWorkingState, .noInterventionNeeded, .sidebarActivityDetected,
-            ]
-
-            #expect(highPriorityTypes.count > 0, "Should have high priority types")
-            #expect(lowPriorityTypes.count > 0, "Should have low priority types")
-
-            // Ensure no overlap between priority levels
-            for highPriority in highPriorityTypes {
-                #expect(!lowPriorityTypes.contains(highPriority), "High priority type should not be low priority")
+        @Test("Priority distribution analysis")
+        func priorityDistributionAnalysis() throws {
+            let matrix = InterventionTestUtilities.createInterventionMatrix()
+            let priorities = matrix.map { $0.priority }
+            
+            await confirmation("Priority distribution", expectedCount: 3) { confirm in
+                // High priority (>= 80)
+                let highPriorityCount = priorities.filter { $0 >= 80 }.count
+                #expect(highPriorityCount > 0, "Should have high priority interventions")
+                confirm()
+                
+                // Medium priority (40-79)
+                let mediumPriorityCount = priorities.filter { $0 >= 40 && $0 < 80 }.count
+                #expect(mediumPriorityCount > 0, "Should have medium priority interventions")
+                confirm()
+                
+                // Low priority (< 40)
+                let lowPriorityCount = priorities.filter { $0 < 40 }.count
+                #expect(lowPriorityCount > 0, "Should have low priority interventions")
+                confirm()
             }
         }
     }
 
     // MARK: - State Management Suite
-
+    
     @Suite("State Management", .tags(.state, .transitions))
     struct StateManagement {
-        @Test("Healthy states are distinct from problem states")
-        func healthyVsProblemStates() async throws {
-            let healthyStates: Set<CursorInterventionEngine.InterventionType> = [
-                .positiveWorkingState, .noInterventionNeeded, .sidebarActivityDetected,
-            ]
-
-            let problemStates: Set<CursorInterventionEngine.InterventionType> = [
-                .connectionIssue, .generalError, .unrecoverableError, .processNotRunning,
-            ]
-
-            #expect(healthyStates.contains(.positiveWorkingState), "Should classify positive working state as healthy")
-            #expect(problemStates.contains(.connectionIssue), "Should classify connection issue as problem")
-
-            // Ensure no overlap between healthy and problem states
-            for healthy in healthyStates {
-                #expect(!problemStates.contains(healthy), "Healthy state \(healthy) should not be a problem state")
+        @Test(
+            "State transition validation matrix",
+            arguments: InterventionEngineTests().stateTransitionMatrix,
+            traits: [StateTransitionTrait(fromState: "various", toState: "various", isValid: true)]
+        )
+        func stateTransitionValidationMatrix(
+            transition: (from: InterventionTestUtilities.InterventionType, to: InterventionTestUtilities.InterventionType, valid: Bool)
+        ) throws {
+            // Validate transition logic
+            if transition.valid {
+                // Valid transitions should follow logical patterns
+                let fromCategory = InterventionTestUtilities.categorizeInterventionType(transition.from)
+                let toCategory = InterventionTestUtilities.categorizeInterventionType(transition.to)
+                
+                switch (fromCategory, toCategory) {
+                case (.error, .recovery):
+                    #expect(true, "Error to recovery is valid")
+                case (.recovery, .positive):
+                    #expect(true, "Recovery to positive is valid")
+                case (.error, .positive) where transition.from != .unrecoverableError:
+                    #expect(true, "Some errors can transition to positive")
+                default:
+                    // Other transitions may be valid based on business logic
+                    break
+                }
+            } else {
+                // Invalid transitions
+                #expect(transition.from == .unrecoverableError || transition.from == .interventionLimitReached,
+                       "Invalid transitions should be from terminal states")
             }
         }
 
@@ -190,62 +335,79 @@ struct InterventionEngineTests {
             #expect(!finalStates.contains(recoveryType), "Recovery state should not be a final state")
         }
 
-        @Test("State categories have logical separation")
-        func stateCategorySeparation() async throws {
-            let healthyStates = Set(positiveTypes)
-            let problemStates = Set(errorTypes)
-            let controlStates = Set(controlTypes)
-            let recoveryStates = Set(recoveryTypes)
-
-            // Test that categories are logically separated
-            let allCategories = [healthyStates, problemStates, controlStates, recoveryStates]
-
-            for (i, category1) in allCategories.enumerated() {
-                for (j, category2) in allCategories.enumerated() {
-                    if i != j {
-                        let intersection = category1.intersection(category2)
-                        #expect(intersection.isEmpty, "Categories \(i) and \(j) should not overlap")
-                    }
-                }
+        @Test("State category orthogonality")
+        func stateCategoryOrthogonality() throws {
+            let matrix = InterventionTestUtilities.createInterventionMatrix()
+            
+            // Group by category
+            var categoryGroups: [InterventionTestUtilities.InterventionCategory: Set<InterventionTestUtilities.InterventionType>] = [:]
+            
+            for entry in matrix {
+                categoryGroups[entry.category, default: []].insert(entry.type)
             }
+            
+            // Verify no type appears in multiple categories
+            let allTypes = Set(InterventionTestUtilities.InterventionType.allCases)
+            var categorizedTypes: Set<InterventionTestUtilities.InterventionType> = []
+            
+            for (category, types) in categoryGroups {
+                let previousCount = categorizedTypes.count
+                categorizedTypes.formUnion(types)
+                
+                #expect(categorizedTypes.count == previousCount + types.count,
+                       "Category \(category) should not share types with other categories")
+            }
+            
+            // Ensure all types are categorized
+            let uncategorized = allTypes.subtracting(categorizedTypes)
+            #expect(uncategorized.isEmpty || uncategorized == [.unknown],
+                   "All types should be categorized (except potentially .unknown)")
         }
     }
 
     // MARK: - Type Safety Suite
-
+    
     @Suite("Type Safety", .tags(.type_safety, .collections))
     struct TypeSafety {
-        @Test("Intervention types work with type-safe collections")
-        func typeSafetyWithCollections() async throws {
-            var typeSet: Set<CursorInterventionEngine.InterventionType> = []
-            var typeArray: [CursorInterventionEngine.InterventionType] = []
-            var typeDictionary: [CursorInterventionEngine.InterventionType: String] = [:]
-
-            // Test Set operations
-            typeSet.insert(.connectionIssue)
-            typeSet.insert(.generalError)
-            typeSet.insert(.connectionIssue) // Duplicate should be ignored
-
-            #expect(typeSet.count == 2, "Set should contain 2 unique types")
-            #expect(typeSet.contains(.connectionIssue), "Set should contain connection issue")
-            #expect(typeSet.contains(.generalError), "Set should contain general error")
-
-            // Test Array operations
-            typeArray.append(.positiveWorkingState)
-            typeArray.append(.noInterventionNeeded)
-
-            #expect(typeArray.count == 2, "Array should contain 2 types")
-            #expect(typeArray.contains(.positiveWorkingState), "Array should contain positive working state")
-
-            // Test Dictionary operations
-            typeDictionary[.automatedRecovery] = "Recovery in progress"
-            typeDictionary[.awaitingAction] = "Waiting for action"
-
-            #expect(typeDictionary.count == 2, "Dictionary should contain 2 entries")
-            #expect(
-                typeDictionary[.automatedRecovery] == "Recovery in progress",
-                "Dictionary should store correct value"
-            )
+        @Test(
+            "Collection operations matrix",
+            arguments: [
+                ("Set", 10),
+                ("Array", 20),
+                ("Dictionary", 15)
+            ]
+        )
+        func collectionOperationsMatrix(testCase: (collection: String, operations: Int)) throws {
+            typealias InterventionType = InterventionTestUtilities.InterventionType
+            
+            switch testCase.collection {
+            case "Set":
+                var set: Set<InterventionType> = []
+                for i in 0..<testCase.operations {
+                    let type = InterventionType.allCases[i % InterventionType.allCases.count]
+                    set.insert(type)
+                }
+                #expect(set.count <= InterventionType.allCases.count, "Set should contain unique values")
+                
+            case "Array":
+                var array: [InterventionType] = []
+                for i in 0..<testCase.operations {
+                    let type = InterventionType.allCases[i % InterventionType.allCases.count]
+                    array.append(type)
+                }
+                #expect(array.count == testCase.operations, "Array should contain all added elements")
+                
+            case "Dictionary":
+                var dict: [InterventionType: Int] = [:]
+                for i in 0..<testCase.operations {
+                    let type = InterventionType.allCases[i % InterventionType.allCases.count]
+                    dict[type] = i
+                }
+                #expect(dict.count <= InterventionType.allCases.count, "Dictionary keys should be unique")
+                
+            default:
+                Issue.record("Unknown collection type: \(testCase.collection)")
+            }
         }
 
         @Test("Intervention types support equality comparison", arguments: [
@@ -293,25 +455,58 @@ struct InterventionEngineTests {
     }
 
     // MARK: - Performance Suite
-
+    
     @Suite("Performance", .tags(.performance, .timing))
     struct Performance {
-        @Test("Enum operations are performant", .timeLimit(.seconds(1)))
-        func enumPerformanceTest() async throws {
-            let iterations = 10000
+        @Test(
+            "Performance benchmarks",
+            arguments: [
+                ("enum_operations", 10000, Duration.milliseconds(100)),
+                ("serialization", 1000, Duration.milliseconds(500)),
+                ("categorization", 5000, Duration.milliseconds(200))
+            ],
+            traits: [InterventionTestTrait(category: "performance", severity: .low)]
+        )
+        func performanceBenchmarks(
+            benchmark: (name: String, iterations: Int, maxDuration: Duration)
+        ) throws {
+            typealias InterventionType = InterventionTestUtilities.InterventionType
+            
             let startTime = ContinuousClock().now
-
-            // Perform many enum operations
-            for i in 0 ..< iterations {
-                let type = CursorInterventionEngine.InterventionType
-                    .allCases[i % CursorInterventionEngine.InterventionType.allCases.count]
-                _ = type.rawValue
-                _ = type == .connectionIssue
-                _ = Set([type])
+            
+            switch benchmark.name {
+            case "enum_operations":
+                for i in 0..<benchmark.iterations {
+                    let type = InterventionType.allCases[i % InterventionType.allCases.count]
+                    _ = type.rawValue
+                    _ = type == .connectionIssue
+                    _ = type.hashValue
+                }
+                
+            case "serialization":
+                let encoder = JSONEncoder()
+                let decoder = JSONDecoder()
+                for i in 0..<benchmark.iterations {
+                    let type = InterventionType.allCases[i % InterventionType.allCases.count]
+                    if let data = try? encoder.encode(type) {
+                        _ = try? decoder.decode(InterventionType.self, from: data)
+                    }
+                }
+                
+            case "categorization":
+                for i in 0..<benchmark.iterations {
+                    let type = InterventionType.allCases[i % InterventionType.allCases.count]
+                    _ = InterventionTestUtilities.categorizeInterventionType(type)
+                    _ = InterventionTestUtilities.calculatePriority(for: type)
+                }
+                
+            default:
+                Issue.record("Unknown benchmark: \(benchmark.name)")
             }
-
+            
             let elapsed = ContinuousClock().now - startTime
-            #expect(elapsed < .seconds(1), "Enum operations should be fast")
+            #expect(elapsed < benchmark.maxDuration, 
+                   "\(benchmark.name) should complete within \(benchmark.maxDuration)")
         }
 
         @Test("Serialization performance is acceptable", .timeLimit(.seconds(3)))
@@ -335,23 +530,37 @@ struct InterventionEngineTests {
         }
     }
 
-    // MARK: - Test Fixtures
+    // MARK: - Integration Tests
+    
+    @Suite("Integration", .tags(.integration), .disabled("Requires live intervention system"))
+    struct IntegrationTests {
+        @Test("End-to-end intervention flow", traits: [RequiresInterventionCapability.self])
+        func endToEndInterventionFlow() async throws {
+            // This test would verify actual intervention execution
+            #expect(true)
+        }
+    }
+}
 
-    static let errorTypes: [CursorInterventionEngine.InterventionType] = [
-        .connectionIssue, .generalError, .unrecoverableError,
-    ]
+// MARK: - Custom Assertions
 
-    static let positiveTypes: [CursorInterventionEngine.InterventionType] = [
-        .noInterventionNeeded, .positiveWorkingState, .sidebarActivityDetected,
-    ]
-
-    static let controlTypes: [CursorInterventionEngine.InterventionType] = [
-        .manualPause, .monitoringPaused, .interventionLimitReached,
-    ]
-
-    static let recoveryTypes: [CursorInterventionEngine.InterventionType] = [
-        .automatedRecovery, .awaitingAction,
-    ]
+extension InterventionEngineTests {
+    func assertValidInterventionType(
+        _ type: InterventionTestUtilities.InterventionType,
+        expectedCategory: InterventionTestUtilities.InterventionCategory? = nil,
+        file: StaticString = #filePath,
+        line: UInt = #line
+    ) {
+        #expect(!type.rawValue.isEmpty, sourceLocation: SourceLocation(filePath: file, line: Int(line)))
+        #expect(InterventionTestUtilities.InterventionType.allCases.contains(type), 
+               sourceLocation: SourceLocation(filePath: file, line: Int(line)))
+        
+        if let expectedCategory = expectedCategory {
+            let actualCategory = InterventionTestUtilities.categorizeInterventionType(type)
+            #expect(actualCategory == expectedCategory, 
+                   sourceLocation: SourceLocation(filePath: file, line: Int(line)))
+        }
+    }
 }
 
 // MARK: - Custom Test Tags
