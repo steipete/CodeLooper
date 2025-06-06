@@ -75,18 +75,30 @@ private struct ClaudeInstanceRow: View {
                             .lineLimit(1)
                     }
                     
-                    // Current activity if available
+                    // Current activity - always show since we now default to "idle"
                     if let activity = instance.currentActivity {
-                        HStack(spacing: Spacing.xxSmall) {
-                            Image(systemName: "waveform")
-                                .font(.caption2)
-                                .foregroundColor(ColorPalette.success)
+                        VStack(alignment: .leading, spacing: 2) {
+                            HStack(spacing: Spacing.xxSmall) {
+                                let statusIcon = activity == "idle" ? "zzz" : "dot.radiowaves.left.and.right"
+                                let statusColor = activity == "idle" ? ColorPalette.textTertiary : ColorPalette.accent
+                                
+                                Image(systemName: statusIcon)
+                                    .font(.caption2)
+                                    .foregroundColor(statusColor)
+                                
+                                Text("Current Status:")
+                                    .font(Typography.caption2(.semibold))
+                                    .foregroundColor(ColorPalette.textSecondary)
+                            }
                             
                             Text(activity)
-                                .font(Typography.caption2(.medium))
-                                .foregroundColor(ColorPalette.success)
-                                .lineLimit(2)
+                                .font(Typography.caption1(.medium))
+                                .foregroundColor(activity == "idle" ? ColorPalette.textTertiary : ColorPalette.accent)
+                                .lineLimit(3)
+                                .fixedSize(horizontal: false, vertical: true)
+                                .padding(.leading, 16)
                         }
+                        .padding(.top, 2)
                     }
                 }
                 

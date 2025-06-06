@@ -4,6 +4,8 @@ import Defaults
 import AppKit
 import Vision
 import ScreenCaptureKit
+import Darwin
+import CoreImage
 
 private let logger = Logger(category: .supervision)
 
@@ -66,7 +68,7 @@ public final class ClaudeMonitorService: ObservableObject, Sendable {
         monitoringTask = Task { [weak self] in
             while !Task.isCancelled {
                 await self?.scanForClaudeInstances()
-                try? await Task.sleep(for: .seconds(3))
+                try? await Task.sleep(for: .seconds(10)) // Reduced from 3s to 10s to save CPU
             }
         }
     }
@@ -187,12 +189,22 @@ public final class ClaudeMonitorService: ObservableObject, Sendable {
                             let p = String(format: "/dev/ttys%03d", n)
                             if stat(p, &dev) == 0, dev.st_rdev == info.e_tdev {
                                 ttyPath = p
+                                logger.debug("Found TTY for PID \(pid): \(ttyPath)")
                                 break
                             }
                         }
                         
-                        // Try to get current activity status
-                        let currentActivity = extractClaudeStatusSync(ttyPath: ttyPath, pid: pid)
+                        if ttyPath.isEmpty {
+                            logger.debug("No TTY found for PID \(pid)")
+                        }
+                        
+                        // Try to get current activity status synchronously first
+                        var currentActivity = extractClaudeStatusSync(ttyPath: ttyPath, pid: pid)
+                        
+                        // If no activity detected, mark as idle
+                        if currentActivity == nil || currentActivity?.isEmpty == true {
+                            currentActivity = "idle"
+                        }
                         
                         let instance = ClaudeInstance(
                             pid: pid,
@@ -212,12 +224,36 @@ public final class ClaudeMonitorService: ObservableObject, Sendable {
                 
                 Task { @MainActor [weak self] in
                     guard let self = self else { return }
-                    self.instances = newInstances
+                    
+                    // Update instances with fresh activity status
+                    var updatedInstances: [ClaudeInstance] = []
+                    
+                    for instance in newInstances {
+                        // Get the latest activity status asynchronously for better accuracy
+                        let latestActivity = await self.extractClaudeStatusForSpecificInstance(instance)
+                        let finalActivity = latestActivity?.isEmpty == false ? latestActivity! : "idle"
+                        
+                        // Create updated instance with fresh activity
+                        let updatedInstance = ClaudeInstance(
+                            pid: instance.pid,
+                            ttyPath: instance.ttyPath,
+                            workingDirectory: instance.workingDirectory,
+                            folderName: instance.folderName,
+                            status: instance.status,
+                            currentActivity: finalActivity,
+                            lastUpdated: Date()
+                        )
+                        updatedInstances.append(updatedInstance)
+                        
+                        logger.debug("Updated instance \(instance.folderName) with activity: '\(finalActivity)'")
+                    }
+                    
+                    self.instances = updatedInstances
                     
                     // Update terminal titles if title override is enabled
                     if self.isMonitoring && self.titleOverrideEnabled {
                         Task {
-                            await self.updateTerminalTitles(for: newInstances)
+                            await self.updateTerminalTitles(for: updatedInstances)
                         }
                     }
                 }
@@ -248,20 +284,33 @@ public final class ClaudeMonitorService: ObservableObject, Sendable {
                     return
                 }
                 
-                // Get current Claude status from terminal
-                let claudeStatus = self.extractClaudeStatus(from: instance)
+                // Get current Claude status from terminal that specifically contains this instance
+                let claudeStatus = await self.extractClaudeStatusForSpecificInstance(instance)
                 
                 logger.debug("Extracted Claude status for PID \(instance.pid): '\(claudeStatus ?? "nil")'")
                 
-                // Create dynamic title: "FolderName — Claude — Status"
+                // Create dynamic title with loop emoji to show CodeLooper is working
                 // If we have Claude status (e.g., "✶ Branching… (1604s · ⚒ 9.0k tokens)"), use it
-                // Otherwise fall back to basic status (e.g., "Claude CLI")
-                var title = "\(instance.folderName) — \(instance.status ?? "Claude")"
-                if let status = claudeStatus, !status.isEmpty {
-                    title = "\(instance.folderName) — \(status)"
-                    logger.info("Using dynamic title for PID \(instance.pid): '\(title)'")
+                // Otherwise fall back to "idle"
+                let displayStatus = claudeStatus?.isEmpty == false ? claudeStatus! : "idle"
+                let title = "🔄 \(instance.folderName) — \(displayStatus)"
+                
+                logger.info("Using title for PID \(instance.pid): '\(title)'")
+                if claudeStatus?.isEmpty == false {
+                    logger.info("Status source: dynamic Claude status")
                 } else {
-                    logger.debug("Using fallback title for PID \(instance.pid): '\(title)'")
+                    logger.info("Status source: fallback to 'idle'")
+                }
+                
+                // Debug: Show exactly what we're trying to write
+                logger.info("DEBUG: Preparing to write title for PID \(instance.pid)")
+                logger.info("DEBUG: TTY path: '\(instance.ttyPath)'")
+                logger.info("DEBUG: Title to set: '\(title)'")
+                
+                // Skip title update if no TTY
+                guard !instance.ttyPath.isEmpty else {
+                    logger.warning("No TTY path for PID \(instance.pid) - cannot update title")
+                    return
                 }
                 
                 // Terminal escape sequence to set window title
@@ -269,23 +318,41 @@ public final class ClaudeMonitorService: ObservableObject, Sendable {
                 let bel = "\u{0007}"
                 let titleCommand = esc + title + bel
                 
-                // Try to write to the TTY (this is safe to do from a Task)
-                let fd = open(instance.ttyPath, O_WRONLY | O_NONBLOCK)
-                if fd >= 0 {
-                    defer { close(fd) }
-                    
-                    let data = titleCommand.data(using: .utf8) ?? Data()
-                    let bytesWritten = data.withUnsafeBytes { bytes in
-                        write(fd, bytes.baseAddress, bytes.count)
-                    }
-                    
-                    if bytesWritten > 0 {
-                        logger.info("Updated terminal title for \(instance.folderName) (PID: \(instance.pid)): \(title)")
+                logger.debug("DEBUG: Full escape sequence: '\\033]2;\(title)\\007'")
+                
+                // Check if TTY exists and is writable
+                let ttyExists = FileManager.default.fileExists(atPath: instance.ttyPath)
+                logger.debug("DEBUG: TTY exists: \(ttyExists)")
+                
+                if ttyExists {
+                    var isWritable = false
+                    let fd = open(instance.ttyPath, O_WRONLY | O_NONBLOCK)
+                    if fd >= 0 {
+                        isWritable = true
+                        defer { close(fd) }
+                        
+                        let data = titleCommand.data(using: .utf8) ?? Data()
+                        let bytesWritten = data.withUnsafeBytes { bytes in
+                            write(fd, bytes.baseAddress, bytes.count)
+                        }
+                        
+                        logger.debug("DEBUG: Bytes written: \(bytesWritten) (expected: \(data.count))")
+                        
+                        if bytesWritten > 0 {
+                            logger.info("✅ Successfully updated terminal title for \(instance.folderName) (PID: \(instance.pid))")
+                            logger.info("✅ Title: '\(title)'")
+                        } else {
+                            let error = String(cString: strerror(errno))
+                            logger.error("❌ Failed to write title to TTY \(instance.ttyPath): \(error)")
+                        }
                     } else {
-                        logger.warning("Failed to write title to TTY \(instance.ttyPath) for PID \(instance.pid)")
+                        let error = String(cString: strerror(errno))
+                        logger.error("❌ Could not open TTY \(instance.ttyPath): \(error)")
                     }
+                    
+                    logger.debug("DEBUG: TTY writable: \(isWritable)")
                 } else {
-                    logger.warning("Could not open TTY \(instance.ttyPath) for PID \(instance.pid)")
+                    logger.error("❌ TTY does not exist: \(instance.ttyPath)")
                 }
                 
                 continuation.resume()
@@ -293,37 +360,37 @@ public final class ClaudeMonitorService: ObservableObject, Sendable {
         }
     }
     
-    private func extractClaudeStatus(from instance: ClaudeInstance) -> String? {
-        // Try to read the terminal buffer to extract Claude's current status
-        guard !instance.ttyPath.isEmpty else { 
-            logger.debug("No TTY path for Claude instance PID \(instance.pid)")
-            return nil
-        }
+    private func extractClaudeStatusForSpecificInstance(_ instance: ClaudeInstance) async -> String? {
+        logger.info("Extracting Claude status for specific instance PID \(instance.pid) in \(instance.workingDirectory)")
         
-        logger.info("Extracting Claude status for PID \(instance.pid) from TTY \(instance.ttyPath)")
-        
-        // Method 1: Try to read recent terminal output
-        if let status = readTerminalBuffer(ttyPath: instance.ttyPath) {
-            logger.info("Found status from terminal buffer for PID \(instance.pid): '\(status)'")
-            return status
-        }
-        
-        // Method 2: Try AppleScript approach for terminal apps
-        if let status = getTerminalContentViaAppleScript(pid: instance.pid) {
+        // Method 1: Try accessibility API first, but match by working directory
+        if let status = getTerminalContentViaAccessibilityForInstance(instance) {
             logger.info("Found status from accessibility API for PID \(instance.pid): '\(status)'")
             return status
         }
         
-        // Method 3: Skip OCR - it's too unreliable with terminal fonts
-        // OCR consistently misreads characters (r→p, etc) making it unusable
-        // if let status = getTerminalContentViaScreenCapture(pid: instance.pid) {
-        //     logger.info("Found status from screen capture OCR for PID \(instance.pid): '\(status)'")
-        //     return status
-        // }
+        // Method 2: Try improved OCR with preprocessing, but only capture the specific window
+        if let status = await getTerminalContentViaImprovedOCRForInstance(instance) {
+            logger.info("Found status from improved OCR for PID \(instance.pid): '\(status)'")
+            return status
+        }
         
-        // Method 4: Parse process output/stderr if available
-        if let status = parseProcessOutput(pid: instance.pid) {
-            logger.info("Found status from process output for PID \(instance.pid): '\(status)'")
+        logger.debug("No Claude status found for PID \(instance.pid)")
+        return nil
+    }
+    
+    private func extractClaudeStatus(from instance: ClaudeInstance) async -> String? {
+        logger.info("Extracting Claude status for PID \(instance.pid)")
+        
+        // Method 1: Try accessibility API first (most reliable and fast)
+        if let status = getTerminalContentViaAccessibility(pid: instance.pid) {
+            logger.info("Found status from accessibility API for PID \(instance.pid): '\(status)'")
+            return status
+        }
+        
+        // Method 2: Try improved OCR with preprocessing as fallback (now async for better performance)
+        if let status = await getTerminalContentViaImprovedOCR(pid: instance.pid) {
+            logger.info("Found status from improved OCR for PID \(instance.pid): '\(status)'")
             return status
         }
         
@@ -333,162 +400,48 @@ public final class ClaudeMonitorService: ObservableObject, Sendable {
     
     private nonisolated func extractClaudeStatusSync(ttyPath: String, pid: Int32) -> String? {
         // Synchronous version for use during scanning
-        guard !ttyPath.isEmpty else { return nil }
+        logger.debug("Trying to extract Claude status sync for PID \(pid)")
         
-        logger.debug("Trying to extract Claude status sync for PID \(pid) from TTY \(ttyPath)")
-        
-        // Try the simpler methods that don't require async
-        if let status = readTerminalBuffer(ttyPath: ttyPath) {
-            logger.info("Found sync status from terminal buffer for PID \(pid): '\(status)'")
+        // Try accessibility API (synchronous)
+        if let status = getTerminalContentViaAccessibility(pid: pid) {
+            logger.info("Found sync status from accessibility API for PID \(pid): '\(status)'")
             return status
         }
         
-        // Try reading process environment or command line for clues
-        if let status = readProcessCommandLine(pid: pid) {
-            logger.info("Found sync status from process command line for PID \(pid): '\(status)'")
-            return status
-        }
-        
-        // Skip OCR - too unreliable
-        // if let status = getTerminalContentViaScreenCapture(pid: pid) {
-        //     logger.info("Found sync status from screen capture OCR for PID \(pid): '\(status)'")
-        //     return status
-        // }
+        // Skip OCR in sync version - it's now async only to avoid blocking the scanning thread
         
         return nil
     }
     
-    private nonisolated func readTerminalBuffer(ttyPath: String) -> String? {
-        // Try to read recent terminal output by monitoring the PTY
-        logger.info("Attempting to read terminal buffer from TTY: \(ttyPath)")
+    private nonisolated func getTerminalContentViaAccessibilityForInstance(_ instance: ClaudeInstance) -> String? {
+        // Find terminal applications that might contain our Claude process
+        let workspace = NSWorkspace.shared
+        let runningApps = workspace.runningApplications
         
-        // Method 1: Try to find the master PTY and read from it
-        if let status = readFromMasterPTY(slavePath: ttyPath) {
-            return status
+        let terminalApps = runningApps.filter { app in
+            guard let bundleId = app.bundleIdentifier else { return false }
+            return bundleId.contains("terminal") || 
+                   bundleId.contains("iterm") ||
+                   bundleId.contains("ghostty") ||
+                   bundleId.contains("warp") ||
+                   app.localizedName?.lowercased().contains("terminal") == true
         }
         
-        // Method 2: Try using ioctl to get terminal buffer
-        if let status = readTerminalViaIoctl(ttyPath: ttyPath) {
-            return status
-        }
-        
-        // Method 3: Try to read from system console logs (least likely to work)
-        if let status = readFromSystemLogs(ttyPath: ttyPath) {
-            return status
-        }
-        
-        return nil
-    }
-    
-    private nonisolated func readFromSystemLogs(ttyPath: String) -> String? {
-        // Extract TTY number from path (e.g., "/dev/ttys003" -> "ttys003")
-        let ttyName = URL(fileURLWithPath: ttyPath).lastPathComponent
-        
-        logger.debug("Attempting to read system logs for TTY: \(ttyName)")
-        
-        // Use 'last' command or system logs to get recent terminal activity
-        let process = Process()
-        process.executableURL = URL(fileURLWithPath: "/usr/bin/last")
-        process.arguments = ["-t", ttyName, "-1"]
-        
-        let pipe = Pipe()
-        process.standardOutput = pipe
-        process.standardError = pipe
-        
-        do {
-            try process.run()
-            process.waitUntilExit()
-            
-            let data = pipe.fileHandleForReading.readDataToEndOfFile()
-            let output = String(data: data, encoding: .utf8) ?? ""
-            
-            logger.debug("System logs output for \(ttyName): '\(String(output.prefix(200)))'")
-            
-            // Look for Claude-related patterns in the output
-            if output.contains("esc to interrupt") || output.contains("Reticulating") {
-                let status = parseClaudeStatusLine(output)
-                logger.info("Parsed Claude status from system logs: '\(status ?? "nil")'")
-                return status
-            }
-        } catch {
-            logger.debug("Failed to read system logs for \(ttyPath): \(error)")
-        }
-        
-        return nil
-    }
-    
-    private nonisolated func readFromMasterPTY(slavePath: String) -> String? {
-        // Try to find and read from the master PTY
-        logger.debug("Attempting to read from master PTY for slave: \(slavePath)")
-        
-        // First, try to find the master PTY
-        if let masterPath = findMasterPTYForSlave(slavePath) {
-            let masterFd = open(masterPath, O_RDONLY | O_NONBLOCK)
-            if masterFd >= 0 {
-                defer { close(masterFd) }
-                
-                var buffer = [CChar](repeating: 0, count: 8192)
-                let bytesRead = read(masterFd, &buffer, 8192)
-                
-                if bytesRead > 0 {
-                    let data = Data(bytes: buffer, count: Int(bytesRead))
-                    let content = String(decoding: data, as: UTF8.self)
-                    logger.info("Read \(bytesRead) bytes from master PTY: '\(String(content.prefix(200)))'")
-                    
-                    if content.contains("esc to interrupt") {
-                        return parseClaudeStatusLine(content)
-                    }
+        // Check each terminal app for windows containing our specific Claude instance
+        for terminalApp in terminalApps {
+            if let content = getTerminalWindowContentForInstance(terminalPID: terminalApp.processIdentifier, instance: instance) {
+                // Check if this content mentions our Claude PID or contains status
+                if content.contains("esc to interrupt") {
+                    return parseClaudeStatusLine(content)
                 }
             }
         }
         
-        // Fallback: Try to read from the slave TTY directly
-        // Sometimes we can read the echo/output from the slave side
-        let slaveFd = open(slavePath, O_RDONLY | O_NONBLOCK)
-        if slaveFd >= 0 {
-            defer { close(slaveFd) }
-            
-            // Try multiple small reads to get recent data
-            var fullContent = ""
-            for _ in 0..<5 {
-                var buffer = [CChar](repeating: 0, count: 1024)
-                let bytesRead = read(slaveFd, &buffer, 1024)
-                
-                if bytesRead > 0 {
-                    let data = Data(bytes: buffer, count: Int(bytesRead))
-                    let chunk = String(decoding: data, as: UTF8.self)
-                    fullContent += chunk
-                    logger.debug("Read chunk (\(bytesRead) bytes) from slave TTY")
-                } else if bytesRead < 0 && errno != EAGAIN && errno != EWOULDBLOCK {
-                    logger.debug("Read error: \(String(cString: strerror(errno)))")
-                    break
-                }
-                
-                // Small delay between reads
-                usleep(10000) // 10ms
-            }
-            
-            if !fullContent.isEmpty {
-                logger.info("Total content read from slave TTY: '\(String(fullContent.prefix(300)))'")
-                if fullContent.contains("esc to interrupt") {
-                    return parseClaudeStatusLine(fullContent)
-                }
-            }
-        } else {
-            logger.debug("Could not open slave TTY for reading: \(String(cString: strerror(errno)))")
-        }
-        
         return nil
     }
     
-    private func getTerminalContentViaAppleScript(pid: Int32) -> String? {
-        // The PID we have is for the Node.js Claude process, not the terminal
-        // We need to find the terminal application that's running this process
-        return findTerminalAndReadContent(claudePID: pid)
-    }
-    
-    private func findTerminalAndReadContent(claudePID: Int32) -> String? {
-        // Get list of running applications that could be terminals
+    private nonisolated func getTerminalContentViaAccessibility(pid: Int32) -> String? {
+        // Find terminal applications that might contain our Claude process
         let workspace = NSWorkspace.shared
         let runningApps = workspace.runningApplications
         
@@ -503,8 +456,8 @@ public final class ClaudeMonitorService: ObservableObject, Sendable {
         
         // Check each terminal app for windows containing our Claude process
         for terminalApp in terminalApps {
-            if let content = getTerminalContentViaAccessibility(terminalPID: terminalApp.processIdentifier) {
-                // Check if this content mentions our Claude PID or working directory
+            if let content = getTerminalWindowContent(terminalPID: terminalApp.processIdentifier) {
+                // Check if this content mentions our Claude PID or contains status
                 if content.contains("esc to interrupt") {
                     return parseClaudeStatusLine(content)
                 }
@@ -514,7 +467,38 @@ public final class ClaudeMonitorService: ObservableObject, Sendable {
         return nil
     }
     
-    private func getTerminalContentViaAccessibility(terminalPID: pid_t) -> String? {
+    private nonisolated func getTerminalWindowContentForInstance(terminalPID: pid_t, instance: ClaudeInstance) -> String? {
+        // Get the terminal application for this PID
+        let app = AXUIElementCreateApplication(terminalPID)
+        
+        var windowsRef: CFTypeRef?
+        let result = AXUIElementCopyAttributeValue(app, kAXWindowsAttribute as CFString, &windowsRef)
+        
+        guard result == .success,
+              let windowsArray = windowsRef as? [AXUIElement] else {
+            logger.debug("Could not get windows for terminal PID \(terminalPID)")
+            return nil
+        }
+        
+        // Look through windows to find one that matches our specific Claude instance
+        for window in windowsArray {
+            if let content = extractTextFromWindow(window) {
+                // Check if this window contains content from our specific working directory
+                // Look for the folder name or full path in the content
+                let containsWorkingDir = content.contains(instance.workingDirectory) || 
+                                       content.contains(instance.folderName)
+                
+                if containsWorkingDir && (content.contains("esc to interrupt") || content.contains("Claude")) {
+                    logger.debug("Found matching terminal window for \(instance.folderName)")
+                    return content
+                }
+            }
+        }
+        
+        return nil
+    }
+    
+    private nonisolated func getTerminalWindowContent(terminalPID: pid_t) -> String? {
         // Get the terminal application for this PID
         let app = AXUIElementCreateApplication(terminalPID)
         
@@ -539,7 +523,7 @@ public final class ClaudeMonitorService: ObservableObject, Sendable {
         return nil
     }
     
-    private func extractTextFromWindow(_ window: AXUIElement) -> String? {
+    private nonisolated func extractTextFromWindow(_ window: AXUIElement) -> String? {
         // Try to get the window's text content
         var valueRef: CFTypeRef?
         
@@ -564,7 +548,7 @@ public final class ClaudeMonitorService: ObservableObject, Sendable {
             }
         }
         
-        // Try to get children and look for text elements (scroll areas, text views, etc.)
+        // Try to get children and look for text elements recursively
         var childrenRef: CFTypeRef?
         if AXUIElementCopyAttributeValue(window, kAXChildrenAttribute as CFString, &childrenRef) == .success,
            let children = childrenRef as? [AXUIElement] {
@@ -581,7 +565,7 @@ public final class ClaudeMonitorService: ObservableObject, Sendable {
         return nil
     }
     
-    private func extractTextFromElement(_ element: AXUIElement, maxDepth: Int) -> String? {
+    private nonisolated func extractTextFromElement(_ element: AXUIElement, maxDepth: Int) -> String? {
         guard maxDepth > 0 else { return nil }
         
         // Get element role to understand what type of element this is
@@ -640,237 +624,13 @@ public final class ClaudeMonitorService: ObservableObject, Sendable {
         return nil
     }
     
-    private func parseProcessOutput(pid: Int32) -> String? {
-        // Try to read process output through various methods
-        logger.debug("Attempting to read process output for PID \(pid)")
-        
-        // Method 1: Check if process is running under tmux
-        if let tmuxStatus = readFromTmux(pid: pid) {
-            return tmuxStatus
-        }
-        
-        // Method 2: Look for typescript files from 'script' command
-        if let scriptStatus = readFromScriptFile(pid: pid) {
-            return scriptStatus
-        }
-        
-        // Method 3: Try lsof to find open files that might contain output
-        if let lsofStatus = readProcessFiles(pid: pid) {
-            return lsofStatus
-        }
-        
-        return nil
-    }
-    
-    private nonisolated func readFromTmux(pid: Int32) -> String? {
-        // Check if the process is running in tmux
-        let process = Process()
-        process.executableURL = URL(fileURLWithPath: "/usr/bin/tmux")
-        process.arguments = ["list-panes", "-a", "-F", "#{pane_pid} #{pane_current_command}"]
-        
-        let pipe = Pipe()
-        process.standardOutput = pipe
-        process.standardError = Pipe() // Discard errors
-        
-        do {
-            try process.run()
-            process.waitUntilExit()
-            
-            let data = pipe.fileHandleForReading.readDataToEndOfFile()
-            let output = String(data: data, encoding: .utf8) ?? ""
-            
-            // Find our PID in tmux panes
-            for line in output.components(separatedBy: .newlines) {
-                if line.contains("\(pid)") {
-                    logger.info("Found process in tmux: \(line)")
-                    
-                    // Try to capture the pane content
-                    let captureProcess = Process()
-                    captureProcess.executableURL = URL(fileURLWithPath: "/usr/bin/tmux")
-                    captureProcess.arguments = ["capture-pane", "-p", "-S", "-100"] // Last 100 lines
-                    
-                    let capturePipe = Pipe()
-                    captureProcess.standardOutput = capturePipe
-                    
-                    try captureProcess.run()
-                    captureProcess.waitUntilExit()
-                    
-                    let captureData = capturePipe.fileHandleForReading.readDataToEndOfFile()
-                    let content = String(data: captureData, encoding: .utf8) ?? ""
-                    
-                    if content.contains("esc to interrupt") {
-                        logger.info("Found Claude status in tmux pane")
-                        return parseClaudeStatusLine(content)
-                    }
-                }
-            }
-        } catch {
-            logger.debug("tmux not available or error: \(error)")
-        }
-        
-        return nil
-    }
-    
-    private nonisolated func readFromScriptFile(pid: Int32) -> String? {
-        // Look for typescript files that might contain terminal output
-        let scriptPaths = [
-            "/tmp/typescript",
-            "~/typescript",
-            "/var/tmp/typescript.\(pid)"
-        ].map { NSString(string: $0).expandingTildeInPath }
-        
-        for path in scriptPaths {
-            if FileManager.default.fileExists(atPath: path) {
-                do {
-                    let content = try String(contentsOfFile: path, encoding: .utf8)
-                    if content.contains("esc to interrupt") {
-                        logger.info("Found Claude status in script file: \(path)")
-                        return parseClaudeStatusLine(content)
-                    }
-                } catch {
-                    logger.debug("Could not read script file \(path): \(error)")
-                }
-            }
-        }
-        
-        return nil
-    }
-    
-    private nonisolated func readProcessFiles(pid: Int32) -> String? {
-        // Use lsof to find files opened by the process
-        let process = Process()
-        process.executableURL = URL(fileURLWithPath: "/usr/sbin/lsof")
-        process.arguments = ["-p", "\(pid)", "-Fn"]
-        
-        let pipe = Pipe()
-        process.standardOutput = pipe
-        process.standardError = Pipe()
-        
-        do {
-            try process.run()
-            process.waitUntilExit()
-            
-            let data = pipe.fileHandleForReading.readDataToEndOfFile()
-            let output = String(data: data, encoding: .utf8) ?? ""
-            
-            logger.debug("lsof output for PID \(pid): \(String(output.prefix(500)))")
-            
-            // Look for interesting files like logs or output files
-            for line in output.components(separatedBy: .newlines) {
-                if line.hasPrefix("n") && (line.contains(".log") || line.contains("output")) {
-                    let filePath = String(line.dropFirst())
-                    logger.debug("Found potential output file: \(filePath)")
-                    
-                    if let content = try? String(contentsOfFile: filePath, encoding: .utf8),
-                       content.contains("esc to interrupt") {
-                        return parseClaudeStatusLine(content)
-                    }
-                }
-            }
-        } catch {
-            logger.debug("lsof failed: \(error)")
-        }
-        
-        return nil
-    }
-    
-    private nonisolated func parseClaudeStatusLine(_ text: String) -> String? {
-        // Parse the Claude status line to extract the complete status
-        // Example input: "claude: ✶ Branching… (1604s · ⚒ 9.0k tokens · esc to interrupt)"
-        // Desired output: "✶ Branching… (1604s · ⚒ 9.0k tokens)"
-        
-        logger.debug("Parsing Claude status from text: '\(String(text.prefix(300)))'")
-        
-        let lines = text.components(separatedBy: .newlines)
-        
-        // Look through all lines for the one containing "esc to interrupt"
-        for (index, line) in lines.enumerated() {
-            let cleanLine = line.trimmingCharacters(in: .whitespacesAndNewlines)
-            
-            // Skip empty lines
-            guard !cleanLine.isEmpty else { continue }
-            
-            logger.debug("Checking line \(index): '\(cleanLine)'")
-            
-            // Look for the line with "esc to interrupt"
-            if cleanLine.contains("esc to interrupt") {
-                logger.info("Found 'esc to interrupt' in line: '\(cleanLine)'")
-                
-                if let range = cleanLine.range(of: "esc to interrupt") {
-                    let beforeEsc = cleanLine[..<range.lowerBound]
-                    var status = String(beforeEsc).trimmingCharacters(in: .whitespacesAndNewlines)
-                    
-                    logger.debug("Before esc: '\(status)'")
-                    
-                    // Remove the final separator before "esc to interrupt" (like " · " or " ・ ")
-                    if status.hasSuffix("·") || status.hasSuffix("・") {
-                        status = String(status.dropLast()).trimmingCharacters(in: .whitespacesAndNewlines)
-                        logger.debug("After removing separator: '\(status)'")
-                    }
-                    
-                    // Clean up any prefix like "claude:" or bullet points if present
-                    if let colonIndex = status.firstIndex(of: ":") {
-                        status = String(status[status.index(after: colonIndex)...]).trimmingCharacters(in: .whitespacesAndNewlines)
-                        logger.debug("After removing prefix: '\(status)'")
-                    }
-                    
-                    // Remove leading bullet points or symbols but keep the actual content
-                    status = status.replacingOccurrences(of: "^[●•○]\\s*", with: "", options: .regularExpression)
-                    status = status.trimmingCharacters(in: .whitespacesAndNewlines)
-                    
-                    logger.debug("Final parsed status: '\(status)'")
-                    
-                    // Return the cleaned status if we have meaningful content
-                    if !status.isEmpty && status.count > 1 {
-                        logger.info("Successfully parsed Claude status: '\(status)'")
-                        return status
-                    }
-                }
-            }
-        }
-        
-        logger.debug("No Claude status found in text")
-        return nil
-    }
-    
-    private nonisolated func readProcessCommandLine(pid: Int32) -> String? {
-        // Try to read the process command line to see if it contains status info
-        let process = Process()
-        process.executableURL = URL(fileURLWithPath: "/bin/ps")
-        process.arguments = ["-p", "\(pid)", "-o", "command"]
-        
-        let pipe = Pipe()
-        process.standardOutput = pipe
-        process.standardError = pipe
-        
-        do {
-            try process.run()
-            process.waitUntilExit()
-            
-            let data = pipe.fileHandleForReading.readDataToEndOfFile()
-            let output = String(data: data, encoding: .utf8) ?? ""
-            
-            logger.debug("Process command line for PID \(pid): '\(output)'")
-            
-            // For now, this is just for debugging - we don't expect to find the live status here
-            // but it might give us clues about what Claude is doing
-            return nil
-        } catch {
-            logger.debug("Failed to read process command line for PID \(pid): \(error)")
-        }
-        
-        return nil
-    }
-    
-    private nonisolated func getTerminalContentViaScreenCapture(pid: Int32) -> String? {
-        // Use screen capture + OCR as fallback for terminals that don't support accessibility (like Ghostty)
-        logger.info("Attempting screen capture OCR for Claude PID \(pid)")
+    private nonisolated func getTerminalContentViaImprovedOCRForInstance(_ instance: ClaudeInstance) async -> String? {
+        logger.info("Attempting improved OCR for Claude instance PID \(instance.pid) in \(instance.folderName)")
         
         // Check if we have screen recording permission
         let hasPermission = CGPreflightScreenCaptureAccess()
         if !hasPermission {
             logger.debug("No screen recording permission for OCR - requesting access")
-            // This will trigger a permission prompt
             _ = CGRequestScreenCaptureAccess()
             return nil
         }
@@ -881,7 +641,58 @@ public final class ClaudeMonitorService: ObservableObject, Sendable {
             return nil
         }
         
-        // Look for terminal windows (Ghostty, iTerm, Terminal, etc.)
+        // Look for terminal windows that match our specific instance
+        for window in windowList {
+            if let windowName = window[kCGWindowName as String] as? String,
+               let ownerName = window[kCGWindowOwnerName as String] as? String,
+               let bounds = window[kCGWindowBounds as String] as? [String: Any],
+               let windowID = window[kCGWindowNumber as String] as? CGWindowID {
+                
+                // Check if this looks like a terminal window
+                let isTerminal = ownerName.lowercased().contains("ghostty") ||
+                               ownerName.lowercased().contains("terminal") ||
+                               ownerName.lowercased().contains("iterm") ||
+                               ownerName.lowercased().contains("warp")
+                
+                // Check if this window might contain our specific Claude instance
+                // Look for folder name or working directory in the window title
+                let matchesInstance = windowName.contains(instance.folderName) ||
+                                    windowName.contains(instance.workingDirectory) ||
+                                    windowName.contains("Claude") // Generic fallback
+                
+                if isTerminal && matchesInstance {
+                    logger.info("Found matching terminal window: '\(windowName)' (\(ownerName)) for \(instance.folderName)")
+                    
+                    // Move heavy processing to background thread
+                    if let status = await captureWindowAndExtractImprovedTextAsync(windowID: windowID, bounds: bounds) {
+                        return status
+                    }
+                }
+            }
+        }
+        
+        logger.debug("No matching terminal windows found for instance \(instance.folderName)")
+        return nil
+    }
+    
+    private nonisolated func getTerminalContentViaImprovedOCR(pid: Int32) async -> String? {
+        logger.info("Attempting improved OCR for Claude PID \(pid)")
+        
+        // Check if we have screen recording permission
+        let hasPermission = CGPreflightScreenCaptureAccess()
+        if !hasPermission {
+            logger.debug("No screen recording permission for OCR - requesting access")
+            _ = CGRequestScreenCaptureAccess()
+            return nil
+        }
+        
+        // Get list of all windows
+        guard let windowList = CGWindowListCopyWindowInfo(.optionOnScreenOnly, kCGNullWindowID) as? [[String: Any]] else {
+            logger.debug("Failed to get window list for screen capture")
+            return nil
+        }
+        
+        // Look for terminal windows
         for window in windowList {
             if let windowName = window[kCGWindowName as String] as? String,
                let ownerName = window[kCGWindowOwnerName as String] as? String,
@@ -897,15 +708,8 @@ public final class ClaudeMonitorService: ObservableObject, Sendable {
                 if isTerminal {
                     logger.info("Found terminal window: '\(windowName)' (\(ownerName))")
                     
-                    // Check if the window name itself contains Claude status
-                    if windowName.contains("—") && windowName.contains("Claude") {
-                        logger.debug("Window name might contain status: '\(windowName)'")
-                        // The window name might already have been updated by our title override
-                        // but it doesn't seem to include the dynamic status
-                    }
-                    
-                    // Try to capture this window and extract text
-                    if let status = captureWindowAndExtractText(windowID: windowID, bounds: bounds) {
+                    // Move heavy processing to background thread
+                    if let status = await captureWindowAndExtractImprovedTextAsync(windowID: windowID, bounds: bounds) {
                         return status
                     }
                 }
@@ -916,9 +720,8 @@ public final class ClaudeMonitorService: ObservableObject, Sendable {
         return nil
     }
     
-    private nonisolated func captureWindowAndExtractText(windowID: CGWindowID, bounds: [String: Any]) -> String? {
-        // For now, still use the deprecated API with a suppression
-        // TODO: Migrate to ScreenCaptureKit async API when we refactor for async context
+    private nonisolated func captureWindowAndExtractImprovedText(windowID: CGWindowID, bounds: [String: Any]) -> String? {
+        // Capture the window
         guard let image = CGWindowListCreateImage(
             CGRect.null,
             .optionIncludingWindow,
@@ -931,14 +734,93 @@ public final class ClaudeMonitorService: ObservableObject, Sendable {
         
         logger.debug("Captured window \(windowID), size: \(image.width)x\(image.height)")
         
-        // Convert to NSImage for Vision framework
-        let nsImage = NSImage(cgImage: image, size: NSSize(width: image.width, height: image.height))
+        // Preprocess the image for better OCR results
+        guard let preprocessedImage = preprocessImageForOCR(image) else {
+            logger.debug("Failed to preprocess image")
+            return nil
+        }
         
-        // Use Vision framework to extract text
-        return extractTextFromImage(nsImage)
+        // Convert to NSImage for Vision framework
+        let nsImage = NSImage(cgImage: preprocessedImage, size: NSSize(width: preprocessedImage.width, height: preprocessedImage.height))
+        
+        // Use Vision framework with improved settings
+        return extractTextFromImageWithImprovedSettings(nsImage)
     }
     
-    private nonisolated func extractTextFromImage(_ image: NSImage) -> String? {
+    private nonisolated func captureWindowAndExtractImprovedTextAsync(windowID: CGWindowID, bounds: [String: Any]) async -> String? {
+        // Move the heavy image processing to a background queue
+        return await withCheckedContinuation { (continuation: CheckedContinuation<String?, Never>) in
+            DispatchQueue.global(qos: .userInitiated).async { [weak self] in
+                guard let self = self else {
+                    continuation.resume(returning: nil)
+                    return
+                }
+                
+                // Capture the window (this is fast)
+                guard let image = CGWindowListCreateImage(
+                    CGRect.null,
+                    .optionIncludingWindow,
+                    windowID,
+                    []
+                ) else {
+                    logger.debug("Failed to capture window \(windowID)")
+                    continuation.resume(returning: nil)
+                    return
+                }
+                
+                logger.debug("Captured window \(windowID) on background thread, size: \(image.width)x\(image.height)")
+                
+                // Preprocess the image for better OCR results (CPU intensive)
+                guard let preprocessedImage = self.preprocessImageForOCR(image) else {
+                    logger.debug("Failed to preprocess image")
+                    continuation.resume(returning: nil)
+                    return
+                }
+                
+                // Convert to NSImage for Vision framework
+                let nsImage = NSImage(cgImage: preprocessedImage, size: NSSize(width: preprocessedImage.width, height: preprocessedImage.height))
+                
+                // Use Vision framework with improved settings (CPU intensive)
+                let result = self.extractTextFromImageWithImprovedSettings(nsImage)
+                
+                logger.debug("OCR processing completed on background thread")
+                continuation.resume(returning: result)
+            }
+        }
+    }
+    
+    private nonisolated func preprocessImageForOCR(_ image: CGImage) -> CGImage? {
+        // Create CIImage from CGImage
+        let ciImage = CIImage(cgImage: image)
+        
+        // Skip grayscale conversion to preserve colored text
+        // Terminal status text (like "Syncing") might be in orange/yellow
+        guard let colorFilter = CIFilter(name: "CIColorControls") else { return nil }
+        colorFilter.setValue(ciImage, forKey: kCIInputImageKey)
+        
+        // Increase contrast and brightness without desaturating
+        colorFilter.setValue(1.4, forKey: kCIInputContrastKey) // Higher contrast
+        colorFilter.setValue(0.1, forKey: kCIInputBrightnessKey) // Slight brightness boost
+        // Keep saturation at default (1.0) to preserve colors
+        
+        // Get the color-preserved result
+        guard let colorOutput = colorFilter.outputImage else { return nil }
+        
+        // Apply sharpening filter
+        guard let sharpenFilter = CIFilter(name: "CISharpenLuminance") else { return nil }
+        sharpenFilter.setValue(colorOutput, forKey: kCIInputImageKey)
+        sharpenFilter.setValue(1.2, forKey: kCIInputSharpnessKey) // More aggressive sharpening
+        
+        guard let sharpOutput = sharpenFilter.outputImage else { return nil }
+        
+        // Create context and render
+        let context = CIContext(options: nil)
+        guard let cgImage = context.createCGImage(sharpOutput, from: sharpOutput.extent) else { return nil }
+        
+        return cgImage
+    }
+    
+    private nonisolated func extractTextFromImageWithImprovedSettings(_ image: NSImage) -> String? {
         guard let tiffData = image.tiffRepresentation,
               let bitmap = NSBitmapImageRep(data: tiffData),
               let cgImage = bitmap.cgImage else {
@@ -947,8 +829,11 @@ public final class ClaudeMonitorService: ObservableObject, Sendable {
         }
         
         let request = VNRecognizeTextRequest()
-        request.recognitionLevel = .fast // Use fast recognition for better performance
-        request.usesLanguageCorrection = false // Don't auto-correct, we want exact text
+        
+        // Use improved settings based on ChatGPT suggestions
+        request.recognitionLevel = .accurate // Use accurate, not fast
+        request.usesLanguageCorrection = false // Disable language correction for terminal text
+        request.minimumTextHeight = 0.02 // Filter out tiny text (2% of image height)
         
         let handler = VNImageRequestHandler(cgImage: cgImage, options: [:])
         
@@ -960,8 +845,10 @@ public final class ClaudeMonitorService: ObservableObject, Sendable {
                 return nil
             }
             
-            // Combine all recognized text
-            let recognizedStrings = observations.compactMap { observation in
+            // Combine all recognized text with confidence filtering
+            let recognizedStrings = observations.compactMap { observation -> String? in
+                // Only include text with high confidence
+                guard observation.confidence > 0.7 else { return nil }
                 return observation.topCandidates(1).first?.string
             }
             
@@ -969,9 +856,20 @@ public final class ClaudeMonitorService: ObservableObject, Sendable {
             logger.debug("OCR extracted text (\(recognizedStrings.count) lines): '\(String(fullText.prefix(200)))'")
             
             // Look for Claude status in the extracted text
-            if fullText.contains("esc to interrupt") {
-                logger.info("Found 'esc to interrupt' in OCR text")
+            if fullText.contains("esc to interrupt") || fullText.contains("interrupt") {
+                logger.info("Found 'esc to interrupt' in improved OCR text")
                 return parseClaudeStatusLine(fullText)
+            }
+            
+            // Also look for partial matches in case OCR missed some characters
+            if fullText.contains("Reticulating") || fullText.contains("Thinking") || fullText.contains("Generating") {
+                logger.info("Found Claude activity keywords in OCR text")
+                // Try to find the full line containing these keywords
+                for line in recognizedStrings {
+                    if line.contains("Reticulating") || line.contains("Thinking") || line.contains("Generating") {
+                        return line
+                    }
+                }
             }
             
         } catch {
@@ -981,63 +879,146 @@ public final class ClaudeMonitorService: ObservableObject, Sendable {
         return nil
     }
     
-    private nonisolated func readTerminalViaIoctl(ttyPath: String) -> String? {
-        logger.debug("Attempting to read terminal via ioctl from: \(ttyPath)")
+    private nonisolated func parseClaudeStatusLine(_ text: String) -> String? {
+        // Simple parsing: find "esc to interrupt" and extract everything before it
+        // Example: "Syncing… (326s · × 1.5k tokens · esc to interrupt)" → "Syncing… (326s · × 1.5k tokens)"
         
-        let fd = open(ttyPath, O_RDONLY | O_NONBLOCK)
-        guard fd >= 0 else {
-            logger.debug("Could not open TTY for ioctl: \(String(cString: strerror(errno)))")
-            return nil
-        }
-        defer { close(fd) }
+        logger.debug("Parsing Claude status from text: '\(String(text.prefix(300)))'")
         
-        // Try TIOCGWINSZ to at least verify we can communicate with the TTY
-        var winsize = winsize()
-        if ioctl(fd, TIOCGWINSZ, &winsize) == 0 {
-            logger.debug("Terminal window size: \(winsize.ws_col)x\(winsize.ws_row)")
-        }
+        // Clean up line breaks - OCR often adds them between words
+        let cleanedText = text.replacingOccurrences(of: "\n+", with: " ", options: .regularExpression)
+            .trimmingCharacters(in: .whitespacesAndNewlines)
         
-        // Try to get terminal attributes
-        var termios = termios()
-        if tcgetattr(fd, &termios) == 0 {
-            logger.debug("Successfully got terminal attributes")
-        }
+        logger.debug("Cleaned text: '\(cleanedText)'")
         
-        // Unfortunately, there's no standard ioctl to read the screen buffer
-        // We'd need terminal-specific APIs for this
+        // Be very lenient - Claude status usually has tokens and time info
+        // Look for patterns like: "Resolving... (2210s • x 5.6k tokens"
         
-        return nil
-    }
-    
-    private nonisolated func findMasterPTYForSlave(_ slavePath: String) -> String? {
-        // On macOS, we can try to find the master PTY through various methods
+        // First try to find any status with time and tokens (most reliable)
+        // Make this more flexible for partial OCR
+        let statusPatterns = [
+            "\\w+[.…]*\\s*\\(\\d+s.*?tokens[^)]*\\)",  // Full pattern with closing paren
+            "\\w+[.…]*\\s*\\(\\d+s.*?tokens",         // Without closing paren
+            "\\w+[.…]*\\s*\\(\\d+s.*?k\\s*tokens",    // With "k tokens"
+            "\\w+[.…]*\\s*\\(\\d+s.*?\\d+k",          // Just time and "Xk" (tokens may be cut off)
+            "[A-Z]\\w+[.…]+\\s*\\(\\d+s",             // Just action word with time (very lenient)
+        ]
         
-        // Method 1: Check if it's using /dev/ptmx (multiplexed PTY)
-        // The master would be accessed through the same file descriptor
-        
-        // Method 2: For BSD-style PTYs, convert /dev/ttysXXX to /dev/ptyXXX
-        if slavePath.contains("/dev/ttys") {
-            let masterPath = slavePath.replacingOccurrences(of: "/dev/ttys", with: "/dev/ptyp")
-            if FileManager.default.fileExists(atPath: masterPath) {
-                logger.debug("Found potential master PTY: \(masterPath)")
-                return masterPath
+        for statusPattern in statusPatterns {
+            if let regex = try? NSRegularExpression(pattern: statusPattern, options: .caseInsensitive),
+               let match = regex.firstMatch(in: cleanedText, options: [], range: NSRange(cleanedText.startIndex..., in: cleanedText)) {
+                
+                let nsString = cleanedText as NSString
+                var status = nsString.substring(with: match.range)
+                
+                // Add closing parenthesis if needed and pattern doesn't already have it
+                if status.contains("(") && !status.contains(")") {
+                    status += ")"
+                }
+                
+                logger.info("Found Claude status via pattern matching ('\(statusPattern)'): '\(status)'")
+                return status
             }
         }
         
-        // Method 3: Use fstat to find the device and search for its pair
-        let fd = open(slavePath, O_RDONLY | O_NONBLOCK)
-        guard fd >= 0 else { return nil }
-        defer { close(fd) }
+        // Fallback: look for any interrupt-related text or just look for lines ending abruptly
+        let patterns = [
+            "esc\\s+to\\s+interrupt",  // Full pattern (preferred)
+            "esc to interrupt",        // Full pattern with normal spacing
+            "to\\s+interrupt",         // Missing "esc"
+            "interrupt\\)",            // Just "interrupt)" - OCR often cuts text
+            "interrupt",               // Very lenient - just "interrupt"
+            "\\)\\s*$",                // Line ending with ) - very common
+            "tokens\\s*$",             // Line ending with "tokens" (cut off before interrupt)
+            "k\\s+tokens\\s*$",        // Line ending with "k tokens"
+            "\\d+k\\s*$"               // Line ending with just "Xk" (very cut off)
+        ]
         
-        var stat = stat()
-        guard fstat(fd, &stat) == 0 else { return nil }
+        for pattern in patterns {
+            if let regex = try? NSRegularExpression(pattern: pattern, options: .caseInsensitive),
+               let match = regex.firstMatch(in: cleanedText, options: [], range: NSRange(cleanedText.startIndex..., in: cleanedText)) {
+                
+                // Get text before the match
+                let beforeText = String(cleanedText[..<cleanedText.index(cleanedText.startIndex, offsetBy: match.range.location)])
+                    .trimmingCharacters(in: .whitespacesAndNewlines)
+                
+                logger.debug("Found '\(pattern)' match in text")
+                logger.debug("Text before match (first 200 chars): '\(String(beforeText.prefix(200)))'")
+                logger.debug("Text before match (last 200 chars): '\(String(beforeText.suffix(200)))'")
+                
+                // Look backwards for the status line
+                // It should contain parentheses with time/tokens info
+                let components = beforeText.components(separatedBy: "•").map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+                
+                // Find the last component that looks like a status
+                for component in components.reversed() {
+                    // Status lines typically have:
+                    // 1. An action word (often ending in "ing" or with "…")
+                    // 2. Parentheses with time/token info
+                    // 3. Should be relatively short (< 100 characters)
+                    if component.contains("(") && 
+                       (component.contains("s ") || component.contains("tokens")) &&
+                       (component.contains("…") || component.contains("ing")) &&
+                       component.count < 100 { // Add length constraint
+                        
+                        var status = component
+                        
+                        // Clean up trailing separators (including the • from your text)
+                        while status.hasSuffix("·") || status.hasSuffix("・") || 
+                              status.hasSuffix("-") || status.hasSuffix("×") || 
+                              status.hasSuffix("•") || status.hasSuffix("x") {
+                            status = String(status.dropLast()).trimmingCharacters(in: .whitespacesAndNewlines)
+                        }
+                        
+                        // Balance parentheses
+                        let openCount = status.filter { $0 == "(" }.count
+                        let closeCount = status.filter { $0 == ")" }.count
+                        if openCount > closeCount {
+                            status += ")"
+                        }
+                        
+                        logger.info("Extracted Claude status: '\(status)'")
+                        return status
+                    }
+                }
+                
+                // Fallback: Find any text with parentheses before the match
+                if let lastParen = beforeText.lastIndex(of: "(") {
+                    // Find where this status line starts
+                    let beforeParen = beforeText[..<lastParen]
+                    var startIndex = beforeParen.startIndex
+                    
+                    // Look for start of status (after bullet points or newlines)
+                    if let bulletIndex = beforeParen.lastIndex(of: "•") {
+                        startIndex = beforeParen.index(after: bulletIndex)
+                    }
+                    
+                    var status = String(beforeText[startIndex...]).trimmingCharacters(in: .whitespacesAndNewlines)
+                    
+                    // Clean up
+                    while status.hasSuffix("·") || status.hasSuffix("・") || 
+                          status.hasSuffix("-") || status.hasSuffix("×") {
+                        status = String(status.dropLast()).trimmingCharacters(in: .whitespacesAndNewlines)
+                    }
+                    
+                    // Balance parentheses
+                    if status.contains("(") && !status.contains(")") {
+                        status += ")"
+                    }
+                    
+                    // Only return if it's a reasonable length and looks like a status
+                    if status.count > 5 && status.count < 150 && 
+                       (status.contains("…") || status.contains("ing") || status.contains("tokens")) {
+                        logger.info("Extracted Claude status (fallback): '\(status)'")
+                        return status
+                    } else {
+                        logger.debug("Rejected fallback status (too long or doesn't look like status): '\(String(status.prefix(100)))'")
+                    }
+                }
+            }
+        }
         
-        let slaveDevice = stat.st_rdev
-        logger.debug("Slave device number: \(slaveDevice)")
-        
-        // On macOS, master and slave PTYs have related device numbers
-        // but the exact relationship is implementation-specific
-        
+        logger.debug("No Claude status found in text")
         return nil
     }
 }

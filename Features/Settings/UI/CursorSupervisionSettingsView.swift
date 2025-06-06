@@ -61,6 +61,15 @@ struct CursorSupervisionSettingsView: View {
                         .padding(.top, Spacing.xxSmall)
                 }
             }
+            
+            // Claude Monitoring Section
+            DSSettingsSection("Claude Instances") {
+                Text("Monitor running Claude CLI instances and their current status")
+                    .font(Typography.caption1())
+                    .foregroundColor(ColorPalette.textSecondary)
+                
+                claudeInstancesView
+            }
 
             Spacer()
         }
@@ -70,6 +79,7 @@ struct CursorSupervisionSettingsView: View {
 
     @StateObject private var inputWatcherViewModel = CursorInputWatcherViewModel()
     @StateObject private var diagnosticsManager = WindowAIDiagnosticsManager.shared
+    @ObservedObject private var claudeMonitor = ClaudeMonitorService.shared
 
     @ViewBuilder
     private var cursorWindowsView: some View {
@@ -78,6 +88,21 @@ struct CursorSupervisionSettingsView: View {
                 .padding(.vertical, Spacing.small)
 
             CursorWindowsList(style: .settings)
+        }
+    }
+    
+    @ViewBuilder
+    private var claudeInstancesView: some View {
+        if !claudeMonitor.instances.isEmpty {
+            DSDivider()
+                .padding(.vertical, Spacing.small)
+            
+            ClaudeInstancesList()
+        } else {
+            Text("No Claude instances running")
+                .font(Typography.caption1())
+                .foregroundColor(ColorPalette.textTertiary)
+                .padding(.top, Spacing.small)
         }
     }
 }
