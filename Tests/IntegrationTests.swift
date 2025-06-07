@@ -21,7 +21,7 @@ struct IntegrationTests {
             isRunning = true
             coordinator = AppServiceCoordinator()
             let loginItemManager = LoginItemManager.shared
-            let sessionLogger = SessionLogger.shared
+            let sessionLogger = Diagnostics.SessionLogger.shared
             windowManager = await WindowManager(
                 loginItemManager: loginItemManager,
                 sessionLogger: sessionLogger,
