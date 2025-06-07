@@ -191,7 +191,7 @@ public final class ClaudeMonitorService: ObservableObject {
                         let folderName = URL(fileURLWithPath: workingDir).lastPathComponent
 
                         // Extract more info from args if possible
-                        var status: String? = if argsString.contains("claude code") || argsString
+                        let status: String? = if argsString.contains("claude code") || argsString
                             .contains("--dangerously-skip-permissions")
                         {
                             "Claude Code"
