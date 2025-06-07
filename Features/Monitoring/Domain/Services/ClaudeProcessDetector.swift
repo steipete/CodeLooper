@@ -75,10 +75,12 @@ final class ClaudeProcessDetector: Loggable, @unchecked Sendable {
                 continue
             }
             
+            logger.debug("Process args length for PID \(pid): \(processArgs.count)")
+            logger.debug("Process args for PID \(pid): \(String(processArgs.prefix(500).replacingOccurrences(of: "\0", with: "\\0")))")
+            
             // Check if this Node process is running Claude
             guard isClaudeProcess(arguments: processArgs) else {
                 logger.debug("Node process PID \(pid) is not Claude")
-                logger.debug("Process args for PID \(pid): \(String(processArgs.prefix(200)))")
                 continue
             }
             
@@ -168,8 +170,24 @@ final class ClaudeProcessDetector: Loggable, @unchecked Sendable {
             return nil
         }
         
+        // KERN_PROCARGS2 format: [argc: int32_t][executable path][args...]
+        // Skip the first 4 bytes (argc) to get to the actual arguments
+        guard argsMax > 4 else { return nil }
+        
         let argsData = Data(bytes: argsPtr, count: argsMax)
-        return String(data: argsData, encoding: .utf8)
+        
+        // Try to create string from the data, handling null bytes
+        if let fullString = String(data: argsData, encoding: .utf8) {
+            return fullString
+        }
+        
+        // If that fails, try to extract just the executable path
+        let execData = argsData.dropFirst(4)  // Skip argc
+        if let execString = String(data: execData, encoding: .utf8) {
+            return execString
+        }
+        
+        return nil
     }
     
     private func getWorkingDirectory(pid: pid_t) -> String? {
