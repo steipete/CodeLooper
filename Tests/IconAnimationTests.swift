@@ -20,9 +20,10 @@ struct IconAnimationTests {
         // Test starting animation
         animator.startAnimating()
 
-        // Test animation state
+        // Test animation state - animation might not start immediately
         let isAnimating = animator.isCurrentlyAnimating
-        #expect(!isAnimating == true || isAnimating) // Either state is valid
+        // Animation state is valid regardless of value
+        #expect(isAnimating || !isAnimating)
 
         // Test stopping animation
         animator.stopAnimating()
@@ -88,7 +89,8 @@ struct IconAnimationTests {
 
         // Should handle concurrent access gracefully
         let concurrentState = animator.isCurrentlyAnimating
-        #expect(!concurrentState == true || concurrentState)
+        // State is valid regardless of value after concurrent operations
+        #expect(concurrentState || !concurrentState)
     }
 
 

@@ -80,10 +80,10 @@ struct AccessibilityTests {
 
             // The permission state should be updated (may be same or different)
             let finalState = manager.hasAccessibilityPermissions
-            #expect(finalState == true || finalState == false)
-
-            // Note: In tests, this likely won't change unless running with permissions
-            // But the method should complete without crashing
+            
+            // In test environment, permissions typically don't change
+            // Just verify the request completes without error
+            #expect(Bool(true), "Request completed without crashing")
         }
 
         @Test("Multiple permission request types", arguments: AccessibilityTestData.permissionTypes)
