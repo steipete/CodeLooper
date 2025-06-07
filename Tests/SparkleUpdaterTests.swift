@@ -29,8 +29,8 @@ struct SparkleUpdaterTests {
         let manager2 = SparkleUpdaterManager()
         
         // Both managers should be valid
-        #expect(manager1.updaterController != nil, "First manager should have controller")
-        #expect(manager2.updaterController != nil, "Second manager should have controller")
+        // manager1.updaterController is non-optional
+        // manager2.updaterController is non-optional
     }
     
     @Test("Sparkle configuration")
@@ -100,7 +100,7 @@ struct SparkleUpdaterTests {
         await MainActor.run {
             let manager = SparkleUpdaterManager()
             let viewModel = UpdaterViewModel(sparkleUpdaterManager: manager)
-            #expect(viewModel != nil) // View model exists
+            // viewModel is non-optional
         }
     }
     
@@ -153,7 +153,7 @@ struct SparkleUpdaterTests {
             let updater = manager.updaterController.updater
 
             // Test updater exists
-            #expect(updater != nil)
+            // updater is non-optional
         }
     }
     
@@ -178,8 +178,8 @@ struct SparkleUpdaterTests {
             let viewModel = UpdaterViewModel(sparkleUpdaterManager: manager)
 
             // Test that manager and view model can work together
-            #expect(viewModel != nil) // View model exists
-            #expect(manager.updaterController != nil) // Controller exists
+            // viewModel is non-optional
+            // manager.updaterController is non-optional
 
             // Test that view model can interact with manager
             viewModel.checkForUpdates()
@@ -194,9 +194,9 @@ struct SparkleUpdaterTests {
         let updater = manager.updaterController.updater
         
         // Test complete workflow
-        #expect(manager.updaterController != nil, "Manager should have controller")
-        #expect(updater != nil, "Controller should have updater")
-        #expect(viewModel != nil, "View model should exist")
+        // manager.updaterController is non-optional
+        // updater is non-optional
+        // viewModel is non-optional
         
         // Test initial state
         #expect(viewModel.isUpdateInProgress == false, "Should start not updating")

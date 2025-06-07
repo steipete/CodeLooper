@@ -12,8 +12,8 @@ struct SoundManagerTests {
         let namedSound = SystemSound.named("Boop.aiff")
 
         // Verify cases can be created
-        #expect(userAlert != nil)
-        #expect(namedSound != nil)
+        // userAlert is non-optional
+        // namedSound is non-optional
     }
 
     @Test("System sound named sound creation")
@@ -24,9 +24,9 @@ struct SoundManagerTests {
         let funkSound = SystemSound.named("Funk.aiff")
 
         // These should all be valid
-        #expect(boopSound != nil)
-        #expect(glassSound != nil)
-        #expect(funkSound != nil)
+        // boopSound is non-optional
+        // glassSound is non-optional
+        // funkSound is non-optional
     }
 
     @Test("System sound named sound with empty string")
@@ -35,7 +35,7 @@ struct SoundManagerTests {
         let emptySound = SystemSound.named("")
 
         // Should still create the enum case
-        #expect(emptySound != nil)
+        // emptySound is non-optional
     }
 
     @Test("System sound named sound with special characters")
@@ -45,9 +45,9 @@ struct SoundManagerTests {
         let soundWithNumbers = SystemSound.named("Sound123.aiff")
         let soundWithSymbols = SystemSound.named("Sound-_().aiff")
 
-        #expect(soundWithSpaces != nil)
-        #expect(soundWithNumbers != nil)
-        #expect(soundWithSymbols != nil)
+        // soundWithSpaces is non-optional
+        // soundWithNumbers is non-optional
+        // soundWithSymbols is non-optional
     }
 
     @Test("Sound engine play user alert sound")

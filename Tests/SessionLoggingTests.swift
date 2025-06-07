@@ -24,15 +24,15 @@ struct SessionLoggingTests {
     // MARK: - SessionLogger Tests
 
     @Test("Session logger initialization") @MainActor func sessionLoggerInitialization() async throws {
-        let logger = await Diagnostics.SessionLogger.shared
+        let logger = Diagnostics.SessionLogger.shared
 
         // Test that logger is created without errors
-        #expect(logger != nil)
+        // logger is non-optional
 
         // Test basic properties
         await MainActor.run {
             // SessionLogger is a singleton and doesn't have sessionId anymore
-            #expect(logger.entries != nil)
+            // logger.entries is non-optional
         }
     }
 
@@ -43,7 +43,7 @@ struct SessionLoggingTests {
     }
 
     @Test("Log entry creation") @MainActor func logEntryCreation() async throws {
-        let logger = await Diagnostics.SessionLogger.shared
+        let logger = Diagnostics.SessionLogger.shared
 
         await MainActor.run {
             // Test basic log entry creation
@@ -60,7 +60,7 @@ struct SessionLoggingTests {
     }
 
     @Test("Session logger concurrent logging") @MainActor func sessionLoggerConcurrentLogging() async throws {
-        let logger = await Diagnostics.SessionLogger.shared
+        let logger = Diagnostics.SessionLogger.shared
 
         // Test concurrent logging from multiple tasks
         await withTaskGroup(of: Void.self) { group in
@@ -88,7 +88,7 @@ struct SessionLoggingTests {
 
     @Test("File logger writing") @MainActor func fileLoggerWriting() async throws {
         // FileLogger is now a singleton actor that uses OSLog
-        let fileLogger = await Diagnostics.FileLogger.shared
+        let fileLogger = Diagnostics.FileLogger.shared
 
         // Test logging - FileLogger now uses OSLog exclusively
         await fileLogger.log(
@@ -115,7 +115,7 @@ struct SessionLoggingTests {
 
     @Test("File logger error handling") @MainActor func fileLoggerErrorHandling() async throws {
         // FileLogger is now a singleton and always valid
-        let fileLogger = await Diagnostics.FileLogger.shared
+        let fileLogger = Diagnostics.FileLogger.shared
 
         // Test logging - should not crash
         await fileLogger.log(
@@ -147,10 +147,10 @@ struct SessionLoggingTests {
     // MARK: - LogManager Tests
 
     @Test("Log management") @MainActor func logManagement() async throws {
-        let logManager = await Diagnostics.LogManager.shared
+        let logManager = Diagnostics.LogManager.shared
 
         // Test that log manager is created without errors
-        #expect(logManager != nil)
+        // logManager is non-optional
 
         // Test logging through logger instances
         await MainActor.run {
@@ -163,7 +163,7 @@ struct SessionLoggingTests {
     }
 
     @Test("Log manager categories") @MainActor func logManagerCategories() async throws {
-        let logManager = await Diagnostics.LogManager.shared
+        let logManager = Diagnostics.LogManager.shared
 
         // Test that we can get loggers for categories
         await MainActor.run {
@@ -187,8 +187,8 @@ struct SessionLoggingTests {
         let logger1 = LoggerFactory.logger(for: SessionLoggingTests.self)
         let logger2 = LoggerFactory.logger(for: SessionLoggingTests.self, category: .supervision)
 
-        #expect(logger1 != nil)
-        #expect(logger2 != nil)
+        // logger1 is non-optional
+        // logger2 is non-optional
 
         // Test that loggers can log without crashing
         logger1.info("Test message from type-based logger")
@@ -201,9 +201,9 @@ struct SessionLoggingTests {
 
     @Test("Logging system integration") @MainActor func loggingSystemIntegration() async throws {
         // Test integration of all logging components
-        let sessionLogger = await Diagnostics.SessionLogger.shared
-        let logManager = await Diagnostics.LogManager.shared
-        let fileLogger = await Diagnostics.FileLogger.shared
+        let sessionLogger = Diagnostics.SessionLogger.shared
+        let logManager = Diagnostics.LogManager.shared
+        let fileLogger = Diagnostics.FileLogger.shared
 
         // Test that all components can work together
         await MainActor.run {
@@ -259,7 +259,7 @@ struct SessionLoggingTests {
     }
 
     @Test("Logging performance") @MainActor func loggingPerformance() async throws {
-        let sessionLogger = await Diagnostics.SessionLogger.shared
+        let sessionLogger = Diagnostics.SessionLogger.shared
 
         // Test logging performance with many entries
         let startTime = Date()

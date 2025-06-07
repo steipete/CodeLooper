@@ -9,23 +9,19 @@ struct RuleExecutionTests {
     // MARK: - RuleExecutor Tests
 
     @Test("Rule executor initialization") @MainActor func ruleExecutorInitialization() async throws {
-        let ruleExecutor = await RuleExecutor()
+        _ = RuleExecutor()
 
         // Test that executor is created without errors
-        #expect(ruleExecutor != nil)
+        // ruleExecutor is non-optional
     }
 
     @Test("Rule execution") @MainActor func ruleExecution() async throws {
         // Save current defaults
-        let (originalMonitoring, originalRecovery) = await MainActor.run {
-            (Defaults[.isGlobalMonitoringEnabled], Defaults[.enableCursorForceStoppedRecovery])
-        }
+        let (originalMonitoring, originalRecovery) = (Defaults[.isGlobalMonitoringEnabled], Defaults[.enableCursorForceStoppedRecovery])
 
         // Enable rules
-        await MainActor.run {
-            Defaults[.isGlobalMonitoringEnabled] = true
-            Defaults[.enableCursorForceStoppedRecovery] = true
-        }
+        Defaults[.isGlobalMonitoringEnabled] = true
+        Defaults[.enableCursorForceStoppedRecovery] = true
 
         defer {
             // Restore defaults
@@ -35,7 +31,7 @@ struct RuleExecutionTests {
             }
         }
 
-        let ruleExecutor = await RuleExecutor()
+        let ruleExecutor = RuleExecutor()
 
         // Execute enabled rules (will check for hooked windows)
         await ruleExecutor.executeEnabledRules()
@@ -45,40 +41,36 @@ struct RuleExecutionTests {
     }
 
     @Test("Stop after25 loops rule") @MainActor func stopAfter25LoopsRule() async throws {
-        let rule = await StopAfter25LoopsRule()
+        let rule = StopAfter25LoopsRule()
 
         // Test rule properties
-        await MainActor.run {
-            #expect(rule.displayName.contains("25"))
-            #expect(rule.ruleName == "StopAfter25LoopsRule")
-        }
+        #expect(rule.displayName.contains("25"))
+        #expect(rule.ruleName == "StopAfter25LoopsRule")
     }
 
     @Test("Rule counter management") @MainActor func ruleCounterManagement() async throws {
-        let counterManager = await RuleCounterManager.shared
+        let counterManager = RuleCounterManager.shared
 
         // Test counter initialization
-        #expect(counterManager != nil)
+        // counterManager is non-optional, no need to check for nil
 
         // Test counter operations
         let testRule = "test-rule"
 
-        let initialCount = await counterManager.getCount(for: testRule)
+        let initialCount = counterManager.getCount(for: testRule)
 
-        await counterManager.incrementCounter(for: testRule)
-        let count = await counterManager.getCount(for: testRule)
+        counterManager.incrementCounter(for: testRule)
+        let count = counterManager.getCount(for: testRule)
         #expect(count == initialCount + 1)
 
-        await counterManager.resetCounter(for: testRule)
-        let resetCount = await counterManager.getCount(for: testRule)
+        counterManager.resetCounter(for: testRule)
+        let resetCount = counterManager.getCount(for: testRule)
         #expect(resetCount == 0)
     }
 
     @Test("Rule execution with defaults") @MainActor func ruleExecutionWithDefaults() async throws {
         // Save current defaults
-        let (originalMonitoring, originalRecovery) = await MainActor.run {
-            (Defaults[.isGlobalMonitoringEnabled], Defaults[.enableCursorForceStoppedRecovery])
-        }
+        let (originalMonitoring, originalRecovery) = (Defaults[.isGlobalMonitoringEnabled], Defaults[.enableCursorForceStoppedRecovery])
 
         defer {
             // Restore defaults
@@ -89,22 +81,18 @@ struct RuleExecutionTests {
         }
 
         // Test with monitoring disabled
-        await MainActor.run {
-            Defaults[.isGlobalMonitoringEnabled] = false
-            Defaults[.enableCursorForceStoppedRecovery] = true
-        }
+        Defaults[.isGlobalMonitoringEnabled] = false
+        Defaults[.enableCursorForceStoppedRecovery] = true
 
-        let ruleExecutor = await RuleExecutor()
+        let ruleExecutor = RuleExecutor()
         await ruleExecutor.executeEnabledRules()
 
         // Should not execute when monitoring is disabled
         #expect(true)
 
         // Test with monitoring enabled but recovery disabled
-        await MainActor.run {
-            Defaults[.isGlobalMonitoringEnabled] = true
-            Defaults[.enableCursorForceStoppedRecovery] = false
-        }
+        Defaults[.isGlobalMonitoringEnabled] = true
+        Defaults[.enableCursorForceStoppedRecovery] = false
 
         await ruleExecutor.executeEnabledRules()
 
@@ -115,110 +103,106 @@ struct RuleExecutionTests {
     // MARK: - Rule Counter Tests
 
     @Test("Rule counter increment") @MainActor func ruleCounterIncrement() async throws {
-        let counterManager = await RuleCounterManager.shared
+        let counterManager = RuleCounterManager.shared
         let ruleName = "test-increment-rule"
 
         // Reset counter first
-        await counterManager.resetCounter(for: ruleName)
+        counterManager.resetCounter(for: ruleName)
 
         // Increment multiple times
         for _ in 0 ..< 5 {
-            await counterManager.incrementCounter(for: ruleName)
+            counterManager.incrementCounter(for: ruleName)
         }
 
-        let count = await counterManager.getCount(for: ruleName)
+        let count = counterManager.getCount(for: ruleName)
         #expect(count == 5)
     }
 
     @Test("Rule counter reset") @MainActor func ruleCounterReset() async throws {
-        let counterManager = await RuleCounterManager.shared
+        let counterManager = RuleCounterManager.shared
         let ruleName = "test-reset-rule"
 
         // Add some counts
         for _ in 0 ..< 3 {
-            await counterManager.incrementCounter(for: ruleName)
+            counterManager.incrementCounter(for: ruleName)
         }
 
         // Reset
-        await counterManager.resetCounter(for: ruleName)
+        counterManager.resetCounter(for: ruleName)
 
-        let count = await counterManager.getCount(for: ruleName)
+        let count = counterManager.getCount(for: ruleName)
         #expect(count == 0)
     }
 
     @Test("Rule counter reset all") @MainActor func ruleCounterResetAll() async throws {
-        let counterManager = await RuleCounterManager.shared
+        let counterManager = RuleCounterManager.shared
 
         // Add counts for multiple rules
         let rules = ["rule1", "rule2", "rule3"]
         for rule in rules {
             for _ in 0 ..< 2 {
-                await counterManager.incrementCounter(for: rule)
+                counterManager.incrementCounter(for: rule)
             }
         }
 
         // Reset all
-        await counterManager.resetAllCounters()
+        counterManager.resetAllCounters()
 
         // Verify all are reset
         for rule in rules {
-            let count = await counterManager.getCount(for: rule)
+            let count = counterManager.getCount(for: rule)
             #expect(count == 0)
         }
     }
 
     @Test("Rule counter persistence") @MainActor func ruleCounterPersistence() async throws {
-        let counterManager = await RuleCounterManager.shared
+        let counterManager = RuleCounterManager.shared
         let ruleName = "test-persistence-rule"
 
         // Reset first
-        await counterManager.resetCounter(for: ruleName)
+        counterManager.resetCounter(for: ruleName)
 
         // Increment
-        await counterManager.incrementCounter(for: ruleName)
-        await counterManager.incrementCounter(for: ruleName)
+        counterManager.incrementCounter(for: ruleName)
+        counterManager.incrementCounter(for: ruleName)
 
         // The counter manager automatically saves on increment
         // Since it's a singleton, the count should persist
 
-        let count = await counterManager.getCount(for: ruleName)
+        let count = counterManager.getCount(for: ruleName)
         #expect(count == 2)
     }
 
     @Test("Total rule executions") @MainActor func testTotalRuleExecutions() async throws {
-        let counterManager = await RuleCounterManager.shared
+        let counterManager = RuleCounterManager.shared
 
         // Reset all first
-        await counterManager.resetAllCounters()
+        counterManager.resetAllCounters()
 
         // Add various counts
-        await counterManager.incrementCounter(for: "rule1")
-        await counterManager.incrementCounter(for: "rule1")
-        await counterManager.incrementCounter(for: "rule2")
-        await counterManager.incrementCounter(for: "rule3")
+        counterManager.incrementCounter(for: "rule1")
+        counterManager.incrementCounter(for: "rule1")
+        counterManager.incrementCounter(for: "rule2")
+        counterManager.incrementCounter(for: "rule3")
 
-        let total = await MainActor.run {
-            counterManager.totalRuleExecutions
-        }
+        let total = counterManager.totalRuleExecutions
 
         #expect(total >= 4)
     }
 
     @Test("Executed rule names") @MainActor func testExecutedRuleNames() async throws {
-        let counterManager = await RuleCounterManager.shared
+        let counterManager = RuleCounterManager.shared
 
         // Reset all first
-        await counterManager.resetAllCounters()
+        counterManager.resetAllCounters()
 
         // Execute some rules
         let testRules = ["alpha-rule", "beta-rule", "gamma-rule"]
         for rule in testRules {
-            await counterManager.incrementCounter(for: rule)
+            counterManager.incrementCounter(for: rule)
         }
 
-        let executedRules = await MainActor.run {
-            counterManager.executedRuleNames
-        }
+        let executedRules = counterManager.executedRuleNames
 
         // Should contain our test rules
         for rule in testRules {
@@ -232,32 +216,32 @@ struct RuleExecutionTests {
     // MARK: - StopAfter25LoopsRule Tests
 
     @Test("Stop after25 loops threshold") @MainActor func stopAfter25LoopsThreshold() async throws {
-        let rule = await StopAfter25LoopsRule()
-        let counterManager = await RuleCounterManager.shared
+        let rule = StopAfter25LoopsRule()
+        let counterManager = RuleCounterManager.shared
 
         // Reset counter
-        await counterManager.resetCounter(for: rule.ruleName)
+        counterManager.resetCounter(for: rule.ruleName)
 
         // Increment counter to just below threshold
         for _ in 0 ..< 24 {
-            await counterManager.incrementCounter(for: rule.ruleName)
+            counterManager.incrementCounter(for: rule.ruleName)
         }
 
-        let count = await counterManager.getCount(for: rule.ruleName)
+        let count = counterManager.getCount(for: rule.ruleName)
         #expect(count == 24)
 
         // One more should hit threshold
-        await counterManager.incrementCounter(for: rule.ruleName)
-        let finalCount = await counterManager.getCount(for: rule.ruleName)
+        counterManager.incrementCounter(for: rule.ruleName)
+        let finalCount = counterManager.getCount(for: rule.ruleName)
         #expect(finalCount == 25)
     }
 
     @Test("Stop after25 loops execution") @MainActor func stopAfter25LoopsExecution() async throws {
-        let rule = await StopAfter25LoopsRule()
-        let jsHookService = await JSHookService.shared
+        let rule = StopAfter25LoopsRule()
+        let jsHookService = JSHookService.shared
 
         // Reset counter
-        await RuleCounterManager.shared.resetCounter(for: rule.ruleName)
+        RuleCounterManager.shared.resetCounter(for: rule.ruleName)
 
         // Test execution with a mock window ID
         // Note: This will likely return false since there's no actual hooked window
@@ -272,9 +256,7 @@ struct RuleExecutionTests {
 
     @Test("Rule system integration") @MainActor func ruleSystemIntegration() async throws {
         // Save current defaults
-        let (originalMonitoring, originalRecovery) = await MainActor.run {
-            (Defaults[.isGlobalMonitoringEnabled], Defaults[.enableCursorForceStoppedRecovery])
-        }
+        let (originalMonitoring, originalRecovery) = (Defaults[.isGlobalMonitoringEnabled], Defaults[.enableCursorForceStoppedRecovery])
 
         defer {
             // Restore defaults
@@ -285,16 +267,14 @@ struct RuleExecutionTests {
         }
 
         // Enable all features
-        await MainActor.run {
-            Defaults[.isGlobalMonitoringEnabled] = true
-            Defaults[.enableCursorForceStoppedRecovery] = true
-        }
+        Defaults[.isGlobalMonitoringEnabled] = true
+        Defaults[.enableCursorForceStoppedRecovery] = true
 
-        let ruleExecutor = await RuleExecutor()
-        let counterManager = await RuleCounterManager.shared
+        let ruleExecutor = RuleExecutor()
+        let counterManager = RuleCounterManager.shared
 
         // Reset counters
-        await counterManager.resetAllCounters()
+        counterManager.resetAllCounters()
 
         // Execute rules multiple times
         for _ in 0 ..< 3 {
@@ -306,14 +286,14 @@ struct RuleExecutionTests {
     }
 
     @Test("Rule performance") @MainActor func rulePerformance() async throws {
-        _ = await RuleExecutor()
-        let counterManager = await RuleCounterManager.shared
+        _ = RuleExecutor()
+        let counterManager = RuleCounterManager.shared
 
         // Test performance with many counter operations
         let startTime = Date()
 
         for i in 0 ..< 50 {
-            await counterManager.incrementCounter(for: "perf-test-\(i)")
+            counterManager.incrementCounter(for: "perf-test-\(i)")
         }
 
         let endTime = Date()
@@ -326,7 +306,7 @@ struct RuleExecutionTests {
     // MARK: - Notification Tests
 
     @Test("Rule counter notifications") @MainActor func ruleCounterNotifications() async throws {
-        let counterManager = await RuleCounterManager.shared
+        let counterManager = RuleCounterManager.shared
         let ruleName = "notification-test-rule"
 
         actor NotificationTracker {
@@ -364,7 +344,7 @@ struct RuleExecutionTests {
         }
 
         // Increment counter
-        await counterManager.incrementCounter(for: ruleName)
+        counterManager.incrementCounter(for: ruleName)
 
         // Give time for notification
         try await Task.sleep(nanoseconds: 100_000_000) // 0.1 seconds
@@ -377,13 +357,11 @@ struct RuleExecutionTests {
 
     @Test("Rule execution with no hooked windows") @MainActor func ruleExecutionWithNoHookedWindows() async throws {
         // This test verifies that rule execution handles the case of no hooked windows gracefully
-        let ruleExecutor = await RuleExecutor()
+        let ruleExecutor = RuleExecutor()
 
         // Enable rules
-        await MainActor.run {
-            Defaults[.isGlobalMonitoringEnabled] = true
-            Defaults[.enableCursorForceStoppedRecovery] = true
-        }
+        Defaults[.isGlobalMonitoringEnabled] = true
+        Defaults[.enableCursorForceStoppedRecovery] = true
 
         // Execute rules (likely no hooked windows in test environment)
         await ruleExecutor.executeEnabledRules()
@@ -393,23 +371,23 @@ struct RuleExecutionTests {
     }
 
     @Test("Concurrent counter operations") @MainActor func concurrentCounterOperations() async throws {
-        let counterManager = await RuleCounterManager.shared
+        let counterManager = RuleCounterManager.shared
         let ruleName = "concurrent-test-rule"
 
         // Reset counter
-        await counterManager.resetCounter(for: ruleName)
+        counterManager.resetCounter(for: ruleName)
 
         // Concurrent increments
         await withTaskGroup(of: Void.self) { group in
             for _ in 0 ..< 10 {
                 group.addTask {
-                    await counterManager.incrementCounter(for: ruleName)
+                    counterManager.incrementCounter(for: ruleName)
                 }
             }
         }
 
         // Should handle concurrent access
-        let count = await counterManager.getCount(for: ruleName)
+        let count = counterManager.getCount(for: ruleName)
         #expect(count == 10)
     }
 }

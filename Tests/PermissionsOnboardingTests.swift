@@ -8,22 +8,22 @@ struct PermissionsOnboardingTests {
     // MARK: - OnboardingCoordinator Tests
 
     @Test("Onboarding flow management") @MainActor func onboardingFlowManagement() async throws {
-        let coordinator = await WelcomeWindowCoordinator.shared
+        let coordinator = WelcomeWindowCoordinator.shared
 
         // Test that coordinator is created without errors
         #expect(coordinator != nil)
 
         // Test window management
-        await coordinator.showWelcomeWindow()
-        await coordinator.dismissWelcomeWindow()
+        coordinator.showWelcomeWindow()
+        coordinator.dismissWelcomeWindow()
 
         // Should handle window operations without crashes
         #expect(true)
     }
 
     @Test("Onboarding completion") @MainActor func onboardingCompletion() async throws {
-        let loginItemManager = await LoginItemManager.shared
-        let viewModel = await WelcomeViewModel(loginItemManager: loginItemManager)
+        let loginItemManager = LoginItemManager.shared
+        let viewModel = WelcomeViewModel(loginItemManager: loginItemManager)
 
         // Test initial state
         await MainActor.run {
@@ -31,7 +31,7 @@ struct PermissionsOnboardingTests {
         }
 
         // Test step progression
-        await viewModel.goToNextStep()
+        viewModel.goToNextStep()
 
         await MainActor.run {
             #expect(viewModel.currentStep != .welcome)
@@ -42,8 +42,8 @@ struct PermissionsOnboardingTests {
     }
 
     @Test("Onboarding step validation") @MainActor func onboardingStepValidation() async throws {
-        let loginItemManager = await LoginItemManager.shared
-        let viewModel = await WelcomeViewModel(loginItemManager: loginItemManager)
+        let loginItemManager = LoginItemManager.shared
+        let viewModel = WelcomeViewModel(loginItemManager: loginItemManager)
 
         // Test step state
         await MainActor.run {
@@ -59,8 +59,8 @@ struct PermissionsOnboardingTests {
     // MARK: - Permission Step Tests
 
     @Test("Accessibility permission step") @MainActor func accessibilityPermissionStep() async throws {
-        let loginItemManager = await LoginItemManager.shared
-        let viewModel = await WelcomeViewModel(loginItemManager: loginItemManager)
+        let loginItemManager = LoginItemManager.shared
+        let viewModel = WelcomeViewModel(loginItemManager: loginItemManager)
 
         // Move to accessibility step
         await MainActor.run {
@@ -68,7 +68,7 @@ struct PermissionsOnboardingTests {
         }
 
         // Test permission checking
-        let permissionsManager = await PermissionsManager()
+        let permissionsManager = PermissionsManager()
         await MainActor.run {
             let hasPermission = permissionsManager.hasAccessibilityPermissions
             #expect(!hasPermission == true || hasPermission)
@@ -79,7 +79,7 @@ struct PermissionsOnboardingTests {
 
     @Test("Screen recording permission step") @MainActor func screenRecordingPermissionStep() async throws {
         // Test that screen recording permissions can be checked
-        let permissionsManager = await PermissionsManager()
+        let permissionsManager = PermissionsManager()
         await MainActor.run {
             let hasPermission = permissionsManager.hasScreenRecordingPermissions
             #expect(!hasPermission == true || hasPermission)
@@ -91,7 +91,7 @@ struct PermissionsOnboardingTests {
 
     @Test("Notification permission step") @MainActor func notificationPermissionStep() async throws {
         // Test that notification permissions can be checked
-        let permissionsManager = await PermissionsManager()
+        let permissionsManager = PermissionsManager()
         await MainActor.run {
             let hasPermission = permissionsManager.hasNotificationPermissions
             #expect(!hasPermission == true || hasPermission)
@@ -103,7 +103,7 @@ struct PermissionsOnboardingTests {
 
     @Test("Automation permission step") @MainActor func automationPermissionStep() async throws {
         // Test that automation permissions can be checked
-        let permissionsManager = await PermissionsManager()
+        let permissionsManager = PermissionsManager()
         await MainActor.run {
             let hasPermission = permissionsManager.hasAutomationPermissions
             #expect(!hasPermission == true || hasPermission)
@@ -116,19 +116,19 @@ struct PermissionsOnboardingTests {
     // MARK: - UI Component Tests
 
     @Test("Welcome view display") @MainActor func welcomeViewDisplay() async throws {
-        let loginItemManager = await LoginItemManager.shared
-        let viewModel = await WelcomeViewModel(loginItemManager: loginItemManager)
+        let loginItemManager = LoginItemManager.shared
+        let viewModel = WelcomeViewModel(loginItemManager: loginItemManager)
         let welcomeView = WelcomeView(viewModel: viewModel)
 
         // Test that welcome view is created without errors
-        #expect(welcomeView != nil)
+        // welcomeView is non-optional
 
         // Since this is a SwiftUI view, we mainly test it doesn't crash on creation
         #expect(true)
     }
 
     @Test("Permission card rendering") @MainActor func permissionCardRendering() async throws {
-        let permissionCard = await PermissionCard(
+        let permissionCard = PermissionCard(
             icon: "lock",
             iconColor: .accentColor,
             title: "Test Permission",
@@ -139,10 +139,10 @@ struct PermissionsOnboardingTests {
         )
 
         // Test that permission card is created without errors
-        #expect(permissionCard != nil)
+        // permissionCard is non-optional
 
         // Test with different icon
-        let grantedCard = await PermissionCard(
+        let grantedCard = PermissionCard(
             icon: "checkmark",
             iconColor: .green,
             title: "Granted Permission",
@@ -152,41 +152,41 @@ struct PermissionsOnboardingTests {
             }
         )
 
-        #expect(grantedCard != nil)
+        // grantedCard is non-optional
     }
 
     @Test("Progress bar display") @MainActor func progressBarDisplay() async throws {
         let progressBar = ProgressBar(currentStep: .settings)
 
         // Test that progress bar is created without errors
-        #expect(progressBar != nil)
+        // progressBar is non-optional
 
         // Test different steps
         let welcomeProgress = ProgressBar(currentStep: .welcome)
         let completionProgress = ProgressBar(currentStep: .complete)
 
-        #expect(welcomeProgress != nil)
-        #expect(completionProgress != nil)
+        // welcomeProgress is non-optional
+        // completionProgress is non-optional
     }
 
     // MARK: - Welcome Flow Tests
 
     @Test("Welcome guide flow") @MainActor func welcomeGuideFlow() async throws {
-        let welcomeGuide = await WelcomeGuideView {}
+        let welcomeGuide = WelcomeGuideView {}
 
         // Test that welcome guide is created without errors
-        #expect(welcomeGuide != nil)
+        // welcomeGuide is non-optional
 
         // Should handle welcome flow without crashes
         #expect(true)
     }
 
     @Test("Welcome view model state") @MainActor func welcomeViewModelState() async throws {
-        let loginItemManager = await LoginItemManager.shared
-        let viewModel = await WelcomeViewModel(loginItemManager: loginItemManager)
+        let loginItemManager = LoginItemManager.shared
+        let viewModel = WelcomeViewModel(loginItemManager: loginItemManager)
 
         // Test that view model is created without errors
-        #expect(viewModel != nil)
+        // viewModel is non-optional
 
         // Test state management
         await MainActor.run {
@@ -195,8 +195,8 @@ struct PermissionsOnboardingTests {
         }
 
         // Test state transitions
-        await viewModel.goToNextStep()
-        await viewModel.goToPreviousStep()
+        viewModel.goToNextStep()
+        viewModel.goToPreviousStep()
 
         // Should manage state transitions gracefully
         #expect(true)
@@ -205,20 +205,20 @@ struct PermissionsOnboardingTests {
     // MARK: - Permission Integration Tests
 
     @Test("All permissions integration") @MainActor func allPermissionsIntegration() async throws {
-        let allPermissionsView = await AllPermissionsView()
+        let allPermissionsView = AllPermissionsView()
 
         // Test that comprehensive permissions view is created
-        #expect(allPermissionsView != nil)
+        // allPermissionsView is non-optional
 
         // Should handle all permissions view creation
         #expect(true)
     }
 
     @Test("Permissions view integration") @MainActor func permissionsViewIntegration() async throws {
-        let permissionsView = await PermissionsView()
+        let permissionsView = PermissionsView()
 
         // Test that permissions view is created without errors
-        #expect(permissionsView != nil)
+        // permissionsView is non-optional
 
         // Should handle permissions monitoring gracefully
         #expect(true)
@@ -227,7 +227,7 @@ struct PermissionsOnboardingTests {
     // MARK: - Coordinator Integration Tests
 
     @Test("Welcome window coordination") @MainActor func welcomeWindowCoordination() async throws {
-        let coordinator = await WelcomeWindowCoordinator.shared
+        let coordinator = WelcomeWindowCoordinator.shared
 
         // Test window state management
         await MainActor.run {
@@ -236,13 +236,13 @@ struct PermissionsOnboardingTests {
         }
 
         // Test window operations
-        await coordinator.showWelcomeWindow()
+        coordinator.showWelcomeWindow()
 
         await MainActor.run {
             #expect(coordinator.welcomeWindow != nil)
         }
 
-        await coordinator.dismissWelcomeWindow()
+        coordinator.dismissWelcomeWindow()
 
         await MainActor.run {
             #expect(coordinator.welcomeWindow == nil)
@@ -250,8 +250,8 @@ struct PermissionsOnboardingTests {
     }
 
     @Test("Onboarding full flow") @MainActor func onboardingFullFlow() async throws {
-        let loginItemManager = await LoginItemManager.shared
-        let viewModel = await WelcomeViewModel(loginItemManager: loginItemManager)
+        let loginItemManager = LoginItemManager.shared
+        let viewModel = WelcomeViewModel(loginItemManager: loginItemManager)
 
         // Test complete flow
         await MainActor.run {
@@ -274,50 +274,50 @@ struct PermissionsOnboardingTests {
     }
 
     @Test("Welcome step view") @MainActor func welcomeStepView() async throws {
-        let loginItemManager = await LoginItemManager.shared
-        let viewModel = await WelcomeViewModel(loginItemManager: loginItemManager)
+        let loginItemManager = LoginItemManager.shared
+        let viewModel = WelcomeViewModel(loginItemManager: loginItemManager)
         let stepView = WelcomeStepView(viewModel: viewModel)
 
         // Test that step view is created without errors
-        #expect(stepView != nil)
+        // stepView is non-optional
     }
 
     @Test("Settings step view") @MainActor func settingsStepView() async throws {
-        let loginItemManager = await LoginItemManager.shared
-        let viewModel = await WelcomeViewModel(loginItemManager: loginItemManager)
+        let loginItemManager = LoginItemManager.shared
+        let viewModel = WelcomeViewModel(loginItemManager: loginItemManager)
         let stepView = SettingsStepView(viewModel: viewModel)
 
         // Test that step view is created without errors
-        #expect(stepView != nil)
+        // stepView is non-optional
     }
 
     @Test("Completion step view") @MainActor func completionStepView() async throws {
-        let loginItemManager = await LoginItemManager.shared
-        let viewModel = await WelcomeViewModel(loginItemManager: loginItemManager)
+        let loginItemManager = LoginItemManager.shared
+        let viewModel = WelcomeViewModel(loginItemManager: loginItemManager)
         let stepView = CompletionStepView(viewModel: viewModel)
 
         // Test that step view is created without errors
-        #expect(stepView != nil)
+        // stepView is non-optional
     }
 
     @Test("Welcome window view") @MainActor func welcomeWindowView() async throws {
-        let loginItemManager = await LoginItemManager.shared
-        let windowView = await WelcomeWindowView(loginItemManager: loginItemManager)
+        let loginItemManager = LoginItemManager.shared
+        let windowView = WelcomeWindowView(loginItemManager: loginItemManager)
 
         // Test that window view is created without errors
-        #expect(windowView != nil)
+        // windowView is non-optional
     }
 
     // MARK: - Performance Tests
 
     @Test("Onboarding performance") @MainActor func onboardingPerformance() async throws {
-        let loginItemManager = await LoginItemManager.shared
+        let loginItemManager = LoginItemManager.shared
 
         // Test performance of creating multiple view models
         let startTime = Date()
 
         for _ in 0 ..< 10 {
-            _ = await WelcomeViewModel(loginItemManager: loginItemManager)
+            _ = WelcomeViewModel(loginItemManager: loginItemManager)
         }
 
         let endTime = Date()

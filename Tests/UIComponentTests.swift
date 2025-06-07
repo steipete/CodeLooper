@@ -10,9 +10,9 @@ struct UIComponentTests {
 
     @Test("Main settings coordinator") @MainActor func mainSettingsCoordinator() async throws {
         // Create mock dependencies
-        let mockLoginItemManager = await createMockLoginItemManager()
-        let mockUpdaterViewModel = await createMockUpdaterViewModel()
-        let coordinator = await MainSettingsCoordinator(
+        let mockLoginItemManager = createMockLoginItemManager()
+        let mockUpdaterViewModel = createMockUpdaterViewModel()
+        let coordinator = MainSettingsCoordinator(
             loginItemManager: mockLoginItemManager,
             updaterViewModel: mockUpdaterViewModel
         )
@@ -35,7 +35,7 @@ struct UIComponentTests {
 
     @Test("Monitored instance info") @MainActor func monitoredInstanceInfo() async throws {
         // Test MonitoredWindowInfo creation
-        let windowInfo = await MonitoredWindowInfo(
+        let windowInfo = MonitoredWindowInfo(
             id: "test-window",
             windowTitle: "Test Window",
             axElement: nil,
@@ -62,24 +62,24 @@ struct UIComponentTests {
     // MARK: - Service Tests
 
     @Test("Login item manager") @MainActor func testLoginItemManager() async throws {
-        let manager = await LoginItemManager.shared
+        let manager = LoginItemManager.shared
         #expect(true) // Manager exists
 
         // Test that we can check login item status
-        let isEnabled = await manager.startsAtLogin()
+        let isEnabled = manager.startsAtLogin()
         #expect(!isEnabled == true || isEnabled) // Either state is valid
     }
 
     @Test("Document path tracking") @MainActor func documentPathTracking() async throws {
-        let gitMonitor = await GitRepositoryMonitor()
-        let tracker = await DocumentPathTracker(gitRepositoryMonitor: gitMonitor)
+        let gitMonitor = GitRepositoryMonitor()
+        let tracker = DocumentPathTracker(gitRepositoryMonitor: gitMonitor)
 
         // Test document path existence check
-        let exists = await tracker.documentPathExists("/nonexistent/path")
+        let exists = tracker.documentPathExists("/nonexistent/path")
         #expect(!exists)
 
         // Test with a real path
-        let homeExists = await tracker.documentPathExists(NSHomeDirectory())
+        let homeExists = tracker.documentPathExists(NSHomeDirectory())
         #expect(homeExists)
     }
 
@@ -185,11 +185,11 @@ struct UIComponentTests {
 
     // MARK: - Test Helpers
 
-    func createMockLoginItemManager() async -> LoginItemManager {
-        await LoginItemManager.shared
+    func createMockLoginItemManager() -> LoginItemManager {
+        LoginItemManager.shared
     }
 
-    func createMockUpdaterViewModel() async -> UpdaterViewModel {
-        await UpdaterViewModel(sparkleUpdaterManager: SparkleUpdaterManager())
+    func createMockUpdaterViewModel() -> UpdaterViewModel {
+        UpdaterViewModel(sparkleUpdaterManager: SparkleUpdaterManager())
     }
 }

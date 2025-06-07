@@ -13,13 +13,13 @@ struct WindowManagementTests {
         let mockSessionLogger = createMockSessionLogger()
         let mockDelegate = createMockWindowManagerDelegate()
 
-        let windowManager = await WindowManager(
+        let windowManager = WindowManager(
             loginItemManager: mockLoginItemManager,
             sessionLogger: mockSessionLogger,
             delegate: mockDelegate
         )
 
-        #expect(windowManager != nil)
+        // windowManager is non-optional
         // Remove delegate check as it causes Sendable issues
     }
 
@@ -28,14 +28,14 @@ struct WindowManagementTests {
         let mockSessionLogger = createMockSessionLogger()
         let mockDelegate = createMockWindowManagerDelegate()
 
-        let windowManager = await WindowManager(
+        let windowManager = WindowManager(
             loginItemManager: mockLoginItemManager,
             sessionLogger: mockSessionLogger,
             delegate: mockDelegate
         )
 
         // Test that window controllers are initially nil
-        let initialWelcomeController = await windowManager.welcomeWindowController
+        let initialWelcomeController = windowManager.welcomeWindowController
         #expect(initialWelcomeController == nil)
     }
 
@@ -44,7 +44,7 @@ struct WindowManagementTests {
         let delegate = MockWindowManagerDelegate()
 
         // Test that delegate methods can be called without errors
-        await delegate.windowManagerDidFinishOnboarding()
+        delegate.windowManagerDidFinishOnboarding()
 
         // Use a simple boolean to avoid reflection issues
         let wasCalled = delegate.didFinishOnboardingCalled
@@ -52,15 +52,15 @@ struct WindowManagementTests {
     }
 
     @Test("windowPositionManagerSingleton") func windowPositionManagerSingleton() async throws {
-        let manager1 = await WindowPositionManager.shared
-        let manager2 = await WindowPositionManager.shared
+        let manager1 = WindowPositionManager.shared
+        let manager2 = WindowPositionManager.shared
 
         // Both references should point to the same instance
         #expect(manager1 === manager2)
     }
 
     @Test("windowPositionOperations") func windowPositionOperations() async throws {
-        let manager = await WindowPositionManager.shared
+        let manager = WindowPositionManager.shared
 
         // Test position and size calculations
         let originalPosition = NSPoint(x: 100, y: 100)
@@ -87,7 +87,7 @@ struct WindowManagementTests {
     }
 
     @Test("positionSavingAndRestoration") func positionSavingAndRestoration() async throws {
-        let manager = await WindowPositionManager.shared
+        let manager = WindowPositionManager.shared
 
         // Test saving and restoring positions using identifiers
         let testFrame = NSRect(x: 150, y: 200, width: 600, height: 500)
@@ -104,7 +104,7 @@ struct WindowManagementTests {
     }
 
     @Test("appleScriptSupportMethods") func appleScriptSupportMethods() async throws {
-        let manager = await WindowPositionManager.shared
+        let manager = WindowPositionManager.shared
 
         // Test NSNumber to NSPoint conversion
         let xNumber = NSNumber(value: 300)
@@ -331,7 +331,7 @@ struct WindowManagementTests {
 
     @Test("windowManagementThreadSafety") func windowManagementThreadSafety() async throws {
         // Test concurrent access to window operations
-        let windowPositionManager = await WindowPositionManager.shared
+        let windowPositionManager = WindowPositionManager.shared
 
         // Test concurrent position calculations
         await withTaskGroup(of: NSRect.self) { group in
@@ -356,21 +356,21 @@ struct WindowManagementTests {
 
     @Test("errorHandling") func errorHandling() async throws {
         // Test graceful handling of nil values
-        let manager = await WindowPositionManager.shared
+        let manager = WindowPositionManager.shared
 
         // Test operations with nil windows (should not crash)
-        await manager.moveWindow(nil, to: NSPoint(x: 100, y: 100))
-        await manager.resizeWindow(nil, to: NSSize(width: 400, height: 300))
-        await manager.setWindowFrame(nil, to: NSRect(x: 0, y: 0, width: 400, height: 300))
-        await manager.centerWindow(nil)
+        manager.moveWindow(nil, to: NSPoint(x: 100, y: 100))
+        manager.resizeWindow(nil, to: NSSize(width: 400, height: 300))
+        manager.setWindowFrame(nil, to: NSRect(x: 0, y: 0, width: 400, height: 300))
+        manager.centerWindow(nil)
 
         // Test position saving/restoring with nil window
-        await manager.saveWindowPosition(nil, identifier: "test")
-        let restored = await manager.restoreWindowPosition(nil, identifier: "test")
+        manager.saveWindowPosition(nil, identifier: "test")
+        let restored = manager.restoreWindowPosition(nil, identifier: "test")
         #expect(!restored)
 
         // Test restoring non-existent position
-        let nonExistentRestored = await manager.restoreWindowPosition(nil, identifier: "non-existent")
+        let nonExistentRestored = manager.restoreWindowPosition(nil, identifier: "non-existent")
         #expect(!nonExistentRestored)
     }
 
