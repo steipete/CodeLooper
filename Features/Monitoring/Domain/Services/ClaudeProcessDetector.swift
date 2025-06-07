@@ -57,9 +57,11 @@ final class ClaudeProcessDetector: Loggable, @unchecked Sendable {
         let totalProcesses = size / Int32(MemoryLayout<pid_t>.size)
         logger.debug("Scanning \(totalProcesses) processes for Claude instances")
         
-        var instances: [ClaudeInstance] = []
+        var allClaudes: [(instance: ClaudeInstance, ppid: pid_t)] = []
+        var claudePIDs = Set<pid_t>()
         var nodeProcessCount = 0
         
+        // First pass: collect all Claude processes
         for i in 0..<totalProcesses {
             let pid = pids[Int(i)]
             
@@ -103,12 +105,26 @@ final class ClaudeProcessDetector: Loggable, @unchecked Sendable {
                 currentActivity: .idle
             )
             
-            instances.append(instance)
-            logger.info("Detected Claude instance: PID=\(pid), folder=\(folderName), status=\(status.displayName)")
+            allClaudes.append((instance: instance, ppid: processInfo.ppid))
+            claudePIDs.insert(pid)
+            logger.debug("Found Claude process: PID=\(pid), PPID=\(processInfo.ppid), folder=\(folderName)")
         }
         
-        logger.info("Detection complete: found \(nodeProcessCount) Node processes, \(instances.count) Claude instances")
-        return instances
+        // Second pass: filter out child Claude processes
+        let rootClaudes = allClaudes.compactMap { item in
+            let isChildOfClaude = claudePIDs.contains(item.ppid)
+            
+            if isChildOfClaude {
+                logger.debug("Filtering out child Claude process PID=\(item.instance.pid) (parent PID=\(item.ppid) is also Claude)")
+                return nil
+            } else {
+                logger.info("Detected root Claude instance: PID=\(item.instance.pid), folder=\(item.instance.folderName), status=\(item.instance.status.displayName)")
+                return item.instance
+            }
+        }
+        
+        logger.info("Detection complete: found \(nodeProcessCount) Node processes, \(allClaudes.count) total Claude processes, \(rootClaudes.count) root Claude instances")
+        return rootClaudes
     }
     
     // MARK: - Helper Functions
@@ -123,7 +139,7 @@ final class ClaudeProcessDetector: Loggable, @unchecked Sendable {
     
     // MARK: - Process Information Extraction
     
-    private func getProcessInfo(pid: pid_t) -> (command: String, device: dev_t)? {
+    private func getProcessInfo(pid: pid_t) -> (command: String, device: dev_t, ppid: pid_t)? {
         var info = proc_bsdinfo()
         
         guard proc_pidinfo(pid, PROC_PIDTBSDINFO, 0, &info, Int32(MemoryLayout.size(ofValue: info))) > 0 else {
@@ -146,7 +162,7 @@ final class ClaudeProcessDetector: Loggable, @unchecked Sendable {
             logger.warning("Device \(info.e_tdev) is too large to convert to Int32")
             device = 0  // Use 0 to indicate no valid device
         }
-        return (command: command, device: device)
+        return (command: command, device: device, ppid: pid_t(info.pbi_ppid))
     }
     
     private func getProcessArguments(pid: pid_t) -> String? {
