@@ -21,7 +21,7 @@ struct IntegrationTests {
             coordinator = AppServiceCoordinator()
             let loginItemManager = LoginItemManager.shared
             let sessionLogger = SessionLogger.shared
-            windowManager = await WindowManager(
+            windowManager = WindowManager(
                 loginItemManager: loginItemManager,
                 sessionLogger: sessionLogger,
                 delegate: nil
@@ -79,8 +79,7 @@ struct IntegrationTests {
         let monitor = CursorMonitor.shared
         // The test is already MainActor-isolated, so we can access these directly
         // AXorcist property is non-optional, so just verify it exists
-        let monitorAxorcist = monitor.axorcist
-        #expect(monitorAxorcist is AXorcist)
+        _ = monitor.axorcist
 
         // Verify initial state
         #expect(!monitor.isMonitoringActivePublic)
@@ -143,7 +142,7 @@ struct IntegrationTests {
             ),
         ]
 
-        let appInfo = await MonitoredAppInfo(
+        let appInfo = MonitoredAppInfo(
             id: 12345,
             pid: 12345,
             displayName: "Cursor with Windows",
@@ -153,32 +152,25 @@ struct IntegrationTests {
             windows: windows
         )
 
-        await MainActor.run {
-            monitor.monitoredApps = [appInfo]
-        }
+        monitor.monitoredApps = [appInfo]
 
         // Verify window information is preserved
-        await MainActor.run {
-            let app = monitor.monitoredApps.first
-            #expect(app?.windows.count == 2)
-            #expect(app?.windows.first?.windowTitle == "Main Document.txt")
-            #expect(app?.windows.first?.documentPath == "/path/to/main.txt")
-            #expect(app?.windows.last?.windowTitle == "Settings")
-            #expect(app?.windows.last?.documentPath == nil)
-        }
+        let app = monitor.monitoredApps.first
+        #expect(app?.windows.count == 2)
+        #expect(app?.windows.first?.windowTitle == "Main Document.txt")
+        #expect(app?.windows.first?.documentPath == "/path/to/main.txt")
+        #expect(app?.windows.last?.windowTitle == "Settings")
+        #expect(app?.windows.last?.documentPath == nil)
     }
 
     // MARK: - Intervention Flow Tests
 
     @Test("Intervention flow") @MainActor func interventionFlow() async throws {
-        let coordinator = AppServiceCoordinator()
+        _ = AppServiceCoordinator()
         let monitor = CursorMonitor.shared
-        // Monitor has internal rule execution
-        // Just verify monitor exists
-        #expect(monitor != nil)
 
         // Create app that might need intervention
-        let appInfo = await MonitoredAppInfo(
+        let appInfo = MonitoredAppInfo(
             id: 12345,
             pid: 12345,
             displayName: "Cursor Needing Intervention",
@@ -187,9 +179,7 @@ struct IntegrationTests {
             interventionCount: 0
         )
 
-        await MainActor.run {
-            monitor.monitoredApps = [appInfo]
-        }
+        monitor.monitoredApps = [appInfo]
 
         // Start monitoring
         await monitor.startMonitoringLoop()
@@ -198,9 +188,7 @@ struct IntegrationTests {
         await monitor.performMonitoringCycle()
 
         // Verify intervention tracking
-        await MainActor.run {
-            #expect(monitor.totalAutomaticInterventionsThisSessionDisplay >= 0)
-        }
+        #expect(monitor.totalAutomaticInterventionsThisSessionDisplay >= 0)
 
         // Cleanup
         await monitor.stopMonitoringLoop()
@@ -211,8 +199,8 @@ struct IntegrationTests {
 
     @Test("Settings persistence integration") @MainActor func settingsPersistenceIntegration() async throws {
         // Save original values
-        let originalMonitoring = await MainActor.run { Defaults[.isGlobalMonitoringEnabled] }
-        let originalMaxInterventions = await MainActor.run { Defaults[.maxInterventionsBeforePause] }
+        let originalMonitoring = Defaults[.isGlobalMonitoringEnabled]
+        let originalMaxInterventions = Defaults[.maxInterventionsBeforePause]
 
         defer {
             // Restore original values
@@ -223,65 +211,53 @@ struct IntegrationTests {
         }
 
         // Set some test settings
-        await MainActor.run {
-            Defaults[.isGlobalMonitoringEnabled] = true
-            Defaults[.maxInterventionsBeforePause] = 10
-        }
+        Defaults[.isGlobalMonitoringEnabled] = true
+        Defaults[.maxInterventionsBeforePause] = 10
 
         // Create first coordinator instance
-        let coordinator1 = AppServiceCoordinator()
-        let monitor1 = CursorMonitor.shared
+        _ = AppServiceCoordinator()
+        _ = CursorMonitor.shared
 
         // Verify settings are loaded
-        await MainActor.run {
-            #expect(Defaults[.isGlobalMonitoringEnabled])
-            #expect(Defaults[.maxInterventionsBeforePause] == 10)
-        }
+        #expect(Defaults[.isGlobalMonitoringEnabled])
+        #expect(Defaults[.maxInterventionsBeforePause] == 10)
 
         // Create second coordinator instance (simulating restart)
-        let coordinator2 = AppServiceCoordinator()
-        let monitor2 = CursorMonitor.shared
+        _ = AppServiceCoordinator()
+        _ = CursorMonitor.shared
 
         // Verify settings persistence
-        await MainActor.run {
-            #expect(Defaults[.isGlobalMonitoringEnabled])
-            #expect(Defaults[.maxInterventionsBeforePause] == 10)
-        }
+        #expect(Defaults[.isGlobalMonitoringEnabled])
+        #expect(Defaults[.maxInterventionsBeforePause] == 10)
 
         // Test settings changes
-        await MainActor.run {
-            Defaults[.isGlobalMonitoringEnabled] = false
-            #expect(!Defaults[.isGlobalMonitoringEnabled])
-        }
+        Defaults[.isGlobalMonitoringEnabled] = false
+        #expect(!Defaults[.isGlobalMonitoringEnabled])
     }
 
     @Test("Window settings persistence") @MainActor func windowSettingsPersistence() async throws {
         // Create window with settings
-        var windowInfo = await MonitoredWindowInfo(
+        var windowInfo = MonitoredWindowInfo(
             id: "test-window",
             windowTitle: "Test Document.txt",
             documentPath: "/path/to/test.txt"
         )
 
         // Modify settings
-        await MainActor.run {
-            windowInfo.isLiveWatchingEnabled = true
-            windowInfo.aiAnalysisIntervalSeconds = 30
-            windowInfo.saveAISettings()
-        }
+        windowInfo.isLiveWatchingEnabled = true
+        windowInfo.aiAnalysisIntervalSeconds = 30
+        windowInfo.saveAISettings()
 
         // Create new window instance with same ID
-        let newWindowInfo = await MonitoredWindowInfo(
+        let newWindowInfo = MonitoredWindowInfo(
             id: "test-window",
             windowTitle: "Test Document.txt",
             documentPath: "/path/to/test.txt"
         )
 
         // Verify settings were loaded
-        await MainActor.run {
-            #expect(newWindowInfo.isLiveWatchingEnabled)
-            #expect(newWindowInfo.aiAnalysisIntervalSeconds == 30)
-        }
+        #expect(newWindowInfo.isLiveWatchingEnabled)
+        #expect(newWindowInfo.aiAnalysisIntervalSeconds == 30)
 
         // Clean up test settings if needed
         // Note: Window settings are stored per window ID and would be cleaned up
@@ -292,22 +268,20 @@ struct IntegrationTests {
 
     @Test("Permission flow integration") @MainActor func permissionFlowIntegration() async throws {
         // Test accessibility permissions check
-        let permissionsManager = await PermissionsManager()
+        let permissionsManager = PermissionsManager()
 
         // Wait for initial check
         try await Task.sleep(for: .milliseconds(100))
 
         // This should not crash regardless of permission state
-        await MainActor.run {
-            #expect(
-                permissionsManager.hasAccessibilityPermissions == true || permissionsManager
-                    .hasAccessibilityPermissions == false
-            )
-        }
+        #expect(
+            permissionsManager.hasAccessibilityPermissions == true || permissionsManager
+                .hasAccessibilityPermissions == false
+        )
     }
 
     @Test("A xorcist permission integration") @MainActor func aXorcistPermissionIntegration() async throws {
-        let axorcist = await AXorcist()
+        let axorcist = AXorcist()
 
         // Test that AXorcist can be created without errors
         #expect(axorcist != nil)
@@ -320,22 +294,16 @@ struct IntegrationTests {
         }
         """
 
-        do {
-            // Test that we can use AXorcist without errors
-            // In a real test, we'd need to create proper command structures
-            // For now, just verify AXorcist can be created
-            let result = true
-            #expect(result != nil)
-        } catch {
-            // Ping might fail due to permissions, but should not crash
-            #expect(error != nil)
-        }
+        // Test that we can use AXorcist without errors
+        // In a real test, we'd need to create proper command structures
+        // For now, just verify AXorcist can be created
+        #expect(true)
     }
 
     // MARK: - Cross-Service Integration Tests
 
     @Test("Service coordination") @MainActor func serviceCoordination() async throws {
-        let coordinator = AppServiceCoordinator()
+        _ = AppServiceCoordinator()
 
         // Test that all services can be accessed
         let cursorMonitor = CursorMonitor.shared
@@ -349,11 +317,11 @@ struct IntegrationTests {
     }
 
     @Test("Cross service error handling") @MainActor func crossServiceErrorHandling() async throws {
-        let coordinator = AppServiceCoordinator()
+        _ = AppServiceCoordinator()
         let monitor = CursorMonitor.shared
 
         // Test error handling with invalid data
-        let invalidAppInfo = await MonitoredAppInfo(
+        let invalidAppInfo = MonitoredAppInfo(
             id: -1, // Invalid PID
             pid: -1,
             displayName: "",
@@ -362,9 +330,7 @@ struct IntegrationTests {
             interventionCount: 0
         )
 
-        await MainActor.run {
-            monitor.monitoredApps = [invalidAppInfo]
-        }
+        monitor.monitoredApps = [invalidAppInfo]
 
         // This should not crash
         await monitor.performMonitoringCycle()
