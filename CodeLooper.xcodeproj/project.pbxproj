@@ -180,6 +180,7 @@
 		A7FBD6325FCDD4D1686CA634 /* CursorJSHookScript.swift in Sources */ = {isa = PBXBuildFile; fileRef = E25607BD9DA70B4FE5DB2D66 /* CursorJSHookScript.swift */; };
 		AA0BA3801781EB602EB0D051 /* OllamaProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0E882DA8E668CA0774D1D21 /* OllamaProvider.swift */; };
 		AA95DA8F125A82DCCD98A099 /* InfoKey.swift in Sources */ = {isa = PBXBuildFile; fileRef = 792D028B10801FA79233AE81 /* InfoKey.swift */; };
+		AB030E1D97D24337280BA856 /* DesignSystem in Frameworks */ = {isa = PBXBuildFile; productRef = BA3BEFEBB8C1CEA13994F38B /* DesignSystem */; };
 		AC645A4EA3239EC2E2951ED4 /* WelcomeViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = BCA0983521BFC38C9EFB5342 /* WelcomeViewModel.swift */; };
 		AE40CB2D386F76F851DF362B /* cursor-hook.js in Resources */ = {isa = PBXBuildFile; fileRef = 987465FE6147F57B5B370533 /* cursor-hook.js */; };
 		AEE59E343C16B2410F168E00 /* CommandHelpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = 45DA6275BB9C155446F51C09 /* CommandHelpers.swift */; };
@@ -599,6 +600,7 @@
 			files = (
 				987074522BCF3E3C9F2235B2 /* Defaults in Frameworks */,
 				7EF37540CFD94D93BC3C4C99 /* AXorcist in Frameworks */,
+				AB030E1D97D24337280BA856 /* DesignSystem in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1479,6 +1481,7 @@
 			packageProductDependencies = (
 				22639A31DA6EC87722BFE2CF /* Defaults */,
 				AC0F576DDBE5B5FACE8E56A9 /* AXorcist */,
+				BA3BEFEBB8C1CEA13994F38B /* DesignSystem */,
 			);
 			productName = CodeLooperTests;
 			productReference = 2B6F1F26DF05152139846594 /* CodeLooperTests.xctest */;
@@ -1970,7 +1973,7 @@
 					"@loader_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
-				OTHER_SWIFT_FLAGS = "-strict-concurrency=complete -enable-experimental-feature DebugDescriptionMacro";
+				OTHER_SWIFT_FLAGS = "-strict-concurrency=complete";
 				PRODUCT_BUNDLE_IDENTIFIER = me.steipete.codelooper.tests;
 				PRODUCT_NAME = CodeLooperTests;
 				SDKROOT = macosx;
@@ -2005,7 +2008,7 @@
 					"@loader_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
-				OTHER_SWIFT_FLAGS = "-strict-concurrency=complete -enable-experimental-feature DebugDescriptionMacro";
+				OTHER_SWIFT_FLAGS = "-strict-concurrency=complete";
 				PRODUCT_BUNDLE_IDENTIFIER = me.steipete.codelooper.tests;
 				PRODUCT_NAME = CodeLooperTests;
 				SDKROOT = macosx;
@@ -2423,6 +2426,10 @@
 		ACF0DC933CEF5FED0549B6AD /* Sparkle */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = Sparkle;
+		};
+		BA3BEFEBB8C1CEA13994F38B /* DesignSystem */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = DesignSystem;
 		};
 		C82404169CD50D644E1ED271 /* AXpector */ = {
 			isa = XCSwiftPackageProductDependency;

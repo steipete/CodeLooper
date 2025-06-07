@@ -154,12 +154,13 @@ let project = Project(
                 .target(name: "Diagnostics"),
                 .package(product: "Defaults"),
                 .package(product: "AXorcist"),
+                .package(product: "DesignSystem"),
             ],
             settings: .settings(
                 base: [
                     "SWIFT_VERSION": "6.0",
                     "MACOSX_DEPLOYMENT_TARGET": "14.0",
-                    "OTHER_SWIFT_FLAGS": "-strict-concurrency=complete -enable-experimental-feature DebugDescriptionMacro",
+                    "OTHER_SWIFT_FLAGS": "-strict-concurrency=complete",
                     "ENABLE_STRICT_CONCURRENCY_CHECKS": "YES",
                     "ENABLE_TESTING": "YES",
                     "ENABLE_TESTING_SEARCH_PATHS": "YES",

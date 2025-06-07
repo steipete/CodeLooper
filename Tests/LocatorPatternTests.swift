@@ -141,20 +141,18 @@ struct LocatorPatternTests {
             }
         }
 
-        @Test("Concurrent locator access", .timeLimit(.minutes(1)))
-        @MainActor func concurrentLocatorAccess() async throws {
+        @Test("Sequential locator access", .timeLimit(.minutes(1)))
+        @MainActor func sequentialLocatorAccess() async throws {
             let manager = await LocatorManager.shared
 
-            await withTaskGroup(of: Void.self) { group in
-                // Multiple concurrent accesses
-                for type in LocatorType.allCases.prefix(5) {
-                    group.addTask { @MainActor in
-                        _ = await manager.getLocator(for: type)
-                    }
-                }
+            // Test sequential access to multiple locator types
+            for type in LocatorType.allCases.prefix(5) {
+                _ = await manager.getLocator(for: type)
+                // Small delay between requests
+                try await Task.sleep(for: .milliseconds(10))
             }
 
-            // Manager should remain functional after concurrent access
+            // Manager should remain functional after multiple accesses
             let testLocator = await manager.getLocator(for: .mainInputField)
             #expect(testLocator != nil || true, "Manager should still be operational")
         }

@@ -4,6 +4,9 @@ import Foundation
 import OSLog
 import Testing
 
+// Use Diagnostics.LogCategory to avoid ambiguity
+typealias LogCategory = Diagnostics.LogCategory
+
 @Suite("Session Logging", .tags(.diagnostics, .core))
 struct SessionLoggingTests {
     // MARK: - SessionLogger Tests
@@ -59,7 +62,7 @@ struct SessionLoggingTests {
                 #expect(lastEntry.level == testCase.level)
                 #expect(lastEntry.message == testCase.message)
                 if let pid = testCase.pid {
-                    #expect(lastEntry.pid == pid)
+                    #expect(lastEntry.instancePID == pid)
                 }
             }
         }
@@ -114,7 +117,7 @@ struct SessionLoggingTests {
             let fileLogger = Diagnostics.FileLogger.shared
 
             // FileLogger uses OSLog, so we verify it doesn't throw
-            #expect(throws: Never.self) {
+            await #expect(throws: Never.self) {
                 await fileLogger.log(
                     message,
                     level: logType,
@@ -139,7 +142,7 @@ struct SessionLoggingTests {
             ]
 
             for testCase in edgeCases {
-                #expect(throws: Never.self) {
+                await #expect(throws: Never.self) {
                     await fileLogger.log(
                         testCase.message,
                         level: .info,
@@ -207,7 +210,6 @@ struct SessionLoggingTests {
                 .auth,
                 .api,
                 .supervision,
-                .monitoring,
             ]
         )
         @MainActor func categoryLoggerRetrieval(category: LogCategory) {

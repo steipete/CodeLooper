@@ -159,4 +159,5 @@ extension Tag {
     @Tag static var rules: Self
     @Tag static var status: Self
     @Tag static var slow: Self
+    @Tag static var factory: Self
 }
