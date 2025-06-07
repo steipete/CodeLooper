@@ -114,11 +114,10 @@ public class ErrorRecoveryService {
             case .retry:
                 return try await retryManager.execute(
                     operation: operation,
-                    shouldRetry: nil,
-                    onRetry: { attempt, error, delay in
-                        self.logger.info("🔄 Retrying '\(context)' (attempt \(attempt)) after \(delay)s: \(error)")
-                    }
-                )
+                    shouldRetry: nil
+                ) { attempt, error, delay in
+                    self.logger.info("🔄 Retrying '\(context)' (attempt \(attempt)) after \(delay)s: \(error)")
+                }
 
             case let .fallback(fallbackOp):
                 do {

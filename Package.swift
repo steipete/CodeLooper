@@ -127,8 +127,16 @@ let package = Package(
             dependencies: [
                 "CodeLooper",
                 "Diagnostics",
+                .product(name: "Testing", package: "swift-testing"),
             ],
-            path: "Tests"
+            path: "Tests",
+            swiftSettings: [
+                .unsafeFlags(["-strict-concurrency=complete"]),
+                .unsafeFlags([
+                    "-warn-concurrency",
+                    "-enable-actor-data-race-checks",
+                ], .when(configuration: .debug)),
+            ]
         ),
     ]
 )

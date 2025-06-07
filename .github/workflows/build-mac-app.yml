@@ -117,6 +117,16 @@ jobs:
             echo "::error::Swift 6.0 or higher is required, but found Swift $SWIFT_VERSION"
             exit 1
           fi
+          
+          # Verify Swift Testing framework availability
+          echo "Verifying Swift Testing framework support..."
+          echo 'import Testing; @Test func sample() { #expect(true) }' > /tmp/test_swift_testing.swift
+          if xcrun swift -parse /tmp/test_swift_testing.swift 2>/dev/null; then
+            echo "✅ Swift Testing framework is available"
+          else
+            echo "::warning::Swift Testing framework may not be fully available"
+          fi
+          rm -f /tmp/test_swift_testing.swift
 
       - name: Set build version and cache fingerprints
         id: set-version
@@ -267,31 +277,70 @@ jobs:
           scripts/ci-swiftlint.sh --verbose || echo "::warning::SwiftLint found linting issues"
           echo "::endgroup::"
 
+      - name: Verify Swift Testing Framework
+        run: |
+          echo "Checking Swift Testing framework availability in dependencies..."
+          
+          # Verify Testing framework is available in Package.swift
+          if grep -q "swift-testing" Package.swift; then
+            echo "✅ Swift Testing framework found in Package.swift dependencies"
+          else
+            echo "::warning::Swift Testing framework not found in Package.swift dependencies"
+          fi
+          
+          # Test compilation with Swift Testing import
+          echo 'import Testing; @Test func check() { #expect(true) }' > /tmp/testing_check.swift
+          if xcrun swift -I $(xcrun --show-sdk-path)/usr/lib/swift -c -o /tmp/testing_check /tmp/testing_check.swift 2>/dev/null; then
+            echo "✅ Swift Testing framework compilation test passed"
+          else
+            echo "::warning::Swift Testing framework compilation test failed - may affect test execution"
+          fi
+          
+          # Clean up
+          rm -f /tmp/testing_check.swift /tmp/testing_check
+
       - name: Run Tests
         continue-on-error: true
         run: |
-          echo "::group::Running Tests"
-          echo "Running test suite..."
+          echo "::group::Running Tests with Swift Testing Framework"
+          echo "Running test suite with Swift Testing framework support..."
           
-          # Run tests using xcodebuild to ensure proper app environment and Swift Testing support
-          echo "Running tests via xcodebuild for Swift Testing compatibility..."
+          # Create test results directory
+          mkdir -p test-results
+          
+          # Run main app tests with Swift Testing support
+          echo "Running main app tests via xcodebuild..."
           set -o pipefail
           xcodebuild test \
             -workspace CodeLooper.xcworkspace \
             -scheme CodeLooper \
             -destination "platform=macOS" \
             -configuration Debug \
+            -enableCodeCoverage YES \
+            -resultBundlePath test-results/CodeLooper.xcresult \
+            OTHER_SWIFT_FLAGS="-enable-testing" \
             CODE_SIGN_IDENTITY="" \
             CODE_SIGNING_REQUIRED=NO \
-            CODE_SIGNING_ALLOWED=NO | xcbeautify || echo "::warning::Some tests failed"
+            CODE_SIGNING_ALLOWED=NO | xcbeautify || echo "::warning::Some main app tests failed"
           
-          # Also run tests in subpackages using swift test (these are simpler)
+          # Check if test results were generated
+          if [ -d "test-results/CodeLooper.xcresult" ]; then
+            echo "✅ Test results bundle created successfully"
+            # Extract basic test summary
+            xcrun xcresulttool get --format json --path test-results/CodeLooper.xcresult | head -20 || true
+          else
+            echo "::warning::No test results bundle was created"
+          fi
+          
+          # Run subpackage tests with Swift Testing framework
           echo "Running AXorcist tests..."
-          cd AXorcist && swift test || echo "::warning::AXorcist tests failed"
+          cd AXorcist
+          swift test --enable-code-coverage --verbose || echo "::warning::AXorcist tests failed"
           cd ..
           
           echo "Running DesignSystem tests..."
-          cd DesignSystem && swift test || echo "::warning::DesignSystem tests failed"
+          cd DesignSystem  
+          swift test --enable-code-coverage --verbose || echo "::warning::DesignSystem tests failed"
           cd ..
           
           echo "::endgroup::"
@@ -558,6 +607,16 @@ jobs:
             ${{ steps.create_artifacts.outputs.artifact_dmg_path }}
           retention-days: 14
           if-no-files-found: error
+
+      - name: Upload Test Results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: CodeLooper-Test-Results-${{ steps.set-version.outputs.version }}
+          path: |
+            test-results/
+          retention-days: 7
+          if-no-files-found: ignore
 
       - name: Upload Lint and Format Reports
         if: always()

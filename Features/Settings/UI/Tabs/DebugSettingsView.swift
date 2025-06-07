@@ -35,7 +35,6 @@ struct DebugSettingsView: View {
                 }
             }
 
-
             // Debug Information
             DSSettingsSection("Build Information") {
                 VStack(alignment: .leading, spacing: Spacing.small) {
