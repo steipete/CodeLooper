@@ -29,7 +29,8 @@ struct NotificationHandlingTests {
             // Values should be initialized (though actual values depend on system state)
             #expect(initialPermission == true || initialPermission == false)
             // Authorization status is a value type (enum), not optional
-            #expect(initialStatus == .authorized || initialStatus == .denied || initialStatus == .notDetermined || initialStatus == .provisional)
+            #expect(initialStatus == .authorized || initialStatus == .denied || initialStatus == .notDetermined ||
+                initialStatus == .provisional)
         }
     }
 
@@ -204,4 +205,3 @@ struct NotificationHandlingTests {
         (title: "Rule Executed", body: "TestRule executed successfully (execution #5)", id: "rule-test-1234567890"),
     ]
 }
-

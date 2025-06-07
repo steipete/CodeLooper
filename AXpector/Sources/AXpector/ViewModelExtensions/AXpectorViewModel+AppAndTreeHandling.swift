@@ -59,7 +59,7 @@ extension AXpectorViewModel {
                 if self.selectedApplicationPID == appPID {
                     self.selectedApplicationPID = nil
                 }
-                
+
                 // Refresh the list
                 self.fetchRunningApplications()
             }

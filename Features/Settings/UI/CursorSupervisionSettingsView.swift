@@ -61,13 +61,13 @@ struct CursorSupervisionSettingsView: View {
                         .padding(.top, Spacing.xxSmall)
                 }
             }
-            
+
             // Claude Monitoring Section
             DSSettingsSection("Claude Instances") {
                 Text("Monitor running Claude CLI instances and their current status")
                     .font(Typography.caption1())
                     .foregroundColor(ColorPalette.textSecondary)
-                
+
                 claudeInstancesView
             }
 
@@ -90,13 +90,13 @@ struct CursorSupervisionSettingsView: View {
             CursorWindowsList(style: .settings)
         }
     }
-    
+
     @ViewBuilder
     private var claudeInstancesView: some View {
         if !claudeMonitor.instances.isEmpty {
             DSDivider()
                 .padding(.vertical, Spacing.small)
-            
+
             ClaudeInstancesList()
         } else {
             Text("No Claude instances running")

@@ -395,7 +395,7 @@ struct WindowManagementTests {
 
     private func createMockSessionLogger() -> SessionLogger {
         // SessionLogger.shared is @MainActor, so we need to access it safely
-        return MainActor.assumeIsolated {
+        MainActor.assumeIsolated {
             SessionLogger.shared
         }
     }

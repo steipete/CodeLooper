@@ -35,9 +35,9 @@ enum SoundEngine {
         let isTestEnvironment = ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] != nil ||
             ProcessInfo.processInfo.arguments.contains("--test-mode") ||
             NSClassFromString("XCTest") != nil
-        
+
         guard !isTestEnvironment else { return }
-        
+
         // Skip the call entirely when the user has muted the Mac
         guard !isOutputMuted else { return }
 

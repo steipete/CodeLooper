@@ -12,7 +12,7 @@ public final class PermissionsManager: ObservableObject, Loggable {
 
     public init() {
         loadCachedPermissions()
-        
+
         // Skip permission checking and monitoring in test environment
         if !Constants.isTestEnvironment {
             scheduleInitialPermissionCheck()
@@ -41,7 +41,7 @@ public final class PermissionsManager: ObservableObject, Loggable {
             logger.info("Skipping accessibility permissions request in test mode")
             return
         }
-        
+
         logger.info("Requesting accessibility permissions")
         let granted = await AXPermissionHelpers.requestPermissions()
         self.hasAccessibilityPermissions = granted
@@ -56,7 +56,7 @@ public final class PermissionsManager: ObservableObject, Loggable {
             logger.info("Skipping automation settings open in test mode")
             return
         }
-        
+
         logger.info("Opening System Settings for automation permissions")
         if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Automation") {
             NSWorkspace.shared.open(url)
@@ -70,7 +70,7 @@ public final class PermissionsManager: ObservableObject, Loggable {
             logger.info("Skipping screen recording settings open in test mode")
             return
         }
-        
+
         logger.info("Opening System Settings for screen recording permissions")
         if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_ScreenCapture") {
             NSWorkspace.shared.open(url)
@@ -84,7 +84,7 @@ public final class PermissionsManager: ObservableObject, Loggable {
             logger.info("Skipping notification permissions request in test mode")
             return
         }
-        
+
         logger.info("Requesting notification permissions")
 
         // First check current authorization status
@@ -145,7 +145,7 @@ public final class PermissionsManager: ObservableObject, Loggable {
             logger.info("Skipping notification settings open in test mode")
             return
         }
-        
+
         logger.info("Opening System Settings for notification permissions")
         if let url = URL(string: "x-apple.systempreferences:com.apple.preference.notifications") {
             NSWorkspace.shared.open(url)
@@ -339,7 +339,7 @@ public final class PermissionsManager: ObservableObject, Loggable {
             logger.info("Skipping permission denied alert in test mode")
             return
         }
-        
+
         let alert = NSAlert()
         alert.messageText = "Notification Permission Denied"
         alert.informativeText =
@@ -357,7 +357,7 @@ public final class PermissionsManager: ObservableObject, Loggable {
             logger.info("Skipping permission error alert in test mode")
             return
         }
-        
+
         let alert = NSAlert()
         alert.messageText = "Notification Permission Request Failed"
         alert
@@ -380,7 +380,7 @@ public final class PermissionsManager: ObservableObject, Loggable {
             logger.info("Skipping permission settings alert in test mode")
             return
         }
-        
+
         let alert = NSAlert()
         alert.messageText = "Notification Permission Required"
         alert

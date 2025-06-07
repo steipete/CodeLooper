@@ -21,7 +21,10 @@ struct DiagnosticsTests {
         func categoryLoggerCreation(category: LogCategory) async throws {
             let logger = Logger(category: category)
             // Logger.logLevel is non-optional, check if it's a valid level
-            #expect(Logger.Level.allCases.contains(logger.logLevel), "Logger should have valid log level for category \(category)")
+            #expect(
+                Logger.Level.allCases.contains(logger.logLevel),
+                "Logger should have valid log level for category \(category)"
+            )
         }
     }
 
@@ -328,15 +331,15 @@ struct DiagnosticsTests {
             let logger = Logger(category: .general)
             // Note: Our custom LogLevel enum is separate from the Logger's internal levels
             // This test verifies LogLevel enum functionality and OSLog mapping
-            
+
             // Test LogLevel properties
             #expect(filterLevel.displayName.count > 0)
             #expect(filterLevel.emoji.count > 0)
-            
+
             // Test OSLog type mapping
             let osLogType = filterLevel.osLogType
             #expect(osLogType != nil)
-            
+
             // Test that levels are comparable
             if filterLevel != .debug {
                 #expect(filterLevel > .debug || filterLevel < .fault)
@@ -397,4 +400,3 @@ struct DiagnosticsTests {
         "Very long message that contains multiple sentences and might test the logging system's ability to handle longer content without issues or truncation problems.",
     ]
 }
-

@@ -97,7 +97,7 @@ struct LoginItemManagerTests {
                 // This would be called on status changes
                 _ = newStatus
             }
-            
+
             // Cancel observation to clean up
             observation.cancel()
         }

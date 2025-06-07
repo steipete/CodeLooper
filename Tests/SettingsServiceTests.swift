@@ -318,4 +318,3 @@ struct SettingsServiceTests {
         #expect(Defaults[.notificationSoundName] == "Default")
     }
 }
-

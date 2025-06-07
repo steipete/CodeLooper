@@ -17,7 +17,10 @@ struct RuleExecutionTests {
 
     @Test("Rule execution") @MainActor func ruleExecution() async throws {
         // Save current defaults
-        let (originalMonitoring, originalRecovery) = (Defaults[.isGlobalMonitoringEnabled], Defaults[.enableCursorForceStoppedRecovery])
+        let (originalMonitoring, originalRecovery) = (
+            Defaults[.isGlobalMonitoringEnabled],
+            Defaults[.enableCursorForceStoppedRecovery]
+        )
 
         // Enable rules
         Defaults[.isGlobalMonitoringEnabled] = true
@@ -70,7 +73,10 @@ struct RuleExecutionTests {
 
     @Test("Rule execution with defaults") @MainActor func ruleExecutionWithDefaults() async throws {
         // Save current defaults
-        let (originalMonitoring, originalRecovery) = (Defaults[.isGlobalMonitoringEnabled], Defaults[.enableCursorForceStoppedRecovery])
+        let (originalMonitoring, originalRecovery) = (
+            Defaults[.isGlobalMonitoringEnabled],
+            Defaults[.enableCursorForceStoppedRecovery]
+        )
 
         defer {
             // Restore defaults
@@ -256,7 +262,10 @@ struct RuleExecutionTests {
 
     @Test("Rule system integration") @MainActor func ruleSystemIntegration() async throws {
         // Save current defaults
-        let (originalMonitoring, originalRecovery) = (Defaults[.isGlobalMonitoringEnabled], Defaults[.enableCursorForceStoppedRecovery])
+        let (originalMonitoring, originalRecovery) = (
+            Defaults[.isGlobalMonitoringEnabled],
+            Defaults[.enableCursorForceStoppedRecovery]
+        )
 
         defer {
             // Restore defaults
@@ -315,7 +324,7 @@ struct RuleExecutionTests {
             func markReceived() {
                 received = true
             }
-            
+
             func getReceived() -> Bool {
                 received
             }

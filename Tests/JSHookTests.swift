@@ -16,8 +16,7 @@ struct JSHookTests {
             // If script file doesn't exist in test environment, that's expected
             #expect(error is CursorJSHookError)
             if case CursorJSHookError.scriptNotFound = error {
-                // This is expected in test environment
-                #expect(true)
+                // This is expected in test environment - script file missing is handled properly
             }
         }
     }

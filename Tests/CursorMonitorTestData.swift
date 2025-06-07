@@ -1,7 +1,8 @@
-import Foundation
 @testable import CodeLooper
+import Foundation
 
 // MARK: - Test Data
+
 // Separate enum to hold test data to avoid Swift Testing macro expansion issues
 
 enum CursorMonitorTestData {
@@ -10,27 +11,33 @@ enum CursorMonitorTestData {
         (54321, "Cursor Preview", .idle),
         (98765, "Development Cursor", .positiveWork),
         (11111, "Production Cursor", .active),
-        (22222, "Debug Cursor", .notRunning)
+        (22222, "Debug Cursor", .notRunning),
     ]
-    
+
     static let performanceTestSizes: [Int] = [1, 10, 50, 100, 500]
-    
+
     static let windowCountMatrix: [(appCount: Int, windowsPerApp: Int)] = [
         (1, 1),
         (5, 3),
         (10, 5),
-        (20, 10)
+        (20, 10),
     ]
-    
+
     static let testAppIds: [Int] = [12345, 54321, 98765, 11111, 22222]
-    
-    static let testDisplayNames: [String] = ["Test Cursor", "Cursor Preview", "Development Cursor", "Production Cursor", "Debug Cursor"]
+
+    static let testDisplayNames: [String] = [
+        "Test Cursor",
+        "Cursor Preview",
+        "Development Cursor",
+        "Production Cursor",
+        "Debug Cursor",
+    ]
 }
 
 // Test data for other test files
 enum AccessibilityTestData {
     static let permissionTypes = ["accessibility", "automation", "screen_recording", "notifications"]
-    
+
     static let settingsURLs = [
         "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility",
         "x-apple.systempreferences:com.apple.preference.security?Privacy_Automation",

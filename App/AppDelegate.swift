@@ -68,30 +68,31 @@ public final class AppDelegate: NSObject, NSApplicationDelegate, ObservableObjec
 
         // Single instance check - skip for Xcode previews, tests, and DEBUG builds
         #if !DEBUG
-        if !isXcodePreview && !Constants.isTestEnvironment {
-            singleInstanceLock = SingleInstanceLock(identifier: "me.steipete.codelooper.instance")
+            if !isXcodePreview, !Constants.isTestEnvironment {
+                singleInstanceLock = SingleInstanceLock(identifier: "me.steipete.codelooper.instance")
 
-            // Check single instance asynchronously
-            Task { @MainActor [weak self] in
-                guard let self else { return }
+                // Check single instance asynchronously
+                Task { @MainActor [weak self] in
+                    guard let self else { return }
 
-                // Give the SingleInstanceLock time to check (reduced from 0.6 to 0.2 seconds)
-                try? await Task.sleep(for: .milliseconds(200))
+                    // Give the SingleInstanceLock time to check (reduced from 0.6 to 0.2 seconds)
+                    try? await Task.sleep(for: .milliseconds(200))
 
-                guard let singleInstanceLock = self.singleInstanceLock else { return }
+                    guard let singleInstanceLock = self.singleInstanceLock else { return }
 
-                if !singleInstanceLock.isPrimaryInstance {
-                    self.logger.warning("Another instance of CodeLooper is already running. Terminating this instance.")
-                    // Bring the other instance to the front and show settings
-                    singleInstanceLock.activateExistingInstance()
-                    NSApp.terminate(nil)
+                    if !singleInstanceLock.isPrimaryInstance {
+                        self.logger
+                            .warning("Another instance of CodeLooper is already running. Terminating this instance.")
+                        // Bring the other instance to the front and show settings
+                        singleInstanceLock.activateExistingInstance()
+                        NSApp.terminate(nil)
+                    }
                 }
+            } else {
+                logger.info("Running in Xcode preview mode or test environment - skipping single instance check")
             }
-        } else {
-            logger.info("Running in Xcode preview mode or test environment - skipping single instance check")
-        }
         #else
-        logger.info("DEBUG build: Single instance check is disabled")
+            logger.info("DEBUG build: Single instance check is disabled")
         #endif
 
         // Initialize core services FIRST
@@ -370,7 +371,7 @@ public final class AppDelegate: NSObject, NSApplicationDelegate, ObservableObjec
 
         let highlightMenuBarObserver = setupHighlightMenuBarObserver()
         notificationObservers.append(highlightMenuBarObserver)
-        
+
         // Observer for showing settings when another instance is launched
         if !Constants.isTestEnvironment {
             DistributedNotificationCenter.default().addObserver(
@@ -413,7 +414,7 @@ public final class AppDelegate: NSObject, NSApplicationDelegate, ObservableObjec
             }
         }
     }
-    
+
     @objc private func handleShowSettingsNotification() {
         Task { @MainActor in
             logger.info("Received request to show settings from another instance")
@@ -426,13 +427,13 @@ public final class AppDelegate: NSObject, NSApplicationDelegate, ObservableObjec
 
     private func setupSupervision() {
         logger.info("Setting up supervision")
-        
+
         // Setup supervision using the coordinator
         supervisionCoordinator?.setupSupervision()
-        
+
         // Start supervision if enabled - this is the key fix!
         supervisionCoordinator?.startSupervisionIfEnabled()
-        
+
         // Observe changes to the global monitoring setting
         Defaults.observe(.isGlobalMonitoringEnabled) { [weak self] change in
             self?.logger.info("Global monitoring preference changed to: \(change.newValue)")

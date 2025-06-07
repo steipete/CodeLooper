@@ -1,10 +1,10 @@
-import SwiftUI
 import DesignSystem
 import Diagnostics
+import SwiftUI
 
 struct ClaudeInstancesList: View {
-    @ObservedObject private var claudeMonitor = ClaudeMonitorService.shared
-    
+    // MARK: Internal
+
     var body: some View {
         VStack(alignment: .leading, spacing: Spacing.small) {
             // Header
@@ -12,12 +12,12 @@ struct ClaudeInstancesList: View {
                 Image(systemName: "terminal.fill")
                     .font(.caption)
                     .foregroundColor(ColorPalette.textSecondary)
-                
+
                 Text("Claude Instances (\(claudeMonitor.instances.count))")
                     .font(Typography.caption1(.semibold))
                     .foregroundColor(ColorPalette.text)
             }
-            
+
             if claudeMonitor.instances.isEmpty {
                 Text("No Claude instances detected")
                     .font(Typography.caption1())
@@ -30,14 +30,17 @@ struct ClaudeInstancesList: View {
             }
         }
     }
+
+    // MARK: Private
+
+    @ObservedObject private var claudeMonitor = ClaudeMonitorService.shared
 }
 
 private struct ClaudeInstanceRow: View {
+    // MARK: Internal
+
     let instance: ClaudeInstance
-    @State private var isHovering = false
-    
-    private static let logger = Logger(category: .ui)
-    
+
     var body: some View {
         DSCard {
             HStack(spacing: Spacing.small) {
@@ -45,20 +48,20 @@ private struct ClaudeInstanceRow: View {
                 Image(systemName: "terminal")
                     .foregroundColor(ColorPalette.loopTint)
                     .font(.system(size: 14))
-                
+
                 VStack(alignment: .leading, spacing: 2) {
                     // Folder name
                     Text(instance.folderName)
                         .font(Typography.body(.medium))
                         .foregroundColor(ColorPalette.text)
                         .lineLimit(1)
-                    
+
                     // Working directory path
                     HStack(spacing: Spacing.xxSmall) {
                         Image(systemName: "folder")
                             .font(.caption2)
                             .foregroundColor(isHovering ? ColorPalette.accent : ColorPalette.textSecondary)
-                        
+
                         Text(instance.workingDirectory)
                             .font(Typography.caption2())
                             .foregroundColor(isHovering ? ColorPalette.accent : ColorPalette.textSecondary)
@@ -66,7 +69,7 @@ private struct ClaudeInstanceRow: View {
                             .lineLimit(1)
                             .truncationMode(.middle)
                     }
-                    
+
                     // Status if available
                     if let status = instance.status {
                         Text(status)
@@ -74,23 +77,23 @@ private struct ClaudeInstanceRow: View {
                             .foregroundColor(ColorPalette.textTertiary)
                             .lineLimit(1)
                     }
-                    
+
                     // Current activity - always show since we now default to "idle"
                     if let activity = instance.currentActivity {
                         VStack(alignment: .leading, spacing: 2) {
                             HStack(spacing: Spacing.xxSmall) {
                                 let statusIcon = activity == "idle" ? "zzz" : "dot.radiowaves.left.and.right"
                                 let statusColor = activity == "idle" ? ColorPalette.textTertiary : ColorPalette.accent
-                                
+
                                 Image(systemName: statusIcon)
                                     .font(.caption2)
                                     .foregroundColor(statusColor)
-                                
+
                                 Text("Current Status:")
                                     .font(Typography.caption2(.semibold))
                                     .foregroundColor(ColorPalette.textSecondary)
                             }
-                            
+
                             Text(activity)
                                 .font(Typography.caption1(.medium))
                                 .foregroundColor(activity == "idle" ? ColorPalette.textTertiary : ColorPalette.accent)
@@ -101,9 +104,9 @@ private struct ClaudeInstanceRow: View {
                         .padding(.top, 2)
                     }
                 }
-                
+
                 Spacer()
-                
+
                 // PID
                 Text("PID: \(instance.pid)")
                     .font(Typography.caption2())
@@ -126,4 +129,10 @@ private struct ClaudeInstanceRow: View {
             NSWorkspace.shared.selectFile(nil, inFileViewerRootedAtPath: instance.workingDirectory)
         }
     }
+
+    // MARK: Private
+
+    private static let logger = Logger(category: .ui)
+
+    @State private var isHovering = false
 }

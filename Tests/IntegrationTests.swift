@@ -1,8 +1,8 @@
 import AppKit
 import AXorcist
 @testable import CodeLooper
-@testable import Diagnostics
 import Defaults
+@testable import Diagnostics
 import Foundation
 import Testing
 
@@ -89,7 +89,7 @@ struct IntegrationTests {
     // MARK: - Cursor Detection and Monitoring Tests
 
     @Test("Cursor detection and monitoring") @MainActor func cursorDetectionAndMonitoring() async throws {
-        let _ = AppServiceCoordinator()
+        _ = AppServiceCoordinator()
         let monitor = await CursorMonitor.shared
 
         // Test app detection without actual Cursor running

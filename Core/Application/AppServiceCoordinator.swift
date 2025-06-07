@@ -108,7 +108,7 @@ final class AppServiceCoordinator {
 
         // CursorMonitor is a singleton and initializes itself
         _ = CursorMonitor.shared
-        
+
         // ClaudeMonitorService is a singleton and initializes itself
         _ = ClaudeMonitorService.shared
 

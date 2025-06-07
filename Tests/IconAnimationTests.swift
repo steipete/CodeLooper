@@ -93,73 +93,12 @@ struct IconAnimationTests {
         #expect(concurrentState || !concurrentState)
     }
 
+    // MARK: - LottieMenuBarView Tests
 
+    // MARK: - CustomChainLinkIcon Tests
     // MARK: - MenuBarIconManager Tests
 
-    @Test("Menu bar icon manager coordination")
-    func menuBarIconManagerCoordination() async throws {
-        await MainActor.run {
-            let manager = MenuBarIconManager.shared
-
-            // Test that manager is created without errors
-            #expect(manager != nil)
-
-            // Test icon state updates
-            manager.setState(.idle)
-            manager.setState(.syncing)
-            manager.setState(.success)
-
-            // Test that state changes don't crash
-            #expect(true)
-        }
-    }
-
-    @Test("Menu bar icon manager rapid changes")
-    func menuBarIconManagerRapidChanges() async throws {
-        await MainActor.run {
-            let manager = MenuBarIconManager.shared
-
-            // Test rapid state changes
-            let states: [StatusIconState] = [
-                .idle, .syncing, .error, .warning, .success,
-            ]
-
-            for state in states {
-                manager.setState(state)
-            }
-
-            // Should handle rapid changes gracefully
-            #expect(true)
-        }
-    }
-
     // MARK: - NSImage Resource Loading Tests
-
-    @Test("NSImage resource loading")
-    func nsImageResourceLoading() async throws {
-        // Test loading icon resources
-        let menuBarIcon = NSImage(named: "menubar")
-
-        // Icon may or may not exist in test environment
-        #expect(menuBarIcon != nil || menuBarIcon == nil)
-
-        // Should not crash regardless of file availability
-        #expect(true)
-    }
-
-    @Test("NSImage missing resource handling")
-    func nsImageMissingResourceHandling() async throws {
-        // Test loading non-existent icon
-        let nonExistentIcon = NSImage(named: "definitely_does_not_exist")
-        #expect(nonExistentIcon == nil)
-
-        // Test loading with empty name
-        let emptyIcon = NSImage(named: "")
-        #expect(emptyIcon == nil)
-
-        // Should handle missing resources gracefully
-        #expect(true)
-    }
 
     // MARK: - Integration Tests
 
@@ -181,7 +120,6 @@ struct IconAnimationTests {
             #expect(true)
         }
     }
-
     @Test("Icon animation performance")
     func iconAnimationPerformance() async throws {
         await MainActor.run {

@@ -126,7 +126,9 @@ struct GitTrackingTests {
         }
     }
 
-    @Test("Git repository sendable compliance", .timeLimit(.minutes(1))) func gitRepositorySendableCompliance() async throws {
+    @Test("Git repository sendable compliance",
+          .timeLimit(.minutes(1))) func gitRepositorySendableCompliance() async throws
+    {
         // Test that GitRepository can be used across concurrency boundaries
         let repo = GitRepository(
             path: "/test",
@@ -163,7 +165,9 @@ struct GitTrackingTests {
         }
     }
 
-    @Test("Git repository memory and performance", .timeLimit(.minutes(1))) func gitRepositoryMemoryAndPerformance() async throws {
+    @Test("Git repository memory and performance",
+          .timeLimit(.minutes(1))) func gitRepositoryMemoryAndPerformance() async throws
+    {
         // Test creating many repository objects
         var repositories: [GitRepository] = []
 

@@ -50,13 +50,13 @@ class AXpectorViewModel: ObservableObject {
     deinit {
         Task { @MainActor [weak self] in
             guard let self else { return }
-            
+
             // Clean up timers and tasks
             self.permissionCheckTimer?.invalidate()
             self.permissionCheckTimer = nil
             self.permissionTask?.cancel()
             self.permissionTask = nil
-            
+
             // Remove app observers
             if let observer = self.appLaunchObserver {
                 NotificationCenter.default.removeObserver(observer)
@@ -64,10 +64,10 @@ class AXpectorViewModel: ObservableObject {
             if let observer = self.appTerminateObserver {
                 NotificationCenter.default.removeObserver(observer)
             }
-            
+
             self.windowRefreshTimer?.invalidate()
             self.windowRefreshTimer = nil
-            
+
             self.stopHoverMonitoring()
             self.stopFocusTrackingMonitoring()
         }

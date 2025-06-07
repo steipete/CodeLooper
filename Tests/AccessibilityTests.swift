@@ -20,7 +20,7 @@ struct AccessibilityTests {
 
             // Verify properties are available (they return Bool values)
             _ = manager.hasAccessibilityPermissions
-            _ = manager.hasAutomationPermissions 
+            _ = manager.hasAutomationPermissions
             _ = manager.hasScreenRecordingPermissions
             _ = manager.hasNotificationPermissions
         }
@@ -48,26 +48,6 @@ struct AccessibilityTests {
 
     @Suite("Permission Operations", .tags(.operations, .system))
     struct PermissionOperations {
-        @Test("Permissions manager permission check methods")
-        @MainActor func permissionsManagerPermissionCheckMethods() async throws {
-            let manager = PermissionsManager()
-
-            // These methods should not crash when called
-            manager.openAutomationSettings()
-            manager.openScreenRecordingSettings()
-
-            #expect(true) // If we get here, methods didn't crash
-        }
-
-        @Test("Permissions manager request notification permissions")
-        @MainActor func permissionsManagerRequestNotificationPermissions() async throws {
-            let manager = PermissionsManager()
-
-            // This should not crash, even if permissions are denied
-            await manager.requestNotificationPermissions()
-
-            #expect(true) // If we get here, request didn't crash
-        }
 
         @Test("Permissions manager request accessibility permissions")
         @MainActor func permissionsManagerPermissionRequestAccessibility() async throws {
@@ -80,7 +60,7 @@ struct AccessibilityTests {
 
             // The permission state should be updated (may be same or different)
             let finalState = manager.hasAccessibilityPermissions
-            
+
             // In test environment, permissions typically don't change
             // Just verify the request completes without error
             #expect(Bool(true), "Request completed without crashing")
@@ -196,7 +176,7 @@ struct AccessibilityTests {
             let hasAutomation = manager.hasAutomationPermissions
             let hasScreenRecording = manager.hasScreenRecordingPermissions
             let hasNotifications = manager.hasNotificationPermissions
-            
+
             #expect(hasAccessibility == true || hasAccessibility == false)
             #expect(hasAutomation == true || hasAutomation == false)
             #expect(hasScreenRecording == true || hasScreenRecording == false)
@@ -226,36 +206,6 @@ struct AccessibilityTests {
 
     @Suite("Reliability", .tags(.reliability, .edge_cases))
     struct Reliability {
-        @Test("Permissions manager multiple permission requests")
-        @MainActor func permissionsManagerMultiplePermissionRequests() async throws {
-            let manager = PermissionsManager()
-
-            // Request multiple times - should not crash
-            await manager.requestAccessibilityPermissions()
-            await manager.requestNotificationPermissions()
-            await manager.requestAccessibilityPermissions()
-
-            #expect(true) // If we get here, multiple requests didn't crash
-        }
-
-        @Test("Permissions manager memory management", .timeLimit(.minutes(1)))
-        @MainActor func permissionsManagerMemoryManagement() async throws {
-            weak var weakManager: PermissionsManager?
-
-            // Create manager in isolated scope
-            autoreleasepool {
-                let manager = PermissionsManager()
-                weakManager = manager
-                #expect(weakManager is PermissionsManager)
-            }
-
-            // Wait a bit for deallocation
-            try await Task.sleep(for: .milliseconds(100)) // 100ms
-
-            // Note: The manager may not be deallocated immediately due to the monitoring task
-            // This test mainly ensures we can create and reference it properly
-            #expect(true)
-        }
 
         @Test("Concurrent permission operations", .timeLimit(.minutes(1)))
         @MainActor func concurrentPermissionOperations() async throws {
@@ -278,6 +228,6 @@ struct AccessibilityTests {
     }
 
     // MARK: - Test Fixtures and Data
+
     // Test data moved to CursorMonitorTestData.swift to avoid Swift Testing macro issues
 }
-

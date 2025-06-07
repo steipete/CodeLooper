@@ -72,10 +72,10 @@ class MenuBarIconManager: ObservableObject {
     func setState(_ state: StatusIconState) {
         currentState = state
         currentTooltip = state.tooltipText
-        
+
         // Skip icon updates in test environment
         guard !Constants.isTestEnvironment else { return }
-        
+
         updateIconAttributedString(for: state)
 
         // Animation logic can be re-evaluated if needed for SwiftUI
