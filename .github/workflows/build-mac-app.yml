@@ -361,28 +361,19 @@ EOF
           
           echo "Running AXorcist tests (XCTest-based)..."
           cd AXorcist
-          if swift test --enable-code-coverage 2>&1 | tee ../test-results/axorcist-output.log; then
-            echo "✅ AXorcist tests completed"
-          else
-            echo "::warning::AXorcist tests failed - see log output above"
-            echo "Note: AXorcist uses XCTest framework which may have integration test dependencies"
-          fi
+          swift test --enable-code-coverage > ../test-results/axorcist-output.log 2>&1 || echo "::warning::AXorcist tests failed - these use XCTest framework which may have integration dependencies"
           cd ..
           
           echo "Running DesignSystem tests..."
           cd DesignSystem
-          if swift test --enable-code-coverage --verbose 2>&1 | tee ../test-results/designsystem-output.log; then
-            echo "✅ DesignSystem tests completed"
-          else
-            echo "::warning::DesignSystem tests failed - see log output above"
-          fi
+          swift test --enable-code-coverage --verbose > ../test-results/designsystem-output.log 2>&1 || echo "::warning::DesignSystem tests failed"
           cd ..
           
-          echo "::endgroup::"
           echo "::endgroup::"
           
           # Summary
           echo "Test execution completed. Main tests exit code: $MAIN_TEST_EXIT_CODE"
+          echo "::endgroup::"
 
       - name: Build, Sign, and Optionally Notarize macOS App
         id: build_sign_notarize_step
