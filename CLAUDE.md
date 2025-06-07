@@ -10,6 +10,10 @@ CodeLooper is a macOS menubar application that monitors Cursor IDE instances and
 - It supports macOS 15+.
 - Refactor properly, do not care about backwards compatibility.
 
+- To view log entries from the process as it runs, use: 
+  `/usr/bin/log show --process CodeLooper --style compact --last 5m | tail -n 50`
+  (5m means 5 minutes, tail -n 50 means last 50 entries)
+
 ## Essential Commands
 
 ### Building and Running

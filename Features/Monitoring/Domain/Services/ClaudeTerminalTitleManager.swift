@@ -50,6 +50,7 @@ final class ClaudeTerminalTitleManager: Loggable {
         
         return [
             Configuration.titlePrefix,
+            " ",
             instance.folderName,
             Configuration.titleSeparator,
             statusText
