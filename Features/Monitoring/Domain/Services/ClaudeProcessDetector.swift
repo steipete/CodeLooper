@@ -206,13 +206,36 @@ final class ClaudeProcessDetector: Loggable, @unchecked Sendable {
     private func isClaudeProcess(arguments: String) -> Bool {
         let lowercasedArgs = arguments.lowercased()
         
-        // If the first argument (command) ends with "claude", it's definitely Claude
-        let components = arguments.split(separator: "\0", maxSplits: 2, omittingEmptySubsequences: false)
-        if let firstArg = components.first {
-            let command = String(firstArg).trimmingCharacters(in: .whitespaces)
-            if command.hasSuffix("claude") || command.hasSuffix("/claude") {
-                logger.debug("Found Claude via command name: \(command)")
+        // Parse the KERN_PROCARGS2 format
+        // Format: [4 bytes argc][executable path\0][padding\0s][arg0\0][arg1\0]...
+        let components = arguments.split(separator: "\0", omittingEmptySubsequences: false)
+        
+        // Skip the first component (contains argc bytes) and look for the actual arguments
+        for (index, component) in components.enumerated() {
+            let componentStr = String(component).trimmingCharacters(in: .whitespaces)
+            
+            // Skip empty components and the executable path
+            if componentStr.isEmpty || index == 0 { continue }
+            
+            // Check if this component is "claude" or ends with "/claude"
+            if componentStr == "claude" || componentStr.hasSuffix("/claude") {
+                logger.debug("Found Claude via argument: \(componentStr)")
                 return true
+            }
+            
+            // Also check the executable path itself
+            if componentStr.contains("/bin/node") && index + 1 < components.count {
+                // Check the next non-empty component after node
+                for nextIndex in (index + 1)..<components.count {
+                    let nextComponent = String(components[nextIndex]).trimmingCharacters(in: .whitespaces)
+                    if !nextComponent.isEmpty {
+                        if nextComponent == "claude" || nextComponent.hasSuffix("/claude") {
+                            logger.debug("Found Claude as node argument: \(nextComponent)")
+                            return true
+                        }
+                        break // Only check the first non-empty argument after node
+                    }
+                }
             }
         }
         
