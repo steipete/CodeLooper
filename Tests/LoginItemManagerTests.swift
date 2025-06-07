@@ -14,12 +14,12 @@ struct LoginItemManagerTests {
         let initialState = await manager.startsAtLogin()
 
         // Test that we can read the state (true or false, both are valid)
-        #expect(!initialState == true || initialState)
+        // initialState is a Bool - no need to validate it's a boolean
 
         // Test enabling (this is a test, so we won't actually change system settings)
         // Instead, we test that the method doesn't crash
         let result = await manager.setStartAtLogin(enabled: true)
-        #expect(!result == true || result) // Should return a boolean result
+        // Result is a Bool - just verify it executed without throwing
     }
 
     @Test("Disable login item")
@@ -29,7 +29,7 @@ struct LoginItemManagerTests {
         // Test disabling (this is a test, so we won't actually change system settings)
         // Instead, we test that the method doesn't crash
         let result = await manager.setStartAtLogin(enabled: false)
-        #expect(!result == true || result) // Should return a boolean result
+        // Result is a Bool - just verify it executed without throwing
     }
 
     @Test("Login item status")
@@ -39,15 +39,14 @@ struct LoginItemManagerTests {
         // Test that status can be checked without errors
         let status = await manager.startsAtLogin()
 
-        // Status should be either true or false
-        #expect(!status == true || status)
+        // Status is a Bool - verify it executed without throwing
+        // No need to test if Bool is true or false
 
         // Test multiple status checks don't crash
         let status2 = await manager.startsAtLogin()
         let status3 = await manager.startsAtLogin()
 
-        #expect(!status2 == true || status2)
-        #expect(!status3 == true || status3)
+        // All statuses are Bool values - execution without throwing is sufficient
     }
 
     @Test("Login item state changes")
@@ -80,8 +79,7 @@ struct LoginItemManagerTests {
         let manager = await LoginItemManager.shared
         let initialStatus = await manager.startsAtLogin()
 
-        // Status should be either true or false
-        #expect(!initialStatus == true || initialStatus)
+        // Status is a Bool - no need to validate it's a boolean
 
         // Test that we can observe changes
         await MainActor.run {
@@ -107,10 +105,8 @@ struct LoginItemManagerTests {
 
         let results = await [status1, status2, status3]
 
-        // All results should be valid boolean values
-        for result in results {
-            #expect(!result == true || result)
-        }
+        // All results are Bool values - no need to validate they are booleans
+        #expect(results.count == 3)
     }
 
     @Test("Toggle login item")
@@ -123,8 +119,8 @@ struct LoginItemManagerTests {
         // Test toggle functionality
         let newState = await manager.toggleStartAtLogin()
 
-        // New state should be opposite of initial (or same if system restrictions prevent change)
-        #expect(!newState == true || newState)
+        // New state is a Bool - in a test environment, it might not actually toggle due to system restrictions
+        // Just verify the method executed without throwing
 
         // Restore original state
         await manager.setStartAtLogin(enabled: initialState)
