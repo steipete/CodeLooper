@@ -200,37 +200,33 @@ struct StatusBarTests {
         // Test that attributed strings are created for different states
         manager.setState(.idle)
         let idleString = manager.currentIconAttributedString
-        // AttributedString is non-optional, always has a value
+        #expect(!idleString.characters.isEmpty, "Idle state should produce non-empty attributed string")
 
         manager.setState(.error)
         let errorString = manager.currentIconAttributedString
-        // AttributedString is non-optional, always has a value
+        #expect(!errorString.characters.isEmpty, "Error state should produce non-empty attributed string")
 
         manager.setState(.aiStatus(working: 2, notWorking: 1, unknown: 0))
         let aiString = manager.currentIconAttributedString
-        // AttributedString is non-optional, always has a value
+        #expect(!aiString.characters.isEmpty, "AI status state should produce non-empty attributed string")
     }
 
-    @Test("Menu bar icon manager concurrent state changes") @MainActor func menuBarIconManagerConcurrentStateChanges() async throws {
+    @Test("Menu bar icon manager rapid state changes") @MainActor func menuBarIconManagerRapidStateChanges() async throws {
         let manager = MenuBarIconManager()
 
-        // Test concurrent state changes
-        await withTaskGroup(of: Void.self) { group in
-            let states: [StatusIconState] = [
-                .idle, .syncing, .error, .warning, .success,
-                .authenticated, .unauthenticated, .paused,
-            ]
+        // Test rapid sequential state changes (MainActor operations must be sequential)
+        let states: [StatusIconState] = [
+            .idle, .syncing, .error, .warning, .success,
+            .authenticated, .unauthenticated, .paused,
+        ]
 
-            for state in states {
-                group.addTask { @MainActor in
-                    manager.setState(state)
-                    // Brief delay to allow state processing
-                    try? await Task.sleep(for: .milliseconds(1)) // 1ms
-                }
-            }
+        for state in states {
+            manager.setState(state)
+            // Brief delay to allow state processing
+            try? await Task.sleep(for: .milliseconds(1))
         }
 
-        // After all concurrent operations, manager should still be in a valid state
+        // After all operations, manager should still be in a valid state
         let finalTooltip = manager.currentTooltip
         #expect(finalTooltip.contains("CodeLooper"))
     }

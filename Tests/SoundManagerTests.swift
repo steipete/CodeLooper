@@ -11,9 +11,21 @@ struct SoundManagerTests {
         let userAlert = SystemSound.userAlert
         let namedSound = SystemSound.named("Boop.aiff")
 
-        // Verify cases can be created
-        // userAlert is non-optional
-        // namedSound is non-optional
+        // Verify cases can be created - SystemSound is an enum, so these will always be valid
+        // Test that userAlert case matches expected pattern
+        switch userAlert {
+        case .userAlert:
+            #expect(true, "userAlert case created successfully")
+        case .named:
+            Issue.record("Expected userAlert case, got named case")
+        }
+        
+        // Named sounds should match their input
+        if case let .named(fileName) = namedSound {
+            #expect(fileName == "Boop.aiff")
+        } else {
+            Issue.record("Expected named sound case")
+        }
     }
 
     @Test("System sound named sound creation")
@@ -23,10 +35,16 @@ struct SoundManagerTests {
         let glassSound = SystemSound.named("Glass.aiff")
         let funkSound = SystemSound.named("Funk.aiff")
 
-        // These should all be valid
-        // boopSound is non-optional
-        // glassSound is non-optional
-        // funkSound is non-optional
+        // Verify named sounds contain the correct file names
+        if case let .named(fileName) = boopSound {
+            #expect(fileName == "Boop.aiff")
+        }
+        if case let .named(fileName) = glassSound {
+            #expect(fileName == "Glass.aiff")
+        }
+        if case let .named(fileName) = funkSound {
+            #expect(fileName == "Funk.aiff")
+        }
     }
 
     @Test("System sound named sound with empty string")
@@ -34,8 +52,12 @@ struct SoundManagerTests {
         // Test creating a named sound with empty string
         let emptySound = SystemSound.named("")
 
-        // Should still create the enum case
-        // emptySound is non-optional
+        // Should still create the enum case with empty string
+        if case let .named(fileName) = emptySound {
+            #expect(fileName == "")
+        } else {
+            Issue.record("Expected named sound case with empty string")
+        }
     }
 
     @Test("System sound named sound with special characters")
@@ -45,9 +67,16 @@ struct SoundManagerTests {
         let soundWithNumbers = SystemSound.named("Sound123.aiff")
         let soundWithSymbols = SystemSound.named("Sound-_().aiff")
 
-        // soundWithSpaces is non-optional
-        // soundWithNumbers is non-optional
-        // soundWithSymbols is non-optional
+        // Verify named sounds preserve special characters
+        if case let .named(fileName) = soundWithSpaces {
+            #expect(fileName == "Sound With Spaces.aiff")
+        }
+        if case let .named(fileName) = soundWithNumbers {
+            #expect(fileName == "Sound123.aiff")
+        }
+        if case let .named(fileName) = soundWithSymbols {
+            #expect(fileName == "Sound-_().aiff")
+        }
     }
 
     @Test("Sound engine play user alert sound")
@@ -56,7 +85,7 @@ struct SoundManagerTests {
         // Note: This may not produce audible sound in tests but should not crash
         SoundEngine.play(.userAlert)
 
-        #expect(true) // If we get here, the call didn't crash
+        #expect(Bool(true)) // If we get here, the call didn't crash
     }
 
     @Test("Sound engine play named sound")
@@ -66,7 +95,7 @@ struct SoundManagerTests {
         SoundEngine.play(.named("Glass.aiff"))
         SoundEngine.play(.named("Funk.aiff"))
 
-        #expect(true) // If we get here, the calls didn't crash
+        #expect(Bool(true)) // If we get here, the calls didn't crash
     }
 
     @Test("Sound engine play invalid named sound")
@@ -76,7 +105,7 @@ struct SoundManagerTests {
         SoundEngine.play(.named(""))
         SoundEngine.play(.named("invalid"))
 
-        #expect(true) // If we get here, the calls didn't crash
+        #expect(Bool(true)) // If we get here, the calls didn't crash
     }
 
     @Test("Sound engine multiple sound playback")
@@ -87,7 +116,7 @@ struct SoundManagerTests {
         SoundEngine.play(.userAlert)
         SoundEngine.play(.named("Glass.aiff"))
 
-        #expect(true) // If we get here, multiple playback didn't crash
+        #expect(Bool(true)) // If we get here, multiple playback didn't crash
     }
 
     @Test("Sound engine rapid sound playback")
@@ -97,7 +126,7 @@ struct SoundManagerTests {
             SoundEngine.play(.named("Boop.aiff"))
         }
 
-        #expect(true) // If we get here, rapid playback didn't crash
+        #expect(Bool(true)) // If we get here, rapid playback didn't crash
     }
 
     @Test("Sound engine concurrent playback")
@@ -111,7 +140,7 @@ struct SoundManagerTests {
             }
         }
 
-        #expect(true) // If we get here, concurrent playback didn't crash
+        #expect(Bool(true)) // If we get here, concurrent playback didn't crash
     }
 
     @Test("Sound engine performance")
@@ -151,7 +180,7 @@ struct SoundManagerTests {
             SoundEngine.play(.named(soundName))
         }
 
-        #expect(true) // If we get here, all sounds were handled without crash
+        #expect(Bool(true)) // If we get here, all sounds were handled without crash
     }
 
     @Test("Sound engine file extensions")
@@ -163,7 +192,7 @@ struct SoundManagerTests {
         SoundEngine.play(.named("Sound.m4a"))
         SoundEngine.play(.named("Sound"))
 
-        #expect(true) // If we get here, different extensions didn't crash
+        #expect(Bool(true)) // If we get here, different extensions didn't crash
     }
 
     @Test("Sound engine memory usage")

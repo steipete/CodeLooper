@@ -1,5 +1,6 @@
 import AppKit
 @testable import CodeLooper
+@testable import Diagnostics
 import Foundation
 import Testing
 

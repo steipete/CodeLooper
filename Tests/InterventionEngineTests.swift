@@ -302,11 +302,11 @@ struct InterventionEngineTests {
                 
                 switch (fromCategory, toCategory) {
                 case (.error, .recovery):
-                    #expect(true, "Error to recovery is valid")
+                    #expect(Bool(true), "Error to recovery is valid")
                 case (.recovery, .positive):
-                    #expect(true, "Recovery to positive is valid")
+                    #expect(Bool(true), "Recovery to positive is valid")
                 case (.error, .positive) where transition.from != .unrecoverableError:
-                    #expect(true, "Some errors can transition to positive")
+                    #expect(Bool(true), "Some errors can transition to positive")
                 default:
                     // Other transitions may be valid based on business logic
                     break
@@ -535,7 +535,7 @@ struct InterventionEngineTests {
         @Test("End-to-end intervention flow")
         func endToEndInterventionFlow() async throws {
             // This test would verify actual intervention execution
-            #expect(true)
+            #expect(Bool(true))
         }
     }
 }

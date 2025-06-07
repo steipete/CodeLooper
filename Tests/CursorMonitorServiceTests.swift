@@ -1,5 +1,6 @@
 import AXorcist
 @testable import CodeLooper
+@testable import Diagnostics
 import Combine
 import Foundation
 import Testing
@@ -99,7 +100,7 @@ struct CursorMonitorServiceTests {
         )
         func monitorInitializationStates(testCase: (hasAxorcist: Bool, interventions: Int, apps: Int)) async throws {
             let sessionLogger = await SessionLogger.shared
-            let monitor = try await createTestMonitor(sessionLogger: sessionLogger)
+            let monitor = await createTestMonitor(sessionLogger: sessionLogger)
             
             try await CursorMonitorTestUtilities.validateMonitorState(monitor)
             #expect(await monitor.totalAutomaticInterventionsThisSessionDisplay == testCase.interventions)
@@ -142,7 +143,7 @@ struct CursorMonitorServiceTests {
         @Test("Monitor lifecycle transitions")
         @MainActor func monitorLifecycleTransitions() async throws {
             let sessionLogger = await SessionLogger.shared
-            let monitor = try await createTestMonitor(sessionLogger: sessionLogger)
+            let monitor = await createTestMonitor(sessionLogger: sessionLogger)
             
             try await confirmation("Lifecycle state transitions", expectedCount: 3) { confirm in
                 // Initial state
@@ -165,7 +166,7 @@ struct CursorMonitorServiceTests {
         @Test("Duplicate lifecycle requests are handled gracefully")
         @MainActor func duplicateLifecycleRequests() async throws {
             let sessionLogger = await SessionLogger.shared
-            let monitor = try await createTestMonitor(sessionLogger: sessionLogger)
+            let monitor = await createTestMonitor(sessionLogger: sessionLogger)
 
             // Multiple start requests should not cause issues
             await monitor.startMonitoringLoop()
@@ -184,7 +185,7 @@ struct CursorMonitorServiceTests {
         @Test("Empty apps handling doesn't cause crashes")
         @MainActor func emptyMonitoredAppsHandling() async throws {
             let sessionLogger = await SessionLogger.shared
-            let monitor = try await createTestMonitor(sessionLogger: sessionLogger)
+            let monitor = await createTestMonitor(sessionLogger: sessionLogger)
 
             // Start monitoring with no apps
             await monitor.startMonitoringLoop()
@@ -208,7 +209,7 @@ struct CursorMonitorServiceTests {
         )
         func appManagementMatrix(config: (id: Int, name: String, status: DisplayStatus)) async throws {
             let sessionLogger = await SessionLogger.shared
-            let monitor = try await createTestMonitor(sessionLogger: sessionLogger)
+            let monitor = await createTestMonitor(sessionLogger: sessionLogger)
             
             let appInfo = await CursorMonitorTestUtilities.createTestApp(
                 id: config.id,
@@ -240,7 +241,7 @@ struct CursorMonitorServiceTests {
             testCase: (status: DisplayStatus, shouldMonitor: Bool)
         ) async throws {
             let sessionLogger = await SessionLogger.shared
-            let monitor = try await createTestMonitor(sessionLogger: sessionLogger)
+            let monitor = await createTestMonitor(sessionLogger: sessionLogger)
             
             try await confirmation("Auto monitoring behavior") { @MainActor confirm in
                 // Initial state
@@ -274,7 +275,7 @@ struct CursorMonitorServiceTests {
         @Test("Multiple apps can be monitored simultaneously")
         @MainActor func multipleAppsMonitoring() async throws {
             let sessionLogger = await SessionLogger.shared
-            let monitor = try await createTestMonitor(sessionLogger: sessionLogger)
+            let monitor = await createTestMonitor(sessionLogger: sessionLogger)
 
             var apps: [MonitoredAppInfo] = []
             for (id, name) in zip(CursorMonitorTestData.testAppIds, CursorMonitorTestData.testDisplayNames) {
@@ -310,7 +311,7 @@ struct CursorMonitorServiceTests {
             testCase: (appCount: Int, windowsPerApp: Int)
         ) async throws {
             let sessionLogger = await SessionLogger.shared
-            let monitor = try await createTestMonitor(sessionLogger: sessionLogger)
+            let monitor = await createTestMonitor(sessionLogger: sessionLogger)
             
             var apps: [MonitoredAppInfo] = []
             
@@ -346,7 +347,7 @@ struct CursorMonitorServiceTests {
         @Test("Multiple windows per app are supported", arguments: [1, 3, 5])
         func multipleWindowsPerApp(windowCount: Int) async throws {
             let sessionLogger = await SessionLogger.shared
-            let monitor = try await createTestMonitor(sessionLogger: sessionLogger)
+            let monitor = await createTestMonitor(sessionLogger: sessionLogger)
 
             var windows: [MonitoredWindowInfo] = []
             for i in 0 ..< windowCount {
@@ -398,7 +399,7 @@ struct CursorMonitorServiceTests {
         )
         func interventionTrackingMatrix(testCase: InterventionTestCase) async throws {
             let sessionLogger = await SessionLogger.shared
-            let monitor = try await createTestMonitor(sessionLogger: sessionLogger)
+            let monitor = await createTestMonitor(sessionLogger: sessionLogger)
             
             var apps: [MonitoredAppInfo] = []
             for i in 0..<testCase.appCount {
@@ -434,7 +435,7 @@ struct CursorMonitorServiceTests {
         @Test("Cumulative intervention tracking")
         func cumulativeInterventionTracking() async throws {
             let sessionLogger = await SessionLogger.shared
-            let monitor = try await createTestMonitor(sessionLogger: sessionLogger)
+            let monitor = await createTestMonitor(sessionLogger: sessionLogger)
             
             try await confirmation("Cumulative tracking", expectedCount: 5) { confirm in
                 let initialTotal = await monitor.totalAutomaticInterventionsThisSessionDisplay
@@ -461,7 +462,7 @@ struct CursorMonitorServiceTests {
         )
         func concurrentOperationsMatrix(concurrentTasks: Int) async throws {
             let sessionLogger = await SessionLogger.shared
-            let monitor = try await createTestMonitor(sessionLogger: sessionLogger)
+            let monitor = await createTestMonitor(sessionLogger: sessionLogger)
             
             try await withThrowingTaskGroup(of: Void.self) { group in
                 // Concurrent monitoring cycles
@@ -492,7 +493,7 @@ struct CursorMonitorServiceTests {
         @Test("Concurrent app management is thread-safe")
         func concurrentAppManagement() async throws {
             let sessionLogger = await SessionLogger.shared
-            let monitor = try await createTestMonitor(sessionLogger: sessionLogger)
+            let monitor = await createTestMonitor(sessionLogger: sessionLogger)
 
             await withTaskGroup(of: Void.self) { group in
                 // Multiple tasks modifying monitored apps
@@ -524,7 +525,7 @@ struct CursorMonitorServiceTests {
         )
         func performanceScalingMatrix(appCount: Int) async throws {
             let sessionLogger = await SessionLogger.shared
-            let monitor = try await createTestMonitor(sessionLogger: sessionLogger)
+            let monitor = await createTestMonitor(sessionLogger: sessionLogger)
             
             // Create apps
             var apps: [MonitoredAppInfo] = []
@@ -556,7 +557,7 @@ struct CursorMonitorServiceTests {
         @Test("Large number of apps can be handled efficiently", .timeLimit(.minutes(1)))
         func largeNumberOfAppsPerformance() async throws {
             let sessionLogger = await SessionLogger.shared
-            let monitor = try await createTestMonitor(sessionLogger: sessionLogger)
+            let monitor = await createTestMonitor(sessionLogger: sessionLogger)
 
             // Create many mock apps
             var apps: [MonitoredAppInfo] = []
@@ -589,7 +590,7 @@ struct CursorMonitorServiceTests {
             let monitor = await CursorMonitor.shared
             
             // This test would require actual accessibility permissions
-            #expect(monitor != nil)
+            #expect(await monitor.axorcist != nil, "Monitor should have AXorcist instance")
         }
     }
 }

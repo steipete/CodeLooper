@@ -363,7 +363,7 @@ struct AIAnalysisServiceTests {
             let manager = await AIServiceManager.shared
             
             // This test would require actual API access
-            #expect(manager != nil)
+            #expect(await manager.currentProvider != nil, "Manager should have a current provider")
         }
     }
 }

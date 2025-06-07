@@ -1,4 +1,5 @@
 @testable import CodeLooper
+@testable import Diagnostics
 import Defaults
 import Foundation
 import SwiftUI
@@ -185,10 +186,12 @@ struct UIComponentTests {
 
     // MARK: - Test Helpers
 
+    @MainActor
     func createMockLoginItemManager() -> LoginItemManager {
         LoginItemManager.shared
     }
 
+    @MainActor
     func createMockUpdaterViewModel() -> UpdaterViewModel {
         UpdaterViewModel(sparkleUpdaterManager: SparkleUpdaterManager())
     }

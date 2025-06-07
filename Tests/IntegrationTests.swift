@@ -1,6 +1,7 @@
 import AppKit
 import AXorcist
 @testable import CodeLooper
+@testable import Diagnostics
 import Defaults
 import Foundation
 import Testing
@@ -18,9 +19,9 @@ struct IntegrationTests {
 
         func startup() async {
             isRunning = true
-            coordinator = await AppServiceCoordinator()
-            let loginItemManager = await LoginItemManager.shared
-            let sessionLogger = await SessionLogger.shared
+            coordinator = AppServiceCoordinator()
+            let loginItemManager = LoginItemManager.shared
+            let sessionLogger = SessionLogger.shared
             windowManager = await WindowManager(
                 loginItemManager: loginItemManager,
                 sessionLogger: sessionLogger,
@@ -77,19 +78,18 @@ struct IntegrationTests {
 
         // Test service dependencies
         let monitor = await CursorMonitor.shared
-        await MainActor.run {
-            #expect(monitor.axorcist != nil)
+        // The test is already MainActor-isolated, so we can access these directly
+        #expect(await monitor.axorcist != nil)
 
-            // Verify initial state
-            #expect(!monitor.isMonitoringActivePublic)
-            #expect(monitor.monitoredApps.isEmpty)
-        }
+        // Verify initial state
+        #expect(!monitor.isMonitoringActivePublic)
+        #expect(monitor.monitoredApps.isEmpty)
     }
 
     // MARK: - Cursor Detection and Monitoring Tests
 
     @Test("Cursor detection and monitoring") @MainActor func cursorDetectionAndMonitoring() async throws {
-        let coordinator = await AppServiceCoordinator()
+        let _ = AppServiceCoordinator()
         let monitor = await CursorMonitor.shared
 
         // Test app detection without actual Cursor running

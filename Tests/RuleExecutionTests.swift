@@ -37,7 +37,7 @@ struct RuleExecutionTests {
         await ruleExecutor.executeEnabledRules()
 
         // Should execute without crashes
-        #expect(true)
+        #expect(Bool(true))
     }
 
     @Test("Stop after25 loops rule") @MainActor func stopAfter25LoopsRule() async throws {
@@ -88,7 +88,7 @@ struct RuleExecutionTests {
         await ruleExecutor.executeEnabledRules()
 
         // Should not execute when monitoring is disabled
-        #expect(true)
+        #expect(Bool(true))
 
         // Test with monitoring enabled but recovery disabled
         Defaults[.isGlobalMonitoringEnabled] = true
@@ -97,7 +97,7 @@ struct RuleExecutionTests {
         await ruleExecutor.executeEnabledRules()
 
         // Should not execute recovery rule when disabled
-        #expect(true)
+        #expect(Bool(true))
     }
 
     // MARK: - Rule Counter Tests
@@ -282,7 +282,7 @@ struct RuleExecutionTests {
         }
 
         // Should complete integration flow
-        #expect(true)
+        #expect(Bool(true))
     }
 
     @Test("Rule performance") @MainActor func rulePerformance() async throws {
@@ -367,7 +367,7 @@ struct RuleExecutionTests {
         await ruleExecutor.executeEnabledRules()
 
         // Should not crash
-        #expect(true)
+        #expect(Bool(true))
     }
 
     @Test("Concurrent counter operations") @MainActor func concurrentCounterOperations() async throws {
@@ -381,7 +381,7 @@ struct RuleExecutionTests {
         await withTaskGroup(of: Void.self) { group in
             for _ in 0 ..< 10 {
                 group.addTask {
-                    counterManager.incrementCounter(for: ruleName)
+                    await counterManager.incrementCounter(for: ruleName)
                 }
             }
         }

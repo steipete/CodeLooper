@@ -273,7 +273,7 @@ struct ProcessMonitoringTests {
                 // Invalid transitions
                 let fromCategory = ProcessMonitoringTestUtilities.categorizeStatus(transition.from)
                 if fromCategory == .terminal {
-                    #expect(true, "Terminal states correctly have no valid transitions")
+                    #expect(Bool(true), "Terminal states correctly have no valid transitions")
                 }
             }
         }
@@ -366,7 +366,7 @@ struct ProcessMonitoringTests {
         @Test("End-to-end status flow")
         func endToEndStatusFlow() async throws {
             // This test would verify actual process monitoring
-            #expect(true)
+            #expect(Bool(true))
         }
     }
 }
