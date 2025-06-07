@@ -94,7 +94,7 @@ final class ClaudeProcessDetector: Loggable, @unchecked Sendable {
             
             let folderName = URL(fileURLWithPath: workingDirectory).lastPathComponent
             let status = determineClaudeStatus(from: processArgs)
-            let ttyPath = findTTYPath(for: pid, processInfo: processInfo)
+            let ttyPath = findTTYPath(for: pid, processInfo: (command: processInfo.command, device: processInfo.device))
             
             let instance = ClaudeInstance(
                 pid: pid,
@@ -111,7 +111,7 @@ final class ClaudeProcessDetector: Loggable, @unchecked Sendable {
         }
         
         // Second pass: filter out child Claude processes
-        let rootClaudes = allClaudes.compactMap { item in
+        let rootClaudes = allClaudes.compactMap { item -> ClaudeInstance? in
             let isChildOfClaude = claudePIDs.contains(item.ppid)
             
             if isChildOfClaude {
