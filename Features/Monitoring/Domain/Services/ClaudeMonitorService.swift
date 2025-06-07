@@ -1,4 +1,4 @@
-// swiftlint:disable file_length function_body_length type_body_length
+// swiftlint:disable file_length
 import AppKit
 import CoreImage
 import Darwin
@@ -15,6 +15,7 @@ private let CTL_KERN: Int32 = 1
 private let KERN_PROCARGS2: Int32 = 49
 
 @MainActor
+// swiftlint:disable:next type_body_length
 public final class ClaudeMonitorService: ObservableObject {
     // MARK: Lifecycle
 
@@ -103,6 +104,7 @@ public final class ClaudeMonitorService: ObservableObject {
         titleProxyProcess = nil
     }
 
+    // swiftlint:disable:next function_body_length
     private func scanForClaudeInstances() async {
         logger.info("Starting Claude instance scan...")
         await withCheckedContinuation { continuation in
@@ -299,6 +301,7 @@ public final class ClaudeMonitorService: ObservableObject {
         }
     }
 
+    // swiftlint:disable:next function_body_length
     private func updateTitle(for instance: ClaudeInstance) async {
         await withCheckedContinuation { continuation in
             Task { [weak self] in
@@ -878,6 +881,7 @@ public final class ClaudeMonitorService: ObservableObject {
         return nil
     }
 
+    // swiftlint:disable:next function_body_length
     private nonisolated func parseClaudeStatusLine(_ text: String) -> String? {
         // Simple parsing: find "esc to interrupt" and extract everything before it
         // Example: "Syncing… (326s · × 1.5k tokens · esc to interrupt)" → "Syncing… (326s · × 1.5k tokens)"
@@ -1039,3 +1043,4 @@ public final class ClaudeMonitorService: ObservableObject {
         return nil
     }
 }
+// swiftlint:enable file_length
