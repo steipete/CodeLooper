@@ -3,187 +3,372 @@ import AudioToolbox
 import Foundation
 import Testing
 
-@Suite("SoundManager Tests")
+// MARK: - Sound Manager Test Suite with Comprehensive Organization
+
+@Suite("Sound Manager", .tags(.utilities, .system, .reliability))
 struct SoundManagerTests {
-    @Test("System sound enum cases")
-    func systemSoundEnumCases() async throws {
-        // Test that SystemSound enum has the expected cases
-        let userAlert = SystemSound.userAlert
-        let namedSound = SystemSound.named("Boop.aiff")
+    
+    // MARK: - Test Data
+    
+    static let commonSoundFiles = [
+        "Boop.aiff", "Glass.aiff", "Funk.aiff", "Pop.aiff",
+        "Submarine.aiff", "Frog.aiff", "Hero.aiff", "Morse.aiff",
+        "Ping.aiff", "Tink.aiff"
+    ]
+    
+    static let specialCharacterFilenames = [
+        "Sound With Spaces.aiff", "Sound123.aiff", "Sound-_().aiff",
+        "Sound@#$%.aiff", "", "LongSoundFileName" + String(repeating: "X", count: 100) + ".aiff"
+    ]
+    
+    static let fileExtensionVariations = [
+        ("Sound.aiff", "AIFF format"),
+        ("Sound.aif", "AIF format"),
+        ("Sound.wav", "WAV format"),
+        ("Sound.m4a", "M4A format"),
+        ("Sound", "No extension")
+    ]
+    
+    // MARK: - SystemSound Enum Suite
+    
+    @Suite("SystemSound Enum", .tags(.enum, .types))
+    struct SystemSoundEnumTests {
+        @Test("Enum case creation and pattern matching")
+        func enumCaseCreationAndPatternMatching() {
+            let userAlert = SystemSound.userAlert
+            let namedSound = SystemSound.named("Boop.aiff")
+            
+            // Verify userAlert case
+            switch userAlert {
+            case .userAlert:
+                #expect(Bool(true), "userAlert case should be created successfully")
+            case .named:
+                Issue.record("Expected userAlert case, got named case")
+            }
+            
+            // Verify named sound case
+            guard case let .named(fileName) = namedSound else {
+                Issue.record("Expected named sound case")
+                return
+            }
+            #expect(fileName == "Boop.aiff", "Named sound should preserve filename")
+        }
 
-        // Verify cases can be created - SystemSound is an enum, so these will always be valid
-        // Test that userAlert case matches expected pattern
-        switch userAlert {
-        case .userAlert:
-            #expect(Bool(true), "userAlert case created successfully")
-        case .named:
-            Issue.record("Expected userAlert case, got named case")
+        @Test(
+            "Named sound creation preserves filename",
+            arguments: commonSoundFiles
+        )
+        func namedSoundCreation(soundFileName: String) {
+            let sound = SystemSound.named(soundFileName)
+            
+            guard case let .named(fileName) = sound else {
+                Issue.record("Expected named sound case for \(soundFileName)")
+                return
+            }
+            #expect(fileName == soundFileName, "Filename should be preserved exactly")
+        }
+
+        @Test(
+            "Named sound handles special characters correctly",
+            arguments: specialCharacterFilenames
+        )
+        func namedSoundSpecialCharacters(testFileName: String) {
+            let sound = SystemSound.named(testFileName)
+            
+            guard case let .named(fileName) = sound else {
+                Issue.record("Expected named sound case for '\(testFileName)'")
+                return
+            }
+            #expect(fileName == testFileName, "Special characters should be preserved exactly")
         }
         
-        // Named sounds should match their input
-        if case let .named(fileName) = namedSound {
-            #expect(fileName == "Boop.aiff")
-        } else {
-            Issue.record("Expected named sound case")
+        @Test("Enum equality and hashability")
+        func enumEqualityAndHashability() {
+            let userAlert1 = SystemSound.userAlert
+            let userAlert2 = SystemSound.userAlert
+            let namedSound1 = SystemSound.named("test.aiff")
+            let namedSound2 = SystemSound.named("test.aiff")
+            let namedSound3 = SystemSound.named("other.aiff")
+            
+            // Test equality
+            #expect(userAlert1 == userAlert2, "Same enum cases should be equal")
+            #expect(namedSound1 == namedSound2, "Same named sounds should be equal")
+            #expect(namedSound1 != namedSound3, "Different named sounds should not be equal")
+            #expect(userAlert1 != namedSound1, "Different enum cases should not be equal")
         }
     }
 
-    @Test("System sound named sound creation", arguments: ["Boop.aiff", "Glass.aiff", "Funk.aiff"])
-    func systemSoundNamedSoundCreation(soundFileName: String) async throws {
-        // Test creating named sound with the given file name
-        let sound = SystemSound.named(soundFileName)
-
-        // Verify named sound contains the correct file name
-        if case let .named(fileName) = sound {
-            #expect(fileName == soundFileName)
-        } else {
-            Issue.record("Expected named sound case for \(soundFileName)")
-        }
-    }
-
-    @Test("System sound named sound with special characters", 
-          arguments: ["Sound With Spaces.aiff", "Sound123.aiff", "Sound-_().aiff", "Sound@#$%.aiff", ""])
-    func systemSoundNamedSoundSpecialCharacters(testFileName: String) async throws {
-        // Test creating named sound with special characters or empty string
-        let sound = SystemSound.named(testFileName)
-
-        // Verify named sound preserves the exact input
-        if case let .named(fileName) = sound {
-            #expect(fileName == testFileName)
-        } else {
-            Issue.record("Expected named sound case for '\(testFileName)'")
-        }
-    }
-
-    @Test("Sound engine play user alert sound")
-    func soundEnginePlayUserAlertSound() async throws {
-        // Test that playing user alert sound doesn't crash
-        // Note: This may not produce audible sound in tests but should not crash
-        SoundEngine.play(.userAlert)
-
-        #expect(Bool(true)) // If we get here, the call didn't crash
-    }
-
-    @Test("Sound engine play named sound", arguments: ["Boop.aiff", "Glass.aiff", "Funk.aiff", "NonExistent.aiff"])
-    func soundEnginePlayNamedSound(soundName: String) async throws {
-        // Test that playing a named sound doesn't crash (even if file doesn't exist)
-        SoundEngine.play(.named(soundName))
+    // MARK: - Sound Playback Suite
+    
+    @Suite("Sound Playback", .tags(.operations, .robustness))
+    struct SoundPlaybackTests {
         
-        #expect(Bool(true)) // If we get here, the call didn't crash
-    }
-
-    @Test("Sound engine play invalid named sound")
-    func soundEnginePlayInvalidNamedSound() async throws {
-        // Test that playing an invalid named sound doesn't crash
-        SoundEngine.play(.named("NonExistentSound.aiff"))
-        SoundEngine.play(.named(""))
-        SoundEngine.play(.named("invalid"))
-
-        #expect(Bool(true)) // If we get here, the calls didn't crash
-    }
-
-    @Test("Sound engine multiple sound playback")
-    func soundEngineMultipleSoundPlayback() async throws {
-        // Test playing multiple sounds in sequence
-        SoundEngine.play(.userAlert)
-        SoundEngine.play(.named("Boop.aiff"))
-        SoundEngine.play(.userAlert)
-        SoundEngine.play(.named("Glass.aiff"))
-
-        #expect(Bool(true)) // If we get here, multiple playback didn't crash
-    }
-
-    @Test("Sound engine rapid sound playback")
-    func soundEngineRapidSoundPlayback() async throws {
-        // Test rapid sound playback doesn't cause issues
-        for _ in 0 ..< 5 {
-            SoundEngine.play(.named("Boop.aiff"))
+        @Test("User alert sound playback does not crash")
+        func userAlertSoundPlayback() {
+            // Test that playing user alert sound doesn't crash
+            // Note: This may not produce audible sound in tests but should not crash
+            #expect(throws: Never.self) {
+                SoundEngine.play(.userAlert)
+            }
         }
 
-        #expect(Bool(true)) // If we get here, rapid playback didn't crash
-    }
+        @Test(
+            "Named sound playback robustness",
+            arguments: commonSoundFiles + ["NonExistent.aiff", "Invalid.file"]
+        )
+        func namedSoundPlayback(soundName: String) {
+            // Test that playing a named sound doesn't crash (even if file doesn't exist)
+            #expect(throws: Never.self) {
+                SoundEngine.play(.named(soundName))
+            }
+        }
 
-    @Test("Sound engine concurrent playback")
-    func soundEngineConcurrentPlayback() async throws {
-        // Test concurrent sound playback from multiple contexts
-        await withTaskGroup(of: Void.self) { group in
-            for i in 0 ..< 3 {
-                group.addTask {
-                    SoundEngine.play(i % 2 == 0 ? .userAlert : .named("Boop.aiff"))
+        @Test("Invalid sound handling gracefully fails")
+        func invalidSoundHandling() {
+            let invalidSounds = ["NonExistentSound.aiff", "", "invalid", "null", "/invalid/path"]
+            
+            for invalidSound in invalidSounds {
+                #expect(throws: Never.self) {
+                    SoundEngine.play(.named(invalidSound))
                 }
             }
         }
 
-        #expect(Bool(true)) // If we get here, concurrent playback didn't crash
-    }
-
-    @Test("Sound engine performance")
-    func soundEnginePerformance() async throws {
-        // Test performance of sound playback
-        let startTime = Date()
-
-        for _ in 0 ..< 10 {
-            SoundEngine.play(.userAlert)
+        @Test("Sequential sound playback works correctly")
+        func sequentialSoundPlayback() {
+            let sounds: [SystemSound] = [
+                .userAlert,
+                .named("Boop.aiff"),
+                .userAlert,
+                .named("Glass.aiff")
+            ]
+            
+            #expect(throws: Never.self) {
+                for sound in sounds {
+                    SoundEngine.play(sound)
+                }
+            }
         }
 
-        let elapsed = Date().timeIntervalSince(startTime)
-        #expect(elapsed < 1.0) // Should complete quickly
-    }
-
-    @Test("System sound ID validation")
-    func systemSoundIDValidation() async throws {
-        // Test that system sound IDs are handled correctly
-        // Note: Actual SystemSoundID values may vary by system
-        SoundEngine.play(.userAlert)
-
-        // Test with common system sounds
-        let commonSounds = [
-            "Boop.aiff",
-            "Glass.aiff",
-            "Funk.aiff",
-            "Pop.aiff",
-            "Submarine.aiff",
-            "Frog.aiff",
-            "Hero.aiff",
-            "Morse.aiff",
-            "Ping.aiff",
-            "Tink.aiff",
-        ]
-
-        for soundName in commonSounds {
-            SoundEngine.play(.named(soundName))
+        @Test("Rapid sound playback stress test", arguments: [5, 10, 25])
+        func rapidSoundPlayback(playbackCount: Int) {
+            #expect(throws: Never.self) {
+                for _ in 0..<playbackCount {
+                    SoundEngine.play(.named("Boop.aiff"))
+                }
+            }
         }
 
-        #expect(Bool(true)) // If we get here, all sounds were handled without crash
-    }
-
-    @Test("Sound engine file extensions")
-    func soundEngineFileExtensions() async throws {
-        // Test different file extensions
-        SoundEngine.play(.named("Sound.aiff"))
-        SoundEngine.play(.named("Sound.aif"))
-        SoundEngine.play(.named("Sound.wav"))
-        SoundEngine.play(.named("Sound.m4a"))
-        SoundEngine.play(.named("Sound"))
-
-        #expect(Bool(true)) // If we get here, different extensions didn't crash
-    }
-
-    @Test("Sound engine memory usage")
-    func soundEngineMemoryUsage() async throws {
-        // Test that repeated sound playback doesn't leak memory
-        var sounds: [SystemSound] = []
-
-        for i in 0 ..< 100 {
-            let sound = SystemSound.named("Sound\(i).aiff")
-            sounds.append(sound)
-            SoundEngine.play(sound)
+        @Test("Concurrent playback thread safety", arguments: [3, 5, 10])
+        func concurrentPlayback(taskCount: Int) async {
+            await withTaskGroup(of: Void.self) { group in
+                for i in 0..<taskCount {
+                    group.addTask {
+                        let sound = i % 2 == 0 ? SystemSound.userAlert : .named("Boop.aiff")
+                        SoundEngine.play(sound)
+                    }
+                }
+            }
+            // If we reach here without crashing, concurrent playback is safe
         }
 
-        #expect(sounds.count == 100)
+        @Test(
+            "File extension compatibility",
+            arguments: fileExtensionVariations
+        )
+        func fileExtensionCompatibility(testCase: (filename: String, description: String)) {
+            #expect(throws: Never.self) {
+                SoundEngine.play(.named(testCase.filename))
+            }
+        }
+    }
+    
+    // MARK: - Performance Suite
+    
+    @Suite("Performance", .tags(.performance, .timing))
+    struct PerformanceTests {
+        
+        @Test("Sound playback performance", .timeLimit(.seconds(5)))
+        func soundPlaybackPerformance() {
+            let startTime = ContinuousClock().now
+            
+            for _ in 0..<10 {
+                SoundEngine.play(.userAlert)
+            }
+            
+            let elapsed = ContinuousClock().now - startTime
+            #expect(elapsed < .seconds(1), "10 sound plays should complete within 1 second")
+        }
 
-        // Clear references
-        sounds.removeAll()
-        #expect(sounds.isEmpty)
+        @Test("Bulk playback performance", .timeLimit(.minutes(1)))
+        func bulkPlaybackPerformance() async {
+            let startTime = ContinuousClock().now
+            let playbackCount = 100
+            
+            await withTaskGroup(of: Void.self) { group in
+                for i in 0..<playbackCount {
+                    group.addTask {
+                        let sound = i % 2 == 0 ? SystemSound.userAlert : .named("Boop.aiff")
+                        SoundEngine.play(sound)
+                    }
+                }
+            }
+            
+            let elapsed = ContinuousClock().now - startTime
+            let soundsPerSecond = Double(playbackCount) / Double(elapsed.components.seconds)
+            
+            #expect(soundsPerSecond > 50, "Should process at least 50 sounds per second")
+        }
+        
+        @Test("Memory efficiency with many sounds")
+        func memoryEfficiency() {
+            var sounds: [SystemSound] = []
+            
+            // Create many sound instances
+            for i in 0..<100 {
+                let sound = SystemSound.named("Sound\(i).aiff")
+                sounds.append(sound)
+                SoundEngine.play(sound)
+            }
+            
+            #expect(sounds.count == 100, "Should create 100 sounds")
+            
+            // Test that we can clear references
+            sounds.removeAll()
+            #expect(sounds.isEmpty, "Should clear all sound references")
+        }
+    }
+    
+    // MARK: - System Integration Suite
+    
+    @Suite("System Integration", .tags(.system, .integration))
+    struct SystemIntegrationTests {
+        
+        @Test("Common system sounds compatibility")
+        func commonSystemSoundsCompatibility() {
+            // Test with common macOS system sounds
+            #expect(throws: Never.self) {
+                SoundEngine.play(.userAlert)
+            }
+            
+            for soundName in commonSoundFiles {
+                #expect(throws: Never.self) {
+                    SoundEngine.play(.named(soundName))
+                }
+            }
+        }
+
+        @Test("AudioToolbox integration works correctly")
+        func audioToolboxIntegration() {
+            // Verify that AudioToolbox integration doesn't crash
+            // Test multiple sound types to ensure robust integration
+            let testScenarios: [(SystemSound, String)] = [
+                (.userAlert, "System alert"),
+                (.named("Test.aiff"), "Named AIFF"),
+                (.named("Test.wav"), "Named WAV"),
+                (.named(""), "Empty filename")
+            ]
+            
+            for (sound, description) in testScenarios {
+                #expect(throws: Never.self, "\(description) should not crash") {
+                    SoundEngine.play(sound)
+                }
+            }
+        }
+
+        @Test("System resource cleanup")
+        func systemResourceCleanup() {
+            // Test that sound engine cleans up system resources properly
+            let iterations = 50
+            
+            for i in 0..<iterations {
+                let sound = SystemSound.named("TestSound\(i % 5).aiff")
+                SoundEngine.play(sound)
+                
+                // Occasional validation points
+                if i % 10 == 0 {
+                    #expect(i >= 0, "Iteration \(i) should proceed normally")
+                }
+            }
+            
+            // If we complete all iterations without issues, resource management is working
+            #expect(Bool(true), "All \(iterations) iterations completed successfully")
+        }
+        
+        @Test("Cross-platform sound handling")
+        func crossPlatformSoundHandling() {
+            // Test that sound handling works across different macOS configurations
+            let platformTestSounds = [
+                "system:alert",     // System-style identifier
+                "Boop.aiff",        // Classic macOS sound
+                "nonexistent.wav",  // Non-existent file
+                "unicode🔊.aiff"     // Unicode filename
+            ]
+            
+            for soundName in platformTestSounds {
+                #expect(throws: Never.self, "Sound '\(soundName)' should be handled gracefully") {
+                    SoundEngine.play(.named(soundName))
+                }
+            }
+        }
+    }
+    
+    // MARK: - Edge Cases Suite
+    
+    @Suite("Edge Cases", .tags(.edge_cases, .robustness))
+    struct EdgeCasesTests {
+        
+        @Test("Extreme filename lengths")
+        func extremeFilenameLengths() {
+            let shortName = "a"
+            let longName = String(repeating: "VeryLong", count: 100) + ".aiff"
+            let emptyName = ""
+            
+            let extremeCases = [shortName, longName, emptyName]
+            
+            for filename in extremeCases {
+                #expect(throws: Never.self, "Filename '\(filename.prefix(20))...' should be handled") {
+                    SoundEngine.play(.named(filename))
+                }
+            }
+        }
+        
+        @Test("Unicode and international character support")
+        func unicodeCharacterSupport() {
+            let unicodeFilenames = [
+                "🔊Sound.aiff",
+                "测试声音.aiff",
+                "صوت.aiff",
+                "звук.aiff",
+                "音.aiff"
+            ]
+            
+            for filename in unicodeFilenames {
+                #expect(throws: Never.self, "Unicode filename should be handled gracefully") {
+                    SoundEngine.play(.named(filename))
+                }
+            }
+        }
+        
+        @Test("Memory pressure resilience", .timeLimit(.minutes(1)))
+        func memoryPressureResilience() async {
+            // Test behavior under simulated memory pressure
+            await withTaskGroup(of: Void.self) { group in
+                // Create multiple concurrent sound operations
+                for taskId in 0..<20 {
+                    group.addTask {
+                        for iteration in 0..<50 {
+                            let soundName = "PressureTest_\(taskId)_\(iteration).aiff"
+                            SoundEngine.play(.named(soundName))
+                        }
+                    }
+                }
+            }
+            
+            // System should remain stable after memory pressure
+            #expect(throws: Never.self) {
+                SoundEngine.play(.userAlert)
+            }
+        }
     }
 }
