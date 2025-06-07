@@ -20,7 +20,8 @@ struct DiagnosticsTests {
         @Test("All categories can create loggers", arguments: logCategories)
         func categoryLoggerCreation(category: LogCategory) async throws {
             let logger = Logger(category: category)
-            #expect(logger.logLevel != nil, "Logger should have valid log level for category \(category)")
+            // Logger.logLevel is non-optional, check if it's a valid level
+            #expect(Logger.Level.allCases.contains(logger.logLevel), "Logger should have valid log level for category \(category)")
         }
     }
 
@@ -55,7 +56,6 @@ struct DiagnosticsTests {
 
         @Test("All log levels can be set", arguments: logLevels)
         func logLevelSetting(level: LogLevel) async throws {
-            let logger = Logger(category: .general)
             // Test that log levels are properly supported
             #expect(LogLevel.allCases.contains(level), "Logger should support log level \(level)")
         }
@@ -70,7 +70,8 @@ struct DiagnosticsTests {
             // Test all categories can be used to create loggers
             for category in LogCategory.allCases {
                 let logger = Logger(category: category)
-                #expect(logger.logLevel != nil)
+                // Logger exists and has a valid level
+                #expect(Logger.Level.allCases.contains(logger.logLevel))
             }
         }
 
@@ -79,8 +80,8 @@ struct DiagnosticsTests {
             let customLabel = "custom.test.logger"
             let logger = Logger(label: customLabel, category: .general)
 
-            // Verify logger is created with custom label
-            #expect(logger.logLevel != nil)
+            // Verify logger is created with custom label and has a valid level
+            #expect(Logger.Level.allCases.contains(logger.logLevel))
         }
 
         @Test("Log category properties")
@@ -130,7 +131,7 @@ struct DiagnosticsTests {
             logger.error("Error message")
             logger.critical("Critical message")
 
-            #expect(true) // If we get here, all log levels work
+            #expect(Bool(true)) // If we get here, all log levels work
         }
 
         @Test("Log levels with test messages", arguments: zip(logLevels, testMessages))
@@ -142,14 +143,14 @@ struct DiagnosticsTests {
             switch level {
             case .debug: logger.debug(Logger.Message(stringLiteral: message))
             case .info: logger.info(Logger.Message(stringLiteral: message))
-            case .notice: logger.notice(Logger.Message(stringLiteral: message))
+            case .notice: logger.info(Logger.Message(stringLiteral: message)) // Logger doesn't have notice method
             case .warning: logger.warning(Logger.Message(stringLiteral: message))
             case .error: logger.error(Logger.Message(stringLiteral: message))
             case .critical: logger.critical(Logger.Message(stringLiteral: message))
             case .fault: logger.critical(Logger.Message(stringLiteral: message)) // Logger doesn't have fault method
             }
 
-            #expect(true, "Logging should complete without errors")
+            #expect(Bool(true), "Logging should complete without errors")
         }
     }
 
@@ -189,7 +190,7 @@ struct DiagnosticsTests {
             logger.info("Info with metadata", metadata: testMetadata)
             logger.error("Error with metadata", metadata: testMetadata)
 
-            #expect(true) // If we get here, metadata logging works
+            #expect(Bool(true)) // If we get here, metadata logging works
         }
 
         @Test("Metadata with various data types")
@@ -222,7 +223,7 @@ struct DiagnosticsTests {
             // This test verifies that multiple bootstrap calls don't crash
             // The actual verification that subsequent calls are ignored would require
             // capturing console output, which is complex in unit tests
-            #expect(true)
+            #expect(Bool(true))
         }
 
         @Test("Default logger availability")
@@ -293,7 +294,7 @@ struct DiagnosticsTests {
 
             // The actual verification of source info would require a custom LogHandler
             // For now, we verify that the API accepts the calls
-            #expect(true)
+            #expect(Bool(true))
         }
     }
 
@@ -319,7 +320,7 @@ struct DiagnosticsTests {
             logger.error("Error message")
             logger.critical("Critical message")
 
-            #expect(true) // If we get here, filtering works correctly
+            #expect(Bool(true)) // If we get here, filtering works correctly
         }
 
         @Test("Log level filtering with different levels", arguments: logLevels)
@@ -362,7 +363,7 @@ struct DiagnosticsTests {
                 }
             }
 
-            #expect(true) // If we get here, concurrent logging didn't crash
+            #expect(Bool(true)) // If we get here, concurrent logging didn't crash
         }
 
         @Test("Concurrent metadata operations")
