@@ -296,20 +296,68 @@ final class ClaudeProcessDetector: Loggable, @unchecked Sendable {
             return ""
         }
         
-        // Try to find TTY by device number
-        for ttyNumber in 0...999 {
-            let ttyPath = String(format: "/dev/ttys%03d", ttyNumber)
-            
-            var ttyStats = stat()
-            guard stat(ttyPath, &ttyStats) == 0 else { continue }
-            
-            if ttyStats.st_rdev == processInfo.device {
-                logger.debug("Found TTY for PID \(pid): \(ttyPath)")
-                return ttyPath
+        // First try to find the TTY using lsof
+        let ttyFromLsof = getTTYUsingLsof(pid: pid)
+        if !ttyFromLsof.isEmpty {
+            logger.debug("Found TTY for PID \(pid) using lsof: \(ttyFromLsof)")
+            return ttyFromLsof
+        }
+        
+        // Fallback: Try to find TTY by device number in common locations
+        let ttyPrefixes = [
+            "/dev/ttys",   // Standard TTYs
+            "/dev/tty.s",  // macOS style
+            "/dev/pts/",   // Linux pseudo-terminals
+            "/dev/tty"     // Generic TTY
+        ]
+        
+        for prefix in ttyPrefixes {
+            for i in 0...999 {
+                let ttyPath = prefix.hasSuffix("/") ? "\(prefix)\(i)" : String(format: "\(prefix)%03d", i)
+                
+                var ttyStats = stat()
+                guard stat(ttyPath, &ttyStats) == 0 else { continue }
+                
+                if ttyStats.st_rdev == processInfo.device {
+                    logger.debug("Found TTY for PID \(pid): \(ttyPath)")
+                    return ttyPath
+                }
             }
         }
         
         logger.debug("No TTY found for PID \(pid) with device \(processInfo.device)")
+        return ""
+    }
+    
+    private func getTTYUsingLsof(pid: pid_t) -> String {
+        let task = Process()
+        task.launchPath = "/usr/sbin/lsof"
+        task.arguments = ["-p", "\(pid)", "-Fn"]
+        
+        let pipe = Pipe()
+        task.standardOutput = pipe
+        task.standardError = Pipe() // Suppress errors
+        
+        do {
+            try task.run()
+            task.waitUntilExit()
+            
+            let data = pipe.fileHandleForReading.readDataToEndOfFile()
+            guard let output = String(data: data, encoding: .utf8) else { return "" }
+            
+            // Look for lines starting with "n" that contain tty/pts
+            for line in output.components(separatedBy: "\n") {
+                if line.hasPrefix("n") && (line.contains("/dev/ttys") || line.contains("/dev/pts/") || line.contains("/dev/tty")) {
+                    let ttyPath = String(line.dropFirst()) // Remove the "n" prefix
+                    if ttyPath.hasPrefix("/dev/") {
+                        return ttyPath
+                    }
+                }
+            }
+        } catch {
+            logger.debug("lsof failed for PID \(pid): \(error)")
+        }
+        
         return ""
     }
 }
