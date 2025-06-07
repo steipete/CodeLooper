@@ -4,6 +4,167 @@ import Foundation
 import Network
 import Testing
 
+// MARK: - Specialized Assertion Utilities
+
+enum PrecisionAssertions {
+    static func expectEqual<T: FloatingPoint>(
+        _ actual: T, 
+        _ expected: T, 
+        tolerance: T,
+        file: StaticString = #filePath,
+        line: UInt = #line
+    ) {
+        let difference = abs(actual - expected)
+        #expect(
+            difference <= tolerance,
+            "Expected \(actual) to be within \(tolerance) of \(expected), but difference was \(difference)",
+            sourceLocation: SourceLocation(
+                fileID: String(describing: file),
+                filePath: String(describing: file),
+                line: Int(line),
+                column: 1
+            )
+        )
+    }
+    
+    static func expectNearlyEqual(
+        _ actual: Double,
+        _ expected: Double,
+        ulps: Int = 4,
+        file: StaticString = #filePath,
+        line: UInt = #line
+    ) {
+        // ULP (Units in the Last Place) comparison for floating point precision
+        let actualBits = actual.bitPattern
+        let expectedBits = expected.bitPattern
+        
+        let ulpDifference = actualBits > expectedBits 
+            ? actualBits - expectedBits 
+            : expectedBits - actualBits
+        
+        #expect(
+            ulpDifference <= ulps,
+            "Expected \(actual) to be within \(ulps) ULPs of \(expected), but ULP difference was \(ulpDifference)",
+            sourceLocation: SourceLocation(
+                fileID: String(describing: file),
+                filePath: String(describing: file),
+                line: Int(line),
+                column: 1
+            )
+        )
+    }
+}
+
+enum CollectionAssertions {
+    static func expectElementsEqual<C1: Collection, C2: Collection>(
+        _ actual: C1,
+        _ expected: C2,
+        file: StaticString = #filePath,
+        line: UInt = #line
+    ) where C1.Element: Equatable, C1.Element == C2.Element {
+        #expect(
+            actual.count == expected.count,
+            "Collections have different counts: \(actual.count) vs \(expected.count)",
+            sourceLocation: SourceLocation(
+                fileID: String(describing: file),
+                filePath: String(describing: file),
+                line: Int(line),
+                column: 1
+            )
+        )
+        
+        for (index, (actualElement, expectedElement)) in zip(actual, expected).enumerated() {
+            #expect(
+                actualElement == expectedElement,
+                "Elements at index \(index) differ: \(actualElement) vs \(expectedElement)",
+                sourceLocation: SourceLocation(
+                    fileID: String(describing: file),
+                    filePath: String(describing: file),
+                    line: Int(line),
+                    column: 1
+                )
+            )
+        }
+    }
+    
+    static func expectContainsInOrder<C: Collection>(
+        _ collection: C,
+        _ elements: [C.Element],
+        file: StaticString = #filePath,
+        line: UInt = #line
+    ) where C.Element: Equatable {
+        var collectionIterator = collection.makeIterator()
+        var elementIndex = 0
+        
+        while elementIndex < elements.count {
+            let targetElement = elements[elementIndex]
+            var found = false
+            
+            while let currentElement = collectionIterator.next() {
+                if currentElement == targetElement {
+                    found = true
+                    break
+                }
+            }
+            
+            #expect(
+                found,
+                "Element \(targetElement) at index \(elementIndex) not found in order within collection",
+                sourceLocation: SourceLocation(
+                    fileID: String(describing: file),
+                    filePath: String(describing: file),
+                    line: Int(line),
+                    column: 1
+                )
+            )
+            
+            if !found { break }
+            elementIndex += 1
+        }
+    }
+    
+    static func expectUnique<C: Collection>(
+        _ collection: C,
+        file: StaticString = #filePath,
+        line: UInt = #line
+    ) where C.Element: Hashable {
+        let uniqueElements = Set(collection)
+        #expect(
+            uniqueElements.count == collection.count,
+            "Collection contains \(collection.count - uniqueElements.count) duplicate elements",
+            sourceLocation: SourceLocation(
+                fileID: String(describing: file),
+                filePath: String(describing: file),
+                line: Int(line),
+                column: 1
+            )
+        )
+    }
+    
+    static func expectSorted<C: Collection>(
+        _ collection: C,
+        by areInIncreasingOrder: (C.Element, C.Element) throws -> Bool = (<),
+        file: StaticString = #filePath,
+        line: UInt = #line
+    ) rethrows where C.Element: Comparable {
+        let pairs = zip(collection, collection.dropFirst())
+        
+        for (index, (first, second)) in pairs.enumerated() {
+            let inOrder = try areInIncreasingOrder(first, second)
+            #expect(
+                inOrder,
+                "Collection not sorted at index \(index): \(first) should come before \(second)",
+                sourceLocation: SourceLocation(
+                    fileID: String(describing: file),
+                    filePath: String(describing: file),
+                    line: Int(line),
+                    column: 1
+                )
+            )
+        }
+    }
+}
+
 @Suite("NetworkingTests")
 struct NetworkingTests {
     // MARK: - Test Utilities
@@ -36,6 +197,202 @@ struct NetworkingTests {
             }
 
             return (data, response)
+        }
+    }
+
+    // MARK: - Specialized Assertions Demo Suite
+    
+    @Suite("Specialized Assertions")
+    struct SpecializedAssertions {
+        @Test(
+            "Floating-point precision comparisons",
+            arguments: [
+                (actual: 0.1 + 0.2, expected: 0.3, tolerance: 0.0001),
+                (actual: Double.pi, expected: 3.14159, tolerance: 0.00001),
+                (actual: 1.0/3.0, expected: 0.33333, tolerance: 0.00001),
+                (actual: sqrt(2.0), expected: 1.41421, tolerance: 0.00001)
+            ]
+        )
+        func floatingPointPrecisionComparisons(
+            testCase: (actual: Double, expected: Double, tolerance: Double)
+        ) throws {
+            PrecisionAssertions.expectEqual(
+                testCase.actual,
+                testCase.expected,
+                tolerance: testCase.tolerance
+            )
+        }
+        
+        @Test("ULP-based floating-point comparisons")
+        func ulpBasedFloatingPointComparisons() throws {
+            // Test cases where standard equality fails but ULP comparison succeeds
+            let value1: Double = 1.0
+            let value2: Double = 1.0 + Double.ulpOfOne
+            let value3: Double = 1.0 + 2 * Double.ulpOfOne
+            
+            // These should be considered nearly equal within default ULPs
+            PrecisionAssertions.expectNearlyEqual(value1, value2, ulps: 4)
+            PrecisionAssertions.expectNearlyEqual(value1, value3, ulps: 4)
+            
+            // Test with very precise calculations
+            let calculated = (0.1 + 0.2) * 10
+            let expected = 3.0
+            PrecisionAssertions.expectNearlyEqual(calculated, expected, ulps: 10)
+        }
+        
+        @Test("Collection element-wise comparison")
+        func collectionElementWiseComparison() throws {
+            let networkRequests = [
+                "GET /api/users",
+                "POST /api/users",
+                "PUT /api/users/123",
+                "DELETE /api/users/123"
+            ]
+            
+            let expectedSequence = [
+                "GET /api/users",
+                "POST /api/users", 
+                "PUT /api/users/123",
+                "DELETE /api/users/123"
+            ]
+            
+            CollectionAssertions.expectElementsEqual(networkRequests, expectedSequence)
+        }
+        
+        @Test("Collection ordering verification")
+        func collectionOrderingVerification() throws {
+            let _ = [
+                ("user-1", Date(timeIntervalSince1970: 1000)),
+                ("user-2", Date(timeIntervalSince1970: 2000)),
+                ("user-3", Date(timeIntervalSince1970: 3000))
+            ]
+            
+            let searchTerms = ["user", "api", "response"]
+            let logEntries = [
+                "Starting user lookup",
+                "Calling user api",
+                "Processing user data",
+                "Preparing api response",
+                "Sending response to client"
+            ]
+            
+            CollectionAssertions.expectContainsInOrder(logEntries, searchTerms)
+        }
+        
+        @Test("Collection uniqueness validation")
+        func collectionUniquenessValidation() throws {
+            // Test unique request IDs
+            let requestIds = (1...100).map { "req-\($0)" }
+            CollectionAssertions.expectUnique(requestIds)
+            
+            // Test unique URL paths
+            let urlPaths = [
+                "/api/v1/users",
+                "/api/v1/posts", 
+                "/api/v1/comments",
+                "/api/v2/users",
+                "/health"
+            ]
+            CollectionAssertions.expectUnique(urlPaths)
+        }
+        
+        @Test("Collection sorting validation")
+        func collectionSortingValidation() throws {
+            // Test timestamp sorting
+            let timestamps: [TimeInterval] = [1000, 2000, 3000, 4000, 5000]
+            try CollectionAssertions.expectSorted(timestamps)
+            
+            // Test reverse sorting with custom comparator
+            let priorities = [5, 4, 3, 2, 1]
+            CollectionAssertions.expectSorted(priorities, by: >)
+            
+            // Test string sorting
+            let endpoints = ["auth", "data", "health", "metrics", "users"]
+            try CollectionAssertions.expectSorted(endpoints)
+        }
+        
+        @Test("Complex nested data structures")
+        func complexNestedDataStructures() throws {
+            struct APIResponse {
+                let statusCode: Int
+                let latency: Double
+                let data: [String: Any]
+            }
+            
+            // Test response latencies are within acceptable ranges
+            let responses = [
+                APIResponse(statusCode: 200, latency: 0.045, data: [:]),
+                APIResponse(statusCode: 200, latency: 0.123, data: [:]),
+                APIResponse(statusCode: 201, latency: 0.089, data: [:])
+            ]
+            
+            let maxAcceptableLatency = 0.150
+            
+            for (index, response) in responses.enumerated() {
+                PrecisionAssertions.expectEqual(
+                    response.latency,
+                    0.0,
+                    tolerance: maxAcceptableLatency
+                )
+                #expect(response.statusCode >= 200 && response.statusCode < 300, "Response \(index) should be successful")
+            }
+            
+            // Test latency distribution
+            let latencies = responses.map(\.latency)
+            let sortedLatencies = latencies.sorted()
+            CollectionAssertions.expectElementsEqual(latencies.sorted(), sortedLatencies)
+        }
+        
+        @Test("Statistical assertions for performance data")
+        func statisticalAssertionsForPerformanceData() throws {
+            // Simulate network response times
+            let responseTimes: [Double] = [
+                0.045, 0.052, 0.048, 0.051, 0.049,
+                0.047, 0.053, 0.046, 0.050, 0.044
+            ]
+            
+            // Calculate statistics
+            let average = responseTimes.reduce(0, +) / Double(responseTimes.count)
+            let min = responseTimes.min()!
+            let max = responseTimes.max()!
+            
+            // Test statistical properties
+            PrecisionAssertions.expectEqual(average, 0.0485, tolerance: 0.002)
+            #expect(min >= 0.040, "Minimum response time should be reasonable")
+            #expect(max <= 0.060, "Maximum response time should be acceptable")
+            
+            // Test variance is within expected range
+            let variance = responseTimes.map { pow($0 - average, 2) }.reduce(0, +) / Double(responseTimes.count)
+            PrecisionAssertions.expectEqual(variance, 0.0, tolerance: 0.00001)
+        }
+        
+        @Test(
+            "Multi-dimensional data comparison",
+            arguments: [
+                (coordinates: [(1.0, 2.0), (3.0, 4.0)], tolerance: 0.001),
+                (coordinates: [(0.1, 0.2), (0.3, 0.4)], tolerance: 0.0001),
+                (coordinates: [(10.5, 20.7), (30.2, 40.9)], tolerance: 0.1)
+            ]
+        )
+        func multiDimensionalDataComparison(
+            testCase: (coordinates: [(Double, Double)], tolerance: Double)
+        ) throws {
+            // Simulate GPS coordinates or API endpoint response data
+            let originalCoords = testCase.coordinates
+            let processedCoords = originalCoords.map { (x: $0.0 + 0.0001, y: $0.1 + 0.0001) }
+            
+            for (index, (original, processed)) in zip(originalCoords, processedCoords).enumerated() {
+                PrecisionAssertions.expectEqual(
+                    processed.x,
+                    original.0,
+                    tolerance: testCase.tolerance
+                )
+                PrecisionAssertions.expectEqual(
+                    processed.y,
+                    original.1,
+                    tolerance: testCase.tolerance
+                )
+            }
         }
     }
 

@@ -504,7 +504,7 @@ struct AIAnalysisServiceTests {
         
         @Test(
             "External API provider configuration",
-            RequiresExternalAPI(provider: .openAI, requiresAPIKey: true),
+            RequiresExternalAPI(provider: .openAI),
             TestComplexity(
                 level: .complex,
                 estimatedDuration: .seconds(120),

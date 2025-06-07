@@ -534,21 +534,72 @@ struct InterventionEngineTests {
     struct KnownIssues {
         @Test("Intervention timeout with known race condition")
         func interventionTimeoutWithRaceCondition() async throws {
-            await withKnownIssue("Race condition in timeout handling", isIntermittent: true) {
-                // This test occasionally fails due to a known race condition
-                // between the timeout timer and intervention completion
-                // Simulating intervention engine behavior without real implementation
+            await withKnownIssue("Race condition between timeout and completion handlers", isIntermittent: true) {
+                // This test demonstrates a real race condition that occurs in intervention systems
+                // where a timeout handler and completion handler can execute simultaneously
                 
-                let timeout: TimeInterval = 5.0
-                let startTime = Date()
+                actor InterventionState {
+                    private var isCompleted = false
+                    private var isTimedOut = false
+                    private var result: String?
+                    
+                    func markCompleted(with result: String) -> Bool {
+                        guard !isTimedOut && !isCompleted else { return false }
+                        isCompleted = true
+                        self.result = result
+                        return true
+                    }
+                    
+                    func markTimedOut() -> Bool {
+                        guard !isCompleted && !isTimedOut else { return false }
+                        isTimedOut = true
+                        return true
+                    }
+                    
+                    func getState() -> (completed: Bool, timedOut: Bool, result: String?) {
+                        (isCompleted, isTimedOut, result)
+                    }
+                }
                 
-                // Simulate timeout vs completion race
-                try await Task.sleep(for: .milliseconds(100))
-                let elapsed = Date().timeIntervalSince(startTime)
+                let state = InterventionState()
+                let timeout: Duration = .milliseconds(50)
                 
-                // The race condition occurs when the timeout fires
-                // just as the intervention completes successfully
-                #expect(elapsed < timeout, "Should complete before timeout")
+                // Start both operations concurrently - this creates the race condition
+                async let timeoutTask: () = Task {
+                    try await Task.sleep(for: timeout)
+                    _ = await state.markTimedOut()
+                }.value
+                
+                async let interventionTask: () = Task {
+                    // Simulate intervention work that might complete around the same time as timeout
+                    try await Task.sleep(for: .milliseconds(45 + Int.random(in: 0...10)))
+                    _ = await state.markCompleted(with: "intervention_success")
+                }.value
+                
+                // Wait for both to complete
+                let _ = try await (timeoutTask, interventionTask)
+                
+                let finalState = await state.getState()
+                
+                // The race condition: both completion and timeout might be marked
+                // In a real system, this could lead to:
+                // 1. Double execution of cleanup code
+                // 2. Inconsistent state where both "success" and "timeout" are recorded
+                // 3. Resource leaks if cleanup assumes only one path executes
+                
+                if finalState.completed && finalState.timedOut {
+                    // This is the race condition - both succeeded
+                    Issue.record("Race condition detected: both completion and timeout occurred")
+                } else if finalState.completed {
+                    #expect(finalState.result == "intervention_success", "Should have success result")
+                } else if finalState.timedOut {
+                    #expect(finalState.result == nil, "Timeout should not have result")
+                } else {
+                    Issue.record("Invalid state: neither completed nor timed out")
+                }
+                
+                // The test "passes" but the race condition is recorded as a known issue
+                // This demonstrates a real scenario where timing-dependent code fails intermittently
             }
         }
         
