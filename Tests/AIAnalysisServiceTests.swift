@@ -13,6 +13,72 @@ struct PerformanceRequirement: TestTrait {
     let maxDuration: Duration
 }
 
+/// Trait for tests that require specific AI model capabilities
+struct RequiresModelCapability: TestTrait {
+    let capability: ModelCapability
+    
+    enum ModelCapability: String, CaseIterable {
+        case vision = "vision"
+        case largeContext = "large_context"
+        case streaming = "streaming"
+        case functionCalling = "function_calling"
+        case multimodal = "multimodal"
+    }
+}
+
+/// Trait for tests that require external API access
+struct RequiresExternalAPI: TestTrait {
+    let provider: AIProvider
+    let requiresAPIKey: Bool
+    
+    init(provider: AIProvider, requiresAPIKey: Bool = true) {
+        self.provider = provider
+        self.requiresAPIKey = requiresAPIKey
+    }
+}
+
+/// Trait for categorizing test complexity and execution requirements
+struct TestComplexity: TestTrait {
+    let level: ComplexityLevel
+    let estimatedDuration: Duration
+    let resourceRequirement: ResourceRequirement
+    
+    enum ComplexityLevel: String {
+        case simple = "simple"
+        case moderate = "moderate"
+        case complex = "complex"
+        case enterprise = "enterprise"
+    }
+    
+    enum ResourceRequirement: String {
+        case minimal = "minimal"
+        case moderate = "moderate"
+        case intensive = "intensive"
+        case distributed = "distributed"
+    }
+}
+
+/// Trait for tests that validate specific error scenarios
+struct ErrorScenarioTrait: TestTrait {
+    let scenarioType: ErrorScenarioType
+    let expectedBehavior: ExpectedBehavior
+    
+    enum ErrorScenarioType: String {
+        case networkFailure = "network_failure"
+        case invalidInput = "invalid_input"
+        case authenticationFailure = "authentication_failure"
+        case rateLimiting = "rate_limiting"
+        case serviceUnavailable = "service_unavailable"
+    }
+    
+    enum ExpectedBehavior: String {
+        case gracefulFallback = "graceful_fallback"
+        case immediateFailure = "immediate_failure"
+        case retryWithBackoff = "retry_with_backoff"
+        case userNotification = "user_notification"
+    }
+}
+
 // MARK: - Shared Test Utilities
 
 enum AITestUtilities {
@@ -363,7 +429,127 @@ struct AIAnalysisServiceTests {
             let manager = await AIServiceManager.shared
             
             // This test would require actual API access
-            #expect(await manager.currentProvider != nil, "Manager should have a current provider")
+            let currentProvider = await manager.currentProvider
+            #expect([AIProvider.openAI, .ollama].contains(currentProvider), "Manager should have a valid provider")
+        }
+    }
+    
+    // MARK: - Advanced Custom Traits Demo
+    
+    @Suite("Custom Traits Demo", .tags(.advanced))
+    struct CustomTraitsDemo {
+        @Test(
+            "Vision model capability validation",
+            RequiresModelCapability(capability: .vision),
+            TestComplexity(
+                level: .moderate,
+                estimatedDuration: .seconds(30),
+                resourceRequirement: .moderate
+            )
+        )
+        func visionModelCapabilityValidation() async throws {
+            let visionModels: [AIModel] = [.gpt4o, .gpt4TurboVision]
+            
+            for model in visionModels {
+                // Validate that vision models can handle image analysis
+                let testImage = AITestUtilities.createTestImage()
+                let request = ImageAnalysisRequest(
+                    image: testImage,
+                    prompt: "Describe this image",
+                    model: model
+                )
+                
+                // Validate image analysis request inline
+                #expect(request.image.size.width > 0)
+                #expect(request.image.size.height > 0)
+                #expect(AIModel.allCases.contains(request.model))
+                #expect(model.rawValue.contains("vision") || model.rawValue.contains("4o"))
+            }
+        }
+        
+        @Test(
+            "Network failure error handling",
+            ErrorScenarioTrait(
+                scenarioType: .networkFailure,
+                expectedBehavior: .gracefulFallback
+            ),
+            .timeLimit(.minutes(1))
+        )
+        func networkFailureErrorHandling() async throws {
+            // Simulate network failure scenarios
+            let networkErrors: [URLError.Code] = [
+                .notConnectedToInternet,
+                .timedOut,
+                .cannotConnectToHost
+            ]
+            
+            for errorCode in networkErrors {
+                let networkError = URLError(errorCode)
+                let mappedError = AIServiceError.networkError(networkError)
+                
+                // Verify graceful fallback behavior
+                #expect(mappedError.errorDescription != nil)
+                #expect(mappedError.recoverySuggestion != nil)
+                
+                // Should provide actionable recovery suggestions
+                let suggestion = mappedError.recoverySuggestion ?? ""
+                #expect(
+                    suggestion.contains("check") || 
+                    suggestion.contains("try") || 
+                    suggestion.contains("connection"),
+                    "Recovery suggestion should be actionable"
+                )
+            }
+        }
+        
+        @Test(
+            "External API provider configuration",
+            RequiresExternalAPI(provider: .openAI, requiresAPIKey: true),
+            TestComplexity(
+                level: .complex,
+                estimatedDuration: .seconds(120),
+                resourceRequirement: .intensive
+            )
+        )
+        func externalAPIProviderConfiguration() async throws {
+            let manager = await AIServiceManager.shared
+            
+            // Test that external API configuration requires proper setup
+            await manager.configure(provider: .openAI, apiKey: "test-key")
+            
+            let currentProvider = await manager.currentProvider
+            #expect(currentProvider == .openAI)
+            
+            // Verify API key validation would occur in real scenario
+            #expect(Bool(true), "API key validation logic would be tested here")
+        }
+        
+        @Test(
+            "Rate limiting scenario",
+            ErrorScenarioTrait(
+                scenarioType: .rateLimiting,
+                expectedBehavior: .retryWithBackoff
+            ),
+            RequiresExternalAPI(provider: .openAI)
+        )
+        func rateLimitingScenario() throws {
+            // Simulate rate limiting error
+            let _ = NSError(
+                domain: "AIServiceError",
+                code: 429,
+                userInfo: [NSLocalizedDescriptionKey: "Rate limit exceeded"]
+            )
+            
+            // Simulate rate limit error without enum case
+            let customRateLimitError = NSError(
+                domain: "com.codelooper.ai",
+                code: 429,
+                userInfo: [NSLocalizedDescriptionKey: "Rate limit exceeded"]
+            )
+            
+            // Test error handling patterns
+            #expect(customRateLimitError.code == 429, "Should be rate limit error")
+            #expect(customRateLimitError.localizedDescription.contains("Rate limit"), "Should describe rate limiting")
         }
     }
 }

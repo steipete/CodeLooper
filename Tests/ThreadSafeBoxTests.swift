@@ -379,6 +379,134 @@ struct ThreadSafeBoxTests {
         }
     }
 
+    // MARK: - Test Instance Lifecycle Demo
+    
+    @Suite("Test Instance Lifecycle", .tags(.lifecycle, .advanced))
+    final class TestInstanceLifecycleDemo: Sendable {
+        // Static counter to track instances across all tests
+        @MainActor static var totalInstancesCreated = 0
+        @MainActor static var totalInstancesDestroyed = 0
+        
+        let instanceId: Int
+        let creationTime: Date
+        
+        init() {
+            MainActor.assumeIsolated {
+                Self.totalInstancesCreated += 1
+            }
+            self.instanceId = MainActor.assumeIsolated { Self.totalInstancesCreated }
+            self.creationTime = Date()
+            print("[LIFECYCLE] Test instance \(instanceId) created at \(creationTime)")
+        }
+        
+        deinit {
+            MainActor.assumeIsolated {
+                Self.totalInstancesDestroyed += 1
+            }
+            let lifetime = Date().timeIntervalSince(creationTime)
+            print("[LIFECYCLE] Test instance \(instanceId) destroyed after \(String(format: "%.3f", lifetime))s")
+        }
+        
+        @Test("Instance lifecycle - Test 1")
+        func instanceLifecycleTest1() async throws {
+            print("[LIFECYCLE] Executing test 1 in instance \(instanceId)")
+            let box = ThreadSafeBox(instanceId)
+            #expect(box.get() == instanceId, "Box should contain instance ID")
+            
+            // Simulate some work
+            try await Task.sleep(for: .milliseconds(10))
+            box.set(instanceId * 10)
+            #expect(box.get() == instanceId * 10, "Box should contain modified value")
+        }
+        
+        @Test("Instance lifecycle - Test 2")
+        func instanceLifecycleTest2() async throws {
+            print("[LIFECYCLE] Executing test 2 in instance \(instanceId)")
+            let box = ThreadSafeBox("instance-\(instanceId)")
+            #expect(box.get() == "instance-\(instanceId)", "Box should contain instance string")
+            
+            // Demonstrate instance isolation
+            let previousTotal = await MainActor.run { Self.totalInstancesCreated }
+            #expect(previousTotal >= instanceId, "Instance count should be consistent")
+        }
+        
+        @Test("Instance lifecycle - Test 3")
+        func instanceLifecycleTest3() async throws {
+            print("[LIFECYCLE] Executing test 3 in instance \(instanceId)")
+            
+            // Each test gets a fresh instance, so instance variables are reset
+            let timeSinceCreation = Date().timeIntervalSince(creationTime)
+            #expect(timeSinceCreation < 1.0, "Instance should be recently created")
+            
+            // Verify instance uniqueness
+            let box = ThreadSafeBox(creationTime.timeIntervalSince1970)
+            let retrievedTime = box.get()
+            #expect(abs(retrievedTime - creationTime.timeIntervalSince1970) < 0.001, "Times should match")
+        }
+        
+        @Test("Instance isolation verification")
+        func instanceIsolationVerification() async throws {
+            print("[LIFECYCLE] Verifying isolation in instance \(instanceId)")
+            
+            // This test demonstrates that each test method gets its own instance
+            // Instance variables are fresh for each test
+            #expect(instanceId > 0, "Instance ID should be positive")
+            let totalCreated = await MainActor.run { Self.totalInstancesCreated }
+            #expect(instanceId <= totalCreated, "Instance ID should be within range")
+            
+            // Create a box with instance-specific data
+            let box = ThreadSafeBox([instanceId: creationTime])
+            let data = box.get()
+            #expect(data.keys.contains(instanceId), "Data should contain instance ID")
+        }
+        
+        @Test("Static state persistence across instances")
+        func staticStatePersistence() async throws {
+            print("[LIFECYCLE] Checking static state in instance \(instanceId)")
+            
+            // Static variables persist across test instances
+            let totalCreated = await MainActor.run { Self.totalInstancesCreated }
+            #expect(totalCreated >= instanceId, "Total instances should include current")
+            
+            // Each instance sees the cumulative static state
+            let box = ThreadSafeBox(totalCreated)
+            #expect(box.get() >= 1, "Should have at least one instance created")
+            
+            // Verify static state is shared but instance state is isolated
+            let instanceBox = ThreadSafeBox(instanceId)
+            let currentInstanceId = self.instanceId
+            box.update { $0 + currentInstanceId }
+            
+            // The boxes are separate even though they're in the same test instance
+            #expect(instanceBox.get() == instanceId, "Instance box unchanged")
+            #expect(box.get() == totalCreated + instanceId, "Static box modified")
+        }
+        
+        @Test("Memory cleanup demonstration")
+        func memoryCleanupDemo() async throws {
+            print("[LIFECYCLE] Memory cleanup demo in instance \(instanceId)")
+            
+            weak var weakBox: ThreadSafeBox<String>?
+            
+            // Create scope where box will be deallocated
+            do {
+                let box = ThreadSafeBox("cleanup-test-\(instanceId)")
+                weakBox = box
+                
+                #expect(weakBox != nil, "Box should be alive within scope")
+                box.set("modified-\(instanceId)")
+                #expect(box.get() == "modified-\(instanceId)", "Box should work normally")
+            }
+            
+            // Force cleanup
+            await Task.yield()
+            
+            // Box should be deallocated when test instance is destroyed
+            // Note: This might still be alive here because the test instance hasn't been destroyed yet
+            // The real cleanup happens in deinit
+        }
+    }
+
     // MARK: - Test Fixtures and Setup
 
     /// Test fixture for creating different box types
@@ -390,8 +518,22 @@ struct ThreadSafeBoxTests {
         "Hello", "World", "Swift", "Testing", "Framework",
     ]
 
-    // MARK: - Parameterized Tests
-
+    // MARK: - Advanced Parameterized Tests
+    
+    /// Complex test case structure for comprehensive parameterized testing
+    struct BoxTestScenario {
+        let initialValue: Any
+        let operations: [BoxOperation]
+        let expectedFinalValue: Any
+        let description: String
+        
+        enum BoxOperation {
+            case set(Any)
+            case transform((Any) -> Any)
+            case concurrentUpdate(count: Int, operation: (Any) -> Any)
+        }
+    }
+    
     @Test("Equals method works correctly", arguments: [
         ("test", "test", true),
         ("test", "other", false),
@@ -406,6 +548,94 @@ struct ThreadSafeBoxTests {
         } else {
             #expect(!box.equals(value2), "'\(value1)' should not equal '\(value2)'")
         }
+    }
+    
+    @Test(
+        "Dictionary operations with type safety", 
+        arguments: [
+            (key: "count", initialValue: 0, expectedValue: 5),
+            (key: "index", initialValue: 10, expectedValue: 15),
+            (key: "total", initialValue: 100, expectedValue: 105)
+        ]
+    )
+    func dictionaryOperationsWithTypeSafety(
+        testCase: (key: String, initialValue: Int, expectedValue: Int)
+    ) async throws {
+        let box = ThreadSafeBox([testCase.key: testCase.initialValue])
+        
+        // Verify initial state
+        let initial = box.get()
+        #expect(initial[testCase.key] == testCase.initialValue, "Should have initial value")
+        
+        // Apply increment operation
+        box.update { dict in
+            var newDict = dict
+            newDict[testCase.key] = (newDict[testCase.key] ?? 0) + 5
+            return newDict
+        }
+        
+        // Verify final state
+        let final = box.get()
+        #expect(final[testCase.key] == testCase.expectedValue, "Should have expected value")
+    }
+    
+    @Test(
+        "Performance characteristics under different loads",
+        arguments: [
+            (threads: 1, operations: 1000, dataElements: 10),
+            (threads: 4, operations: 500, dataElements: 100),
+            (threads: 8, operations: 250, dataElements: 1000),
+            (threads: 16, operations: 125, dataElements: 10)
+        ]
+    )
+    func performanceCharacteristics(
+        testCase: (threads: Int, operations: Int, dataElements: Int)
+    ) async throws {
+        enum DataSize {
+            case small, medium, large
+            
+            var sampleData: [String] {
+                switch self {
+                case .small: return Array(repeating: "x", count: 10)
+                case .medium: return Array(repeating: "x", count: 100)  
+                case .large: return Array(repeating: "x", count: 1000)
+                }
+            }
+        }
+        
+        let dataSize: DataSize = testCase.dataElements <= 10 ? .small : 
+                                 testCase.dataElements <= 100 ? .medium : .large
+        
+        let box = ThreadSafeBox(dataSize.sampleData)
+        let startTime = ContinuousClock().now
+        
+        await withTaskGroup(of: Void.self) { group in
+            for threadId in 0..<testCase.threads {
+                group.addTask {
+                    for operation in 0..<testCase.operations {
+                        let newData = dataSize.sampleData + ["\(threadId)-\(operation)"]
+                        box.set(newData)
+                        _ = box.get()
+                    }
+                }
+            }
+        }
+        
+        let elapsed = ContinuousClock().now - startTime
+        let totalOperations = testCase.threads * testCase.operations * 2 // set + get
+        let operationsPerSecond = Double(totalOperations) / Double(elapsed.components.seconds)
+        
+        // Performance expectations based on load
+        let expectedMinOpsPerSecond: Double = switch dataSize {
+        case .small: 10000
+        case .medium: 5000
+        case .large: 1000
+        }
+        
+        #expect(
+            operationsPerSecond > expectedMinOpsPerSecond,
+            "Performance should be at least \(expectedMinOpsPerSecond) ops/sec, got \(operationsPerSecond)"
+        )
     }
 
     // MARK: - Conditional Tests

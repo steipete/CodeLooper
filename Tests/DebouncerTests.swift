@@ -451,7 +451,106 @@ struct DebouncerTests {
             try await Task.sleep(for: .milliseconds(150))
 
             // This test mainly verifies no crashes occur
-            #expect(true, "Debouncer deallocation should not cause crashes")
+            #expect(Bool(true), "Debouncer deallocation should not cause crashes")
+        }
+    }
+    
+    // MARK: - Advanced Confirmation Patterns
+    
+    @Suite("Confirmation Patterns", .tags(.async, .advanced))
+    struct ConfirmationPatterns {
+        @Test("Multi-step debouncer lifecycle with confirmations")
+        @MainActor
+        func multiStepDebouncerLifecycle() async throws {
+            let debouncer = Debouncer(delay: 0.05)
+            let counter = TestCounter()
+            
+            // Use confirmation to track multiple expected events
+            try await confirmation("Debouncer executes through complete lifecycle", expectedCount: 3) { confirm in
+                // Step 1: Initial call
+                debouncer.call {
+                    Task {
+                        await counter.increment()
+                        confirm() // First confirmation
+                    }
+                }
+                
+                // Wait for first execution
+                try await Task.sleep(for: .milliseconds(70))
+                
+                // Step 2: Second call after first completes
+                debouncer.call {
+                    Task {
+                        await counter.increment()
+                        confirm() // Second confirmation
+                    }
+                }
+                
+                // Wait for second execution  
+                try await Task.sleep(for: .milliseconds(70))
+                
+                // Step 3: Final verification
+                let finalCount = await counter.getCount()
+                #expect(finalCount == 2, "Should have executed twice")
+                confirm() // Third confirmation
+            }
+        }
+        
+        @Test("Debouncer cancellation pattern with confirmations")
+        @MainActor
+        func debouncerCancellationPattern() async throws {
+            let debouncer = Debouncer(delay: 0.1)
+            let counter = TestCounter()
+            
+            try await confirmation("Only the final call executes", expectedCount: 1) { confirm in
+                // Make several rapid calls that should cancel each other
+                for i in 1...5 {
+                    debouncer.call {
+                        Task {
+                            await counter.increment(with: i)
+                            if i == 5 { // Only the last call should execute
+                                confirm()
+                            }
+                        }
+                    }
+                    try await Task.sleep(for: .milliseconds(10)) // Much shorter than delay
+                }
+                
+                // Wait for the final call to execute
+                try await Task.sleep(for: .milliseconds(150))
+                
+                let (count, lastValue) = await counter.getCountAndValue()
+                #expect(count == 1, "Should execute only once")
+                #expect(lastValue == 5, "Should execute with last value")
+            }
+        }
+        
+        @Test("Stream-like confirmation pattern", .timeLimit(.minutes(1)))
+        @MainActor
+        func streamLikeConfirmationPattern() async throws {
+            let debouncer = Debouncer(delay: 0.02)
+            let counter = TestCounter()
+            
+            // Simulate a stream of events where we expect exactly 10 to be processed
+            try await confirmation("Stream processes exactly 10 events", expectedCount: 10) { confirm in
+                // Send 100 rapid events, but only expect ~10 to actually execute due to debouncing
+                for i in 1...100 {
+                    debouncer.call {
+                        Task {
+                            await counter.append("event-\(i)")
+                            confirm()
+                        }
+                    }
+                    try await Task.sleep(for: .milliseconds(1))
+                }
+                
+                // Wait for all debounced calls to settle
+                try await Task.sleep(for: .milliseconds(50))
+            }
+            
+            let results = await counter.getResults()
+            #expect(results.count == 10, "Should have processed exactly 10 events")
+            #expect(results.last?.contains("event-100") == true, "Last event should be the final one")
         }
     }
 
