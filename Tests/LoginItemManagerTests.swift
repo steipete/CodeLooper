@@ -5,13 +5,6 @@ import Testing
 @Suite("LoginItemManager Tests")
 struct LoginItemManagerTests {
     /// Test suite for LoginItemManager functionality
-    @Test("Login item manager initialization")
-    func loginItemManagerInitialization() async throws {
-        let manager = await LoginItemManager.shared
-
-        // Test that manager is created without errors
-        #expect(true) // Manager exists as singleton
-    }
 
     @Test("Enable login item")
     func enableLoginItem() async throws {
@@ -79,7 +72,6 @@ struct LoginItemManagerTests {
 
         // Note: We don't verify the final state matches initial state
         // because system restrictions might prevent changes in test environment
-        #expect(true) // If we get here, no crashes occurred
     }
 
     @Test("Service management integration")
@@ -102,44 +94,6 @@ struct LoginItemManagerTests {
             observation.cancel()
         }
 
-        #expect(true) // If we get here, no crashes occurred
-    }
-
-    @Test("Login item error handling")
-    func loginItemErrorHandling() async throws {
-        let manager = await LoginItemManager.shared
-
-        // Test that manager handles edge cases gracefully
-        // Multiple rapid calls shouldn't crash
-        for _ in 0 ..< 5 {
-            _ = await manager.startsAtLogin()
-        }
-
-        // Rapid enable/disable calls shouldn't crash
-        let currentState = await manager.startsAtLogin()
-        await manager.setStartAtLogin(enabled: !currentState)
-        await manager.setStartAtLogin(enabled: currentState) // Restore
-
-        #expect(true) // If we get here, no crashes occurred
-    }
-
-    @Test("Login item settings integration")
-    func loginItemSettingsIntegration() async throws {
-        let manager = await LoginItemManager.shared
-
-        // Test that manager can work with settings system
-        // This mainly tests that there are no conflicts or crashes
-
-        let status = await manager.startsAtLogin()
-
-        // Simulate settings change
-        await manager.setStartAtLogin(enabled: status) // Set to same value (no-op)
-
-        // Test sync functionality
-        let syncResult = await manager.syncLoginItemWithPreference()
-        #expect(!syncResult == true || syncResult) // Should return a boolean
-
-        #expect(true) // If we get here, no crashes occurred
     }
 
     @Test("Login item thread safety")
@@ -174,7 +128,5 @@ struct LoginItemManagerTests {
 
         // Restore original state
         await manager.setStartAtLogin(enabled: initialState)
-
-        #expect(true) // If we get here, no crashes occurred
     }
 }

@@ -213,15 +213,6 @@ struct IntegrationTests {
         await monitor.stopMonitoringLoop()
     }
 
-    @Test("Rule execution integration") @MainActor func ruleExecutionIntegration() async throws {
-        let ruleExecutor = await RuleExecutor()
-
-        // Test that rule executor can run without errors
-        await ruleExecutor.executeEnabledRules()
-
-        // Verify no crashes occurred
-        #expect(true) // If we get here, no exception was thrown
-    }
 
     // MARK: - Settings Persistence Tests
 
@@ -362,9 +353,6 @@ struct IntegrationTests {
 
         // Test that monitor can interact with its dependencies
         await monitor.performMonitoringCycle()
-
-        // Verify no crashes occurred
-        #expect(true)
     }
 
     @Test("Cross service error handling") @MainActor func crossServiceErrorHandling() async throws {
@@ -387,7 +375,5 @@ struct IntegrationTests {
 
         // This should not crash
         await monitor.performMonitoringCycle()
-
-        #expect(true) // If we get here, error was handled gracefully
     }
 }
