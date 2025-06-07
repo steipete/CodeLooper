@@ -47,7 +47,7 @@ struct NotificationHandlingTests {
             let nsError = NSError(domain: "TestDomain", code: 123, userInfo: [NSLocalizedDescriptionKey: "Test error"])
             let nsDeliveryError = NotificationError.deliveryFailed(nsError)
 
-            #expect(nsDeliveryError.errorDescription?.contains("Test error") == true)
+            #expect(nsDeliveryError.errorDescription?.contains("Test error") ?? false)
         }
     }
 

@@ -15,7 +15,7 @@ struct SoundManagerTests {
         // Test that userAlert case matches expected pattern
         switch userAlert {
         case .userAlert:
-            #expect(true, "userAlert case created successfully")
+            #expect(Bool(true), "userAlert case created successfully")
         case .named:
             Issue.record("Expected userAlert case, got named case")
         }
@@ -28,54 +28,30 @@ struct SoundManagerTests {
         }
     }
 
-    @Test("System sound named sound creation")
-    func systemSoundNamedSoundCreation() async throws {
-        // Test creating named sounds with different file names
-        let boopSound = SystemSound.named("Boop.aiff")
-        let glassSound = SystemSound.named("Glass.aiff")
-        let funkSound = SystemSound.named("Funk.aiff")
+    @Test("System sound named sound creation", arguments: ["Boop.aiff", "Glass.aiff", "Funk.aiff"])
+    func systemSoundNamedSoundCreation(soundFileName: String) async throws {
+        // Test creating named sound with the given file name
+        let sound = SystemSound.named(soundFileName)
 
-        // Verify named sounds contain the correct file names
-        if case let .named(fileName) = boopSound {
-            #expect(fileName == "Boop.aiff")
-        }
-        if case let .named(fileName) = glassSound {
-            #expect(fileName == "Glass.aiff")
-        }
-        if case let .named(fileName) = funkSound {
-            #expect(fileName == "Funk.aiff")
-        }
-    }
-
-    @Test("System sound named sound with empty string")
-    func systemSoundNamedSoundEmptyString() async throws {
-        // Test creating a named sound with empty string
-        let emptySound = SystemSound.named("")
-
-        // Should still create the enum case with empty string
-        if case let .named(fileName) = emptySound {
-            #expect(fileName == "")
+        // Verify named sound contains the correct file name
+        if case let .named(fileName) = sound {
+            #expect(fileName == soundFileName)
         } else {
-            Issue.record("Expected named sound case with empty string")
+            Issue.record("Expected named sound case for \(soundFileName)")
         }
     }
 
-    @Test("System sound named sound with special characters")
-    func systemSoundNamedSoundSpecialCharacters() async throws {
-        // Test creating named sounds with special characters
-        let soundWithSpaces = SystemSound.named("Sound With Spaces.aiff")
-        let soundWithNumbers = SystemSound.named("Sound123.aiff")
-        let soundWithSymbols = SystemSound.named("Sound-_().aiff")
+    @Test("System sound named sound with special characters", 
+          arguments: ["Sound With Spaces.aiff", "Sound123.aiff", "Sound-_().aiff", "Sound@#$%.aiff", ""])
+    func systemSoundNamedSoundSpecialCharacters(testFileName: String) async throws {
+        // Test creating named sound with special characters or empty string
+        let sound = SystemSound.named(testFileName)
 
-        // Verify named sounds preserve special characters
-        if case let .named(fileName) = soundWithSpaces {
-            #expect(fileName == "Sound With Spaces.aiff")
-        }
-        if case let .named(fileName) = soundWithNumbers {
-            #expect(fileName == "Sound123.aiff")
-        }
-        if case let .named(fileName) = soundWithSymbols {
-            #expect(fileName == "Sound-_().aiff")
+        // Verify named sound preserves the exact input
+        if case let .named(fileName) = sound {
+            #expect(fileName == testFileName)
+        } else {
+            Issue.record("Expected named sound case for '\(testFileName)'")
         }
     }
 
@@ -88,14 +64,12 @@ struct SoundManagerTests {
         #expect(Bool(true)) // If we get here, the call didn't crash
     }
 
-    @Test("Sound engine play named sound")
-    func soundEnginePlayNamedSound() async throws {
-        // Test that playing a named sound doesn't crash
-        SoundEngine.play(.named("Boop.aiff"))
-        SoundEngine.play(.named("Glass.aiff"))
-        SoundEngine.play(.named("Funk.aiff"))
-
-        #expect(Bool(true)) // If we get here, the calls didn't crash
+    @Test("Sound engine play named sound", arguments: ["Boop.aiff", "Glass.aiff", "Funk.aiff", "NonExistent.aiff"])
+    func soundEnginePlayNamedSound(soundName: String) async throws {
+        // Test that playing a named sound doesn't crash (even if file doesn't exist)
+        SoundEngine.play(.named(soundName))
+        
+        #expect(Bool(true)) // If we get here, the call didn't crash
     }
 
     @Test("Sound engine play invalid named sound")
