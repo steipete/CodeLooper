@@ -24,22 +24,19 @@ struct HeartbeatMonitoringTests {
             )
 
             // Group related assertions for better failure reporting
-            #expectAll("Process identifiers are consistent") {
-                #expect(instanceInfo.id == 12345)
-                #expect(instanceInfo.processIdentifier == 12345)
-                #expect(instanceInfo.pid == 12345)
-            }
+            // Process identifiers
+            #expect(instanceInfo.id == 12345)
+            #expect(instanceInfo.processIdentifier == 12345)
+            #expect(instanceInfo.pid == 12345)
             
-            #expectAll("App properties are set correctly") {
-                #expect(instanceInfo.bundleIdentifier == "com.test.app")
-                #expect(instanceInfo.localizedName == "Test App")
-            }
+            // App properties
+            #expect(instanceInfo.bundleIdentifier == "com.test.app")
+            #expect(instanceInfo.localizedName == "Test App")
             
-            #expectAll("Status properties are set correctly") {
-                #expect(instanceInfo.status == .idle)
-                #expect(instanceInfo.statusMessage == "Test status")
-                #expect(instanceInfo.lastInterventionType == .connection)
-            }
+            // Status properties
+            #expect(instanceInfo.status == .idle)
+            #expect(instanceInfo.statusMessage == "Test status")
+            #expect(instanceInfo.lastInterventionType == .connection)
         }
 
         @Test(
@@ -276,11 +273,9 @@ struct HeartbeatMonitoringTests {
                 lastInterventionType: nil
             )
 
-            #expectAll {
-                #expect(instanceInfo.statusMessage == message)
-                #expect(instanceInfo.id == 12345)
-                #expect(instanceInfo.bundleIdentifier == "com.test.app")
-            }
+            #expect(instanceInfo.statusMessage == message)
+            #expect(instanceInfo.id == 12345)
+            #expect(instanceInfo.bundleIdentifier == "com.test.app")
         }
 
     @Test("Recovery attempt progression in heartbeat") func recoveryAttemptProgressionInHeartbeat() async throws {

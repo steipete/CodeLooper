@@ -70,12 +70,11 @@ struct SessionLoggingTests {
             
             // Verify last entry matches what we logged
             if let lastEntry = logger.entries.last {
-                #expectAll("Entry properties match") {
-                    #expect(lastEntry.level == testCase.level)
-                    #expect(lastEntry.message == testCase.message)
-                    if let pid = testCase.pid {
-                        #expect(lastEntry.pid == pid)
-                    }
+                // Entry properties match
+                #expect(lastEntry.level == testCase.level)
+                #expect(lastEntry.message == testCase.message)
+                if let pid = testCase.pid {
+                    #expect(lastEntry.pid == pid)
                 }
             }
         }
