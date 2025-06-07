@@ -15,7 +15,7 @@ final class ClaudeProcessDetector: Loggable, @unchecked Sendable {
             "/.claude/local/node_modules/.bin/claude",
             "\\.claude\\local\\node_modules\\.bin\\claude"
         ]
-        static let nodeProcessNames = ["node"]
+        static let nodeProcessNames = ["node", "claude"]
         static let claudeIndicators = ["anthropic", "claude"]
     }
     
@@ -78,6 +78,7 @@ final class ClaudeProcessDetector: Loggable, @unchecked Sendable {
             // Check if this Node process is running Claude
             guard isClaudeProcess(arguments: processArgs) else {
                 logger.debug("Node process PID \(pid) is not Claude")
+                logger.debug("Process args for PID \(pid): \(String(processArgs.prefix(200)))")
                 continue
             }
             
@@ -186,6 +187,16 @@ final class ClaudeProcessDetector: Loggable, @unchecked Sendable {
     
     private func isClaudeProcess(arguments: String) -> Bool {
         let lowercasedArgs = arguments.lowercased()
+        
+        // If the first argument (command) ends with "claude", it's definitely Claude
+        let components = arguments.split(separator: "\0", maxSplits: 2, omittingEmptySubsequences: false)
+        if let firstArg = components.first {
+            let command = String(firstArg).trimmingCharacters(in: .whitespaces)
+            if command.hasSuffix("claude") || command.hasSuffix("/claude") {
+                logger.debug("Found Claude via command name: \(command)")
+                return true
+            }
+        }
         
         // Check for specific Claude installation path patterns
         for pattern in Configuration.claudePathPatterns {
