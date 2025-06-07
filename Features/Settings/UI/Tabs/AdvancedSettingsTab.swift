@@ -51,6 +51,85 @@ struct AdvancedSettingsTab: View {
                             .gridCellColumns(2)
                     }
 
+                    // HTTP Server Settings
+                    GridRow {
+                        Text("HTTP Server:")
+                            .frame(width: 120, alignment: .trailing)
+                            .gridCellAnchor(.topTrailing)
+                            .gridColumnAlignment(.trailing)
+
+                        VStack(alignment: .leading, spacing: 12) {
+                            Toggle("Enable HTTP Server", isOn: Binding(
+                                get: { Defaults[.httpServerEnabled] },
+                                set: { newValue in
+                                    Defaults[.httpServerEnabled] = newValue
+                                    if newValue {
+                                        Task { await HTTPServerService.shared.startServer() }
+                                    } else {
+                                        Task { await HTTPServerService.shared.stopServer() }
+                                    }
+                                }
+                            ))
+                            .toggleStyle(.checkbox)
+                            .help("Enable HTTP server for remote monitoring and control")
+
+                            HStack {
+                                Text("Port:")
+                                    .frame(width: 40, alignment: .leading)
+                                TextField("8080", value: Binding(
+                                    get: { Defaults[.httpServerPort] },
+                                    set: { newValue in
+                                        Defaults[.httpServerPort] = newValue
+                                        if Defaults[.httpServerEnabled] {
+                                            Task {
+                                                await HTTPServerService.shared.restartServer()
+                                            }
+                                        }
+                                    }
+                                ), format: .number)
+                                .textFieldStyle(.roundedBorder)
+                                .frame(width: 80)
+                            }
+
+                            HStack {
+                                Text("ngrok API Key:")
+                                    .frame(width: 100, alignment: .leading)
+                                SecureField("API Key", text: Binding(
+                                    get: { Defaults[.ngrokAPIKey] },
+                                    set: { newValue in Defaults[.ngrokAPIKey] = newValue }
+                                ))
+                                .textFieldStyle(.roundedBorder)
+                                .frame(maxWidth: 200)
+                            }
+
+                            HStack {
+                                Text("Screenshot Refresh:")
+                                    .frame(width: 120, alignment: .leading)
+                                TextField("1000", value: Binding(
+                                    get: { Defaults[.httpServerScreenshotRefreshRate] },
+                                    set: { newValue in Defaults[.httpServerScreenshotRefreshRate] = newValue }
+                                ), format: .number)
+                                .textFieldStyle(.roundedBorder)
+                                .frame(width: 80)
+                                Text("ms")
+                                    .foregroundColor(.secondary)
+                            }
+
+                            if Defaults[.httpServerEnabled] {
+                                Text("Access your instances at: http://localhost:\(Defaults[.httpServerPort])")
+                                    .font(.caption)
+                                    .foregroundColor(.secondary)
+                            }
+                        }
+                        .gridColumnAlignment(.leading)
+                    }
+                    .padding(.vertical, 6)
+
+                    GridRow {
+                        Divider()
+                            .gridCellColumns(2)
+                    }
+
                     // Reset
                     GridRow {
                         Text("Reset settings:")

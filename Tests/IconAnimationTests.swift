@@ -93,8 +93,27 @@ struct IconAnimationTests {
         #expect(concurrentState || !concurrentState)
     }
 
-    // MARK: - LottieMenuBarView Tests
+    // MARK: - AnimatedLoopIcon Tests
 
+    @Test("AnimatedLoopIcon integration")
+    func animatedLoopIconIntegration() async throws {
+        // Test that AnimatedLoopIcon can be created
+        let iconView = AnimatedLoopIcon(size: 16)
+
+        // AnimatedLoopIcon is a SwiftUI view, just verify it can be created
+        #expect(true)
+    }
+
+    @Test("AnimatedLoopIcon sizes")
+    func animatedLoopIconSizes() async throws {
+        let smallIcon = AnimatedLoopIcon(size: 8)
+        let mediumIcon = AnimatedLoopIcon(size: 16)
+        let largeIcon = AnimatedLoopIcon(size: 32)
+
+        // AnimatedLoopIcon should handle different sizes gracefully
+        // Just verify they don't crash
+        #expect(true)
+    }
     // MARK: - CustomChainLinkIcon Tests
     // MARK: - MenuBarIconManager Tests
 
@@ -108,13 +127,18 @@ struct IconAnimationTests {
             let mockStatusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
             let animator = IconAnimator(statusItem: mockStatusItem)
             let manager = MenuBarIconManager.shared
+            let customIcon = CustomChainLinkIcon(size: 16)
+            let animatedIcon = AnimatedLoopIcon(size: 16)
+
             // Test that all components can work together
             animator.startAnimating()
             manager.setState(.syncing)
+            // Icons update automatically based on defaults
 
             // Stop animation
             animator.stopAnimating()
             manager.setState(.idle)
+            // Icons update automatically
 
             // System should work without conflicts
             #expect(true)

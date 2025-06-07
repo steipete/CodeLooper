@@ -34,6 +34,8 @@ let package = Package(
         // AI and image analysis dependencies
         .package(url: "https://github.com/MacPaw/OpenAI", .upToNextMajor(from: "0.4.3")),
         .package(url: "https://github.com/loopwork-ai/ollama-swift", .upToNextMajor(from: "1.5.0")),
+        // HTTP server
+        .package(url: "https://github.com/hummingbird-project/hummingbird.git", from: "2.5.0"),
         // Development-only dependencies
         .package(url: "https://github.com/cpisciotta/xcbeautify", from: "2.28.0"),
     ],
@@ -63,6 +65,7 @@ let package = Package(
                 .product(name: "OpenAI", package: "OpenAI"),
                 .product(name: "Ollama", package: "ollama-swift"),
                 .product(name: "Demark", package: "Demark"),
+                .product(name: "Hummingbird", package: "hummingbird"),
             ],
             path: ".",
             exclude: [

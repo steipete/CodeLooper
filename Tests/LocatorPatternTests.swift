@@ -92,7 +92,8 @@ struct LocatorPatternTests {
 
             // Verify discoverer is created successfully
             // DynamicLocatorDiscoverer is always created without error
-            #expect(discoverer != nil, "Discoverer should be created successfully")
+            _ = discoverer
+            #expect(true, "Discoverer should be created successfully")
         }
 
         @Test("Discovery process simulation")
@@ -126,7 +127,7 @@ struct LocatorPatternTests {
         )
         @MainActor func endToEndLocatorUsage(testCase: (type: LocatorType, action: String)) async throws {
             let manager = await LocatorManager.shared
-            let discoverer = await DynamicLocatorDiscoverer()
+            _ = await DynamicLocatorDiscoverer()
 
             // In real implementation, discovery would happen here
             // For testing, we just verify the flow

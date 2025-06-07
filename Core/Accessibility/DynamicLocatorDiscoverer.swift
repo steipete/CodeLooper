@@ -56,7 +56,7 @@ class DynamicLocatorDiscoverer {
     ///   - axorcist: An instance of `AXorcist` to perform queries.
     /// - Returns: An `AXorcist.Locator` if discovery is successful, otherwise `nil`.
     func discover(type: LocatorType, for pid: pid_t, axorcist: AXorcist) async -> Locator? {
-        guard let specificHeuristics = heuristicsRegistry[type], !specificHeuristics.isEmpty else {
+        guard let specificHeuristics = heuristics[type], !specificHeuristics.isEmpty else {
             SessionLogger.shared.log(
                 level: .debug,
                 message: "No dynamic discovery heuristics registered for LocatorType: \(type.rawValue)",
@@ -104,7 +104,4 @@ class DynamicLocatorDiscoverer {
     // This maps a locator type to an ordered list of heuristics to try.
     // The order matters: heuristics are tried sequentially.
     private let heuristics: [LocatorType: [AXElementHeuristic]]
-
-    // Heuristics will be registered here, mapping LocatorType to an array of heuristic instances.
-    private var heuristicsRegistry: [LocatorType: [AXElementHeuristic]] = [:]
 }

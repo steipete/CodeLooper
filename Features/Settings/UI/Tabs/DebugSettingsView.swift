@@ -3,13 +3,39 @@ import DesignSystem
 import Diagnostics
 import SwiftUI
 
+// Type aliases to resolve ambiguity
+private typealias DiagnosticsLogLevel = Diagnostics.LogLevel
+private typealias DiagnosticsLogEntry = Diagnostics.LogEntry
+
 struct DebugSettingsView: View {
     // MARK: Internal
 
-    @EnvironmentObject var sessionLogger: SessionLogger
+    @EnvironmentObject var sessionLogger: Diagnostics.SessionLogger
 
     var body: some View {
         VStack(alignment: .leading, spacing: Spacing.xLarge) {
+            // Menu Bar Icon Settings
+            DSSettingsSection("Menu Bar Icon") {
+                VStack(alignment: .leading, spacing: Spacing.medium) {
+                    DSToggle(
+                        "Use Animated Icon",
+                        isOn: $useDynamicMenuBarIcon,
+                        description: "Use animated SwiftUI icon instead of static PNG image in menu bar"
+                    )
+
+                    HStack {
+                        Text("Current icon type:")
+                            .font(Typography.caption1())
+                            .foregroundColor(ColorPalette.textSecondary)
+
+                        Spacer()
+
+                        Text(useDynamicMenuBarIcon ? "Animated (SwiftUI)" : "Static (PNG)")
+                            .font(Typography.caption1(.medium))
+                            .foregroundColor(useDynamicMenuBarIcon ? ColorPalette.success : ColorPalette.loopTint)
+                    }
+                }
+            }
 
             // JS Hook Settings
             DSSettingsSection("JavaScript Hook Settings") {
@@ -33,6 +59,11 @@ struct DebugSettingsView: View {
                             .foregroundColor(automaticJSHookInjection ? ColorPalette.warning : ColorPalette.success)
                     }
                 }
+            }
+
+            // Animation Test Section
+            DSSettingsSection("Animation Test") {
+                AnimationTestView()
             }
 
             // Debug Information
@@ -111,6 +142,7 @@ struct DebugSettingsView: View {
     // MARK: Private
 
     @Default(.automaticJSHookInjection) private var automaticJSHookInjection
+    @Default(.useDynamicMenuBarIcon) private var useDynamicMenuBarIcon
 
     private var appVersion: String {
         Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "Unknown"
@@ -138,21 +170,269 @@ struct DebugSettingsView: View {
     }
 }
 
+// MARK: - Animation Test View
+
+private struct AnimationTestView: View {
+    @Default(.isGlobalMonitoringEnabled) private var isWatchingEnabled
+    @State private var testSize: CGFloat = 32
+    @State private var localAnimationEnabled = true
+    @State private var rotationAngle: Double = 0
+
+    var body: some View {
+        VStack(spacing: Spacing.medium) {
+            Text("Menu Bar Icon Test")
+                .font(Typography.body(.medium))
+                .foregroundColor(ColorPalette.text)
+
+            // Animation test views
+            HStack(spacing: Spacing.large) {
+                VStack(spacing: Spacing.small) {
+                    Text("Menu Bar Size (16x16)")
+                        .font(Typography.caption1())
+                        .foregroundColor(ColorPalette.textSecondary)
+
+                    AnimatedLoopIcon(size: 16)
+                        .background(ColorPalette.backgroundTertiary)
+                        .border(ColorPalette.error, width: 1) // Debug border
+                }
+
+                VStack(spacing: Spacing.small) {
+                    Text("Test Size (\(Int(testSize))x\(Int(testSize)))")
+                        .font(Typography.caption1())
+                        .foregroundColor(ColorPalette.textSecondary)
+
+                    AnimatedLoopIcon(size: testSize)
+                        .frame(width: testSize, height: testSize)
+                        .background(ColorPalette.backgroundTertiary)
+                        .border(ColorPalette.loopTint, width: 1) // Debug border
+                }
+
+                VStack(spacing: Spacing.small) {
+                    Text("Rotating Icon Test")
+                        .font(Typography.caption1())
+                        .foregroundColor(ColorPalette.textSecondary)
+
+                    Image(systemName: "link")
+                        .renderingMode(.template)
+                        .foregroundColor(Color.primary)
+                        .font(.system(size: testSize / 2))
+                        .frame(width: testSize, height: testSize)
+                        .rotationEffect(.degrees(localAnimationEnabled ? rotationAngle : 0))
+                        .animation(
+                            localAnimationEnabled ? .linear(duration: 2).repeatForever(autoreverses: false) : .default,
+                            value: localAnimationEnabled
+                        )
+                        .background(ColorPalette.backgroundTertiary)
+                        .border(ColorPalette.success, width: 1)
+                        .onAppear {
+                            if localAnimationEnabled {
+                                rotationAngle = 360
+                            }
+                        }
+                        .onChange(of: localAnimationEnabled) { _, newValue in
+                            if newValue {
+                                rotationAngle = 360
+                            } else {
+                                rotationAngle = 0
+                            }
+                        }
+                }
+
+                VStack(spacing: Spacing.small) {
+                    Text("Your Custom Icon")
+                        .font(Typography.caption1())
+                        .foregroundColor(ColorPalette.textSecondary)
+
+                    CustomChainLinkIcon(size: testSize)
+                        .background(ColorPalette.backgroundTertiary)
+                        .border(ColorPalette.loopPurple, width: 1)
+                }
+
+                VStack(spacing: Spacing.small) {
+                    Text("Simplified Test")
+                        .font(Typography.caption1())
+                        .foregroundColor(ColorPalette.textSecondary)
+
+                    SimplifiedChainLinkIcon(size: testSize)
+                        .background(ColorPalette.backgroundTertiary)
+                        .border(ColorPalette.warning, width: 1)
+                }
+            }
+
+            DSDivider()
+
+            // Controls section
+            VStack(spacing: Spacing.medium) {
+                // Animation toggle buttons
+                HStack(spacing: Spacing.medium) {
+                    Text("Local Animation:")
+                        .font(Typography.caption1())
+                        .foregroundColor(ColorPalette.textSecondary)
+
+                    Button("Enable") {
+                        localAnimationEnabled = true
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .disabled(localAnimationEnabled)
+
+                    Button("Disable") {
+                        localAnimationEnabled = false
+                    }
+                    .buttonStyle(.bordered)
+                    .disabled(!localAnimationEnabled)
+                }
+
+                // Global monitoring toggle
+                HStack(spacing: Spacing.medium) {
+                    Text("Global Monitoring:")
+                        .font(Typography.caption1())
+                        .foregroundColor(ColorPalette.textSecondary)
+
+                    Button("Enable") {
+                        Defaults[.isGlobalMonitoringEnabled] = true
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .disabled(isWatchingEnabled)
+
+                    Button("Disable") {
+                        Defaults[.isGlobalMonitoringEnabled] = false
+                    }
+                    .buttonStyle(.bordered)
+                    .disabled(!isWatchingEnabled)
+                }
+
+                // Size controls
+                HStack(spacing: Spacing.medium) {
+                    Text("Test Size:")
+                        .font(Typography.caption1())
+                        .foregroundColor(ColorPalette.textSecondary)
+
+                    Button("16") { testSize = 16 }
+                        .buttonStyle(.bordered)
+
+                    Button("24") { testSize = 24 }
+                        .buttonStyle(.bordered)
+
+                    Button("32") { testSize = 32 }
+                        .buttonStyle(.bordered)
+
+                    Button("64") { testSize = 64 }
+                        .buttonStyle(.bordered)
+
+                    Button("128") { testSize = 128 }
+                        .buttonStyle(.bordered)
+                }
+
+                // Size slider
+                HStack(spacing: Spacing.medium) {
+                    Text("Custom:")
+                        .font(Typography.caption1())
+                        .foregroundColor(ColorPalette.textSecondary)
+
+                    Slider(value: $testSize, in: 16 ... 128, step: 1) {
+                        Text("Size")
+                    } minimumValueLabel: {
+                        Text("16")
+                            .font(Typography.caption2())
+                    } maximumValueLabel: {
+                        Text("128")
+                            .font(Typography.caption2())
+                    }
+                    .frame(width: 200)
+
+                    Text("\(Int(testSize))")
+                        .font(Typography.caption1(.medium))
+                        .frame(width: 30)
+                }
+            }
+
+            DSDivider()
+
+            // Status section
+            VStack(spacing: Spacing.small) {
+                Text("Current State:")
+                    .font(Typography.caption1())
+                    .foregroundColor(ColorPalette.textSecondary)
+
+                HStack(spacing: Spacing.medium) {
+                    Text("Global Watching: \(isWatchingEnabled ? "Enabled" : "Disabled")")
+                        .font(Typography.caption1(.medium))
+                        .foregroundColor(isWatchingEnabled ? ColorPalette.success : ColorPalette.error)
+
+                    Text("Local Animation: \(localAnimationEnabled ? "Enabled" : "Disabled")")
+                        .font(Typography.caption1(.medium))
+                        .foregroundColor(localAnimationEnabled ? ColorPalette.success : ColorPalette.error)
+                }
+            }
+        }
+        .padding(Spacing.medium)
+    }
+}
+
+
+// MARK: - Custom Chain Link Icon
+
+private struct CustomChainLinkIcon: View {
+    let size: CGFloat
+    
+    var body: some View {
+        ZStack {
+            // First oval link
+            RoundedRectangle(cornerRadius: size * 0.15)
+                .stroke(Color.primary, lineWidth: max(2, size / 16))
+                .frame(width: size * 0.35, height: size * 0.55)
+                .rotationEffect(.degrees(-45))
+                .offset(x: -size * 0.125, y: 0)
+            
+            // Second oval link
+            RoundedRectangle(cornerRadius: size * 0.15)
+                .stroke(Color.primary, lineWidth: max(2, size / 16))
+                .frame(width: size * 0.35, height: size * 0.55)
+                .rotationEffect(.degrees(45))
+                .offset(x: size * 0.125, y: 0)
+        }
+        .frame(width: size, height: size)
+    }
+}
+
+// MARK: - Simplified Chain Link Icon
+
+private struct SimplifiedChainLinkIcon: View {
+    let size: CGFloat
+
+    var body: some View {
+        ZStack {
+            // First oval link
+            Ellipse()
+                .stroke(Color.primary, lineWidth: max(2, size / 12))
+                .frame(width: size * 0.4, height: size * 0.2)
+                .offset(x: -size * 0.15, y: 0)
+
+            // Second oval link (rotated and offset)
+            Ellipse()
+                .stroke(Color.primary, lineWidth: max(2, size / 12))
+                .frame(width: size * 0.2, height: size * 0.4)
+                .offset(x: size * 0.15, y: 0)
+        }
+        .frame(width: size, height: size)
+    }
+}
+
 // MARK: - Log Viewer Content
 
 private struct LogViewerContent: View {
     // MARK: Internal
 
-    let sessionLogger: SessionLogger
+    let sessionLogger: Diagnostics.SessionLogger
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             // Toolbar
             HStack {
                 Picker("Filter:", selection: $selectedLogLevelFilter) {
-                    Text("All").tag(nil as LogLevel?)
-                    ForEach(LogLevel.allCases, id: \.self) { level in
-                        Text(level.displayName).tag(level as LogLevel?)
+                    Text("All").tag(nil as DiagnosticsLogLevel?)
+                    ForEach(DiagnosticsLogLevel.allCases, id: \.self) { level in
+                        Text(level.displayName).tag(level as DiagnosticsLogLevel?)
                     }
                 }
                 .pickerStyle(.menu)
@@ -217,14 +497,16 @@ private struct LogViewerContent: View {
     // MARK: Private
 
     @State private var searchText: String = ""
-    @State private var selectedLogLevelFilter: LogLevel?
-    @State private var logEntries: [LogEntry] = []
+    @State private var selectedLogLevelFilter: DiagnosticsLogLevel?
+    @State private var logEntries: [DiagnosticsLogEntry] = []
 
-    private var filteredLogEntries: [LogEntry] {
+    private var filteredLogEntries: [DiagnosticsLogEntry] {
         var filtered = logEntries
 
         if let levelFilter = selectedLogLevelFilter {
-            filtered = filtered.filter { $0.level == levelFilter }
+            filtered = filtered.filter { entry in
+                entry.level == levelFilter
+            }
         }
 
         if !searchText.isEmpty {
@@ -238,7 +520,7 @@ private struct LogViewerContent: View {
     }
 
     @ViewBuilder
-    private func logEntryRow(entry: LogEntry) -> some View {
+    private func logEntryRow(entry: DiagnosticsLogEntry) -> some View {
         HStack(alignment: .top, spacing: 8) {
             Text(entry.timestamp, style: .time)
                 .font(.system(.caption, design: .monospaced))
@@ -269,7 +551,7 @@ private struct LogViewerContent: View {
         logEntries = sessionLogger.getEntries()
     }
 
-    private func colorForLogLevel(_ level: LogLevel) -> Color {
+    private func colorForLogLevel(_ level: DiagnosticsLogLevel) -> Color {
         switch level {
         case .debug: ColorPalette.textSecondary
         case .info: ColorPalette.info
@@ -301,7 +583,7 @@ private struct LogViewerContent: View {
 struct DebugSettingsView_Previews: PreviewProvider {
     static var previews: some View {
         DebugSettingsView()
-            .environmentObject(SessionLogger.shared)
+            .environmentObject(Diagnostics.SessionLogger.shared)
             .frame(width: 600, height: 800)
             .padding()
             .background(MaterialPalette.windowBackground)

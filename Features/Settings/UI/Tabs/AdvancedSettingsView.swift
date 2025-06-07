@@ -21,6 +21,7 @@ struct AdvancedSettingsView: View {
 
     @Default(.showDebugMenu) var showDebugMenu
     @Default(.debugMode) var debugMode
+    @StateObject private var httpServer = HTTPServerService.shared
 
     var body: some View {
         VStack(alignment: .leading, spacing: Spacing.xLarge) {
@@ -81,6 +82,103 @@ struct AdvancedSettingsView: View {
                         }
                     }
                     .padding(.top, Spacing.xxSmall)
+                }
+            }
+
+            // HTTP Server Settings
+            DSSettingsSection("HTTP Server") {
+                DSToggle(
+                    "Enable HTTP Server",
+                    isOn: Binding(
+                        get: { Defaults[.httpServerEnabled] },
+                        set: { newValue in
+                            Defaults[.httpServerEnabled] = newValue
+                            if newValue {
+                                Task { await HTTPServerService.shared.startServer() }
+                            } else {
+                                Task { await HTTPServerService.shared.stopServer() }
+                            }
+                        }
+                    ),
+                    description: "Enable HTTP server for remote monitoring and control of Claude and Cursor instances",
+                    descriptionLineSpacing: 3
+                )
+
+                if Defaults[.httpServerEnabled] {
+                    DSDivider()
+                    
+                    HStack {
+                        Text("Port:")
+                            .frame(width: 60, alignment: .leading)
+                        TextField("8080", value: Binding(
+                            get: { Defaults[.httpServerPort] },
+                            set: { newValue in
+                                Defaults[.httpServerPort] = newValue
+                                if Defaults[.httpServerEnabled] {
+                                    Task {
+                                        await HTTPServerService.shared.restartServer()
+                                    }
+                                }
+                            }
+                        ), format: .number)
+                        .textFieldStyle(.roundedBorder)
+                        .frame(width: 80)
+                        
+                        Spacer()
+                        
+                        // Server status indicator
+                        HStack(spacing: 8) {
+                            Circle()
+                                .fill(httpServer.isRunning ? Color.green : Color.red)
+                                .frame(width: 8, height: 8)
+                            Text(httpServer.isRunning ? "Running" : "Stopped")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                        }
+                    }
+                    
+                    HStack {
+                        Text("Screenshot Refresh:")
+                            .frame(width: 140, alignment: .leading)
+                        TextField("1000", value: Binding(
+                            get: { Defaults[.httpServerScreenshotRefreshRate] },
+                            set: { newValue in Defaults[.httpServerScreenshotRefreshRate] = newValue }
+                        ), format: .number)
+                        .textFieldStyle(.roundedBorder)
+                        .frame(width: 80)
+                        Text("ms")
+                            .foregroundColor(.secondary)
+                        
+                        Spacer()
+                    }
+                    
+                    HStack {
+                        Text("ngrok API Key:")
+                            .frame(width: 100, alignment: .leading)
+                        SecureField("API Key", text: Binding(
+                            get: { Defaults[.ngrokAPIKey] },
+                            set: { newValue in Defaults[.ngrokAPIKey] = newValue }
+                        ))
+                        .textFieldStyle(.roundedBorder)
+                        .frame(maxWidth: 200)
+                        
+                        Spacer()
+                    }
+                    
+                    HStack {
+                        Text("Access your instances at: http://localhost:\(Defaults[.httpServerPort])")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                        
+                        if httpServer.isRunning {
+                            DSButton("Open Web Interface", style: .tertiary, size: .small) {
+                                if let url = URL(string: "http://localhost:\(Defaults[.httpServerPort])") {
+                                    NSWorkspace.shared.open(url)
+                                }
+                            }
+                        }
+                    }
+                    .padding(.top, 8)
                 }
             }
 

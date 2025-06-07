@@ -18,7 +18,7 @@ struct LoginItemManagerTests {
 
         // Test enabling (this is a test, so we won't actually change system settings)
         // Instead, we test that the method doesn't crash
-        let result = await manager.setStartAtLogin(enabled: true)
+        _ = await manager.setStartAtLogin(enabled: true)
         // Result is a Bool - just verify it executed without throwing
     }
 
@@ -28,7 +28,7 @@ struct LoginItemManagerTests {
 
         // Test disabling (this is a test, so we won't actually change system settings)
         // Instead, we test that the method doesn't crash
-        let result = await manager.setStartAtLogin(enabled: false)
+        _ = await manager.setStartAtLogin(enabled: false)
         // Result is a Bool - just verify it executed without throwing
     }
 
@@ -43,8 +43,8 @@ struct LoginItemManagerTests {
         // No need to test if Bool is true or false
 
         // Test multiple status checks don't crash
-        let status2 = await manager.startsAtLogin()
-        let status3 = await manager.startsAtLogin()
+        _ = await manager.startsAtLogin()
+        _ = await manager.startsAtLogin()
 
         // All statuses are Bool values - execution without throwing is sufficient
     }
@@ -77,7 +77,7 @@ struct LoginItemManagerTests {
     func serviceManagementIntegration() async throws {
         // Test that the native SMAppService is available and functional
         let manager = await LoginItemManager.shared
-        let initialStatus = await manager.startsAtLogin()
+        _ = await manager.startsAtLogin()
 
         // Status is a Bool - no need to validate it's a boolean
 
@@ -117,7 +117,7 @@ struct LoginItemManagerTests {
         let initialState = await manager.startsAtLogin()
 
         // Test toggle functionality
-        let newState = await manager.toggleStartAtLogin()
+        _ = await manager.toggleStartAtLogin()
 
         // New state is a Bool - in a test environment, it might not actually toggle due to system restrictions
         // Just verify the method executed without throwing

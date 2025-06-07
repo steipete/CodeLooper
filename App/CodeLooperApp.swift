@@ -112,13 +112,20 @@ struct MenuBarIconView: View {
     @StateObject private var menuBarIconManager = MenuBarIconManager.shared
     @EnvironmentObject var appIconStateController: AppIconStateController // Keep for status display
     @Default(.isGlobalMonitoringEnabled) private var isGlobalMonitoringEnabled
+    @Default(.useDynamicMenuBarIcon) private var useDynamicMenuBarIcon
 
     var body: some View {
         HStack(spacing: 4) {
-            // Static PNG icon
-            Image("MenuBarTemplateIcon")
-                .renderingMode(.template)
-                .frame(width: 16, height: 16)
+            // Icon based on user preference
+            if useDynamicMenuBarIcon {
+                // Animated SwiftUI icon
+                AnimatedLoopIcon(size: 16)
+            } else {
+                // Static PNG icon
+                Image("MenuBarTemplateIcon")
+                    .renderingMode(.template)
+                    .frame(width: 16, height: 16)
+            }
 
             // Display the status text from the manager
             Text(menuBarIconManager.currentIconAttributedString)

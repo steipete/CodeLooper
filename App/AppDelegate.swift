@@ -433,7 +433,12 @@ public final class AppDelegate: NSObject, NSApplicationDelegate, ObservableObjec
 
         // Start supervision if enabled - this is the key fix!
         supervisionCoordinator?.startSupervisionIfEnabled()
-
+        
+        // Initialize HTTP server
+        Task { @MainActor in
+            await HTTPServerService.shared.startIfEnabled()
+        }
+        
         // Observe changes to the global monitoring setting
         Defaults.observe(.isGlobalMonitoringEnabled) { [weak self] change in
             self?.logger.info("Global monitoring preference changed to: \(change.newValue)")

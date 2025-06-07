@@ -64,6 +64,7 @@ public enum LogCategory: String, CaseIterable, Sendable {
     case aiAnalysis = "AIAnalysis"
     case networking = "Networking"
     case git = "Git"
+    case automation = "Automation"
 
     // MARK: Public
 

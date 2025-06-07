@@ -155,8 +155,15 @@ extension Defaults.Keys {
         #endif
     }())
     static let automaticJSHookInjection = Key<Bool>("automaticJSHookInjection", default: false)
+    static let useDynamicMenuBarIcon = Key<Bool>("useDynamicMenuBarIcon", default: false)
 
     // --- Claude Monitoring Settings ---
     static let enableClaudeMonitoring = Key<Bool>("enableClaudeMonitoring", default: true)
     static let enableClaudeTitleOverride = Key<Bool>("enableClaudeTitleOverride", default: true)
+    
+    // --- HTTP Server Settings ---
+    static let httpServerEnabled = Key<Bool>("httpServerEnabled", default: false)
+    static let httpServerPort = Key<Int>("httpServerPort", default: 8080)
+    static let ngrokAPIKey = Key<String>("ngrokAPIKey", default: "")
+    static let httpServerScreenshotRefreshRate = Key<Int>("httpServerScreenshotRefreshRate", default: 1000) // milliseconds
 }

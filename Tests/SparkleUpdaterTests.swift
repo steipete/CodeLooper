@@ -14,7 +14,8 @@ struct SparkleUpdaterTests {
             let manager = SparkleUpdaterManager()
 
             // Test that manager is created without errors
-            #expect(Bool(true)) // Manager exists
+            _ = manager // Manager exists
+            #expect(Bool(true)) // Manager created
 
             // Test that updater controller is accessible
             _ = manager.updaterController
@@ -28,8 +29,9 @@ struct SparkleUpdaterTests {
         let manager2 = SparkleUpdaterManager()
 
         // Both managers should be valid
-        // manager1.updaterController is non-optional
-        // manager2.updaterController is non-optional
+        _ = manager1.updaterController
+        _ = manager2.updaterController
+        #expect(true) // Controllers are accessible
     }
 
     @Test("Sparkle configuration")
@@ -39,11 +41,13 @@ struct SparkleUpdaterTests {
 
             // Test Sparkle updater controller configuration
             let controller = manager.updaterController
-            #expect(Bool(true)) // Controller exists
+            _ = controller // Controller exists
+            #expect(Bool(true)) // Controller accessible
 
             // Test that updater exists
             let updater = controller.updater
-            #expect(Bool(true)) // Updater exists
+            _ = updater // Updater exists
+            #expect(Bool(true)) // Updater accessible
 
             // Test that updater has proper configuration
             let automaticallyChecksForUpdates = updater.automaticallyChecksForUpdates
@@ -62,7 +66,8 @@ struct SparkleUpdaterTests {
             let updater = manager.updaterController.updater
 
             // Test that we can access update configuration
-            #expect(Bool(true)) // Updater accessible
+            _ = updater // Updater accessible
+            #expect(Bool(true)) // Configuration accessible
 
             // Test automatic download configuration
             let automaticallyDownloadsUpdates = updater.automaticallyDownloadsUpdates
@@ -99,7 +104,8 @@ struct SparkleUpdaterTests {
         await MainActor.run {
             let manager = SparkleUpdaterManager()
             let viewModel = UpdaterViewModel(sparkleUpdaterManager: manager)
-            // viewModel is non-optional
+            _ = viewModel // viewModel is non-optional
+            #expect(true) // ViewModel created successfully
         }
     }
 
@@ -152,7 +158,8 @@ struct SparkleUpdaterTests {
             let updater = manager.updaterController.updater
 
             // Test updater exists
-            // updater is non-optional
+            _ = updater // updater is non-optional
+            #expect(true) // Updater accessible
         }
     }
 
@@ -191,6 +198,7 @@ struct SparkleUpdaterTests {
         let manager = SparkleUpdaterManager()
         let viewModel = UpdaterViewModel(sparkleUpdaterManager: manager)
         let updater = manager.updaterController.updater
+        _ = updater // Use updater reference
 
         // Test complete workflow
         // manager.updaterController is non-optional

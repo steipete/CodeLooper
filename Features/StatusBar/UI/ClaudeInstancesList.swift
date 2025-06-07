@@ -69,40 +69,61 @@ private struct ClaudeInstanceRow: View {
                             .lineLimit(1)
                             .truncationMode(.middle)
                     }
-
-                    // Status if available
-                    if let status = instance.status {
-                        Text(status)
+                    
+                    // Status with icon
+                    HStack(spacing: Spacing.xxSmall) {
+                        Image(systemName: instance.status.icon)
+                            .font(.caption2)
+                            .foregroundColor(ColorPalette.textTertiary)
+                        
+                        Text(instance.status.displayName)
                             .font(Typography.caption2())
                             .foregroundColor(ColorPalette.textTertiary)
                             .lineLimit(1)
                     }
-
-                    // Current activity - always show since we now default to "idle"
-                    if let activity = instance.currentActivity {
-                        VStack(alignment: .leading, spacing: 2) {
-                            HStack(spacing: Spacing.xxSmall) {
-                                let statusIcon = activity == "idle" ? "zzz" : "dot.radiowaves.left.and.right"
-                                let statusColor = activity == "idle" ? ColorPalette.textTertiary : ColorPalette.accent
-
-                                Image(systemName: statusIcon)
-                                    .font(.caption2)
-                                    .foregroundColor(statusColor)
-
-                                Text("Current Status:")
-                                    .font(Typography.caption2(.semibold))
-                                    .foregroundColor(ColorPalette.textSecondary)
+                    
+                    // Current activity with enhanced visual design
+                    VStack(alignment: .leading, spacing: 2) {
+                        HStack(spacing: Spacing.xxSmall) {
+                            Image(systemName: instance.currentActivity.type.icon)
+                                .font(.caption2)
+                                .foregroundColor(activityColor(for: instance.currentActivity.type))
+                            
+                            Text("Activity:")
+                                .font(Typography.caption2(.semibold))
+                                .foregroundColor(ColorPalette.textSecondary)
+                            
+                            // Show duration if available
+                            if let duration = instance.currentActivity.duration {
+                                Text("(\(Int(duration))s)")
+                                    .font(Typography.caption2())
+                                    .foregroundColor(ColorPalette.textTertiary)
                             }
-
-                            Text(activity)
-                                .font(Typography.caption1(.medium))
-                                .foregroundColor(activity == "idle" ? ColorPalette.textTertiary : ColorPalette.accent)
-                                .lineLimit(3)
-                                .fixedSize(horizontal: false, vertical: true)
-                                .padding(.leading, 16)
                         }
-                        .padding(.top, 2)
+                        
+                        HStack(spacing: Spacing.xxSmall) {
+                            Text(instance.currentActivity.text)
+                                .font(Typography.caption1(.medium))
+                                .foregroundColor(activityColor(for: instance.currentActivity.type))
+                                .lineLimit(2)
+                                .fixedSize(horizontal: false, vertical: true)
+                            
+                            Spacer()
+                            
+                            // Show token count if available
+                            if let tokenCount = instance.currentActivity.tokenCount {
+                                Text("\(formatTokenCount(tokenCount))")
+                                    .font(Typography.caption2())
+                                    .foregroundColor(ColorPalette.textTertiary)
+                                    .padding(.horizontal, 4)
+                                    .padding(.vertical, 1)
+                                    .background(ColorPalette.backgroundTertiary)
+                                    .cornerRadius(3)
+                            }
+                        }
+                        .padding(.leading, 16)
                     }
+                    .padding(.top, 2)
                 }
 
                 Spacer()
@@ -129,10 +150,41 @@ private struct ClaudeInstanceRow: View {
             NSWorkspace.shared.selectFile(nil, inFileViewerRootedAtPath: instance.workingDirectory)
         }
     }
-
-    // MARK: Private
-
+    
+    // MARK: - Private
+    
     private static let logger = Logger(category: .ui)
-
     @State private var isHovering = false
+    
+    // MARK: - Helper Functions
+    
+    private func activityColor(for type: ClaudeActivity.ActivityType) -> Color {
+        switch type {
+        case .idle:
+            return ColorPalette.textTertiary
+        case .working:
+            return ColorPalette.loopTint
+        case .generating:
+            return ColorPalette.accent
+        case .syncing:
+            return .blue
+        case .thinking:
+            return .purple
+        case .resolving:
+            return .purple
+        case .branching:
+            return .orange
+        case .compacting:
+            return .green
+        }
+    }
+    
+    private func formatTokenCount(_ count: Int) -> String {
+        if count >= 1000 {
+            let kCount = Double(count) / 1000.0
+            return String(format: "%.1fk", kCount)
+        } else {
+            return "\(count)"
+        }
+    }
 }

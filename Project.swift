@@ -27,6 +27,7 @@ let project = Project(
         .remote(url: "https://github.com/orchetect/MenuBarExtraAccess.git", requirement: .upToNextMajor(from: "1.2.1")),
         .remote(url: "https://github.com/MacPaw/OpenAI", requirement: .upToNextMajor(from: "0.3.0")),
         .remote(url: "https://github.com/loopwork-ai/ollama-swift", requirement: .upToNextMajor(from: "1.0.0")),
+        .remote(url: "https://github.com/hummingbird-project/hummingbird.git", requirement: .upToNextMajor(from: "2.5.0")),
         .remote(url: "https://github.com/apple/swift-testing.git", requirement: .upToNextMajor(from: "0.12.0")),
         .local(path: "AXorcist"),
         .local(path: "AXpector"),
@@ -96,7 +97,6 @@ let project = Project(
                 "Resources/CodeLooper.sdef",
                 "Resources/MainMenu.nib",
                 "Resources/JavaScript/**",
-                "Resources/chain_link_lottie.json",
                 "App/Resources/Assets.xcassets",
                 "CodeLooper/Base.lproj/Main.storyboard",
             ],
@@ -116,6 +116,7 @@ let project = Project(
                 .package(product: "OpenAI"),
                 .package(product: "Ollama"),
                 .package(product: "Demark"),
+                .package(product: "Hummingbird"),
             ],
             settings: .settings(
                 base: [
