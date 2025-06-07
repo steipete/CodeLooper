@@ -87,56 +87,6 @@ class IconAnimationTests: XCTestCase {
         XCTAssertEqual(concurrentState, true || concurrentState == false)
     }
 
-    // MARK: - LottieMenuBarView Tests
-
-    func testLottieMenuBarIntegration() async throws {
-        // Test that LottieMenuBarView can be created
-        let lottieView = LottieMenuBarView()
-
-        // LottieMenuBarView is a SwiftUI view, just verify it can be created
-        XCTAssertTrue(true)
-    }
-
-    func testLottieAnimationFileHandling() async throws {
-        let lottieView = LottieMenuBarView()
-
-        // LottieMenuBarView handles animation loading internally
-        // Just verify it doesn't crash
-        XCTAssertTrue(true)
-    }
-
-    // MARK: - CustomChainLinkIcon Tests
-
-    func testCustomChainLinkIcon() async throws {
-        let iconView = CustomChainLinkIcon(size: 16)
-
-        // Test that custom icon view is created without errors
-        XCTAssertNotNil(iconView)
-
-        // Test basic view properties
-        XCTAssertNotNil(iconView.frame)
-
-        // CustomChainLinkIcon is a SwiftUI view that updates based on defaults
-        // Just verify it doesn't crash
-
-        // If we get here without crashes, custom icon rendering works
-        XCTAssertTrue(true)
-    }
-
-    func testCustomChainLinkIconStates() async throws {
-        let iconView = CustomChainLinkIcon(size: 16)
-
-        // CustomChainLinkIcon animates based on isGlobalMonitoringEnabled default
-        // Toggle the default to test animation changes
-        Defaults[.isGlobalMonitoringEnabled] = true
-        try await Task.sleep(for: .milliseconds(10))
-
-        Defaults[.isGlobalMonitoringEnabled] = false
-        try await Task.sleep(for: .milliseconds(10))
-
-        // All states should be handled without crashes
-        XCTAssertTrue(true)
-    }
 
     // MARK: - MenuBarIconManager Tests
 
@@ -208,17 +158,13 @@ class IconAnimationTests: XCTestCase {
             let mockStatusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
             let animator = IconAnimator(statusItem: mockStatusItem)
             let manager = MenuBarIconManager.shared
-            let customIcon = CustomChainLinkIcon(size: 16)
-
             // Test that all components can work together
             animator.startAnimating()
             manager.setState(.syncing)
-            // CustomChainLinkIcon updates automatically based on defaults
 
             // Stop animation
             animator.stopAnimating()
             manager.setState(.idle)
-            // CustomChainLinkIcon updates automatically
 
             // System should work without conflicts
             XCTAssertTrue(true)

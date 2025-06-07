@@ -1,7 +1,6 @@
 import Defaults
 import DesignSystem
 import Diagnostics
-import Lottie
 import SwiftUI
 
 struct DebugSettingsView: View {
@@ -11,28 +10,6 @@ struct DebugSettingsView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: Spacing.xLarge) {
-            // Menu Bar Icon Settings
-            DSSettingsSection("Menu Bar Icon") {
-                VStack(alignment: .leading, spacing: Spacing.medium) {
-                    DSToggle(
-                        "Use Dynamic Lottie Icon",
-                        isOn: $useDynamicMenuBarIcon,
-                        description: "Use animated Lottie icon instead of static PNG image in menu bar"
-                    )
-
-                    HStack {
-                        Text("Current icon type:")
-                            .font(Typography.caption1())
-                            .foregroundColor(ColorPalette.textSecondary)
-
-                        Spacer()
-
-                        Text(useDynamicMenuBarIcon ? "Dynamic (Lottie)" : "Static (PNG)")
-                            .font(Typography.caption1(.medium))
-                            .foregroundColor(useDynamicMenuBarIcon ? ColorPalette.success : ColorPalette.loopTint)
-                    }
-                }
-            }
 
             // JS Hook Settings
             DSSettingsSection("JavaScript Hook Settings") {
@@ -58,10 +35,6 @@ struct DebugSettingsView: View {
                 }
             }
 
-            // Lottie Animation Test Section
-            DSSettingsSection("Lottie Animation Test") {
-                LottieTestView()
-            }
 
             // Debug Information
             DSSettingsSection("Build Information") {
@@ -138,7 +111,6 @@ struct DebugSettingsView: View {
 
     // MARK: Private
 
-    @Default(.useDynamicMenuBarIcon) private var useDynamicMenuBarIcon
     @Default(.automaticJSHookInjection) private var automaticJSHookInjection
 
     private var appVersion: String {
@@ -164,290 +136,6 @@ struct DebugSettingsView: View {
     private func showWelcomeScreen() {
         NotificationCenter.default.post(name: .showWelcomeWindow, object: nil)
         print("DEBUG: Posted showWelcomeWindow notification")
-    }
-}
-
-// MARK: - Lottie Test View (moved from AboutSettingsView)
-
-private struct LottieTestView: View {
-    @Default(.isGlobalMonitoringEnabled) private var isWatchingEnabled
-    @State private var testSize: CGFloat = 32
-    @State private var localAnimationEnabled = true
-    @State private var rotationAngle: Double = 0
-
-    var body: some View {
-        VStack(spacing: Spacing.medium) {
-            Text("Menu Bar Icon Test")
-                .font(Typography.body(.medium))
-                .foregroundColor(ColorPalette.text)
-
-            // Animation analysis
-            VStack(spacing: Spacing.small) {
-                Text("Animation Analysis:")
-                    .font(Typography.caption1(.medium))
-                    .foregroundColor(ColorPalette.text)
-
-                if let animation = LottieAnimation.named("chain_link_lottie") {
-                    let duration = animation.duration
-                    let frameRate = animation.framerate
-                    let totalFrames = Int(duration * frameRate)
-
-                    Text("Duration: \(String(format: "%.2f", duration))s, FPS: \(frameRate), Frames: \(totalFrames)")
-                        .font(Typography.caption2())
-                        .foregroundColor(ColorPalette.textSecondary)
-                } else {
-                    Text("Failed to load animation")
-                        .font(Typography.caption2())
-                        .foregroundColor(ColorPalette.error)
-                }
-            }
-
-            // Animation test views
-            HStack(spacing: Spacing.large) {
-                VStack(spacing: Spacing.small) {
-                    Text("Menu Bar Size (16x16)")
-                        .font(Typography.caption1())
-                        .foregroundColor(ColorPalette.textSecondary)
-
-                    LottieMenuBarView()
-                        .background(ColorPalette.backgroundTertiary)
-                        .border(ColorPalette.error, width: 1) // Debug border
-                }
-
-                VStack(spacing: Spacing.small) {
-                    Text("Test Size (\(Int(testSize))x\(Int(testSize)))")
-                        .font(Typography.caption1())
-                        .foregroundColor(ColorPalette.textSecondary)
-
-                    LottieTestAnimationView(isEnabled: localAnimationEnabled)
-                        .frame(width: testSize, height: testSize)
-                        .background(ColorPalette.backgroundTertiary)
-                        .border(ColorPalette.loopTint, width: 1) // Debug border
-                }
-
-                VStack(spacing: Spacing.small) {
-                    Text("Rotating Icon Test")
-                        .font(Typography.caption1())
-                        .foregroundColor(ColorPalette.textSecondary)
-
-                    Image(systemName: "link")
-                        .renderingMode(.template)
-                        .foregroundColor(Color.primary)
-                        .font(.system(size: testSize / 2))
-                        .frame(width: testSize, height: testSize)
-                        .rotationEffect(.degrees(localAnimationEnabled ? rotationAngle : 0))
-                        .animation(
-                            localAnimationEnabled ? .linear(duration: 2).repeatForever(autoreverses: false) : .default,
-                            value: localAnimationEnabled
-                        )
-                        .background(ColorPalette.backgroundTertiary)
-                        .border(ColorPalette.success, width: 1)
-                        .onAppear {
-                            if localAnimationEnabled {
-                                rotationAngle = 360
-                            }
-                        }
-                        .onChange(of: localAnimationEnabled) { _, newValue in
-                            if newValue {
-                                rotationAngle = 360
-                            } else {
-                                rotationAngle = 0
-                            }
-                        }
-                }
-
-                VStack(spacing: Spacing.small) {
-                    Text("Your Custom Icon")
-                        .font(Typography.caption1())
-                        .foregroundColor(ColorPalette.textSecondary)
-
-                    CustomChainLinkIcon(size: testSize)
-                        .background(ColorPalette.backgroundTertiary)
-                        .border(ColorPalette.loopPurple, width: 1)
-                }
-
-                VStack(spacing: Spacing.small) {
-                    Text("Simplified Test")
-                        .font(Typography.caption1())
-                        .foregroundColor(ColorPalette.textSecondary)
-
-                    SimplifiedChainLinkIcon(size: testSize)
-                        .background(ColorPalette.backgroundTertiary)
-                        .border(ColorPalette.warning, width: 1)
-                }
-            }
-
-            DSDivider()
-
-            // Controls section
-            VStack(spacing: Spacing.medium) {
-                // Animation toggle buttons
-                HStack(spacing: Spacing.medium) {
-                    Text("Local Animation:")
-                        .font(Typography.caption1())
-                        .foregroundColor(ColorPalette.textSecondary)
-
-                    Button("Enable") {
-                        localAnimationEnabled = true
-                    }
-                    .buttonStyle(.borderedProminent)
-                    .disabled(localAnimationEnabled)
-
-                    Button("Disable") {
-                        localAnimationEnabled = false
-                    }
-                    .buttonStyle(.bordered)
-                    .disabled(!localAnimationEnabled)
-                }
-
-                // Global monitoring toggle
-                HStack(spacing: Spacing.medium) {
-                    Text("Global Monitoring:")
-                        .font(Typography.caption1())
-                        .foregroundColor(ColorPalette.textSecondary)
-
-                    Button("Enable") {
-                        Defaults[.isGlobalMonitoringEnabled] = true
-                    }
-                    .buttonStyle(.borderedProminent)
-                    .disabled(isWatchingEnabled)
-
-                    Button("Disable") {
-                        Defaults[.isGlobalMonitoringEnabled] = false
-                    }
-                    .buttonStyle(.bordered)
-                    .disabled(!isWatchingEnabled)
-                }
-
-                // Size controls
-                HStack(spacing: Spacing.medium) {
-                    Text("Test Size:")
-                        .font(Typography.caption1())
-                        .foregroundColor(ColorPalette.textSecondary)
-
-                    Button("16") { testSize = 16 }
-                        .buttonStyle(.bordered)
-
-                    Button("24") { testSize = 24 }
-                        .buttonStyle(.bordered)
-
-                    Button("32") { testSize = 32 }
-                        .buttonStyle(.bordered)
-
-                    Button("64") { testSize = 64 }
-                        .buttonStyle(.bordered)
-
-                    Button("128") { testSize = 128 }
-                        .buttonStyle(.bordered)
-                }
-
-                // Size slider
-                HStack(spacing: Spacing.medium) {
-                    Text("Custom:")
-                        .font(Typography.caption1())
-                        .foregroundColor(ColorPalette.textSecondary)
-
-                    Slider(value: $testSize, in: 16 ... 128, step: 1) {
-                        Text("Size")
-                    } minimumValueLabel: {
-                        Text("16")
-                            .font(Typography.caption2())
-                    } maximumValueLabel: {
-                        Text("128")
-                            .font(Typography.caption2())
-                    }
-                    .frame(width: 200)
-
-                    Text("\(Int(testSize))")
-                        .font(Typography.caption1(.medium))
-                        .frame(width: 30)
-                }
-            }
-
-            DSDivider()
-
-            // Status section
-            VStack(spacing: Spacing.small) {
-                Text("Current State:")
-                    .font(Typography.caption1())
-                    .foregroundColor(ColorPalette.textSecondary)
-
-                HStack(spacing: Spacing.medium) {
-                    Text("Global Watching: \(isWatchingEnabled ? "Enabled" : "Disabled")")
-                        .font(Typography.caption1(.medium))
-                        .foregroundColor(isWatchingEnabled ? ColorPalette.success : ColorPalette.error)
-
-                    Text("Local Animation: \(localAnimationEnabled ? "Enabled" : "Disabled")")
-                        .font(Typography.caption1(.medium))
-                        .foregroundColor(localAnimationEnabled ? ColorPalette.success : ColorPalette.error)
-                }
-            }
-        }
-        .padding(Spacing.medium)
-    }
-}
-
-// MARK: - Lottie Test Animation View
-
-private struct LottieTestAnimationView: View {
-    // MARK: Internal
-
-    let isEnabled: Bool
-
-    var body: some View {
-        Group {
-            if let animation = loadAnimation() {
-                LottieView(animation: animation)
-                    .playing(loopMode: isEnabled ? .loop : .playOnce)
-                    .animationSpeed(0.3)
-                    .resizable()
-                    .aspectRatio(contentMode: .fit)
-                    .colorMultiply(Color.primary)
-                    .clipped()
-                    .onAppear {
-                        logger.info("Test Lottie animation view appeared, enabled: \(isEnabled)")
-                    }
-            } else {
-                Image(systemName: "link")
-                    .renderingMode(.template)
-                    .foregroundColor(Color.primary)
-                    .onAppear {
-                        logger.error("Test animation failed to load, using fallback")
-                    }
-            }
-        }
-    }
-
-    // MARK: Private
-
-    private let logger = Logger(category: .statusBar)
-
-    private func loadAnimation() -> LottieAnimation? {
-        LottieAnimation.named("chain_link_lottie") ??
-            LottieAnimation.filepath(Bundle.main.path(forResource: "chain_link_lottie", ofType: "json") ?? "")
-    }
-}
-
-// MARK: - Simplified Chain Link Icon
-
-private struct SimplifiedChainLinkIcon: View {
-    let size: CGFloat
-
-    var body: some View {
-        ZStack {
-            // First oval link
-            Ellipse()
-                .stroke(Color.primary, lineWidth: max(2, size / 12))
-                .frame(width: size * 0.4, height: size * 0.2)
-                .offset(x: -size * 0.15, y: 0)
-
-            // Second oval link (rotated and offset)
-            Ellipse()
-                .stroke(Color.primary, lineWidth: max(2, size / 12))
-                .frame(width: size * 0.2, height: size * 0.4)
-                .offset(x: size * 0.15, y: 0)
-        }
-        .frame(width: size, height: size)
     }
 }
 

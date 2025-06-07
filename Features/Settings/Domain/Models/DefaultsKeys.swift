@@ -154,7 +154,6 @@ extension Defaults.Keys {
             return false
         #endif
     }())
-    static let useDynamicMenuBarIcon = Key<Bool>("useDynamicMenuBarIcon", default: false)
     static let automaticJSHookInjection = Key<Bool>("automaticJSHookInjection", default: false)
     
     // --- Claude Monitoring Settings ---

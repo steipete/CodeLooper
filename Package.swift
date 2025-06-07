@@ -34,8 +34,6 @@ let package = Package(
         // AI and image analysis dependencies
         .package(url: "https://github.com/MacPaw/OpenAI", .upToNextMajor(from: "0.4.3")),
         .package(url: "https://github.com/loopwork-ai/ollama-swift", .upToNextMajor(from: "1.5.0")),
-        // Animation library
-        .package(url: "https://github.com/airbnb/lottie-ios", .upToNextMajor(from: "4.5.2")),
         // Development-only dependencies
         .package(url: "https://github.com/cpisciotta/xcbeautify", from: "2.28.0"),
     ],
@@ -64,7 +62,6 @@ let package = Package(
                 .product(name: "MenuBarExtraAccess", package: "MenuBarExtraAccess"),
                 .product(name: "OpenAI", package: "OpenAI"),
                 .product(name: "Ollama", package: "ollama-swift"),
-                .product(name: "Lottie", package: "lottie-ios"),
                 .product(name: "Demark", package: "Demark"),
             ],
             path: ".",

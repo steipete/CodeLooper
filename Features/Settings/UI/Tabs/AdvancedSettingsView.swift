@@ -56,7 +56,7 @@ struct AdvancedSettingsView: View {
                 DSToggle(
                     "Debug Mode",
                     isOn: $debugMode,
-                    description: "Show the Debug tab in settings with Lottie animation tests and debugging tools",
+                    description: "Show the Debug tab in settings with debugging tools and development options",
                     descriptionLineSpacing: 3
                 )
 

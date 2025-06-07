@@ -1,12 +1,22 @@
 {
+  "originHash" : "5be54ddfbc59dd9eb54cdcadb66dcd3cc977c1adb871882caf35bd5b3aec1638",
   "pins" : [
     {
       "identity" : "defaults",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/sindresorhus/Defaults",
       "state" : {
-        "revision" : "3efef5a28ebdbbe922d4a2049493733ed14475a6",
-        "version" : "7.3.1"
+        "revision" : "cc938ecf0bed848dc80a9726ac5455104e3f9dae",
+        "version" : "9.0.2"
+      }
+    },
+    {
+      "identity" : "demark",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/steipete/Demark",
+      "state" : {
+        "revision" : "9e01f67e57d7115c03c688d906cf0e88f22f6d83",
+        "version" : "1.0.0"
       }
     },
     {
@@ -19,12 +29,39 @@
       }
     },
     {
-      "identity" : "launchatlogin",
+      "identity" : "keychainaccess",
       "kind" : "remoteSourceControl",
-      "location" : "https://github.com/sindresorhus/LaunchAtLogin",
+      "location" : "https://github.com/kishikawakatsumi/KeychainAccess.git",
       "state" : {
-        "revision" : "9a894d799269cb591037f9f9cb0961510d4dca81",
-        "version" : "5.0.2"
+        "revision" : "84e546727d66f1adc5439debad16270d0fdd04e7",
+        "version" : "4.2.2"
+      }
+    },
+    {
+      "identity" : "menubarextraaccess",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/orchetect/MenuBarExtraAccess.git",
+      "state" : {
+        "revision" : "e911e6454f8cbfe34a52136fc48e1ceb989a60e7",
+        "version" : "1.2.1"
+      }
+    },
+    {
+      "identity" : "ollama-swift",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/loopwork-ai/ollama-swift",
+      "state" : {
+        "revision" : "925a19367882f620a431d35ad7592f2be70b0324",
+        "version" : "1.6.0"
+      }
+    },
+    {
+      "identity" : "openai",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/MacPaw/OpenAI",
+      "state" : {
+        "revision" : "9261cd39d55a718bcc360fbc29515a331cad5dbb",
+        "version" : "0.4.3"
       }
     },
     {
@@ -46,12 +83,30 @@
       }
     },
     {
+      "identity" : "swift-http-types",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/apple/swift-http-types",
+      "state" : {
+        "revision" : "a0a57e949a8903563aba4615869310c0ebf14c03",
+        "version" : "1.4.0"
+      }
+    },
+    {
       "identity" : "swift-log",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/apple/swift-log.git",
       "state" : {
         "revision" : "3d8596ed08bd13520157f0355e35caed215ffbfa",
         "version" : "1.6.3"
+      }
+    },
+    {
+      "identity" : "swift-openapi-runtime",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/apple/swift-openapi-runtime",
+      "state" : {
+        "revision" : "8f33cc5dfe81169fb167da73584b9c72c3e8bc23",
+        "version" : "1.8.2"
       }
     },
     {
@@ -82,5 +137,5 @@
       }
     }
   ],
-  "version" : 2
+  "version" : 3
 }
