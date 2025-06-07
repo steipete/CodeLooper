@@ -290,23 +290,12 @@ jobs:
           
           # Test compilation with Swift Testing import in the context of the project
           echo "Testing Swift Testing framework compilation with project context..."
-          cat > /tmp/testing_check.swift << 'EOF'
-import Testing
-
-@Test func basicSwiftTestingCheck() {
-    #expect(true)
-}
-
-@Test("Test with description") 
-func namedTest() {
-    #expect(1 + 1 == 2)
-}
-EOF
+          echo 'import Testing; @Test func check() { #expect(true) }' > /tmp/testing_check.swift
           
           # Try to compile with the project's build context
-          if swift package resolve && xcrun swift -package-path . -I .build/debug -c -o /tmp/testing_check /tmp/testing_check.swift 2>/dev/null; then
+          if swift package resolve >/dev/null 2>&1 && xcrun swift -package-path . -I .build/debug -c -o /tmp/testing_check /tmp/testing_check.swift >/dev/null 2>&1; then
             echo "✅ Swift Testing framework compilation test passed with project context"
-          elif xcrun swift -c -o /tmp/testing_check /tmp/testing_check.swift 2>/dev/null; then
+          elif xcrun swift -c -o /tmp/testing_check /tmp/testing_check.swift >/dev/null 2>&1; then
             echo "✅ Swift Testing framework compilation test passed with basic context"
           else
             echo "::warning::Swift Testing framework compilation test failed - may impact test execution but not critical"
