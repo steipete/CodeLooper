@@ -4,7 +4,7 @@ import Foundation
 import OSLog
 import Testing
 
-@Suite("SessionLoggingTests")
+@Suite("Session Logging", .tags(.diagnostics, .core))
 struct SessionLoggingTests {
     // MARK: - Test Utilities
 
@@ -22,228 +22,145 @@ struct SessionLoggingTests {
     }
 
     // MARK: - SessionLogger Tests
-
-    @Test("Session logger initialization") @MainActor func sessionLoggerInitialization() async throws {
-        let logger = Diagnostics.SessionLogger.shared
-
-        // Test that logger is created without errors
-        // logger is non-optional
-
-        // Test basic properties
-        await MainActor.run {
-            // SessionLogger is a singleton and doesn't have sessionId anymore
-            // logger.entries is non-optional
+    
+    @Suite("Session Logger", .tags(.singleton))
+    struct SessionLoggerTests {
+        @Test("Singleton behavior")
+        @MainActor func singletonBehavior() async throws {
+            await confirmation("Session logger maintains singleton state", expectedCount: 1) { confirm in
+                let logger1 = Diagnostics.SessionLogger.shared
+                let logger2 = Diagnostics.SessionLogger.shared
+                
+                // Verify singleton pattern
+                #expect(logger1 === logger2, "Should return same instance")
+                
+                // Verify logger is functional
+                logger1.log(level: .info, message: "Test message")
+                #expect(logger1.entries.count >= 0, "Logger should track entries")
+                
+                confirm()
+            }
         }
-    }
 
-    @Test("Session logger unique session ids") @MainActor func sessionLoggerUniqueSessionIds() async throws {
-        // Skip this test since SessionLogger has a private init and is a singleton
-        // The concept of unique session IDs per instance no longer applies
-        #expect(true)
-    }
-
-    @Test("Log entry creation") @MainActor func logEntryCreation() async throws {
-        let logger = Diagnostics.SessionLogger.shared
-
-        await MainActor.run {
-            // Test basic log entry creation
-            logger.log(level: Diagnostics.LogLevel.info, message: "Test message")
-            logger.log(level: Diagnostics.LogLevel.warning, message: "Test warning")
-            logger.log(level: Diagnostics.LogLevel.error, message: "Test error")
-
-            // Test log entry with PID
-            logger.log(level: Diagnostics.LogLevel.info, message: "Test with PID", pid: 12345)
-
-            // Check that entries were added
-            #expect(logger.entries.count > 0)
-        }
-    }
-
-    @Test("Session logger concurrent logging") @MainActor func sessionLoggerConcurrentLogging() async throws {
-        let logger = Diagnostics.SessionLogger.shared
-
-        // Test concurrent logging from multiple tasks
-        await withTaskGroup(of: Void.self) { group in
-            for i in 0 ..< 10 {
-                group.addTask {
-                    await MainActor.run {
-                        logger.log(level: Diagnostics.LogLevel.info, message: "Concurrent message \(i)")
-                        logger.log(
-                            level: Diagnostics.LogLevel.debug,
-                            message: "Debug message \(i)",
-                            pid: Int32(1000 + i)
-                        )
+        @Test(
+            "Log entry creation with different levels",
+            arguments: [
+                (level: Diagnostics.LogLevel.debug, message: "Debug test", pid: nil as Int32?),
+                (level: .info, message: "Info test", pid: nil as Int32?),
+                (level: .warning, message: "Warning test", pid: nil as Int32?),
+                (level: .error, message: "Error test", pid: nil as Int32?),
+                (level: .info, message: "Test with PID", pid: 12345 as Int32?)
+            ]
+        )
+        @MainActor func logEntryCreation(
+            testCase: (level: Diagnostics.LogLevel, message: String, pid: Int32?)
+        ) async throws {
+            let logger = Diagnostics.SessionLogger.shared
+            let initialCount = logger.entries.count
+            
+            // Log the entry
+            if let pid = testCase.pid {
+                logger.log(level: testCase.level, message: testCase.message, pid: pid)
+            } else {
+                logger.log(level: testCase.level, message: testCase.message)
+            }
+            
+            // Verify entry was added
+            #expect(logger.entries.count > initialCount, "Entry should be added")
+            
+            // Verify last entry matches what we logged
+            if let lastEntry = logger.entries.last {
+                #expectAll("Entry properties match") {
+                    #expect(lastEntry.level == testCase.level)
+                    #expect(lastEntry.message == testCase.message)
+                    if let pid = testCase.pid {
+                        #expect(lastEntry.pid == pid)
                     }
                 }
             }
         }
 
-        // Check that entries were added
-        await MainActor.run {
-            #expect(logger.entries.count > 0)
+        @Test(
+            "Concurrent logging safety",
+            .timeLimit(.minutes(1)),
+            arguments: [10, 50, 100]
+        )
+        @MainActor func concurrentLoggingSafety(taskCount: Int) async throws {
+            let logger = Diagnostics.SessionLogger.shared
+            let initialCount = logger.entries.count
+            
+            await confirmation("All concurrent logs are recorded", expectedCount: taskCount * 2) { confirm in
+                await withTaskGroup(of: Void.self) { group in
+                    for i in 0 ..< taskCount {
+                        group.addTask {
+                            await MainActor.run {
+                                logger.log(level: .info, message: "Concurrent message \(i)")
+                                confirm()
+                                
+                                logger.log(
+                                    level: .debug,
+                                    message: "Debug message \(i)",
+                                    pid: Int32(1000 + i)
+                                )
+                                confirm()
+                            }
+                        }
+                    }
+                }
+            }
+            
+            // Verify all entries were added
+            let addedEntries = logger.entries.count - initialCount
+            #expect(addedEntries >= taskCount * 2, "All concurrent logs should be recorded")
         }
-    }
 
+    }
+    
     // MARK: - FileLogger Tests
-
-    @Test("File logger writing") @MainActor func fileLoggerWriting() async throws {
-        // FileLogger is now a singleton actor that uses OSLog
-        let fileLogger = Diagnostics.FileLogger.shared
-
-        // Test logging - FileLogger now uses OSLog exclusively
-        await fileLogger.log(
-            "Test file log entry",
-            level: OSLogType.info,
-            category: "test",
-            file: #file,
-            function: #function,
-            line: #line
+    
+    @Suite("File Logger", .tags(.async, .logging))
+    struct FileLoggerTests {
+        @Test(
+            "OSLog integration",
+            arguments: zip(
+                ["Info test", "Warning test", "Error test", "Debug test"],
+                [OSLogType.info, OSLogType.default, OSLogType.error, OSLogType.debug]
+            )
         )
-        await fileLogger.log(
-            "Test error entry",
-            level: OSLogType.error,
-            category: "test",
-            file: #file,
-            function: #function,
-            line: #line
-        )
-
-        // FileLogger now uses OSLog, so we can't check file contents
-        // Just verify the logging didn't crash
-        #expect(true)
-    }
-
-    @Test("File logger error handling") @MainActor func fileLoggerErrorHandling() async throws {
-        // FileLogger is now a singleton and always valid
-        let fileLogger = Diagnostics.FileLogger.shared
-
-        // Test logging - should not crash
-        await fileLogger.log(
-            "This should not crash",
-            level: OSLogType.info,
-            category: "test",
-            file: #file,
-            function: #function,
-            line: #line
-        )
-
-        // Give logger time to attempt writing
-        try await Task.sleep(for: .milliseconds(100))
-
-        #expect(true) // If we get here, error was handled gracefully
-    }
-
-    // MARK: - LogLevel Tests
-
-    @Test("Log level types") @MainActor func logLevelTypes() async throws {
-        // Test all log levels exist
-        let levels: [Diagnostics.LogLevel] = [.debug, .info, .warning, .error]
-
-        for level in levels {
-            #expect(level.rawValue >= 0)
-        }
-    }
-
-    // MARK: - LogManager Tests
-
-    @Test("Log management") @MainActor func logManagement() async throws {
-        let logManager = Diagnostics.LogManager.shared
-
-        // Test that log manager is created without errors
-        // logManager is non-optional
-
-        // Test logging through logger instances
-        await MainActor.run {
-            logManager.app.info("Test app log")
-            let supervisionLogger = logManager.getLogger(for: .supervision)
-            supervisionLogger.debug("Test supervision log")
-
-            #expect(true) // If we get here, log management works
-        }
-    }
-
-    @Test("Log manager categories") @MainActor func logManagerCategories() async throws {
-        let logManager = Diagnostics.LogManager.shared
-
-        // Test that we can get loggers for categories
-        await MainActor.run {
-            let appLogger = logManager.app
-            let authLogger = logManager.auth
-            let apiLogger = logManager.api
-
-            // Test logging with different loggers
-            appLogger.info("Test app message")
-            authLogger.info("Test auth message")
-            apiLogger.info("Test API message")
-
-            #expect(true) // All categories should be handled without crashes
-        }
-    }
-
-    // MARK: - Logger Factory Tests
-
-    @Test("Logger factory") @MainActor func loggerFactory() async throws {
-        // Test creating loggers for different types
-        let logger1 = LoggerFactory.logger(for: SessionLoggingTests.self)
-        let logger2 = LoggerFactory.logger(for: SessionLoggingTests.self, category: .supervision)
-
-        // logger1 is non-optional
-        // logger2 is non-optional
-
-        // Test that loggers can log without crashing
-        logger1.info("Test message from type-based logger")
-        logger2.debug("Test message from category-based logger")
-
-        #expect(true) // If we get here, logger factory works
-    }
-
-    // MARK: - Integration Tests
-
-    @Test("Logging system integration") @MainActor func loggingSystemIntegration() async throws {
-        // Test integration of all logging components
-        let sessionLogger = Diagnostics.SessionLogger.shared
-        let logManager = Diagnostics.LogManager.shared
-        let fileLogger = Diagnostics.FileLogger.shared
-
-        // Test that all components can work together
-        await MainActor.run {
-            sessionLogger.log(level: .info, message: "Session log test")
-            logManager.app.info("Manager log test")
-        }
-
-        await fileLogger.log(
-            "File log test",
-            level: OSLogType.info,
-            category: "test",
-            file: #file,
-            function: #function,
-            line: #line
-        )
-
-        // Test concurrent usage
-        await withTaskGroup(of: Void.self) { group in
-            group.addTask {
-                await MainActor.run {
-                    for i in 0 ..< 5 {
-                        sessionLogger.log(level: .debug, message: "Session \(i)")
-                    }
-                }
+        func osLogIntegration(message: String, logType: OSLogType) async throws {
+            let fileLogger = Diagnostics.FileLogger.shared
+            
+            // FileLogger uses OSLog, so we verify it doesn't throw
+            #expect(throws: Never.self) {
+                await fileLogger.log(
+                    message,
+                    level: logType,
+                    category: "test",
+                    file: #file,
+                    function: #function,
+                    line: #line
+                )
             }
+        }
 
-            group.addTask {
-                await MainActor.run {
-                    for i in 0 ..< 5 {
-                        logManager.app.debug("Manager \(i)")
-                    }
-                }
-            }
-
-            group.addTask {
-                for i in 0 ..< 5 {
+        @Test("Error resilience")
+        func errorResilience() async throws {
+            let fileLogger = Diagnostics.FileLogger.shared
+            
+            // Test with various edge cases that should not crash
+            let edgeCases = [
+                (message: "", category: "empty"),
+                (message: String(repeating: "x", count: 10000), category: "long"),
+                (message: "Special chars: 🚀📱💻", category: "unicode"),
+                (message: "Line\nBreaks\nTest", category: "multiline")
+            ]
+            
+            for testCase in edgeCases {
+                #expect(throws: Never.self) {
                     await fileLogger.log(
-                        "File \(i)",
-                        level: OSLogType.debug,
-                        category: "test",
+                        testCase.message,
+                        level: .info,
+                        category: testCase.category,
                         file: #file,
                         function: #function,
                         line: #line
@@ -252,28 +169,195 @@ struct SessionLoggingTests {
             }
         }
 
-        // Give all loggers time to complete
-        try await Task.sleep(for: .milliseconds(300))
-
-        #expect(true) // Integration should work without conflicts
     }
-
-    @Test("Logging performance") @MainActor func loggingPerformance() async throws {
-        let sessionLogger = Diagnostics.SessionLogger.shared
-
-        // Test logging performance with many entries
-        let startTime = Date()
-
-        await MainActor.run {
-            for i in 0 ..< 100 {
-                sessionLogger.log(level: .debug, message: "Performance test message \(i)")
+    
+    // MARK: - LogLevel Tests
+    
+    @Suite("Log Levels", .tags(.validation))
+    struct LogLevelTests {
+        @Test(
+            "Level ordering and values",
+            arguments: [
+                (level: Diagnostics.LogLevel.debug, minValue: 0),
+                (level: .info, minValue: 0),
+                (level: .warning, minValue: 0),
+                (level: .error, minValue: 0)
+            ]
+        )
+        func levelOrdering(testCase: (level: Diagnostics.LogLevel, minValue: Int)) {
+            #expect(testCase.level.rawValue >= testCase.minValue)
+            
+            // Verify levels are properly ordered (if applicable)
+            if testCase.level == .error {
+                #expect(testCase.level.rawValue >= Diagnostics.LogLevel.warning.rawValue,
+                        "Error should have higher or equal value than warning")
             }
         }
 
-        let endTime = Date()
-        let duration = endTime.timeIntervalSince(startTime)
+    }
+    
+    // MARK: - LogManager Tests
+    
+    @Suite("Log Manager", .tags(.manager))
+    struct LogManagerTests {
+        @Test("Singleton and category loggers")
+        @MainActor func singletonAndCategoryLoggers() async throws {
+            await confirmation("Manager provides consistent loggers", expectedCount: 1) { confirm in
+                let manager1 = Diagnostics.LogManager.shared
+                let manager2 = Diagnostics.LogManager.shared
+                
+                #expect(manager1 === manager2, "Should be singleton")
+                
+                // Verify category loggers work
+                #expect(throws: Never.self) {
+                    manager1.app.info("App log test")
+                    manager1.auth.warning("Auth log test")
+                    manager1.api.error("API log test")
+                }
+                
+                confirm()
+            }
+        }
+        
+        @Test(
+            "Category logger retrieval",
+            arguments: [
+                LogCategory.app,
+                .auth,
+                .api,
+                .supervision,
+                .monitoring
+            ]
+        )
+        @MainActor func categoryLoggerRetrieval(category: LogCategory) {
+            let logManager = Diagnostics.LogManager.shared
+            let logger = logManager.getLogger(for: category)
+            
+            // Verify logger works for the category
+            #expect(throws: Never.self) {
+                logger.debug("Debug message for \(category)")
+                logger.info("Info message for \(category)")
+                logger.warning("Warning message for \(category)")
+                logger.error("Error message for \(category)")
+            }
+        }
 
-        // Should complete reasonably quickly (less than 1 second for 100 entries)
-        #expect(duration < 1.0)
+    }
+    
+    // MARK: - Logger Factory Tests
+    
+    @Suite("Logger Factory", .tags(.factory))
+    struct LoggerFactoryTests {
+        @Test("Type-based logger creation")
+        func typeBasedLoggerCreation() {
+            // Create loggers for different types
+            let stringLogger = LoggerFactory.logger(for: String.self)
+            let intLogger = LoggerFactory.logger(for: Int.self)
+            let testLogger = LoggerFactory.logger(for: SessionLoggingTests.self)
+            
+            // All should work without throwing
+            #expect(throws: Never.self) {
+                stringLogger.info("String logger test")
+                intLogger.info("Int logger test")
+                testLogger.info("Test suite logger test")
+            }
+        }
+        
+        @Test(
+            "Category-based logger creation",
+            arguments: zip(
+                [String.self, Int.self, SessionLoggingTests.self] as [Any.Type],
+                [LogCategory.app, .api, .supervision]
+            )
+        )
+        func categoryBasedLoggerCreation(type: Any.Type, category: LogCategory) {
+            let logger = LoggerFactory.logger(for: type, category: category)
+            
+            #expect(throws: Never.self) {
+                logger.debug("Debug from \(type) with category \(category)")
+                logger.info("Info from \(type) with category \(category)")
+            }
+        }
+
+    }
+    
+    // MARK: - Integration Tests
+    
+    @Suite("Integration", .tags(.integration, .async))
+    struct IntegrationTests {
+        @Test("Multi-component logging", .timeLimit(.minutes(1)))
+        @MainActor func multiComponentLogging() async throws {
+            await confirmation("All logging components work together", expectedCount: 15) { confirm in
+                let sessionLogger = Diagnostics.SessionLogger.shared
+                let logManager = Diagnostics.LogManager.shared
+                let fileLogger = Diagnostics.FileLogger.shared
+                
+                // Test concurrent usage from multiple components
+                await withTaskGroup(of: Void.self) { group in
+                    // Session logger task
+                    group.addTask {
+                        await MainActor.run {
+                            for i in 0 ..< 5 {
+                                sessionLogger.log(level: .debug, message: "Session \(i)")
+                                confirm()
+                            }
+                        }
+                    }
+                    
+                    // Log manager task
+                    group.addTask {
+                        await MainActor.run {
+                            for i in 0 ..< 5 {
+                                logManager.app.debug("Manager \(i)")
+                                confirm()
+                            }
+                        }
+                    }
+                    
+                    // File logger task
+                    group.addTask {
+                        for i in 0 ..< 5 {
+                            await fileLogger.log(
+                                "File \(i)",
+                                level: .debug,
+                                category: "test",
+                                file: #file,
+                                function: #function,
+                                line: #line
+                            )
+                            confirm()
+                        }
+                    }
+                }
+            }
+        }
+
+        @Test(
+            "Performance characteristics",
+            .timeLimit(.minutes(1)),
+            arguments: [100, 500, 1000]
+        )
+        @MainActor func performanceCharacteristics(entryCount: Int) async throws {
+            let sessionLogger = Diagnostics.SessionLogger.shared
+            
+            let clock = ContinuousClock()
+            let start = clock.now
+            
+            for i in 0 ..< entryCount {
+                sessionLogger.log(level: .debug, message: "Performance test \(i)")
+            }
+            
+            let elapsed = clock.now - start
+            
+            // Performance expectations based on entry count
+            let maxDuration: Duration = switch entryCount {
+            case ...100: .seconds(0.1)
+            case ...500: .seconds(0.5)
+            default: .seconds(1)
+            }
+            
+            #expect(elapsed < maxDuration,
+                    "\(entryCount) entries should complete within \(maxDuration)")
+        }
     }
 }

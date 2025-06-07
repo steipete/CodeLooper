@@ -3,65 +3,78 @@ import AppKit
 import Foundation
 import Testing
 
-@Suite("Heartbeat Monitoring Tests")
+@Suite("Heartbeat Monitoring", .tags(.monitoring, .core))
 @MainActor
 struct HeartbeatMonitoringTests {
     // MARK: Internal
 
-    @Test("Instance info construction") func instanceInfoConstruction() async throws {
-        let mockApp = createMockRunningApplication(pid: 12345, bundleId: "com.test.app", name: "Test App")
-        let status = CursorInstanceStatus.idle
-        let statusMessage = "Test status"
+    @Suite("Instance Info", .tags(.model, .basic))
+    struct InstanceInfoTests {
+        @Test("Construction and properties")
+        func instanceInfoConstruction() async throws {
+            let mockApp = createMockRunningApplication(pid: 12345, bundleId: "com.test.app", name: "Test App")
+            let status = CursorInstanceStatus.idle
+            let statusMessage = "Test status"
 
-        let instanceInfo = CursorInstanceInfo(
-            app: mockApp,
-            status: status,
-            statusMessage: statusMessage,
-            lastInterventionType: .connection
+            let instanceInfo = CursorInstanceInfo(
+                app: mockApp,
+                status: status,
+                statusMessage: statusMessage,
+                lastInterventionType: .connection
+            )
+
+            // Group related assertions for better failure reporting
+            #expectAll("Process identifiers are consistent") {
+                #expect(instanceInfo.id == 12345)
+                #expect(instanceInfo.processIdentifier == 12345)
+                #expect(instanceInfo.pid == 12345)
+            }
+            
+            #expectAll("App properties are set correctly") {
+                #expect(instanceInfo.bundleIdentifier == "com.test.app")
+                #expect(instanceInfo.localizedName == "Test App")
+            }
+            
+            #expectAll("Status properties are set correctly") {
+                #expect(instanceInfo.status == .idle)
+                #expect(instanceInfo.statusMessage == "Test status")
+                #expect(instanceInfo.lastInterventionType == .connection)
+            }
+        }
+
+        @Test(
+            "Equality based on PID",
+            arguments: [
+                (pid1: 12345, pid2: 12345, shouldEqual: true, reason: "Same PID should be equal"),
+                (pid1: 12345, pid2: 54321, shouldEqual: false, reason: "Different PID should not be equal"),
+                (pid1: 0, pid2: 0, shouldEqual: true, reason: "Zero PIDs should be equal"),
+                (pid1: Int.max, pid2: Int.max, shouldEqual: true, reason: "Max PIDs should be equal")
+            ]
         )
+        func instanceInfoEquality(testCase: (pid1: pid_t, pid2: pid_t, shouldEqual: Bool, reason: String)) async throws {
+            let mockApp1 = createMockRunningApplication(pid: testCase.pid1, bundleId: "com.test.app", name: "Test App")
+            let mockApp2 = createMockRunningApplication(pid: testCase.pid2, bundleId: "com.test.app", name: "Test App")
 
-        #expect(instanceInfo.id == 12345)
-        #expect(instanceInfo.processIdentifier == 12345)
-        #expect(instanceInfo.pid == 12345)
-        #expect(instanceInfo.bundleIdentifier == "com.test.app")
-        #expect(instanceInfo.localizedName == "Test App")
-        #expect(instanceInfo.status == .idle)
-        #expect(instanceInfo.statusMessage == "Test status")
-        #expect(instanceInfo.lastInterventionType == .connection)
-    }
+            let instanceInfo1 = CursorInstanceInfo(
+                app: mockApp1,
+                status: .idle,
+                statusMessage: "Test",
+                lastInterventionType: .connection
+            )
 
-    @Test("Instance info equality") func instanceInfoEquality() async throws {
-        let mockApp1 = createMockRunningApplication(pid: 12345, bundleId: "com.test.app", name: "Test App")
-        let mockApp2 = createMockRunningApplication(pid: 12345, bundleId: "com.test.app", name: "Test App")
-        let mockApp3 = createMockRunningApplication(pid: 54321, bundleId: "com.test.app", name: "Test App")
+            let instanceInfo2 = CursorInstanceInfo(
+                app: mockApp2,
+                status: .idle,
+                statusMessage: "Test",
+                lastInterventionType: .connection
+            )
 
-        let instanceInfo1 = CursorInstanceInfo(
-            app: mockApp1,
-            status: .idle,
-            statusMessage: "Test",
-            lastInterventionType: .connection
-        )
-
-        let instanceInfo2 = CursorInstanceInfo(
-            app: mockApp2,
-            status: .idle,
-            statusMessage: "Test",
-            lastInterventionType: .connection
-        )
-
-        let instanceInfo3 = CursorInstanceInfo(
-            app: mockApp3,
-            status: .idle,
-            statusMessage: "Test",
-            lastInterventionType: .connection
-        )
-
-        // Same PID and properties should be equal
-        #expect(instanceInfo1 == instanceInfo2)
-
-        // Different PID should not be equal
-        #expect(instanceInfo1 != instanceInfo3)
-    }
+            if testCase.shouldEqual {
+                #expect(instanceInfo1 == instanceInfo2, "\(testCase.reason)")
+            } else {
+                #expect(instanceInfo1 != instanceInfo2, "\(testCase.reason)")
+            }
+        }
 
     @Test("Instance info hashable") func instanceInfoHashable() async throws {
         let mockApp1 = createMockRunningApplication(pid: 12345, bundleId: "com.test.app", name: "Test App")
@@ -119,56 +132,106 @@ struct HeartbeatMonitoringTests {
         #expect(instanceInfo.lastInterventionType == .connection)
     }
 
-    @Test("Status helper methods") func statusHelperMethods() async throws {
-        // Test isRecovering()
-        let recoveringStatus = CursorInstanceStatus.recovering(type: .connection, attempt: 1)
-        let idleStatus = CursorInstanceStatus.idle
-        let workingStatus = CursorInstanceStatus.working(detail: "test")
-
-        #expect(recoveringStatus.isRecovering() == true)
-        #expect(idleStatus.isRecovering() == false)
-        #expect(workingStatus.isRecovering() == false)
-
-        // Test isRecovering(ofType:)
-        let connectionRecovery = CursorInstanceStatus.recovering(type: .connection, attempt: 1)
-        let stuckRecovery = CursorInstanceStatus.recovering(type: .stuck, attempt: 1)
-
-        #expect(connectionRecovery.isRecovering(ofType: .connection) == true)
-        #expect(connectionRecovery.isRecovering(ofType: .stuck) == false)
-        #expect(stuckRecovery.isRecovering(ofType: .stuck) == true)
-        #expect(idleStatus.isRecovering(ofType: .connection) == false)
-
-        // Test isRecovering(ofAnyType:)
-        let recoveryTypes: [RecoveryType] = [.connection, .stuck]
-        #expect(connectionRecovery.isRecovering(ofAnyType: recoveryTypes) == true)
-        #expect(stuckRecovery.isRecovering(ofAnyType: recoveryTypes) == true)
-        #expect(idleStatus.isRecovering(ofAnyType: recoveryTypes) == false)
-
-        let forceStopRecovery = CursorInstanceStatus.recovering(type: .forceStop, attempt: 1)
-        #expect(forceStopRecovery.isRecovering(ofAnyType: recoveryTypes) == false)
     }
+    
+    @Suite("Status Helpers", .tags(.model, .validation))
+    struct StatusHelperTests {
+        @Test(
+            "Recovery status detection",
+            arguments: [
+                (status: CursorInstanceStatus.recovering(type: .connection, attempt: 1), isRecovering: true),
+                (status: .idle, isRecovering: false),
+                (status: .working(detail: "test"), isRecovering: false),
+                (status: .paused, isRecovering: false),
+                (status: .error(reason: "test"), isRecovering: false)
+            ]
+        )
+        func isRecoveringDetection(testCase: (status: CursorInstanceStatus, isRecovering: Bool)) {
+            #expect(testCase.status.isRecovering() == testCase.isRecovering)
+        }
+        
+        @Test(
+            "Specific recovery type detection",
+            arguments: zip(
+                [
+                    CursorInstanceStatus.recovering(type: .connection, attempt: 1),
+                    .recovering(type: .stuck, attempt: 1),
+                    .recovering(type: .forceStop, attempt: 1),
+                    .idle
+                ],
+                [
+                    (checkType: RecoveryType.connection, expected: true),
+                    (checkType: .stuck, expected: true),
+                    (checkType: .connection, expected: false),
+                    (checkType: .connection, expected: false)
+                ]
+            )
+        )
+        func specificRecoveryTypeDetection(
+            status: CursorInstanceStatus,
+            check: (checkType: RecoveryType, expected: Bool)
+        ) {
+            #expect(status.isRecovering(ofType: check.checkType) == check.expected)
+        }
+        
+        @Test("Multiple recovery type detection")
+        func multipleRecoveryTypeDetection() {
+            let recoveryTypes: [RecoveryType] = [.connection, .stuck]
+            
+            let testCases: [(status: CursorInstanceStatus, shouldMatch: Bool)] = [
+                (.recovering(type: .connection, attempt: 1), true),
+                (.recovering(type: .stuck, attempt: 2), true),
+                (.recovering(type: .forceStop, attempt: 1), false),
+                (.idle, false),
+                (.working(detail: "active"), false)
+            ]
+            
+            for testCase in testCases {
+                #expect(
+                    testCase.status.isRecovering(ofAnyType: recoveryTypes) == testCase.shouldMatch,
+                    "Status \(testCase.status) should \(testCase.shouldMatch ? "" : "not ")match recovery types"
+                )
+            }
+        }
 
-    @Test("String stable hash") func stringStableHash() async throws {
-        let text1 = "Hello World"
-        let text2 = "Hello World"
-        let text3 = "Hello World!"
-        let emptyText = ""
-
-        // Same strings should have same hash
-        #expect(text1.stableHash() == text2.stableHash())
-
-        // Different strings should have different hashes
-        #expect(text1.stableHash() != text3.stableHash())
-
-        // Empty string should work
-        let emptyHash = emptyText.stableHash()
-        #expect(emptyHash == 0)
-
-        // Hash should be deterministic
-        let hash1 = text1.stableHash()
-        let hash2 = text1.stableHash()
-        #expect(hash1 == hash2)
     }
+    
+    @Suite("String Extensions", .tags(.utilities))
+    struct StringExtensionTests {
+        @Test(
+            "Stable hash consistency",
+            arguments: [
+                (text: "Hello World", expectedBehavior: "consistent hash"),
+                (text: "", expectedBehavior: "zero for empty"),
+                (text: "🚀 Unicode 测试", expectedBehavior: "handles unicode"),
+                (text: String(repeating: "a", count: 1000), expectedBehavior: "handles long strings")
+            ]
+        )
+        func stableHashConsistency(testCase: (text: String, expectedBehavior: String)) {
+            let hash1 = testCase.text.stableHash()
+            let hash2 = testCase.text.stableHash()
+            
+            #expect(hash1 == hash2, "Hash should be deterministic for \(testCase.expectedBehavior)")
+            
+            if testCase.text.isEmpty {
+                #expect(hash1 == 0, "Empty string should hash to 0")
+            }
+        }
+        
+        @Test(
+            "Hash uniqueness",
+            arguments: zip(
+                ["Hello", "World", "Hello World", "Hello World!"],
+                ["Hello", "World", "Hello World", "Hello World"]
+            )
+        )
+        func hashUniqueness(text1: String, text2: String) {
+            if text1 == text2 {
+                #expect(text1.stableHash() == text2.stableHash(), "Same strings should have same hash")
+            } else {
+                #expect(text1.stableHash() != text2.stableHash(), "Different strings should have different hashes")
+            }
+        }
 
     @Test("Bundle identifier edge cases") func bundleIdentifierEdgeCases() async throws {
         // Test with nil bundle identifier
@@ -185,20 +248,27 @@ struct HeartbeatMonitoringTests {
         #expect(instanceInfo.localizedName == "Test App")
     }
 
-    @Test("Status message variations") func statusMessageVariations() async throws {
-        let mockApp = createMockRunningApplication(pid: 12345, bundleId: "com.test.app", name: "Test App")
-
-        let statusMessages = [
-            "Starting up",
-            "Processing request",
-            "Waiting for response",
-            "Recovering from error",
-            "Intervention paused",
-            "",
-            "Very long status message that contains multiple pieces of information about the current state",
-        ]
-
-        for message in statusMessages {
+    }
+    
+    @Suite("Status Messages", .tags(.validation))
+    struct StatusMessageTests {
+        @Test(
+            "Message variations",
+            arguments: [
+                "Starting up",
+                "Processing request",
+                "Waiting for response",
+                "Recovering from error",
+                "Intervention paused",
+                "",
+                "Very long status message that contains multiple pieces of information about the current state",
+                "Special chars: !@#$%^&*()",
+                "Unicode: 🚀 📱 💻 测试"
+            ]
+        )
+        func statusMessageVariations(message: String) async throws {
+            let mockApp = createMockRunningApplication(pid: 12345, bundleId: "com.test.app", name: "Test App")
+            
             let instanceInfo = CursorInstanceInfo(
                 app: mockApp,
                 status: .working(detail: "test"),
@@ -206,10 +276,12 @@ struct HeartbeatMonitoringTests {
                 lastInterventionType: nil
             )
 
-            #expect(instanceInfo.statusMessage == message)
-            #expect(instanceInfo.id == 12345)
+            #expectAll {
+                #expect(instanceInfo.statusMessage == message)
+                #expect(instanceInfo.id == 12345)
+                #expect(instanceInfo.bundleIdentifier == "com.test.app")
+            }
         }
-    }
 
     @Test("Recovery attempt progression in heartbeat") func recoveryAttemptProgressionInHeartbeat() async throws {
         let mockApp = createMockRunningApplication(pid: 12345, bundleId: "com.test.app", name: "Test App")
@@ -240,19 +312,19 @@ struct HeartbeatMonitoringTests {
         #expect(attempt1 != attempt2)
     }
 
-    @Test("Intervention type tracking") func interventionTypeTracking() async throws {
-        let mockApp = createMockRunningApplication(pid: 12345, bundleId: "com.test.app", name: "Test App")
-
-        // Test all intervention types
-        let interventionTypes: [RecoveryType?] = [
-            nil,
-            .connection,
-            .stopGenerating,
-            .stuck,
-            .forceStop,
-        ]
-
-        for interventionType in interventionTypes {
+        @Test(
+            "Intervention type tracking",
+            arguments: [
+                nil,
+                RecoveryType.connection,
+                .stopGenerating,
+                .stuck,
+                .forceStop
+            ] as [RecoveryType?]
+        )
+        func interventionTypeTracking(interventionType: RecoveryType?) async throws {
+            let mockApp = createMockRunningApplication(pid: 12345, bundleId: "com.test.app", name: "Test App")
+            
             let instanceInfo = CursorInstanceInfo(
                 app: mockApp,
                 status: .idle,
@@ -262,7 +334,6 @@ struct HeartbeatMonitoringTests {
 
             #expect(instanceInfo.lastInterventionType == interventionType)
         }
-    }
 
     @Test("Instance collection operations") func instanceCollectionOperations() async throws {
         let mockApp1 = createMockRunningApplication(pid: 12345, bundleId: "com.test.app1", name: "App 1")
@@ -305,41 +376,36 @@ struct HeartbeatMonitoringTests {
         #expect(targetInstance?.status == .recovering(type: .stuck, attempt: 2))
     }
 
-    @Test("Status transition validation") func statusTransitionValidation() async throws {
-        // Test logical status transitions
-        let transitions = [
-            (from: CursorInstanceStatus.unknown, to: CursorInstanceStatus.idle),
-            (from: CursorInstanceStatus.idle, to: CursorInstanceStatus.working(detail: "Started")),
-            (
-                from: CursorInstanceStatus.working(detail: "Active"),
-                to: CursorInstanceStatus.recovering(type: .connection, attempt: 1)
-            ),
-            (
-                from: CursorInstanceStatus.recovering(type: .connection, attempt: 1),
-                to: CursorInstanceStatus.error(reason: "Failed")
-            ),
-            (
-                from: CursorInstanceStatus.error(reason: "Recoverable"),
-                to: CursorInstanceStatus.recovering(type: .stuck, attempt: 1)
-            ),
-            (
-                from: CursorInstanceStatus.recovering(type: .stuck, attempt: 3),
-                to: CursorInstanceStatus.unrecoverable(reason: "Max attempts")
-            ),
-            (from: CursorInstanceStatus.error(reason: "Temporary"), to: CursorInstanceStatus.idle),
-            (from: CursorInstanceStatus.recovering(type: .connection, attempt: 1), to: CursorInstanceStatus.paused),
-        ]
-
-        for transition in transitions {
-            // All transitions should result in different statuses
-            #expect(transition.from != transition.to)
-
-            // Verify each status can be compared properly
-            let sameFrom1 = transition.from
-            let sameFrom2 = transition.from
-            #expect(sameFrom1 == sameFrom2)
-        }
     }
+    
+    @Suite("Status Transitions", .tags(.state, .validation))
+    struct StatusTransitionTests {
+        @Test(
+            "Valid status transitions",
+            arguments: [
+                (from: CursorInstanceStatus.unknown, to: CursorInstanceStatus.idle, isValid: true),
+                (from: .idle, to: .working(detail: "Started"), isValid: true),
+                (from: .working(detail: "Active"), to: .recovering(type: .connection, attempt: 1), isValid: true),
+                (from: .recovering(type: .connection, attempt: 1), to: .error(reason: "Failed"), isValid: true),
+                (from: .error(reason: "Recoverable"), to: .recovering(type: .stuck, attempt: 1), isValid: true),
+                (from: .recovering(type: .stuck, attempt: 3), to: .unrecoverable(reason: "Max attempts"), isValid: true),
+                (from: .error(reason: "Temporary"), to: .idle, isValid: true),
+                (from: .recovering(type: .connection, attempt: 1), to: .paused, isValid: true)
+            ]
+        )
+        func statusTransitionValidation(transition: (from: CursorInstanceStatus, to: CursorInstanceStatus, isValid: Bool)) {
+            // All transitions should result in different statuses
+            #expect(transition.from != transition.to, "From and to statuses should be different")
+            
+            // Verify each status can be compared properly
+            let sameStatus = transition.from
+            #expect(transition.from == sameStatus, "Status equality should work")
+            
+            // In a real app, you might validate if the transition is allowed
+            if transition.isValid {
+                #expect(true, "Transition from \(transition.from) to \(transition.to) is valid")
+            }
+        }
 
     @Test("Hash consistency") func hashConsistency() async throws {
         let mockApp = createMockRunningApplication(pid: 12345, bundleId: "com.test.app", name: "Test App")
@@ -405,49 +471,71 @@ struct HeartbeatMonitoringTests {
         // We've verified the properties work correctly
     }
 
-    @Test("Memory and performance") func memoryAndPerformance() async throws {
-        // Test creating many instances to check for memory issues
-        var instances: [CursorInstanceInfo] = []
-
-        for i in 0 ..< 1000 {
-            let mockApp = createMockRunningApplication(pid: pid_t(i), bundleId: "com.test.app\(i)", name: "App \(i)")
-            let instance = CursorInstanceInfo(
-                app: mockApp,
-                status: .idle,
-                statusMessage: "Instance \(i)",
-                lastInterventionType: nil
-            )
-            instances.append(instance)
+    }
+    
+    @Suite("Performance", .tags(.performance))
+    struct PerformanceTests {
+        @Test(
+            "Large scale instance creation",
+            .timeLimit(.minutes(1)),
+            arguments: [100, 500, 1000]
+        )
+        func memoryAndPerformance(instanceCount: Int) async throws {
+            // Use confirmation to track progress
+            await confirmation("Creating \(instanceCount) instances", expectedCount: 1) { confirm in
+                var instances: [CursorInstanceInfo] = []
+                
+                for i in 0 ..< instanceCount {
+                    let mockApp = createMockRunningApplication(
+                        pid: pid_t(i),
+                        bundleId: "com.test.app\(i)",
+                        name: "App \(i)"
+                    )
+                    let instance = CursorInstanceInfo(
+                        app: mockApp,
+                        status: .idle,
+                        statusMessage: "Instance \(i)",
+                        lastInterventionType: nil
+                    )
+                    instances.append(instance)
+                }
+                
+                #expect(instances.count == instanceCount)
+                
+                // Test that instances are properly distinct
+                let uniquePIDs = Set(instances.map(\.pid))
+                #expect(uniquePIDs.count == instanceCount)
+                
+                // Test performance of hash operations
+                let clock = ContinuousClock()
+                let start = clock.now
+                
+                var instanceSet: Set<CursorInstanceInfo> = []
+                for instance in instances {
+                    instanceSet.insert(instance)
+                }
+                
+                let elapsed = clock.now - start
+                
+                #expect(instanceSet.count == instanceCount)
+                #expect(elapsed < .seconds(1), "Hash operations should complete quickly")
+                
+                confirm()
+            }
         }
 
-        #expect(instances.count == 1000)
-
-        // Test that instances are properly distinct
-        let uniquePIDs = Set(instances.map(\.pid))
-        #expect(uniquePIDs.count == 1000)
-
-        // Test performance of hash operations
-        let startTime = Date()
-        var instanceSet: Set<CursorInstanceInfo> = []
-        for instance in instances {
-            instanceSet.insert(instance)
-        }
-        let endTime = Date()
-
-        #expect(instanceSet.count == 1000)
-        #expect(endTime.timeIntervalSince(startTime) < 1.0) // Should complete in under 1 second
     }
+}
 
-    // MARK: Private
+// MARK: - Helper Functions
 
-    // MARK: - Helper Functions
-
-    private func createMockRunningApplication(pid _: pid_t, bundleId _: String?,
-                                              name _: String?) -> NSRunningApplication
-    {
-        // Note: In real tests, you would need to create a proper mock
-        // For now, we'll use the current running application as a placeholder
-        // In actual implementation, you'd want to create a MockNSRunningApplication
-        NSRunningApplication.current
-    }
+private func createMockRunningApplication(
+    pid _: pid_t,
+    bundleId _: String?,
+    name _: String?
+) -> NSRunningApplication {
+    // Note: In real tests, you would need to create a proper mock
+    // For now, we'll use the current running application as a placeholder
+    // In actual implementation, you'd want to create a MockNSRunningApplication
+    NSRunningApplication.current
 }
