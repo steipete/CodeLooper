@@ -108,6 +108,16 @@ final class ClaudeProcessDetector: Loggable, @unchecked Sendable {
         return instances
     }
     
+    // MARK: - Helper Functions
+    
+    private func safeConvertToInt32<T: BinaryInteger>(_ value: T, name: String) -> Int32? {
+        guard let int32Value = Int32(exactly: value) else {
+            logger.warning("\(name) \(value) is too large to convert to Int32")
+            return nil
+        }
+        return int32Value
+    }
+    
     // MARK: - Process Information Extraction
     
     private func getProcessInfo(pid: pid_t) -> (command: String, device: dev_t)? {
@@ -121,14 +131,25 @@ final class ClaudeProcessDetector: Loggable, @unchecked Sendable {
             $0.withMemoryRebound(to: CChar.self, capacity: Int(MAXCOMLEN)) { String(cString: $0) }
         }
         
-        return (command: command, device: dev_t(info.e_tdev))
+        // Handle the device number - 0xFFFFFFFF (4294967295) means no TTY device
+        let device: dev_t
+        if info.e_tdev == 0xFFFFFFFF {
+            // No TTY device - this is normal for many processes
+            device = 0
+        } else if let deviceInt32 = Int32(exactly: info.e_tdev) {
+            device = dev_t(deviceInt32)
+        } else {
+            // Only log warning for actual overflow (not the special 0xFFFFFFFF value)
+            logger.warning("Device \(info.e_tdev) is too large to convert to Int32")
+            device = 0  // Use 0 to indicate no valid device
+        }
+        return (command: command, device: device)
     }
     
     private func getProcessArguments(pid: pid_t) -> String? {
         var argsMax = 0
         // Safely convert pid_t to Int32 - if it doesn't fit, return nil
-        guard let pidInt32 = Int32(exactly: pid) else {
-            logger.warning("PID \(pid) is too large to convert to Int32")
+        guard let pidInt32 = safeConvertToInt32(pid, name: "PID") else {
             return nil
         }
         var mib: [Int32] = [CTL_KERN, KERN_PROCARGS2, pidInt32]
@@ -202,6 +223,11 @@ final class ClaudeProcessDetector: Loggable, @unchecked Sendable {
     // MARK: - TTY Detection
     
     private func findTTYPath(for pid: pid_t, processInfo: (command: String, device: dev_t)) -> String {
+        // If device is 0, it means no TTY device
+        guard processInfo.device != 0 else {
+            return ""
+        }
+        
         // Try to find TTY by device number
         for ttyNumber in 0...999 {
             let ttyPath = String(format: "/dev/ttys%03d", ttyNumber)
@@ -215,7 +241,7 @@ final class ClaudeProcessDetector: Loggable, @unchecked Sendable {
             }
         }
         
-        logger.debug("No TTY found for PID \(pid)")
+        logger.debug("No TTY found for PID \(pid) with device \(processInfo.device)")
         return ""
     }
 }

@@ -90,19 +90,6 @@ struct MainPopoverView: View {
 
             DSDivider()
 
-            // Rule execution stats
-            RuleExecutionStatsView()
-
-            // Rule execution stats
-            HStack {
-                Image(systemName: "chart.bar.xaxis")
-                    .font(.caption)
-                    .foregroundColor(ColorPalette.textTertiary)
-                Text("Rule Executions: \(ruleCounter.totalRuleExecutions)")
-                    .font(Typography.caption1())
-                    .foregroundColor(ColorPalette.textSecondary)
-            }
-
             // Action buttons
             HStack {
                 Button(action: {
