@@ -206,36 +206,47 @@ final class ClaudeStatusExtractor: ObservableObject, Loggable {
     }
     
     private nonisolated func extractTextFromImage(_ image: CGImage) async -> String? {
-        // Preprocess image for better OCR
-        guard let processedImage = preprocessImage(image) else { return nil }
-        
-        let request = VNRecognizeTextRequest()
-        request.recognitionLevel = .accurate
-        request.usesLanguageCorrection = false
-        request.minimumTextHeight = 0.02
-        
-        let handler = VNImageRequestHandler(cgImage: processedImage, options: [:])
-        
-        do {
-            try handler.perform([request])
-            
-            guard let observations = request.results else { return nil }
-            
-            let recognizedStrings = observations.compactMap { observation -> String? in
-                guard observation.confidence > Configuration.ocrConfidenceThreshold else { return nil }
-                return observation.topCandidates(1).first?.string
+        await withCheckedContinuation { continuation in
+            Task.detached(priority: .userInitiated) {
+                // Preprocess image for better OCR
+                guard let processedImage = self.preprocessImage(image) else {
+                    continuation.resume(returning: nil)
+                    return
+                }
+                
+                let request = VNRecognizeTextRequest()
+                request.recognitionLevel = .accurate
+                request.usesLanguageCorrection = false
+                request.minimumTextHeight = 0.02
+                
+                let handler = VNImageRequestHandler(cgImage: processedImage, options: [:])
+                
+                do {
+                    try handler.perform([request])
+                    
+                    guard let observations = request.results else {
+                        continuation.resume(returning: nil)
+                        return
+                    }
+                    
+                    let recognizedStrings = observations.compactMap { observation -> String? in
+                        guard observation.confidence > Configuration.ocrConfidenceThreshold else { return nil }
+                        return observation.topCandidates(1).first?.string
+                    }
+                    
+                    let fullText = recognizedStrings.joined(separator: "\n")
+                    
+                    if fullText.contains("esc to interrupt") || fullText.contains("interrupt") {
+                        let status = self.parseClaudeStatus(from: fullText)
+                        continuation.resume(returning: status)
+                    } else {
+                        continuation.resume(returning: nil)
+                    }
+                } catch {
+                    self.logger.debug("OCR failed: \(error)")
+                    continuation.resume(returning: nil)
+                }
             }
-            
-            let fullText = recognizedStrings.joined(separator: "\n")
-            
-            if fullText.contains("esc to interrupt") || fullText.contains("interrupt") {
-                return parseClaudeStatus(from: fullText)
-            }
-            
-            return nil
-        } catch {
-            logger.debug("OCR failed: \(error)")
-            return nil
         }
     }
     
