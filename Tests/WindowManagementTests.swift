@@ -24,7 +24,7 @@ struct WindowManagementTests {
         // Remove delegate check as it causes Sendable issues
     }
 
-    @Test("windowControllerManagement") @MainActor func windowControllerManagement() async throws {
+    @Test("Window controller management handles creation and lifecycle") @MainActor func windowControllerManagement() async throws {
         let mockLoginItemManager = createMockLoginItemManager()
         let mockSessionLogger = createMockSessionLogger()
         let mockDelegate = createMockWindowManagerDelegate()
@@ -40,7 +40,7 @@ struct WindowManagementTests {
         #expect(initialWelcomeController == nil)
     }
 
-    @Test("windowManagerDelegate") @MainActor func windowManagerDelegate() async throws {
+    @Test("Window manager delegate protocol methods can be called") @MainActor func windowManagerDelegate() async throws {
         // Test delegate protocol methods exist and can be called
         let delegate = MockWindowManagerDelegate()
 
@@ -52,7 +52,7 @@ struct WindowManagementTests {
         #expect(wasCalled)
     }
 
-    @Test("windowPositionManagerSingleton") func windowPositionManagerSingleton() async throws {
+    @Test("Window position manager singleton provides consistent instance") func windowPositionManagerSingleton() async throws {
         let manager1 = WindowPositionManager.shared
         let manager2 = WindowPositionManager.shared
 
@@ -60,7 +60,7 @@ struct WindowManagementTests {
         #expect(manager1 === manager2)
     }
 
-    @Test("windowPositionOperations") func windowPositionOperations() async throws {
+    @Test("Window position operations save and retrieve coordinates") func windowPositionOperations() async throws {
         let manager = WindowPositionManager.shared
 
         // Test position and size calculations
@@ -87,7 +87,7 @@ struct WindowManagementTests {
         #expect(resizedFrame.size.height == 400)
     }
 
-    @Test("positionSavingAndRestoration") func positionSavingAndRestoration() async throws {
+    @Test("Position saving and restoration persists window states") func positionSavingAndRestoration() async throws {
         let manager = WindowPositionManager.shared
 
         // Test saving and restoring positions using identifiers
@@ -104,7 +104,7 @@ struct WindowManagementTests {
         #expect(identifier.contains("test-window"))
     }
 
-    @Test("appleScriptSupportMethods") func appleScriptSupportMethods() async throws {
+    @Test("AppleScript support methods provide automation capabilities") func appleScriptSupportMethods() async throws {
         let manager = WindowPositionManager.shared
 
         // Test NSNumber to NSPoint conversion

@@ -320,6 +320,65 @@ struct ThreadSafeBoxTests {
         }
     }
 
+    // MARK: - Memory Leak Tests
+
+    @Suite("Memory Management", .tags(.memory, .reliability))
+    struct MemoryManagement {
+        @Test("ThreadSafeBox instances are properly deallocated")
+        func threadSafeBoxMemoryLeaks() async throws {
+            weak var weakBox: ThreadSafeBox<String>?
+            
+            // Create a scope where the box will be deallocated
+            do {
+                let box = ThreadSafeBox("test-value")
+                weakBox = box
+                
+                // Verify the box works correctly
+                #expect(box.get() == "test-value")
+                box.set("updated-value")
+                #expect(box.get() == "updated-value")
+                
+                // weakBox should still be alive here
+                #expect(weakBox != nil, "Box should be alive within scope")
+            }
+            
+            // Force deallocation by yielding to the runtime
+            await Task.yield()
+            
+            // After the scope, the box should be deallocated
+            #expect(weakBox == nil, "Box should be deallocated after scope ends")
+        }
+        
+        @Test("Multiple ThreadSafeBox instances don't retain each other")
+        func multipleBoxesNoRetainCycles() async throws {
+            weak var weakBox1: ThreadSafeBox<Int>?
+            weak var weakBox2: ThreadSafeBox<Int>?
+            
+            do {
+                let box1 = ThreadSafeBox(100)
+                let box2 = ThreadSafeBox(200)
+                
+                weakBox1 = box1
+                weakBox2 = box2
+                
+                // Boxes operate independently
+                box1.set(box2.get() + 50)
+                #expect(box1.get() == 250)
+                #expect(box2.get() == 200)
+                
+                // Both should be alive
+                #expect(weakBox1 != nil)
+                #expect(weakBox2 != nil)
+            }
+            
+            await Task.yield()
+            
+            // Both should be deallocated
+            #expect(weakBox1 == nil, "First box should be deallocated")
+            #expect(weakBox2 == nil, "Second box should be deallocated")
+        }
+    }
+
     // MARK: - Test Fixtures and Setup
 
     /// Test fixture for creating different box types

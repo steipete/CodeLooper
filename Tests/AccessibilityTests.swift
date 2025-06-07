@@ -184,7 +184,7 @@ struct AccessibilityTests {
             #expect(initialNotifications == true || initialNotifications == false)
         }
 
-        @Test("Permissions manager permission monitoring task")
+        @Test("Permissions manager permission monitoring task", .timeLimit(.minutes(1)))
         @MainActor func permissionsManagerPermissionMonitoringTask() async throws {
             let manager = PermissionsManager()
 
@@ -203,7 +203,7 @@ struct AccessibilityTests {
             #expect(hasNotifications == true || hasNotifications == false)
         }
 
-        @Test("Published property updates")
+        @Test("Published property updates", .timeLimit(.minutes(1)))
         @MainActor func permissionsManagerPublishedPropertyUpdates() async throws {
             let manager = PermissionsManager()
 
@@ -257,7 +257,7 @@ struct AccessibilityTests {
             #expect(true)
         }
 
-        @Test("Concurrent permission operations")
+        @Test("Concurrent permission operations", .timeLimit(.minutes(1)))
         @MainActor func concurrentPermissionOperations() async throws {
             let manager = PermissionsManager()
 
