@@ -2,7 +2,6 @@ import AppKit
 import AXorcist
 @testable import CodeLooper
 import Defaults
-@testable import Diagnostics
 import Foundation
 import Testing
 
@@ -21,7 +20,7 @@ struct IntegrationTests {
             isRunning = true
             coordinator = AppServiceCoordinator()
             let loginItemManager = LoginItemManager.shared
-            let sessionLogger = Diagnostics.SessionLogger.shared
+            let sessionLogger = SessionLogger.shared
             windowManager = await WindowManager(
                 loginItemManager: loginItemManager,
                 sessionLogger: sessionLogger,
@@ -69,17 +68,19 @@ struct IntegrationTests {
     }
 
     @Test("Service coordinator initialization") @MainActor func serviceCoordinatorInitialization() async throws {
-        let coordinator = await AppServiceCoordinator()
+        let coordinator = AppServiceCoordinator()
 
         // Verify core services are available
-        await MainActor.run {
-            #expect(coordinator.axorcist != nil)
-        }
+        // AXorcist is always available (non-optional)
+        let axorcist = coordinator.axorcist
+        #expect(axorcist is AXorcist)
 
         // Test service dependencies
-        let monitor = await CursorMonitor.shared
+        let monitor = CursorMonitor.shared
         // The test is already MainActor-isolated, so we can access these directly
-        #expect(await monitor.axorcist != nil)
+        // AXorcist property is non-optional, so just verify it exists
+        let monitorAxorcist = monitor.axorcist
+        #expect(monitorAxorcist is AXorcist)
 
         // Verify initial state
         #expect(!monitor.isMonitoringActivePublic)
@@ -90,10 +91,10 @@ struct IntegrationTests {
 
     @Test("Cursor detection and monitoring") @MainActor func cursorDetectionAndMonitoring() async throws {
         _ = AppServiceCoordinator()
-        let monitor = await CursorMonitor.shared
+        let monitor = CursorMonitor.shared
 
         // Test app detection without actual Cursor running
-        let mockApps = await [
+        let mockApps = [
             MonitoredAppInfo(
                 id: 12345,
                 pid: 12345,
@@ -105,39 +106,31 @@ struct IntegrationTests {
         ]
 
         // Simulate app detection
-        await MainActor.run {
-            monitor.monitoredApps = mockApps
-        }
+        monitor.monitoredApps = mockApps
 
         // Verify monitoring state
-        await MainActor.run {
-            #expect(monitor.monitoredApps.count == 1)
-            #expect(monitor.monitoredApps.first?.displayName == "Cursor Test")
-        }
+        #expect(monitor.monitoredApps.count == 1)
+        #expect(monitor.monitoredApps.first?.displayName == "Cursor Test")
 
         // Test monitoring lifecycle with apps
         await monitor.startMonitoringLoop()
 
         try await Task.sleep(for: .milliseconds(100))
 
-        await MainActor.run {
-            #expect(monitor.isMonitoringActivePublic)
-        }
+        #expect(monitor.isMonitoringActivePublic)
 
         // Cleanup
         await monitor.stopMonitoringLoop()
 
-        await MainActor.run {
-            #expect(!monitor.isMonitoringActivePublic)
-        }
+        #expect(!monitor.isMonitoringActivePublic)
     }
 
     @Test("Window management integration") @MainActor func windowManagementIntegration() async throws {
-        let coordinator = await AppServiceCoordinator()
-        let monitor = await CursorMonitor.shared
+        _ = AppServiceCoordinator()
+        let monitor = CursorMonitor.shared
 
         // Create app with multiple windows
-        let windows = await [
+        let windows = [
             MonitoredWindowInfo(
                 id: "window1",
                 windowTitle: "Main Document.txt",
@@ -178,8 +171,8 @@ struct IntegrationTests {
     // MARK: - Intervention Flow Tests
 
     @Test("Intervention flow") @MainActor func interventionFlow() async throws {
-        let coordinator = await AppServiceCoordinator()
-        let monitor = await CursorMonitor.shared
+        let coordinator = AppServiceCoordinator()
+        let monitor = CursorMonitor.shared
         // Monitor has internal rule execution
         // Just verify monitor exists
         #expect(monitor != nil)
@@ -236,8 +229,8 @@ struct IntegrationTests {
         }
 
         // Create first coordinator instance
-        let coordinator1 = await AppServiceCoordinator()
-        let monitor1 = await CursorMonitor.shared
+        let coordinator1 = AppServiceCoordinator()
+        let monitor1 = CursorMonitor.shared
 
         // Verify settings are loaded
         await MainActor.run {
@@ -246,8 +239,8 @@ struct IntegrationTests {
         }
 
         // Create second coordinator instance (simulating restart)
-        let coordinator2 = await AppServiceCoordinator()
-        let monitor2 = await CursorMonitor.shared
+        let coordinator2 = AppServiceCoordinator()
+        let monitor2 = CursorMonitor.shared
 
         // Verify settings persistence
         await MainActor.run {
@@ -342,22 +335,22 @@ struct IntegrationTests {
     // MARK: - Cross-Service Integration Tests
 
     @Test("Service coordination") @MainActor func serviceCoordination() async throws {
-        let coordinator = await AppServiceCoordinator()
+        let coordinator = AppServiceCoordinator()
 
         // Test that all services can be accessed
-        let cursorMonitor = await CursorMonitor.shared
+        let cursorMonitor = CursorMonitor.shared
         #expect(cursorMonitor != nil)
 
         // Test service interaction
-        let monitor = await CursorMonitor.shared
+        let monitor = CursorMonitor.shared
 
         // Test that monitor can interact with its dependencies
         await monitor.performMonitoringCycle()
     }
 
     @Test("Cross service error handling") @MainActor func crossServiceErrorHandling() async throws {
-        let coordinator = await AppServiceCoordinator()
-        let monitor = await CursorMonitor.shared
+        let coordinator = AppServiceCoordinator()
+        let monitor = CursorMonitor.shared
 
         // Test error handling with invalid data
         let invalidAppInfo = await MonitoredAppInfo(
