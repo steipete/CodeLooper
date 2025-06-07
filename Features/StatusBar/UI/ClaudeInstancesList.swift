@@ -1,11 +1,14 @@
 import AppKit
 import AXorcist
+import Defaults
 import DesignSystem
 import Diagnostics
 import SwiftUI
 
 struct ClaudeInstancesList: View {
     // MARK: Internal
+    
+    @Default(.showDebugTab) private var showDebugInfo
 
     var body: some View {
         VStack(alignment: .leading, spacing: Spacing.small) {
@@ -27,7 +30,7 @@ struct ClaudeInstancesList: View {
                     .padding(.leading, 10)
             } else {
                 ForEach(claudeMonitor.instances) { instance in
-                    ClaudeInstanceRow(instance: instance)
+                    ClaudeInstanceRow(instance: instance, showDebugInfo: showDebugInfo)
                 }
             }
         }
@@ -42,6 +45,7 @@ private struct ClaudeInstanceRow: View {
     // MARK: Internal
 
     let instance: ClaudeInstance
+    let showDebugInfo: Bool
 
     var body: some View {
         DSCard {
@@ -136,9 +140,25 @@ private struct ClaudeInstanceRow: View {
                         .foregroundColor(ColorPalette.textSecondary)
                     
                     if !instance.ttyPath.isEmpty {
-                        Text("TTY: \(URL(fileURLWithPath: instance.ttyPath).lastPathComponent)")
+                        if showDebugInfo {
+                            // Show full TTY path in debug mode
+                            Text("TTY: \(instance.ttyPath)")
+                                .font(Typography.caption2())
+                                .foregroundColor(ColorPalette.textTertiary)
+                        } else {
+                            // Show just the TTY name normally
+                            Text("TTY: \(URL(fileURLWithPath: instance.ttyPath).lastPathComponent)")
+                                .font(Typography.caption2())
+                                .foregroundColor(ColorPalette.textTertiary)
+                        }
+                    }
+                    
+                    // Show instance ID in debug mode
+                    if showDebugInfo {
+                        Text("ID: \(instance.id)")
                             .font(Typography.caption2())
                             .foregroundColor(ColorPalette.textTertiary)
+                            .italic()
                     }
                 }
             }

@@ -13,6 +13,7 @@ struct CursorWindowsList: View {
 
     let style: Style
     @Default(.isGlobalMonitoringEnabled) private var isGlobalMonitoringEnabled
+    @Default(.showDebugTab) private var showDebugInfo
     @StateObject private var inputWatcherViewModel = CursorInputWatcherViewModel()
     @StateObject private var diagnosticsManager = WindowAIDiagnosticsManager.shared
 
@@ -35,6 +36,7 @@ struct CursorWindowsList: View {
                             windowState: windowState,
                             style: style,
                             isGlobalMonitoringEnabled: isGlobalMonitoringEnabled,
+                            showDebugInfo: showDebugInfo,
                             inputWatcherViewModel: inputWatcherViewModel,
                             diagnosticsManager: diagnosticsManager
                         )
@@ -59,6 +61,7 @@ private struct WindowRow: View {
     let windowState: MonitoredWindowInfo
     let style: CursorWindowsList.Style
     let isGlobalMonitoringEnabled: Bool
+    let showDebugInfo: Bool
     @ObservedObject var inputWatcherViewModel: CursorInputWatcherViewModel
     @ObservedObject var diagnosticsManager: WindowAIDiagnosticsManager
 
@@ -175,6 +178,14 @@ private struct WindowRow: View {
             Text(windowState.screenDescription)
                 .font(Typography.caption2())
                 .foregroundColor(ColorPalette.textTertiary)
+            
+            // Window ID (only in debug mode)
+            if showDebugInfo {
+                Text("Window ID: \(windowState.id)")
+                    .font(Typography.caption2())
+                    .foregroundColor(ColorPalette.textTertiary)
+                    .italic()
+            }
         }
     }
 
