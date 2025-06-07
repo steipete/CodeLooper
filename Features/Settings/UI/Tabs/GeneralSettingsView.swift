@@ -152,22 +152,22 @@ struct GeneralSettingsView: View {
                     isOn: $enableClaudeMonitoring,
                     description: "Show running Claude instances in the status menu"
                 )
-                .onChange(of: enableClaudeMonitoring) { _, newValue in
+                .onChange(of: enableClaudeMonitoring) { _, _ in
                     Task { @MainActor in
                         // Use syncWithUserDefaults to ensure state consistency
                         ClaudeMonitorService.shared.syncWithUserDefaults()
                     }
                 }
-                
+
                 if enableClaudeMonitoring {
                     DSDivider()
-                    
+
                     DSToggle(
                         "Override Claude terminal titles",
                         isOn: $enableClaudeTitleOverride,
                         description: "Show folder name and status in Claude terminal window titles"
                     )
-                    .onChange(of: enableClaudeTitleOverride) { _, newValue in
+                    .onChange(of: enableClaudeTitleOverride) { _, _ in
                         Task { @MainActor in
                             // Use syncWithUserDefaults to ensure state consistency
                             ClaudeMonitorService.shared.syncWithUserDefaults()
@@ -175,7 +175,7 @@ struct GeneralSettingsView: View {
                     }
                 }
             }
-            
+
             // Git Integration
             DSSettingsSection("Git Integration") {
                 VStack(alignment: .leading, spacing: Spacing.small) {

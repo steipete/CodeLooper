@@ -2,10 +2,11 @@ import AppKit
 @testable import CodeLooper
 import Foundation
 import SwiftUI
-import XCTest
+import Testing
 
-class StatusBarTests: XCTestCase {
-    func testStatusIconStateAllCases() async throws {
+@Suite("StatusBarTests")
+struct StatusBarTests {
+    @Test("Status icon state all cases") @MainActor func statusIconStateAllCases() throws {
         let states: [StatusIconState] = [
             .idle,
             .syncing,
@@ -20,78 +21,78 @@ class StatusBarTests: XCTestCase {
         ]
 
         for state in states {
-            XCTAssertGreaterThan(state.rawValue.count, 0)
-            XCTAssertGreaterThan(state.description.count, 0)
-            XCTAssertGreaterThan(state.tooltipText.count, 0)
+            #expect(state.rawValue.count > 0)
+            #expect(state.description.count > 0)
+            #expect(state.tooltipText.count > 0)
         }
     }
 
-    func testStatusIconStateRawValues() async throws {
-        XCTAssertEqual(StatusIconState.idle.rawValue, "idle")
-        XCTAssertEqual(StatusIconState.syncing.rawValue, "syncing")
-        XCTAssertEqual(StatusIconState.error.rawValue, "error")
-        XCTAssertEqual(StatusIconState.warning.rawValue, "warning")
-        XCTAssertEqual(StatusIconState.success.rawValue, "success")
-        XCTAssertEqual(StatusIconState.authenticated.rawValue, "authenticated")
-        XCTAssertEqual(StatusIconState.unauthenticated.rawValue, "unauthenticated")
-        XCTAssertEqual(StatusIconState.criticalError.rawValue, "criticalError")
-        XCTAssertEqual(StatusIconState.paused.rawValue, "paused")
-        XCTAssertEqual(StatusIconState.aiStatus(working: 1, notWorking: 2, unknown: 3).rawValue, "aiStatus")
+    @Test("Status icon state raw values") @MainActor func statusIconStateRawValues() throws {
+        #expect(StatusIconState.idle.rawValue == "idle")
+        #expect(StatusIconState.syncing.rawValue == "syncing")
+        #expect(StatusIconState.error.rawValue == "error")
+        #expect(StatusIconState.warning.rawValue == "warning")
+        #expect(StatusIconState.success.rawValue == "success")
+        #expect(StatusIconState.authenticated.rawValue == "authenticated")
+        #expect(StatusIconState.unauthenticated.rawValue == "unauthenticated")
+        #expect(StatusIconState.criticalError.rawValue == "criticalError")
+        #expect(StatusIconState.paused.rawValue == "paused")
+        #expect(StatusIconState.aiStatus(working: 1, notWorking: 2, unknown: 3).rawValue == "aiStatus")
     }
 
-    func testStatusIconStateDescriptions() async throws {
-        XCTAssertEqual(StatusIconState.idle.description, "Idle")
-        XCTAssertEqual(StatusIconState.syncing.description, "Syncing")
-        XCTAssertEqual(StatusIconState.error.description, "Error")
-        XCTAssertEqual(StatusIconState.warning.description, "Warning")
-        XCTAssertEqual(StatusIconState.success.description, "Success")
-        XCTAssertEqual(StatusIconState.authenticated.description, "Authenticated")
-        XCTAssertEqual(StatusIconState.unauthenticated.description, "Not Logged In")
-        XCTAssertEqual(StatusIconState.criticalError.description, "Critical Error")
-        XCTAssertEqual(StatusIconState.paused.description, "Paused")
+    @Test("Status icon state descriptions") @MainActor func statusIconStateDescriptions() throws {
+        #expect(StatusIconState.idle.description == "Idle")
+        #expect(StatusIconState.syncing.description == "Syncing")
+        #expect(StatusIconState.error.description == "Error")
+        #expect(StatusIconState.warning.description == "Warning")
+        #expect(StatusIconState.success.description == "Success")
+        #expect(StatusIconState.authenticated.description == "Authenticated")
+        #expect(StatusIconState.unauthenticated.description == "Not Logged In")
+        #expect(StatusIconState.criticalError.description == "Critical Error")
+        #expect(StatusIconState.paused.description == "Paused")
 
         let aiStatus = StatusIconState.aiStatus(working: 2, notWorking: 1, unknown: 3)
-        XCTAssertEqual(aiStatus.description, "AI Status: 2 working, 1 not working, 3 unknown")
+        #expect(aiStatus.description == "AI Status: 2 working, 1 not working, 3 unknown")
     }
 
-    func testStatusIconStateTooltipText() async throws {
-        XCTAssertEqual(StatusIconState.idle.tooltipText, "CodeLooper")
-        XCTAssertEqual(StatusIconState.syncing.tooltipText, "CodeLooper - Syncing Contacts...")
-        XCTAssertEqual(StatusIconState.error.tooltipText, "CodeLooper - Sync Error")
-        XCTAssertEqual(StatusIconState.warning.tooltipText, "CodeLooper - Warning")
-        XCTAssertEqual(StatusIconState.success.tooltipText, "CodeLooper - Sync Successful")
-        XCTAssertEqual(StatusIconState.authenticated.tooltipText, "CodeLooper - Signed In")
-        XCTAssertEqual(StatusIconState.unauthenticated.tooltipText, "CodeLooper - Signed Out")
-        XCTAssertEqual(StatusIconState.criticalError.tooltipText, "CodeLooper: Critical Error - Check Settings")
-        XCTAssertEqual(StatusIconState.paused.tooltipText, "CodeLooper: Supervision Paused")
+    @Test("Status icon state tooltip text") @MainActor func statusIconStateTooltipText() throws {
+        #expect(StatusIconState.idle.tooltipText == "CodeLooper")
+        #expect(StatusIconState.syncing.tooltipText == "CodeLooper - Syncing Contacts...")
+        #expect(StatusIconState.error.tooltipText == "CodeLooper - Sync Error")
+        #expect(StatusIconState.warning.tooltipText == "CodeLooper - Warning")
+        #expect(StatusIconState.success.tooltipText == "CodeLooper - Sync Successful")
+        #expect(StatusIconState.authenticated.tooltipText == "CodeLooper - Signed In")
+        #expect(StatusIconState.unauthenticated.tooltipText == "CodeLooper - Signed Out")
+        #expect(StatusIconState.criticalError.tooltipText == "CodeLooper: Critical Error - Check Settings")
+        #expect(StatusIconState.paused.tooltipText == "CodeLooper: Supervision Paused")
 
         let aiStatus = StatusIconState.aiStatus(working: 1, notWorking: 2, unknown: 3)
-        XCTAssertEqual(aiStatus.tooltipText, "CodeLooper: AI Analysis - 1 Working, 2 Not Working, 3 Unknown")
+        #expect(aiStatus.tooltipText == "CodeLooper: AI Analysis - 1 Working, 2 Not Working, 3 Unknown")
     }
 
-    func testStatusIconStateTemplateImageUsage() async throws {
-        XCTAssertEqual(StatusIconState.idle.useTemplateImage, true)
-        XCTAssertEqual(StatusIconState.syncing.useTemplateImage, true)
-        XCTAssertEqual(StatusIconState.error.useTemplateImage, true)
-        XCTAssertEqual(StatusIconState.warning.useTemplateImage, true)
-        XCTAssertEqual(StatusIconState.success.useTemplateImage, true)
-        XCTAssertEqual(StatusIconState.authenticated.useTemplateImage, true)
-        XCTAssertEqual(StatusIconState.unauthenticated.useTemplateImage, true)
-        XCTAssertEqual(StatusIconState.criticalError.useTemplateImage, true)
-        XCTAssertEqual(StatusIconState.paused.useTemplateImage, true)
+    @Test("Status icon state template image usage") @MainActor func statusIconStateTemplateImageUsage() throws {
+        #expect(StatusIconState.idle.useTemplateImage)
+        #expect(StatusIconState.syncing.useTemplateImage)
+        #expect(StatusIconState.error.useTemplateImage)
+        #expect(StatusIconState.warning.useTemplateImage)
+        #expect(StatusIconState.success.useTemplateImage)
+        #expect(StatusIconState.authenticated.useTemplateImage)
+        #expect(StatusIconState.unauthenticated.useTemplateImage)
+        #expect(StatusIconState.criticalError.useTemplateImage)
+        #expect(StatusIconState.paused.useTemplateImage)
 
         // AI status should not use template image for custom colors
-        XCTAssertEqual(StatusIconState.aiStatus(working: 1, notWorking: 2, unknown: 3).useTemplateImage, false)
+        #expect(StatusIconState.aiStatus(working: 1, notWorking: 2, unknown: 3).useTemplateImage == false)
     }
 
-    func testStatusIconStateHashableAndSendable() async throws {
+    @Test("Status icon state hashable and sendable") @MainActor func statusIconStateHashableAndSendable() throws {
         let state1 = StatusIconState.idle
         let state2 = StatusIconState.idle
         let state3 = StatusIconState.syncing
 
         // Test equality
-        XCTAssertEqual(state1, state2)
-        XCTAssertNotEqual(state1, state3)
+        #expect(state1 == state2)
+        #expect(state1 != state3)
 
         // Test hashable
         var stateSet: Set<StatusIconState> = []
@@ -99,219 +100,215 @@ class StatusBarTests: XCTestCase {
         stateSet.insert(state2) // Should not add duplicate
         stateSet.insert(state3)
 
-        XCTAssertEqual(stateSet.count, 2)
-        XCTAssertTrue(stateSet.contains(.idle))
-        XCTAssertTrue(stateSet.contains(.syncing))
+        #expect(stateSet.count == 2)
+        #expect(stateSet.contains(.idle))
+        #expect(stateSet.contains(.syncing))
 
         // Test AI status equality
         let aiStatus1 = StatusIconState.aiStatus(working: 1, notWorking: 2, unknown: 3)
         let aiStatus2 = StatusIconState.aiStatus(working: 1, notWorking: 2, unknown: 3)
         let aiStatus3 = StatusIconState.aiStatus(working: 2, notWorking: 1, unknown: 3)
 
-        XCTAssertEqual(aiStatus1, aiStatus2)
-        XCTAssertNotEqual(aiStatus1, aiStatus3)
+        #expect(aiStatus1 == aiStatus2)
+        #expect(aiStatus1 != aiStatus3)
     }
 
-    func testStatusIconStateAIStatusEdgeCases() async throws {
+    @Test("Status icon state a i status edge cases") @MainActor func statusIconStateAIStatusEdgeCases() throws {
         // Test zero counts
         let zeroStatus = StatusIconState.aiStatus(working: 0, notWorking: 0, unknown: 0)
-        XCTAssertEqual(zeroStatus.description, "AI Status: 0 working, 0 not working, 0 unknown")
-        XCTAssertEqual(zeroStatus.rawValue, "aiStatus")
+        #expect(zeroStatus.description == "AI Status: 0 working, 0 not working, 0 unknown")
+        #expect(zeroStatus.rawValue == "aiStatus")
 
         // Test large counts
         let largeStatus = StatusIconState.aiStatus(working: 999, notWorking: 888, unknown: 777)
-        XCTAssertEqual(largeStatus.description, "AI Status: 999 working, 888 not working, 777 unknown")
+        #expect(largeStatus.description == "AI Status: 999 working, 888 not working, 777 unknown")
 
         // Test single non-zero count
         let singleWorkingStatus = StatusIconState.aiStatus(working: 1, notWorking: 0, unknown: 0)
-        XCTAssertEqual(singleWorkingStatus.description, "AI Status: 1 working, 0 not working, 0 unknown")
+        #expect(singleWorkingStatus.description == "AI Status: 1 working, 0 not working, 0 unknown")
     }
 
-    func testMenuBarIconManagerInitialization() async throws {
-        let manager = await MenuBarIconManager()
+    @Test("Menu bar icon manager initialization") @MainActor func menuBarIconManagerInitialization() throws {
+        let manager = MenuBarIconManager()
 
         // Test initial state
-        XCTAssertNotNil(manager)
+        // manager is non-optional, no need to test for nil
 
-        let initialTooltip = await manager.currentTooltip
-        XCTAssertTrue(initialTooltip.contains("CodeLooper"))
+        let initialTooltip = manager.currentTooltip
+        #expect(initialTooltip.contains("CodeLooper"))
     }
 
-    func testMenuBarIconManagerStateChanges() async throws {
-        let manager = await MenuBarIconManager()
+    @Test("Menu bar icon manager state changes") @MainActor func menuBarIconManagerStateChanges() throws {
+        let manager = MenuBarIconManager()
 
         // Test setting different states
-        await manager.setState(.idle)
-        let idleTooltip = await manager.currentTooltip
-        XCTAssertEqual(idleTooltip, "CodeLooper")
+        manager.setState(.idle)
+        let idleTooltip = manager.currentTooltip
+        #expect(idleTooltip == "CodeLooper")
 
-        await manager.setState(.error)
-        let errorTooltip = await manager.currentTooltip
-        XCTAssertEqual(errorTooltip, "CodeLooper - Sync Error")
+        manager.setState(.error)
+        let errorTooltip = manager.currentTooltip
+        #expect(errorTooltip == "CodeLooper - Sync Error")
 
-        await manager.setState(.syncing)
-        let syncingTooltip = await manager.currentTooltip
-        XCTAssertEqual(syncingTooltip, "CodeLooper - Syncing Contacts...")
+        manager.setState(.syncing)
+        let syncingTooltip = manager.currentTooltip
+        #expect(syncingTooltip == "CodeLooper - Syncing Contacts...")
 
-        await manager.setState(.paused)
-        let pausedTooltip = await manager.currentTooltip
-        XCTAssertEqual(pausedTooltip, "CodeLooper: Supervision Paused")
+        manager.setState(.paused)
+        let pausedTooltip = manager.currentTooltip
+        #expect(pausedTooltip == "CodeLooper: Supervision Paused")
     }
 
-    func testMenuBarIconManagerLegacyMethods() async throws {
-        let manager = await MenuBarIconManager()
+    @Test("Menu bar icon manager legacy methods") @MainActor func menuBarIconManagerLegacyMethods() throws {
+        let manager = MenuBarIconManager()
 
         // Test legacy method compatibility
-        await manager.setActiveIcon()
-        let activeTooltip = await manager.currentTooltip
-        XCTAssertEqual(activeTooltip, "CodeLooper - Signed In")
+        manager.setActiveIcon()
+        let activeTooltip = manager.currentTooltip
+        #expect(activeTooltip == "CodeLooper - Signed In")
 
-        await manager.setInactiveIcon()
-        let inactiveTooltip = await manager.currentTooltip
-        XCTAssertEqual(inactiveTooltip, "CodeLooper - Signed Out")
+        manager.setInactiveIcon()
+        let inactiveTooltip = manager.currentTooltip
+        #expect(inactiveTooltip == "CodeLooper - Signed Out")
 
-        await manager.setUploadingIcon()
-        let uploadingTooltip = await manager.currentTooltip
-        XCTAssertEqual(uploadingTooltip, "CodeLooper - Syncing Contacts...")
+        manager.setUploadingIcon()
+        let uploadingTooltip = manager.currentTooltip
+        #expect(uploadingTooltip == "CodeLooper - Syncing Contacts...")
 
-        await manager.setNormalIcon()
-        let normalTooltip = await manager.currentTooltip
-        XCTAssertEqual(normalTooltip, "CodeLooper")
+        manager.setNormalIcon()
+        let normalTooltip = manager.currentTooltip
+        #expect(normalTooltip == "CodeLooper")
     }
 
-    func testMenuBarIconManagerAIStatusIcon() async throws {
-        let manager = await MenuBarIconManager()
+    @Test("Menu bar icon manager a i status icon") @MainActor func menuBarIconManagerAIStatusIcon() throws {
+        let manager = MenuBarIconManager()
 
         // Test AI status with various counts
-        await manager.setState(.aiStatus(working: 3, notWorking: 2, unknown: 1))
-        let aiTooltip = await manager.currentTooltip
-        XCTAssertEqual(aiTooltip, "CodeLooper: AI Analysis - 3 Working, 2 Not Working, 1 Unknown")
+        manager.setState(.aiStatus(working: 3, notWorking: 2, unknown: 1))
+        let aiTooltip = manager.currentTooltip
+        #expect(aiTooltip == "CodeLooper: AI Analysis - 3 Working, 2 Not Working, 1 Unknown")
 
         // Test AI status with zero counts
-        await manager.setState(.aiStatus(working: 0, notWorking: 0, unknown: 0))
-        let zeroAITooltip = await manager.currentTooltip
-        XCTAssertEqual(zeroAITooltip, "CodeLooper: AI Analysis - 0 Working, 0 Not Working, 0 Unknown")
+        manager.setState(.aiStatus(working: 0, notWorking: 0, unknown: 0))
+        let zeroAITooltip = manager.currentTooltip
+        #expect(zeroAITooltip == "CodeLooper: AI Analysis - 0 Working, 0 Not Working, 0 Unknown")
     }
 
-    func testMenuBarIconManagerAttributedStringCreation() async throws {
-        let manager = await MenuBarIconManager()
+    @Test("Menu bar icon manager attributed string creation") @MainActor func menuBarIconManagerAttributedStringCreation() throws {
+        let manager = MenuBarIconManager()
 
         // Test that attributed strings are created for different states
-        await manager.setState(.idle)
-        let idleString = await manager.currentIconAttributedString
-        XCTAssertNotNil(idleString)
+        manager.setState(.idle)
+        let idleString = manager.currentIconAttributedString
+        #expect(!idleString.characters.isEmpty, "Idle state should produce non-empty attributed string")
 
-        await manager.setState(.error)
-        let errorString = await manager.currentIconAttributedString
-        XCTAssertNotNil(errorString)
+        manager.setState(.error)
+        let errorString = manager.currentIconAttributedString
+        #expect(!errorString.characters.isEmpty, "Error state should produce non-empty attributed string")
 
-        await manager.setState(.aiStatus(working: 2, notWorking: 1, unknown: 0))
-        let aiString = await manager.currentIconAttributedString
-        XCTAssertNotNil(aiString)
+        manager.setState(.aiStatus(working: 2, notWorking: 1, unknown: 0))
+        let aiString = manager.currentIconAttributedString
+        #expect(!aiString.characters.isEmpty, "AI status state should produce non-empty attributed string")
     }
 
-    func testMenuBarIconManagerConcurrentStateChanges() async throws {
-        let manager = await MenuBarIconManager()
+    @Test("Menu bar icon manager rapid state changes") @MainActor func menuBarIconManagerRapidStateChanges() async throws {
+        let manager = MenuBarIconManager()
 
-        // Test concurrent state changes
-        await withTaskGroup(of: Void.self) { group in
-            let states: [StatusIconState] = [
-                .idle, .syncing, .error, .warning, .success,
-                .authenticated, .unauthenticated, .paused,
-            ]
+        // Test rapid sequential state changes (MainActor operations must be sequential)
+        let states: [StatusIconState] = [
+            .idle, .syncing, .error, .warning, .success,
+            .authenticated, .unauthenticated, .paused,
+        ]
 
-            for state in states {
-                group.addTask {
-                    await manager.setState(state)
-                    // Brief delay to allow state processing
-                    try? await Task.sleep(for: .milliseconds(1)) // 1ms
-                }
-            }
+        for state in states {
+            manager.setState(state)
+            // Brief delay to allow state processing
+            try? await Task.sleep(for: .milliseconds(1))
         }
 
-        // After all concurrent operations, manager should still be in a valid state
-        let finalTooltip = await manager.currentTooltip
-        XCTAssertTrue(finalTooltip.contains("CodeLooper"))
+        // After all operations, manager should still be in a valid state
+        let finalTooltip = manager.currentTooltip
+        #expect(finalTooltip.contains("CodeLooper"))
     }
 
-    func testMenuBarIconManagerCleanupOperations() async throws {
-        let manager = await MenuBarIconManager()
+    @Test("Menu bar icon manager cleanup operations") @MainActor func menuBarIconManagerCleanupOperations() throws {
+        let manager = MenuBarIconManager()
 
         // Test cleanup doesn't crash
-        await manager.cleanup()
+        manager.cleanup()
 
         // Manager should still be usable after cleanup
-        await manager.setState(.idle)
-        let tooltipAfterCleanup = await manager.currentTooltip
-        XCTAssertEqual(tooltipAfterCleanup, "CodeLooper")
+        manager.setState(.idle)
+        let tooltipAfterCleanup = manager.currentTooltip
+        #expect(tooltipAfterCleanup == "CodeLooper")
     }
 
-    func testStatusBarAppearanceHandling() async throws {
+    @Test("Status bar appearance handling") @MainActor func statusBarAppearanceHandling() throws {
         // Test appearance name constants
         let darkAppearance = NSAppearance.Name.darkAqua
         let lightAppearance = NSAppearance.Name.aqua
 
-        XCTAssertEqual(darkAppearance.rawValue, "NSAppearanceNameDarkAqua")
-        XCTAssertEqual(lightAppearance.rawValue, "NSAppearanceNameAqua")
-        XCTAssertNotEqual(darkAppearance, lightAppearance)
+        #expect(darkAppearance.rawValue == "NSAppearanceNameDarkAqua")
+        #expect(lightAppearance.rawValue == "NSAppearanceNameAqua")
+        #expect(darkAppearance != lightAppearance)
     }
 
-    func testStatusBarNotificationNames() async throws {
+    @Test("Status bar notification names") @MainActor func statusBarNotificationNames() throws {
         // Test system notification name
         let themeChangeNotification = NSNotification.Name("AppleInterfaceThemeChangedNotification")
-        XCTAssertEqual(themeChangeNotification.rawValue, "AppleInterfaceThemeChangedNotification")
+        #expect(themeChangeNotification.rawValue == "AppleInterfaceThemeChangedNotification")
     }
 
-    func testStatusBarAttributedStringCreation() async throws {
+    @Test("Status bar attributed string creation") @MainActor func statusBarAttributedStringCreation() throws {
         // Test creating attributed strings with different properties
         var attributes = AttributeContainer()
         attributes.font = Font.system(size: 12)
         attributes.foregroundColor = Color.white
 
         let attributedString = AttributedString("Test", attributes: attributes)
-        XCTAssertEqual(attributedString.characters.count, 4)
+        #expect(attributedString.characters.count == 4)
 
         // Test appending attributed strings
         var result = AttributedString()
         result.append(AttributedString("🟢"))
         result.append(AttributedString("2"))
-        XCTAssertEqual(result.characters.count, 2)
+        #expect(result.characters.count == 2)
     }
 
-    func testStatusBarColorDefinitions() async throws {
+    @Test("Status bar color definitions") @MainActor func statusBarColorDefinitions() throws {
         // Test that colors can be created and are distinct
         let workingColor = Color.green
         let notWorkingColor = Color.red
         let unknownColor = Color.orange
 
-        XCTAssertNotEqual(workingColor, notWorkingColor)
-        XCTAssertNotEqual(notWorkingColor, unknownColor)
-        XCTAssertNotEqual(unknownColor, workingColor)
+        #expect(workingColor != notWorkingColor)
+        #expect(notWorkingColor != unknownColor)
+        #expect(unknownColor != workingColor)
     }
 
-    func testStatusBarMemoryManagement() async throws {
+    @Test("Status bar memory management") @MainActor func statusBarMemoryManagement() throws {
         // Test creating and releasing multiple managers
         var managers: [MenuBarIconManager] = []
 
         for _ in 0 ..< 10 {
-            let manager = await MenuBarIconManager()
-            await manager.setState(.idle)
+            let manager = MenuBarIconManager()
+            manager.setState(.idle)
             managers.append(manager)
         }
 
-        XCTAssertEqual(managers.count, 10)
+        #expect(managers.count == 10)
 
         // Test cleanup
         for manager in managers {
-            await manager.cleanup()
+            manager.cleanup()
         }
 
         managers.removeAll()
-        XCTAssertTrue(managers.isEmpty)
+        #expect(managers.isEmpty)
     }
 
-    func testStatusBarStateValidation() async throws {
-        let manager = await MenuBarIconManager()
+    @Test("Status bar state validation") @MainActor func statusBarStateValidation() throws {
+        let manager = MenuBarIconManager()
 
         // Test state transitions don't crash
         let stateSequence: [StatusIconState] = [
@@ -329,28 +326,28 @@ class StatusBarTests: XCTestCase {
         ]
 
         for state in stateSequence {
-            await manager.setState(state)
-            let tooltip = await manager.currentTooltip
-            XCTAssertGreaterThan(tooltip.count, 0)
-            XCTAssertTrue(tooltip.contains("CodeLooper"))
+            manager.setState(state)
+            let tooltip = manager.currentTooltip
+            #expect(tooltip.count > 0)
+            #expect(tooltip.contains("CodeLooper"))
         }
     }
 
-    func testStatusBarPerformanceCharacteristics() async throws {
-        let manager = await MenuBarIconManager()
+    @Test("Status bar performance characteristics") @MainActor func statusBarPerformanceCharacteristics() throws {
+        let manager = MenuBarIconManager()
 
         // Test rapid state changes
         let startTime = Date()
         for i in 0 ..< 100 {
             let state = StatusIconState.aiStatus(working: i % 10, notWorking: (i + 1) % 10, unknown: (i + 2) % 10)
-            await manager.setState(state)
+            manager.setState(state)
         }
         let elapsed = Date().timeIntervalSince(startTime)
 
-        XCTAssertLessThan(elapsed, 1.0) // Should complete in under 1 second
+        #expect(elapsed < 1.0) // Should complete in under 1 second
 
         // Final state should be valid
-        let finalTooltip = await manager.currentTooltip
-        XCTAssertTrue(finalTooltip.contains("CodeLooper"))
+        let finalTooltip = manager.currentTooltip
+        #expect(finalTooltip.contains("CodeLooper"))
     }
 }

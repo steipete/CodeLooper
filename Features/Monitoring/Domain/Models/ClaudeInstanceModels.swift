@@ -1,15 +1,8 @@
 import Foundation
 
 public struct ClaudeInstance: Identifiable, Sendable {
-    public let id: UUID = UUID()
-    public let pid: Int32
-    public let ttyPath: String
-    public let workingDirectory: String
-    public let folderName: String
-    public let status: String?
-    public let currentActivity: String? // The live status line from terminal
-    public let lastUpdated: Date
-    
+    // MARK: Lifecycle
+
     public init(
         pid: Int32,
         ttyPath: String,
@@ -27,6 +20,17 @@ public struct ClaudeInstance: Identifiable, Sendable {
         self.currentActivity = currentActivity
         self.lastUpdated = lastUpdated
     }
+
+    // MARK: Public
+
+    public let id: UUID = .init()
+    public let pid: Int32
+    public let ttyPath: String
+    public let workingDirectory: String
+    public let folderName: String
+    public let status: String?
+    public let currentActivity: String? // The live status line from terminal
+    public let lastUpdated: Date
 }
 
 public enum ClaudeMonitoringState: Sendable {

@@ -84,7 +84,7 @@ public class RuleCounterManager: ObservableObject {
                 !["rule1", "rule2", "rule3"].contains(key)
             }
             ruleCounters = filteredCounters
-            
+
             // If we filtered out test data, save the cleaned version
             if filteredCounters.count != saved.count {
                 saveCounters()

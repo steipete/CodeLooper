@@ -36,7 +36,7 @@ public class UpdaterViewModel: ObservableObject {
             print("UpdaterViewModel: SparkleUpdaterManager not available.")
             return
         }
-        
+
         // Defer the state update to avoid "Publishing changes from within view updates"
         Task { @MainActor in
             // Set update in progress (simplistic, real status comes from Sparkle delegates)

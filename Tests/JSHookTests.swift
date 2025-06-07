@@ -1,38 +1,38 @@
 @testable import CodeLooper
 import Foundation
 import Network
-import XCTest
+import Testing
 
-class JSHookTests: XCTestCase {
-    func testScriptTemplateLoading() async throws {
+@Suite("JSHookTests")
+struct JSHookTests {
+    @Test("Script template loading") func scriptTemplateLoading() {
         // Test that the JavaScript template can be loaded
         do {
             let template = try CursorJSHookScript.loadTemplate()
-            XCTAssertGreaterThan(template.count, 0)
-            XCTAssertTrue(template.contains("__CODELOOPER_PORT_PLACEHOLDER__"))
-            XCTAssertTrue(template.contains("__CODELOOPER_VERSION_PLACEHOLDER__"))
+            #expect(template.count > 0)
+            #expect(template.contains("__CODELOOPER_PORT_PLACEHOLDER__"))
+            #expect(template.contains("__CODELOOPER_VERSION_PLACEHOLDER__"))
         } catch {
             // If script file doesn't exist in test environment, that's expected
-            XCTAssertTrue(error is CursorJSHookError)
+            #expect(error is CursorJSHookError)
             if case CursorJSHookError.scriptNotFound = error {
-                // This is expected in test environment
-                XCTAssertTrue(true)
+                // This is expected in test environment - script file missing is handled properly
             }
         }
     }
 
-    func testScriptVersionConstant() async throws {
+    @Test("Script version constant") func scriptVersionConstant() {
         let version = CursorJSHookScript.version
-        XCTAssertGreaterThan(version.count, 0)
-        XCTAssertTrue(version.contains("."))
+        #expect(version.count > 0)
+        #expect(version.contains("."))
 
         // Version should be in semantic versioning format
         let versionComponents = version.split(separator: ".")
-        XCTAssertGreaterThanOrEqual(versionComponents.count, 2)
-        XCTAssertLessThanOrEqual(versionComponents.count, 3)
+        #expect(versionComponents.count >= 2)
+        #expect(versionComponents.count <= 3)
     }
 
-    func testScriptGenerationWithPort() async throws {
+    @Test("Script generation with port") func scriptGenerationWithPort() {
         // Mock the template loading since file might not exist in test environment
         let mockTemplate = """
         // Test JavaScript template
@@ -46,19 +46,19 @@ class JSHookTests: XCTestCase {
         let withPort = mockTemplate.replacingOccurrences(of: "__CODELOOPER_PORT_PLACEHOLDER__", with: String(port))
         let withVersion = withPort.replacingOccurrences(of: "__CODELOOPER_VERSION_PLACEHOLDER__", with: "1.0.0")
 
-        XCTAssertTrue(withVersion.contains("const port = 8080;"))
-        XCTAssertTrue(withVersion.contains("const version = '1.0.0';"))
-        XCTAssertFalse(withVersion.contains("__CODELOOPER_PORT_PLACEHOLDER__"))
-        XCTAssertFalse(withVersion.contains("__CODELOOPER_VERSION_PLACEHOLDER__"))
+        #expect(withVersion.contains("const port = 8080;"))
+        #expect(withVersion.contains("const version = '1.0.0';"))
+        #expect(!withVersion.contains("__CODELOOPER_PORT_PLACEHOLDER__"))
+        #expect(!withVersion.contains("__CODELOOPER_VERSION_PLACEHOLDER__"))
     }
 
-    func testJSHookErrorTypes() async throws {
+    @Test("J s hook error types") func jSHookErrorTypes() {
         let scriptError = CursorJSHookError.scriptNotFound
-        XCTAssertNotNil(scriptError.errorDescription)
-        XCTAssertTrue(scriptError.errorDescription?.contains("JavaScript hook script not found") == true)
+        #expect(scriptError.errorDescription != nil)
+        #expect(scriptError.errorDescription?.contains("JavaScript hook script not found") == true)
     }
 
-    func testHookErrorTypes() async throws {
+    @Test("Hook error types") func hookErrorTypes() {
         // Test various hook error types
         let portError = CursorJSHook.HookError.portInUse(port: 8080)
         let timeoutError = CursorJSHook.HookError.timeout(duration: 30.0, operation: "test")
@@ -67,69 +67,69 @@ class JSHookTests: XCTestCase {
         let permissionError = CursorJSHook.HookError.applescriptPermissionDenied
 
         // Test error descriptions exist
-        XCTAssertNotNil(portError.errorDescription)
-        XCTAssertNotNil(timeoutError.errorDescription)
-        XCTAssertNotNil(notConnectedError.errorDescription)
-        XCTAssertNotNil(cancelledError.errorDescription)
-        XCTAssertNotNil(permissionError.errorDescription)
+        #expect(portError.errorDescription != nil)
+        #expect(timeoutError.errorDescription != nil)
+        #expect(notConnectedError.errorDescription != nil)
+        #expect(cancelledError.errorDescription != nil)
+        #expect(permissionError.errorDescription != nil)
 
         // Test specific error properties
         if case let .portInUse(port) = portError {
-            XCTAssertEqual(port, 8080)
+            #expect(port == 8080)
         } else {
-            XCTFail("Expected portInUse error")
+            #expect(Bool(false), "Expected portInUse error")
         }
 
         if case let .timeout(duration, operation) = timeoutError {
-            XCTAssertEqual(duration, 30.0)
-            XCTAssertEqual(operation, "test")
+            #expect(duration == 30.0)
+            #expect(operation == "test")
         } else {
-            XCTFail("Expected timeout error")
+            #expect(Bool(false), "Expected timeout error")
         }
     }
 
-    func testWebSocketManagerInitialization() async throws {
+    @Test("Web socket manager initialization") @MainActor func webSocketManagerInitialization() async throws {
         let port: UInt16 = 9999
         let manager = await WebSocketManager(port: port)
 
         // Test initial state
         let isConnected = await manager.isConnected
-        XCTAssertEqual(isConnected, false)
+        #expect(!isConnected)
     }
 
-    func testPortValidation() async throws {
+    @Test("Port validation") @MainActor func portValidation() async throws {
         // Test various port values
         let validPorts: [UInt16] = [8080, 9999, 3000, 1234, 65535]
 
         for port in validPorts {
             let manager = await WebSocketManager(port: port)
             // Should not throw during initialization
-            XCTAssertNotNil(manager)
+            #expect(manager != nil)
         }
 
         // Test port 0 (should create valid NWEndpoint.Port)
         let zeroPortManager = await WebSocketManager(port: 0)
-        XCTAssertNotNil(zeroPortManager)
+        #expect(zeroPortManager != nil)
     }
 
-    func testConnectionStateManagement() async throws {
+    @Test("Connection state management") @MainActor func connectionStateManagement() async throws {
         let manager = await WebSocketManager(port: 9998)
 
         // Initially not connected
         let initialState = await manager.isConnected
-        XCTAssertEqual(initialState, false)
+        #expect(!initialState)
 
         // Connection state should be testable without actual network operations
         // This tests the state logic without requiring real connections
     }
 
-    func testMessageTypes() async throws {
+    @Test("Message types") @MainActor func testMessageTypes() async throws {
         // Test that we can validate message type constants
         let messageTypes = ["heartbeat", "composerUpdate", "ready"]
 
         for messageType in messageTypes {
-            XCTAssertGreaterThan(messageType.count, 0)
-            XCTAssertFalse(messageType.contains(" "))
+            #expect(messageType.count > 0)
+            #expect(!messageType.contains(" "))
         }
 
         // Test JSON message structure
@@ -145,23 +145,23 @@ class JSHookTests: XCTestCase {
         let data = heartbeatJSON.data(using: .utf8)!
         let parsed = try JSONSerialization.jsonObject(with: data) as! [String: Any]
 
-        XCTAssertEqual(parsed["type"] as? String, "heartbeat")
-        XCTAssertEqual(parsed["version"] as? String, "1.0.0")
-        XCTAssertEqual(parsed["location"] as? String, "test")
-        XCTAssertEqual(parsed["resumeNeeded"] as? Bool, false)
+        #expect(parsed["type"] as? String == "heartbeat")
+        #expect(parsed["version"] as? String == "1.0.0")
+        #expect(parsed["location"] as? String == "test")
+        #expect(parsed["resumeNeeded"] as? Bool == false)
     }
 
-    func testNotificationNames() async throws {
+    @Test("Notification names") func notificationNames() {
         // Test notification name constants
         let heartbeatNotification = Notification.Name("CursorHeartbeat")
         let composerNotification = Notification.Name("CursorComposerUpdate")
 
-        XCTAssertEqual(heartbeatNotification.rawValue, "CursorHeartbeat")
-        XCTAssertEqual(composerNotification.rawValue, "CursorComposerUpdate")
-        XCTAssertNotEqual(heartbeatNotification, composerNotification)
+        #expect(heartbeatNotification.rawValue == "CursorHeartbeat")
+        #expect(composerNotification.rawValue == "CursorComposerUpdate")
+        #expect(heartbeatNotification != composerNotification)
     }
 
-    func testThreadingAndConcurrency() async throws {
+    @Test("Threading and concurrency") @MainActor func threadingAndConcurrency() async throws {
         // Test thread-safe operations that don't require actual networking
         let port: UInt16 = 9997
 
@@ -176,12 +176,12 @@ class JSHookTests: XCTestCase {
             }
 
             for await result in group {
-                XCTAssertEqual(result, true)
+                #expect(result)
             }
         }
     }
 
-    func testJSONParsingEdgeCases() async throws {
+    @Test("J s o n parsing edge cases") func jSONParsingEdgeCases() {
         // Test malformed JSON handling
         let malformedJSONs = [
             "",
@@ -208,13 +208,13 @@ class JSHookTests: XCTestCase {
             if let parsed {
                 // If it parsed, type extraction should be safe
                 let type = parsed["type"] as? String
-                XCTAssertTrue(type == nil || type?.count ?? 0 >= 0)
+                #expect(type == nil || type?.count ?? 0 >= 0)
             }
             // If parsing failed, that's expected for malformed JSON
         }
     }
 
-    func testStringEncoding() async throws {
+    @Test("String encoding") func stringEncoding() {
         // Test various string encodings that might be received
         let testStrings = [
             "ready",
@@ -230,16 +230,16 @@ class JSHookTests: XCTestCase {
         for testString in testStrings {
             // Test encoding and decoding
             let data = testString.data(using: .utf8)
-            XCTAssertNotNil(data)
+            #expect(data != nil)
 
             if let data {
                 let decoded = String(data: data, encoding: .utf8)
-                XCTAssertEqual(decoded, testString)
+                #expect(decoded == testString)
             }
         }
     }
 
-    func testPerformanceConsiderations() async throws {
+    @Test("Performance considerations") func performanceConsiderations() {
         // Test performance of frequent operations
         let testData = "test message".data(using: .utf8)!
         let startTime = Date()
@@ -250,7 +250,7 @@ class JSHookTests: XCTestCase {
         }
 
         let elapsed = Date().timeIntervalSince(startTime)
-        XCTAssertLessThan(elapsed, 1.0) // Should complete quickly
+        #expect(elapsed < 1.0) // Should complete quickly
 
         // Test JSON parsing performance
         let jsonString = """
@@ -263,10 +263,10 @@ class JSHookTests: XCTestCase {
             _ = try? JSONSerialization.jsonObject(with: jsonData)
         }
         let jsonElapsed = Date().timeIntervalSince(jsonStartTime)
-        XCTAssertLessThan(jsonElapsed, 1.0)
+        #expect(jsonElapsed < 1.0)
     }
 
-    func testMemoryManagement() async throws {
+    @Test("Memory management") @MainActor func memoryManagement() async throws {
         // Test that managers can be created and released without leaks
         var managers: [WebSocketManager] = []
 
@@ -275,20 +275,20 @@ class JSHookTests: XCTestCase {
             managers.append(manager)
         }
 
-        XCTAssertEqual(managers.count, 100)
+        #expect(managers.count == 100)
 
         // Clear references - in real app, ARC should handle cleanup
         managers.removeAll()
-        XCTAssertTrue(managers.isEmpty)
+        #expect(managers.isEmpty)
     }
 
-    func testErrorHandlingRobustness() async throws {
+    @Test("Error handling robustness") @MainActor func errorHandlingRobustness() async throws {
         // Test that error conditions are handled gracefully
 
         // Test invalid port handling (conceptually)
         let maxPort = UInt16.max
         let manager = await WebSocketManager(port: maxPort)
-        XCTAssertNotNil(manager) // Should create successfully
+        #expect(manager != nil) // Should create successfully
 
         // Test error message consistency
         let errors: [CursorJSHook.HookError] = [
@@ -302,8 +302,8 @@ class JSHookTests: XCTestCase {
         ]
 
         for error in errors {
-            XCTAssertNotNil(error.errorDescription)
-            XCTAssertGreaterThan(error.errorDescription?.count ?? 0, 0)
+            #expect(error.errorDescription != nil)
+            #expect(error.errorDescription?.count ?? 0 > 0)
         }
     }
 }

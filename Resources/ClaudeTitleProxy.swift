@@ -7,8 +7,8 @@
 //  to show the current working directory and status.
 //
 
-import Foundation
 import Dispatch
+import Foundation
 
 // ───── helpers ───────────────────────────────────────────────────────────
 
@@ -33,7 +33,7 @@ struct Watch {
     let source: DispatchSourceRead
 }
 
-var watches: [String: Watch] = [:]   // keyed by tty path
+var watches: [String: Watch] = [:] // keyed by tty path
 
 /// Add a watch for the given tty if we aren't already watching it
 func ensureWatch(ttyPath: String, folder: String) {
@@ -47,7 +47,7 @@ func ensureWatch(ttyPath: String, folder: String) {
     source.setEventHandler {
         var buf = [UInt8](repeating: 0, count: 4096)
         let n = read(rfd, &buf, buf.count)
-        guard n > 0, let chunk = String(bytes: buf[0..<n], encoding: .utf8) else { return }
+        guard n > 0, let chunk = String(bytes: buf[0 ..< n], encoding: .utf8) else { return }
         for line in chunk.split(separator: "\n") {
             if let status = cleanStatus(String(line)) {
                 let title = "\(folder) — \(status)"
@@ -70,7 +70,7 @@ func scanForClaude() {
     let size = proc_listallpids(&pids, Int32(MemoryLayout<pid_t>.size * pids.count))
     guard size > 0 else { return }
 
-    for i in 0..<size/Int32(MemoryLayout<pid_t>.size) {
+    for i in 0 ..< size / Int32(MemoryLayout<pid_t>.size) {
         let pid = pids[Int(i)]
         var info = proc_bsdinfo()
         if proc_pidinfo(pid, PROC_PIDTBSDINFO, 0, &info, Int32(MemoryLayout.size(ofValue: info))) <= 0 {
@@ -83,7 +83,7 @@ func scanForClaude() {
 
         // resolve tty dev to path
         var dev = stat()
-        for n in 0...999 {
+        for n in 0 ... 999 {
             let p = String(format: "/dev/ttys%03d", n)
             if stat(p, &dev) == 0, dev.st_rdev == info.e_tdev {
                 // Get the process's current working directory
@@ -108,4 +108,4 @@ timer.schedule(deadline: .now(), repeating: .seconds(3))
 timer.setEventHandler { scanForClaude() }
 timer.resume()
 
-dispatchMain()   // never returns
+dispatchMain() // never returns

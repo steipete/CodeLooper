@@ -18,20 +18,17 @@ import Sparkle
 public class SparkleUpdaterManager: NSObject, SPUUpdaterDelegate, SPUStandardUserDriverDelegate, ObservableObject,
     Loggable
 {
-    // MARK: - Static Logger for nonisolated methods
-    nonisolated private static let staticLogger = Logger(category: .appLifecycle)
-    
     // MARK: Lifecycle
 
     override init() {
         super.init()
-        
+
         // Skip Sparkle initialization in test environment to avoid dialogs
         if Constants.isTestEnvironment {
             self.logger.info("SparkleUpdaterManager initialized in test mode - Sparkle disabled")
             return
         }
-        
+
         // Accessing the lazy var here will trigger its initialization.
         _ = self.updaterController
         self.logger.info("SparkleUpdaterManager initialized. Updater controller lazy initialization triggered.")
@@ -54,12 +51,10 @@ public class SparkleUpdaterManager: NSObject, SPUUpdaterDelegate, SPUStandardUse
         return controller
     }() // The () here executes the closure and assigns the result to updaterController
 
-    // MARK: Private
-
     // MARK: - SPUUpdaterDelegate
 
     // Handle when no update is found or when there's an error checking for updates
-    nonisolated public func updater(_: SPUUpdater, didFinishUpdateCycleFor _: SPUUpdateCheck, error: Error?) {
+    public nonisolated func updater(_: SPUUpdater, didFinishUpdateCycleFor _: SPUUpdateCheck, error: Error?) {
         if let error = error as NSError? {
             // Check if it's a "no update found" error - this is normal and shouldn't be logged as an error
             if error.domain == "SUSparkleErrorDomain", error.code == 1001 {
@@ -89,14 +84,14 @@ public class SparkleUpdaterManager: NSObject, SPUUpdaterDelegate, SPUStandardUse
     }
 
     // Prevent update checks if we know the appcast is not available
-    nonisolated public func updater(_: SPUUpdater, mayPerform updateCheck: SPUUpdateCheck) throws {
+    public nonisolated func updater(_: SPUUpdater, mayPerform updateCheck: SPUUpdateCheck) throws {
         // You can add logic here to prevent update checks under certain conditions
         // For now, we'll allow all checks but handle errors gracefully in didFinishUpdateCycleFor
         Self.staticLogger.debug("Allowing update check of type: \(updateCheck)")
     }
 
     // Handle when update is not found
-    nonisolated public func updaterDidNotFindUpdate(_: SPUUpdater, error: Error) {
+    public nonisolated func updaterDidNotFindUpdate(_: SPUUpdater, error: Error) {
         if let error = error as NSError? {
             Self.staticLogger.info("No update found: \(error.localizedDescription)")
         } else {
@@ -107,15 +102,21 @@ public class SparkleUpdaterManager: NSObject, SPUUpdaterDelegate, SPUStandardUse
     // MARK: - SPUStandardUserDriverDelegate
 
     // Called before showing any modal alert
-    nonisolated public func standardUserDriverWillShowModalAlert() {
+    public nonisolated func standardUserDriverWillShowModalAlert() {
         Self.staticLogger.debug("Sparkle will show modal alert")
     }
 
     // Called after showing any modal alert
-    nonisolated public func standardUserDriverDidShowModalAlert() {
+    public nonisolated func standardUserDriverDidShowModalAlert() {
         Self.staticLogger.debug("Sparkle did show modal alert")
     }
 
     // Add any other necessary SPUUpdaterDelegate or SPUStandardUserDriverDelegate methods here
     // based on the app's requirements for customizing Sparkle's behavior.
+
+    // MARK: Private
+
+    // MARK: - Static Logger for nonisolated methods
+
+    private nonisolated static let staticLogger = Logger(category: .appLifecycle)
 }

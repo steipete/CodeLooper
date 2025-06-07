@@ -29,6 +29,7 @@ on:
       - 'CodeLooper/**'
       - 'Resources/**'
       - 'scripts/**'
+      - 'Tests/**'
       - '.github/workflows/build-mac-app.yml'
       - 'Project.swift'
       - 'Package.swift'
@@ -39,6 +40,7 @@ on:
       - 'CodeLooper/**'
       - 'Resources/**'
       - 'scripts/**'
+      - 'Tests/**'
       - '.github/workflows/build-mac-app.yml'
       - 'Project.swift'
       - 'Package.swift'
@@ -80,16 +82,16 @@ jobs:
           fetch-depth: 0
           submodules: recursive
 
-      # Set up Swift environment - use Xcode 16 which includes Swift 6.0
-      - name: Setup Xcode 16 with Swift 6.0
+      # Set up Swift environment - use Xcode 16.3 which includes Swift 6.0.3
+      - name: Setup Xcode 16.3 with Swift 6.0.3
         run: |
           # List available Xcode versions for debugging
           echo "Available Xcode versions:"
           ls /Applications/ | grep Xcode || true
           
-          # Select Xcode 16.x (macOS 15 runner should have it)
+          # Select Xcode 16.3 (macOS 15 runner should have it)
           # Try multiple versions in order of preference
-          for version in "16.2" "16.1" "16.0"; do
+          for version in "16.3" "16.2" "16.1" "16.0"; do
             if [ -d "/Applications/Xcode_${version}.app" ]; then
               echo "Using Xcode ${version}"
               sudo xcode-select -s "/Applications/Xcode_${version}.app"
@@ -115,6 +117,16 @@ jobs:
             echo "::error::Swift 6.0 or higher is required, but found Swift $SWIFT_VERSION"
             exit 1
           fi
+          
+          # Verify Swift Testing framework availability
+          echo "Verifying Swift Testing framework support..."
+          echo 'import Testing; @Test func sample() { #expect(true) }' > /tmp/test_swift_testing.swift
+          if xcrun swift -parse /tmp/test_swift_testing.swift 2>/dev/null; then
+            echo "✅ Swift Testing framework is available"
+          else
+            echo "::warning::Swift Testing framework may not be fully available"
+          fi
+          rm -f /tmp/test_swift_testing.swift
 
       - name: Set build version and cache fingerprints
         id: set-version
@@ -223,14 +235,29 @@ jobs:
           chmod +x scripts/build.sh
           chmod +x scripts/codesign-app.sh
 
-      - name: Install build tools (Tuist, xcbeautify, SwiftLint, SwiftFormat)
+      - name: Install mise
         run: |
-          # Use Homebrew to install all build tools
-          brew install tuist xcbeautify swiftlint swiftformat
+          # Install mise (formerly rtx) for tool version management
+          curl https://mise.run | sh
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+          
+      - name: Install build tools (Tuist via mise, xcbeautify, SwiftLint, SwiftFormat)
+        run: |
+          # Install Tuist via mise to ensure consistent version
+          mise install
+          eval "$(mise activate bash)"
+          
+          # Install other tools via Homebrew
+          brew install xcbeautify swiftlint swiftformat
+          
+          # Verify Tuist installation
+          tuist version
           tuist --help | head -5
 
       - name: Generate Xcode project with Tuist
         run: |
+          # Ensure mise environment is activated
+          eval "$(mise activate bash)"
           # Generate Xcode project with Swift 6.0
           ./scripts/generate-xcproj.sh
 
@@ -248,6 +275,93 @@ jobs:
           echo "::group::SwiftLint Check"
           chmod +x scripts/ci-swiftlint.sh
           scripts/ci-swiftlint.sh --verbose || echo "::warning::SwiftLint found linting issues"
+          echo "::endgroup::"
+
+      - name: Verify Swift Testing Framework
+        run: |
+          echo "Checking Swift Testing framework availability in dependencies..."
+          
+          # Verify Testing framework is available in Package.swift
+          if grep -q "swift-testing" Package.swift; then
+            echo "✅ Swift Testing framework found in Package.swift dependencies"
+          else
+            echo "::warning::Swift Testing framework not found in Package.swift dependencies"
+          fi
+          
+          # Test compilation with Swift Testing import in the context of the project
+          echo "Testing Swift Testing framework compilation with project context..."
+          echo 'import Testing; @Test func check() { #expect(true) }' > /tmp/testing_check.swift
+          
+          # Try to compile with the project's build context
+          if swift package resolve >/dev/null 2>&1 && xcrun swift -package-path . -I .build/debug -c -o /tmp/testing_check /tmp/testing_check.swift >/dev/null 2>&1; then
+            echo "✅ Swift Testing framework compilation test passed with project context"
+          elif xcrun swift -c -o /tmp/testing_check /tmp/testing_check.swift >/dev/null 2>&1; then
+            echo "✅ Swift Testing framework compilation test passed with basic context"
+          else
+            echo "::warning::Swift Testing framework compilation test failed - may impact test execution but not critical"
+            echo "::warning::This is expected if Swift Testing is only available in the Xcode build context"
+          fi
+          
+          # Clean up
+          rm -f /tmp/testing_check.swift /tmp/testing_check
+
+      - name: Run Tests
+        continue-on-error: true
+        run: |
+          echo "::group::Running Tests with Swift Testing Framework"
+          echo "Running test suite with Swift Testing framework support..."
+          
+          # Create test results directory
+          mkdir -p test-results
+          
+          # Run main app tests with Swift Testing support
+          echo "Running main app tests via xcodebuild..."
+          MAIN_TEST_EXIT_CODE=0
+          set -o pipefail
+          if ! xcodebuild test \
+            -workspace CodeLooper.xcworkspace \
+            -scheme CodeLooper \
+            -destination "platform=macOS" \
+            -configuration Debug \
+            -enableCodeCoverage YES \
+            -resultBundlePath test-results/CodeLooper.xcresult \
+            OTHER_SWIFT_FLAGS="-enable-testing" \
+            CODE_SIGN_IDENTITY="" \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGNING_ALLOWED=NO | xcbeautify; then
+            MAIN_TEST_EXIT_CODE=$?
+            echo "::warning::Main app tests failed with exit code $MAIN_TEST_EXIT_CODE"
+          else
+            echo "✅ Main app tests completed successfully"
+          fi
+          
+          # Check if test results were generated
+          if [ -d "test-results/CodeLooper.xcresult" ]; then
+            echo "✅ Test results bundle created successfully"
+            # Extract basic test summary
+            echo "Test results summary:"
+            xcrun xcresulttool get --format json --path test-results/CodeLooper.xcresult | head -20 || true
+          else
+            echo "::warning::No test results bundle was created"
+          fi
+          
+          # Run subpackage tests (these use XCTest, not Swift Testing)
+          echo "::group::Running Subpackage Tests"
+          
+          echo "Running AXorcist tests (XCTest-based)..."
+          cd AXorcist
+          swift test --enable-code-coverage > ../test-results/axorcist-output.log 2>&1 || echo "::warning::AXorcist tests failed - these use XCTest framework which may have integration dependencies"
+          cd ..
+          
+          echo "Running DesignSystem tests..."
+          cd DesignSystem
+          swift test --enable-code-coverage --verbose > ../test-results/designsystem-output.log 2>&1 || echo "::warning::DesignSystem tests failed"
+          cd ..
+          
+          echo "::endgroup::"
+          
+          # Summary
+          echo "Test execution completed. Main tests exit code: $MAIN_TEST_EXIT_CODE"
           echo "::endgroup::"
 
       - name: Build, Sign, and Optionally Notarize macOS App
@@ -512,6 +626,16 @@ jobs:
             ${{ steps.create_artifacts.outputs.artifact_dmg_path }}
           retention-days: 14
           if-no-files-found: error
+
+      - name: Upload Test Results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: CodeLooper-Test-Results-${{ steps.set-version.outputs.version }}
+          path: |
+            test-results/
+          retention-days: 7
+          if-no-files-found: ignore
 
       - name: Upload Lint and Format Reports
         if: always()

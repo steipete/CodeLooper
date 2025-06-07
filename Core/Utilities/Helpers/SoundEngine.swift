@@ -7,7 +7,7 @@ import Foundation
 ///
 /// This enum provides a type-safe way to specify which sound to play,
 /// supporting both the user's preferred alert sound and named system sounds.
-enum SystemSound {
+enum SystemSound: Equatable, Hashable, Sendable {
     /// The user's preferred alert sound as configured in System Settings
     case userAlert // kSystemSoundID_UserPreferredAlert
     /// A named system sound file (e.g. "Boop.aiff")
@@ -31,6 +31,13 @@ enum SoundEngine {
 
     /// Play a tone that obeys the user's sound settings
     static func play(_ sound: SystemSound) {
+        // Skip playing sounds in test environment
+        let isTestEnvironment = ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] != nil ||
+            ProcessInfo.processInfo.arguments.contains("--test-mode") ||
+            NSClassFromString("XCTest") != nil
+
+        guard !isTestEnvironment else { return }
+
         // Skip the call entirely when the user has muted the Mac
         guard !isOutputMuted else { return }
 

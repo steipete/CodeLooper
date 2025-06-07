@@ -12,15 +12,25 @@ public final class SingleInstanceLock {
         self.identifier = identifier
 
         #if !DEBUG // Only enforce single instance lock in Release builds
-            // Set up observers first before checking
-            setupObservers()
-            
-            Task {
-                self.isPrimaryInstance = await checkIfPrimaryInstance()
-                
-                // If we're not the primary instance, remove observers
-                if !self.isPrimaryInstance {
-                    self.removeObservers()
+            // Skip for test environment
+            let isTestEnvironment = ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] != nil ||
+                ProcessInfo.processInfo.arguments.contains("--test-mode") ||
+                NSClassFromString("XCTest") != nil
+
+            if isTestEnvironment {
+                self.isPrimaryInstance = true
+                logger.info("Test environment: Single instance lock is bypassed.")
+            } else {
+                // Set up observers first before checking
+                setupObservers()
+
+                Task {
+                    self.isPrimaryInstance = await checkIfPrimaryInstance()
+
+                    // If we're not the primary instance, remove observers
+                    if !self.isPrimaryInstance {
+                        self.removeObservers()
+                    }
                 }
             }
         #else // For DEBUG builds, always assume primary instance
@@ -52,7 +62,7 @@ public final class SingleInstanceLock {
             userInfo: nil,
             deliverImmediately: true
         )
-        
+
         // Then activate the app
         if let runningApp = NSRunningApplication.runningApplications(
             withBundleIdentifier: Bundle.main.bundleIdentifier ?? ""
@@ -89,17 +99,16 @@ public final class SingleInstanceLock {
             name: NSNotification.Name(Self.responseNotificationName),
             object: nil
         )
-        
+
         logger.debug("Single instance observers set up")
     }
-    
+
     private func removeObservers() {
         DistributedNotificationCenter.default().removeObserver(self)
         logger.debug("Single instance observers removed")
     }
-    
-    private func checkIfPrimaryInstance() async -> Bool {
 
+    private func checkIfPrimaryInstance() async -> Bool {
         // Send a notification to check if another instance is running
         logger.info("Checking for other running instances... (PID: \(ProcessInfo.processInfo.processIdentifier))")
 
@@ -140,7 +149,12 @@ public final class SingleInstanceLock {
            let notificationIdentifier = userInfo["identifier"] as? String,
            notificationIdentifier == identifier
         {
-            logger.info("Received instance check from another instance. Current PID: \(ProcessInfo.processInfo.processIdentifier). Responding...")
+            logger.info(
+                """
+                Received instance check from another instance. \
+                Current PID: \(ProcessInfo.processInfo.processIdentifier). Responding...
+                """
+            )
 
             // Send response that we're already running
             DistributedNotificationCenter.default().postNotificationName(
@@ -159,9 +173,9 @@ public final class SingleInstanceLock {
         {
             let respondingPID = userInfo["pid"] as? Int ?? -1
             let ourPID = ProcessInfo.processInfo.processIdentifier
-            
+
             logger.info("Received response from existing instance. Their PID: \(respondingPID), Our PID: \(ourPID)")
-            
+
             // Ignore if this is our own response (shouldn't happen but let's be safe)
             if respondingPID == ourPID {
                 logger.warning("Ignoring response from ourselves! This shouldn't happen.")

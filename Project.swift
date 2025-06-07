@@ -152,7 +152,9 @@ let project = Project(
             dependencies: [
                 .target(name: "CodeLooper"),
                 .target(name: "Diagnostics"),
-                .package(product: "Testing"),
+                .package(product: "Defaults"),
+                .package(product: "AXorcist"),
+                .package(product: "DesignSystem"),
             ],
             settings: .settings(
                 base: [
@@ -161,10 +163,16 @@ let project = Project(
                     "OTHER_SWIFT_FLAGS": "-strict-concurrency=complete",
                     "ENABLE_STRICT_CONCURRENCY_CHECKS": "YES",
                     "ENABLE_TESTING": "YES",
+                    "ENABLE_TESTING_SEARCH_PATHS": "YES",
                     "FRAMEWORK_SEARCH_PATHS": "$(inherited) $(PLATFORM_DIR)/Developer/Library/Frameworks",
+                    // Enable Swift Testing framework
+                    "SWIFT_TESTING_ENABLED": "YES",
                     // Enable automatic macro trust for Swift Testing
                     "ENABLE_USER_SCRIPT_SANDBOXING": "NO",
                     "SWIFT_PACKAGE_MACRO_VALIDATION": "NO",
+                    // Configure test host
+                    "TEST_HOST": "$(BUILT_PRODUCTS_DIR)/CodeLooper.app/Contents/MacOS/CodeLooper",
+                    "BUNDLE_LOADER": "$(TEST_HOST)",
                 ]
             )
         ),

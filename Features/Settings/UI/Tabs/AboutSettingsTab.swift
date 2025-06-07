@@ -4,21 +4,10 @@ import SwiftUI
 
 /// About tab view
 struct AboutSettingsTab: View {
+    // MARK: Internal
+
     // Use @Bindable for consistency, though this view doesn't directly bind to properties
     @Bindable var viewModel: MainSettingsViewModel
-    
-    /// App display name that includes pre-release indicator if applicable
-    private var appDisplayName: String {
-        let baseName = Constants.appName
-        
-        // Check if this is a pre-release build
-        if let prereleaseFlag = Bundle.main.object(forInfoDictionaryKey: "IS_PRERELEASE_BUILD") as? String,
-           prereleaseFlag.lowercased() == "yes" || prereleaseFlag == "1" {
-            return "\(baseName) (Pre-release)"
-        }
-        
-        return baseName
-    }
 
     var body: some View {
         ScrollView {
@@ -86,6 +75,22 @@ struct AboutSettingsTab: View {
             .frame(maxWidth: .infinity)
         }
     }
+
+    // MARK: Private
+
+    /// App display name that includes pre-release indicator if applicable
+    private var appDisplayName: String {
+        let baseName = Constants.appName
+
+        // Check if this is a pre-release build
+        if let prereleaseFlag = Bundle.main.object(forInfoDictionaryKey: "IS_PRERELEASE_BUILD") as? String,
+           prereleaseFlag.lowercased() == "yes" || prereleaseFlag == "1"
+        {
+            return "\(baseName) (Pre-release)"
+        }
+
+        return baseName
+    }
 }
 
 #if hasFeature(PreviewsMacros)
@@ -100,27 +105,29 @@ struct AboutSettingsTab: View {
         )
 
         AboutSettingsTab(viewModel: mainSettingsViewModel)
-            // .environmentObject(mainSettingsViewModel) // viewModel is passed directly, no need for environmentObject here
+            // .environmentObject(mainSettingsViewModel) // viewModel is passed directly, no need for environmentObject
+            // here
             .frame(width: 350, height: 400)
     }
 #endif
 
 #if hasFeature(PreviewsMacros)
-struct AboutSettingsTab_Previews: PreviewProvider {
-    static var previews: some View {
-        // Create dummy/shared instances for preview
-        let loginItemManager = LoginItemManager.shared
-        let sparkleUpdaterManager = SparkleUpdaterManager() // Assuming it can be init'd simply
-        let updaterViewModel = UpdaterViewModel(sparkleUpdaterManager: sparkleUpdaterManager)
-        let mainSettingsViewModel = MainSettingsViewModel(
-            loginItemManager: loginItemManager,
-            updaterViewModel: updaterViewModel
-        )
+    struct AboutSettingsTab_Previews: PreviewProvider {
+        static var previews: some View {
+            // Create dummy/shared instances for preview
+            let loginItemManager = LoginItemManager.shared
+            let sparkleUpdaterManager = SparkleUpdaterManager() // Assuming it can be init'd simply
+            let updaterViewModel = UpdaterViewModel(sparkleUpdaterManager: sparkleUpdaterManager)
+            let mainSettingsViewModel = MainSettingsViewModel(
+                loginItemManager: loginItemManager,
+                updaterViewModel: updaterViewModel
+            )
 
-        AboutSettingsTab(viewModel: mainSettingsViewModel)
-            // .environmentObject(mainSettingsViewModel) // viewModel is passed directly, no need for environmentObject
-            // here
-            .frame(width: 350, height: 400)
+            AboutSettingsTab(viewModel: mainSettingsViewModel)
+                // .environmentObject(mainSettingsViewModel) // viewModel is passed directly, no need for
+                // environmentObject
+                // here
+                .frame(width: 350, height: 400)
+        }
     }
-}
 #endif

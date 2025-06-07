@@ -28,7 +28,7 @@ public final class LoginItemManager: ObservableObject {
                 self.syncWithSystemState()
             }
         }
-        
+
         // Defer initial sync to ensure object is fully initialized
         Task { @MainActor in
             // On initialization, sync the status to ensure UserDefaults matches system state
@@ -193,12 +193,31 @@ public final class LoginItemManager: ObservableObject {
     /// Check if login item is enabled
     @MainActor
     private func isEnabled() -> Bool {
-        SMAppService.mainApp.status == .enabled
+        // In test environment, always return false to prevent login item operations
+        let isTestEnvironment = ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] != nil ||
+            ProcessInfo.processInfo.arguments.contains("--test-mode") ||
+            NSClassFromString("XCTest") != nil
+
+        if isTestEnvironment {
+            return false
+        }
+
+        return SMAppService.mainApp.status == .enabled
     }
 
     /// Set login item enabled state
     @MainActor
     private func setEnabled(_ enabled: Bool) {
+        // Skip login item registration in test environment
+        let isTestEnvironment = ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] != nil ||
+            ProcessInfo.processInfo.arguments.contains("--test-mode") ||
+            NSClassFromString("XCTest") != nil
+
+        guard !isTestEnvironment else {
+            logger.info("Skipping login item registration in test environment")
+            return
+        }
+
         do {
             if enabled {
                 if SMAppService.mainApp.status == .enabled {
@@ -215,7 +234,7 @@ public final class LoginItemManager: ObservableObject {
                 try SMAppService.mainApp.unregister()
                 logger.info("Successfully disabled login item")
             }
-            
+
             // Post notification after successful change
             NotificationCenter.default.post(name: Self.statusChangedNotification, object: nil)
         } catch {

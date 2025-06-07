@@ -112,11 +112,11 @@ struct WelcomeScene: Scene {
 }
 
 #if hasFeature(PreviewsMacros)
-#Preview {
-    // Use mocked services for preview
-    WelcomeWindowView(
-        loginItemManager: LoginItemManager.shared
-    )
-    .environmentObject(AppEnvironment())
-}
+    #Preview {
+        // Use mocked services for preview
+        WelcomeWindowView(
+            loginItemManager: LoginItemManager.shared
+        )
+        .environmentObject(AppEnvironment())
+    }
 #endif

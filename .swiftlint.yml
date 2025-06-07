@@ -114,3 +114,6 @@ identifier_name:
     - i
     - p
     - c
+    - n
+    - CTL_KERN
+    - KERN_PROCARGS2

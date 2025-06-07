@@ -27,26 +27,54 @@ echo "Attempting to quit Xcode..."
 osascript -e 'tell application "Xcode" to quit saving no'
 echo "Xcode quit command sent. Continuing with script..."
 
-if ! command -v tuist &> /dev/null
-then
-    echo "Tuist not found. Attempting to install with Homebrew..."
-    if command -v brew &> /dev/null
-    then
-        brew install tuist
-        if ! command -v tuist &> /dev/null
-        then
-            echo "Failed to make tuist available after 'brew install tuist'."
-            echo "Please ensure Homebrew is correctly configured and 'tuist' is in your PATH."
+# Check if mise is available and activate it
+if command -v mise &> /dev/null; then
+    echo "mise found, activating environment..."
+    eval "$(mise activate bash)"
+elif [ -f "$HOME/.local/bin/mise" ]; then
+    echo "mise found at $HOME/.local/bin/mise, adding to PATH and activating..."
+    export PATH="$HOME/.local/bin:$PATH"
+    eval "$(mise activate bash)"
+fi
+
+# Check if tuist is available (might be installed via mise now)
+if ! command -v tuist &> /dev/null; then
+    # If mise is available, try to install tuist via mise
+    if command -v mise &> /dev/null; then
+        echo "Tuist not found. Installing via mise..."
+        mise install
+        eval "$(mise activate bash)"
+        
+        if ! command -v tuist &> /dev/null; then
+            echo "Failed to install tuist via mise. Falling back to Homebrew..."
+            if command -v brew &> /dev/null; then
+                brew install tuist
+            else
+                echo "Neither mise nor Homebrew available. Cannot install tuist automatically."
+                echo "Please install tuist manually."
+                exit 1
+            fi
+        fi
+    else
+        # Fall back to Homebrew if mise is not available
+        echo "Tuist not found. Attempting to install with Homebrew..."
+        if command -v brew &> /dev/null; then
+            brew install tuist
+            if ! command -v tuist &> /dev/null; then
+                echo "Failed to make tuist available after 'brew install tuist'."
+                echo "Please ensure Homebrew is correctly configured and 'tuist' is in your PATH."
+                exit 1
+            fi
+            echo "Tuist installed successfully via Homebrew."
+        else
+            echo "Neither mise nor Homebrew available. Cannot install tuist automatically."
+            echo "Please install tuist manually."
             exit 1
         fi
-        echo "Tuist installed successfully via Homebrew."
-    else
-        echo "Homebrew (brew) command not found. Cannot install tuist automatically."
-        echo "Please install tuist manually."
-        exit 1
     fi
 else
-    echo "Tuist found."
+    echo "Tuist found at: $(which tuist)"
+    tuist version
 fi
 
 # Change to the mac directory if needed

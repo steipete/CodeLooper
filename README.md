@@ -46,3 +46,43 @@ Warning: These tools give your agent full power over your system, so integrate a
 Download one of the releases from GitHub's Release section.
 
 Note: This is currently under active development and doesn't yet work.
+
+## Development Setup
+
+### Prerequisites
+
+- Xcode 16.0 or later (for Swift 6.0)
+- [mise](https://mise.jdx.dev/) (for tool version management)
+- Homebrew (for additional tools)
+
+### Building from Source
+
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/steipete/CodeLooper2.git
+   cd CodeLooper2
+   ```
+
+2. Install mise and dependencies:
+   ```bash
+   # Install mise
+   curl https://mise.run | sh
+   
+   # Install tools via mise
+   mise install
+   
+   # Generate Xcode project
+   ./scripts/generate-xcproj.sh
+   ```
+
+3. Open in Xcode:
+   ```bash
+   open CodeLooper.xcworkspace
+   ```
+
+### Tool Versions
+
+Tool versions are managed via `.mise.toml`:
+- Tuist: 4.52.0
+
+The CI/CD pipeline automatically uses mise to ensure consistent tool versions.

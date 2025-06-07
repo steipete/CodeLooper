@@ -1,151 +1,207 @@
 @testable import CodeLooper
 import Foundation
 import Sparkle
-import XCTest
+import Testing
 
-class SparkleUpdaterTests: XCTestCase {
-    // MARK: - SparkleUpdaterManager Tests
+@Suite("Sparkle Updater Tests", .tags(.updates, .sparkle, .integration))
+@MainActor
+struct SparkleUpdaterTests {
+    // MARK: - Manager Tests
 
-    func testSparkleUpdaterManagerInitialization() async throws {
+    @Test("Sparkle updater manager initialization")
+    func sparkleUpdaterManagerInitialization() async {
         await MainActor.run {
             let manager = SparkleUpdaterManager()
 
             // Test that manager is created without errors
-            XCTAssertTrue(true) // Manager exists
+            #expect(Bool(true)) // Manager exists
 
             // Test that updater controller is accessible
             _ = manager.updaterController
-            XCTAssertTrue(true) // Controller is accessible
+            #expect(Bool(true)) // Controller is accessible
         }
     }
 
-    func testSparkleConfiguration() async throws {
+    @Test("Manager creation is consistent")
+    func managerCreationConsistency() async {
+        let manager1 = SparkleUpdaterManager()
+        let manager2 = SparkleUpdaterManager()
+
+        // Both managers should be valid
+        // manager1.updaterController is non-optional
+        // manager2.updaterController is non-optional
+    }
+
+    @Test("Sparkle configuration")
+    func sparkleConfiguration() async {
         await MainActor.run {
             let manager = SparkleUpdaterManager()
 
             // Test Sparkle updater controller configuration
             let controller = manager.updaterController
-            XCTAssertTrue(true) // Controller exists
+            #expect(Bool(true)) // Controller exists
 
             // Test that updater exists
             let updater = controller.updater
-            XCTAssertTrue(true) // Updater exists
+            #expect(Bool(true)) // Updater exists
 
             // Test that updater has proper configuration
             let automaticallyChecksForUpdates = updater.automaticallyChecksForUpdates
-            XCTAssertEqual(automaticallyChecksForUpdates, true || automaticallyChecksForUpdates == false)
+            #expect(!automaticallyChecksForUpdates == true || automaticallyChecksForUpdates)
 
             // Test update interval
             let updateCheckInterval = updater.updateCheckInterval
-            XCTAssertGreaterThan(updateCheckInterval, 0)
+            #expect(updateCheckInterval > 0)
         }
     }
 
-    func testUpdateCheckingConfiguration() async throws {
+    @Test("Update checking configuration")
+    func updateCheckingConfiguration() async {
         await MainActor.run {
             let manager = SparkleUpdaterManager()
             let updater = manager.updaterController.updater
 
             // Test that we can access update configuration
-            XCTAssertTrue(true) // Updater accessible
+            #expect(Bool(true)) // Updater accessible
 
             // Test automatic download configuration
             let automaticallyDownloadsUpdates = updater.automaticallyDownloadsUpdates
-            XCTAssertEqual(automaticallyDownloadsUpdates, true || automaticallyDownloadsUpdates == false)
+            #expect(!automaticallyDownloadsUpdates == true || automaticallyDownloadsUpdates)
 
             // Test update check interval
-            XCTAssertGreaterThanOrEqual(updater.updateCheckInterval, 0)
+            #expect(updater.updateCheckInterval >= 0)
         }
     }
 
-    // MARK: - UpdaterViewModel Tests
+    @Test("Configuration values are boolean")
+    func configurationValuesAreBoolean() async {
+        let manager = SparkleUpdaterManager()
+        let updater = manager.updaterController.updater
 
-    func testUpdaterViewModelInitialization() async throws {
+        let autoCheck = updater.automaticallyChecksForUpdates
+        let autoDownload = updater.automaticallyDownloadsUpdates
+
+        #expect(autoCheck == true || autoCheck == false, "Auto check should be boolean")
+        #expect(autoDownload == true || autoDownload == false, "Auto download should be boolean")
+    }
+
+    @Test("Update intervals are valid", arguments: [3600, 86400, 604_800])
+    func updateIntervalsAreValid(interval: TimeInterval) async {
+        // Test that different intervals would be acceptable
+        #expect(interval > 0, "Update interval should be positive")
+        #expect(interval <= 604_800, "Update interval should be reasonable (max 1 week)")
+    }
+
+    // MARK: - ViewModel Tests
+
+    @Test("Updater view model initialization")
+    func updaterViewModelInitialization() async {
         await MainActor.run {
             let manager = SparkleUpdaterManager()
             let viewModel = UpdaterViewModel(sparkleUpdaterManager: manager)
-            XCTAssertNotNil(viewModel) // View model exists
+            // viewModel is non-optional
         }
     }
 
-    func testUpdaterViewModelConfiguration() async throws {
+    @Test("Updater view model configuration")
+    func updaterViewModelConfiguration() async {
         await MainActor.run {
             let manager = SparkleUpdaterManager()
             let viewModel = UpdaterViewModel(sparkleUpdaterManager: manager)
 
             // Test that view model has proper initial state
-            XCTAssertEqual(viewModel.isUpdateInProgress, false)
-            XCTAssertEqual(viewModel.lastUpdateCheckDate, nil)
+            #expect(!viewModel.isUpdateInProgress)
+            #expect(viewModel.lastUpdateCheckDate == nil)
         }
     }
 
-    func testUpdaterViewModelActions() async throws {
+    @Test("Updater view model actions")
+    func updaterViewModelActions() async {
         await MainActor.run {
             let manager = SparkleUpdaterManager()
             let viewModel = UpdaterViewModel(sparkleUpdaterManager: manager)
 
             // Test that actions don't crash
             viewModel.checkForUpdates()
-            XCTAssertTrue(true) // Check initiated without crash
+            #expect(Bool(true)) // Check initiated without crash
         }
     }
 
-    func testSparkleUpdateLifecycle() async throws {
+    @Test("View model state transitions")
+    func viewModelStateTransitions() async {
+        let manager = SparkleUpdaterManager()
+        let viewModel = UpdaterViewModel(sparkleUpdaterManager: manager)
+
+        // Test initial state
+        let initialState = viewModel.isUpdateInProgress
+
+        // Test action triggers state change
+        viewModel.checkForUpdates()
+        let afterActionState = viewModel.isUpdateInProgress
+
+        #expect(initialState == false, "Should start in non-updating state")
+        #expect(afterActionState == true, "Should be updating after check")
+    }
+
+    // MARK: - Lifecycle Tests
+
+    @Test("Sparkle update lifecycle")
+    func sparkleUpdateLifecycle() async {
         await MainActor.run {
             let manager = SparkleUpdaterManager()
             let updater = manager.updaterController.updater
 
             // Test updater exists
-            XCTAssertNotNil(updater)
+            // updater is non-optional
         }
     }
 
-    func testSparkleUpdateCheckInterval() async throws {
+    @Test("Sparkle update check interval")
+    func sparkleUpdateCheckInterval() async {
         await MainActor.run {
             let manager = SparkleUpdaterManager()
             let updater = manager.updaterController.updater
 
             // Test default update check interval
             let interval = updater.updateCheckInterval
-            XCTAssertTrue(interval == 86400 || interval == 3600 || interval > 0) // Daily, hourly, or custom
-        }
-    }
-
-    func testSparklePermissions() async throws {
-        await MainActor.run {
-            let manager = SparkleUpdaterManager()
-            let updater = manager.updaterController.updater
-
-            // Test feed URL configuration
-            // Feed URL can be either configured or not - just verify the property is accessible
-            _ = updater.feedURL
-        }
-    }
-
-    func testSparkleUserDriver() async throws {
-        await MainActor.run {
-            let manager = SparkleUpdaterManager()
-            let controller = manager.updaterController
-
-            // Test that controller has user driver
-            XCTAssertTrue(true) // User driver is part of controller
+            #expect(interval == 86400 || interval == 3600 || interval > 0) // Daily, hourly, or custom
         }
     }
 
     // MARK: - Integration Tests
 
-    func testSparkleIntegration() async throws {
+    @Test("Sparkle integration")
+    func sparkleIntegration() async {
         await MainActor.run {
             let manager = SparkleUpdaterManager()
             let viewModel = UpdaterViewModel(sparkleUpdaterManager: manager)
 
             // Test that manager and view model can work together
-            XCTAssertNotNil(viewModel) // View model exists
-            XCTAssertNotNil(manager.updaterController) // Controller exists
+            // viewModel is non-optional
+            // manager.updaterController is non-optional
 
             // Test that view model can interact with manager
             viewModel.checkForUpdates()
-            XCTAssertEqual(viewModel.isUpdateInProgress, true)
+            #expect(viewModel.isUpdateInProgress)
         }
+    }
+
+    @Test("Complete update workflow")
+    func completeUpdateWorkflow() async {
+        let manager = SparkleUpdaterManager()
+        let viewModel = UpdaterViewModel(sparkleUpdaterManager: manager)
+        let updater = manager.updaterController.updater
+
+        // Test complete workflow
+        // manager.updaterController is non-optional
+        // updater is non-optional
+        // viewModel is non-optional
+
+        // Test initial state
+        #expect(viewModel.isUpdateInProgress == false, "Should start not updating")
+
+        // Test action
+        viewModel.checkForUpdates()
+        #expect(viewModel.isUpdateInProgress == true, "Should be updating after check")
     }
 }

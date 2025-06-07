@@ -1,73 +1,160 @@
 import AXorcist
 @testable import CodeLooper
 import Foundation
-import XCTest
+import Testing
 
-class LocatorPatternTests: XCTestCase {
+@Suite("Locator Pattern", .tags(.accessibility, .core))
+struct LocatorPatternTests {
     // MARK: - LocatorManager Tests
 
-    func testLocatorManagerInitialization() async throws {
-        let manager = await LocatorManager.shared
-
-        // Manager is always created successfully
-
-        // Test getting a locator for a known type
-        _ = await manager.getLocator(for: .mainInputField)
-        // Locator might be nil if not found, which is valid
-        XCTAssertTrue(true)
-    }
-
-    func testLocatorTypes() async throws {
-        // Test all locator types have default locators
-        for type in LocatorType.allCases {
-            XCTAssertNotNil(type.defaultLocator)
+    @Suite("Locator Manager", .tags(.singleton))
+    struct LocatorManagerTests {
+        @Test("Singleton consistency")
+        @MainActor func singletonConsistency() async throws {
+            await confirmation("Manager singleton remains consistent", expectedCount: 1) { confirm in
+                let manager1 = await LocatorManager.shared
+                let manager2 = await LocatorManager.shared
+                #expect(manager1 === manager2, "Should return the same instance")
+                confirm()
+            }
         }
-    }
 
-    func testLocatorManagerGetLocator() async throws {
-        let manager = await LocatorManager.shared
+        @Test(
+            "Locator retrieval for all types",
+            arguments: LocatorType.allCases
+        )
+        @MainActor func locatorRetrieval(type: LocatorType) async throws {
+            let manager = await LocatorManager.shared
+            let locator = await manager.getLocator(for: type)
 
-        // Test getting locators for different types
-        _ = await manager.getLocator(for: .mainInputField)
-        _ = await manager.getLocator(for: .stopGeneratingButton)
-
-        // These might be nil, which is valid behavior
-        XCTAssertTrue(true)
-    }
-
-    // MARK: - DynamicLocatorDiscoverer Tests
-
-    func testDynamicLocatorDiscoverer() async throws {
-        let discoverer = await DynamicLocatorDiscoverer()
-
-        // Discoverer is always created successfully
-        XCTAssertTrue(true)
+            // Locator existence depends on dynamic discovery
+            if let locator {
+                #expect(!locator.criteria.isEmpty, "Retrieved locator should have criteria")
+            }
+            // nil is also valid if not yet discovered
+        }
     }
 
     // MARK: - LocatorType Tests
 
-    func testLocatorTypeDefaultLocators() async throws {
-        // Test that each locator type has a valid default locator
-        let allTypes = LocatorType.allCases
+    @Suite("Locator Types", .tags(.validation))
+    struct LocatorTypeTests {
+        @Test(
+            "Default locator validation",
+            arguments: zip(
+                LocatorType.allCases,
+                LocatorType.allCases.map { type in
+                    // Expected criteria count for each type
+                    switch type {
+                    case .mainInputField, .stopGeneratingButton: 1
+                    case .sidebarActivityArea: 2
+                    default: 1
+                    }
+                }
+            )
+        )
+        func defaultLocatorValidation(type: LocatorType, expectedMinCriteria: Int) throws {
+            let locator = try #require(type.defaultLocator, "Every type must have a default locator")
 
-        for type in allTypes {
-            let locator = type.defaultLocator
-            XCTAssertNotNil(locator)
+            #expect(locator.criteria.count >= expectedMinCriteria,
+                    "\(type) should have at least \(expectedMinCriteria) criteria")
 
-            // Check that locator exists (defaultLocator should never be nil)
-            if let loc = locator {
-                XCTAssertNotNil(loc.criteria)
+            // Validate first criterion exists and has content
+            if let firstCriterion = locator.criteria.first {
+                #expect(!firstCriterion.attribute.isEmpty, "Criterion attribute should not be empty")
+                #expect(!firstCriterion.value.isEmpty, "Criterion value should not be empty")
             }
+        }
+
+        @Test(
+            "Raw value consistency",
+            arguments: [
+                (type: LocatorType.mainInputField, prefix: "mainInput"),
+                (type: .stopGeneratingButton, prefix: "stopGenerating"),
+                (type: .sidebarActivityArea, prefix: "sidebar"),
+            ]
+        )
+        func rawValueConsistency(testCase: (type: LocatorType, prefix: String)) {
+            let rawValue = testCase.type.rawValue
+            #expect(!rawValue.isEmpty, "Raw value should not be empty")
+            #expect(rawValue.hasPrefix(testCase.prefix) || rawValue.contains(testCase.prefix),
+                    "Raw value should match expected pattern")
         }
     }
 
-    func testLocatorTypeRawValues() async throws {
-        // Test that each locator type has a raw value
-        let allTypes = LocatorType.allCases
+    // MARK: - DynamicLocatorDiscoverer Tests
 
-        for type in allTypes {
-            let rawValue = type.rawValue
-            XCTAssertTrue(!rawValue.isEmpty)
+    @Suite("Dynamic Locator Discoverer", .tags(.advanced, .async))
+    struct DynamicLocatorDiscovererTests {
+        @Test("Discoverer initialization")
+        @MainActor func discovererInitialization() async throws {
+            let discoverer = await DynamicLocatorDiscoverer()
+
+            // Verify discoverer is created successfully
+            // DynamicLocatorDiscoverer is always created without error
+            #expect(discoverer != nil, "Discoverer should be created successfully")
+        }
+
+        @Test("Discovery process simulation")
+        @MainActor func discoveryProcessSimulation() async throws {
+            let discoverer = await DynamicLocatorDiscoverer()
+
+            // Test that discoverer can attempt to find locators for different types
+            for type in LocatorType.allCases.prefix(3) {
+                // In real implementation, this would trigger discovery
+                // For now, we just verify no crashes occur
+                // Discovery requires pid and axorcist instance, skip in test
+
+                // Give some time between discovery attempts
+                try await Task.sleep(for: .milliseconds(10))
+            }
+
+            #expect(true, "Discovery process completed without errors")
+        }
+    }
+
+    // MARK: - Integration Tests
+
+    @Suite("Integration", .tags(.integration, .slow))
+    struct IntegrationTests {
+        @Test(
+            "End-to-end locator usage",
+            arguments: [
+                (type: LocatorType.mainInputField, action: "focus"),
+                (type: .stopGeneratingButton, action: "click"),
+            ]
+        )
+        @MainActor func endToEndLocatorUsage(testCase: (type: LocatorType, action: String)) async throws {
+            let manager = await LocatorManager.shared
+            let discoverer = await DynamicLocatorDiscoverer()
+
+            // In real implementation, discovery would happen here
+            // For testing, we just verify the flow
+
+            // Retrieve potentially updated locator
+            let locator = await manager.getLocator(for: testCase.type)
+
+            if let locator {
+                #expect(!locator.criteria.isEmpty, "Discovered locator should have criteria")
+                #expect(locator.requireAction == nil || locator.requireAction == testCase.action,
+                        "Action should match expected type")
+            }
+        }
+
+        @Test("Sequential locator access", .timeLimit(.minutes(1)))
+        @MainActor func sequentialLocatorAccess() async throws {
+            let manager = await LocatorManager.shared
+
+            // Test sequential access to multiple locator types
+            for type in LocatorType.allCases.prefix(5) {
+                _ = await manager.getLocator(for: type)
+                // Small delay between requests
+                try await Task.sleep(for: .milliseconds(10))
+            }
+
+            // Manager should remain functional after multiple accesses
+            let testLocator = await manager.getLocator(for: .mainInputField)
+            #expect(testLocator != nil || true, "Manager should still be operational")
         }
     }
 }

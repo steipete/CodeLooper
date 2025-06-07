@@ -37,7 +37,7 @@ public class CursorAppLifecycleManager: ObservableObject {
         setupWorkspaceNotificationObservers()
         scanForExistingInstances()
     }
-    
+
     public func scanForCursorApps() {
         logger.info("Manually triggering scan for Cursor apps")
         scanForExistingInstances()

@@ -2,12 +2,14 @@
 import Combine
 import Defaults
 import Foundation
-import XCTest
+import Testing
 
 @MainActor
-class SettingsServiceTests: XCTestCase {
-    override func setUp() {
-        super.setUp()
+@Suite("SettingsService Tests")
+struct SettingsServiceTests {
+    // MARK: Lifecycle
+
+    init() {
         // Reset all relevant defaults to their defined default values before each test
 
         // Basic monitoring and intervention settings
@@ -93,13 +95,17 @@ class SettingsServiceTests: XCTestCase {
         Defaults.reset(.automaticJSHookInjection)
     }
 
-    func testOpenSettingsSubjectAvailability() async throws {
+    // MARK: Internal
+
+    @Test("Open settings subject is available")
+    func openSettingsSubjectAvailability() async throws {
         // Verify the subject is available and can be used
         let subject = SettingsService.openSettingsSubject
-        XCTAssertNotNil(subject)
+        #expect(subject != nil)
     }
 
-    func testOpenSettingsSubjectEmission() async throws {
+    @Test("Open settings subject emits events correctly")
+    func openSettingsSubjectEmission() async throws {
         let subject = SettingsService.openSettingsSubject
         var receivedEvents = 0
 
@@ -114,117 +120,132 @@ class SettingsServiceTests: XCTestCase {
         // Small delay to let the publisher process
         try await Task.sleep(for: .milliseconds(10)) // 10ms
 
-        XCTAssertEqual(receivedEvents, 2)
+        #expect(receivedEvents == 2)
         cancellable.cancel()
     }
 
-    func testDefaultsKeysBasicDefinitions() async throws {
+    @Test("Basic settings have proper default values")
+    func defaultsKeysBasicDefinitions() async throws {
         // Test that all basic keys have proper defaults
-        XCTAssertEqual(Defaults[.monitoringIntervalSeconds], 1.0)
-        XCTAssertEqual(Defaults[.maxInterventionsBeforePause], 5)
-        XCTAssertEqual(Defaults[.playSoundOnIntervention], true)
-        XCTAssertEqual(Defaults[.successfulInterventionSoundName], "Funk")
-        XCTAssertEqual(Defaults[.sendNotificationOnMaxInterventions], true)
-        XCTAssertEqual(Defaults[.isGlobalMonitoringEnabled], true)
-        XCTAssertEqual(Defaults[.showInMenuBar], true)
+        #expect(Defaults[.monitoringIntervalSeconds] == 1.0)
+        #expect(Defaults[.maxInterventionsBeforePause] == 5)
+        #expect(Defaults[.playSoundOnIntervention])
+        #expect(Defaults[.successfulInterventionSoundName] == "Funk")
+        #expect(Defaults[.sendNotificationOnMaxInterventions])
+        #expect(Defaults[.isGlobalMonitoringEnabled])
+        #expect(Defaults[.showInMenuBar])
     }
 
-    func testDefaultsKeysTextRecoverySettings() async throws {
+    @Test("Text recovery settings have correct default values")
+    func defaultsKeysTextRecoverySettings() async throws {
         let expectedText = "Can you please re-evaluate the current context and continue?"
-        XCTAssertEqual(Defaults[.textForCursorStopsRecovery], expectedText)
+        #expect(Defaults[.textForCursorStopsRecovery] == expectedText)
     }
 
-    func testDefaultsKeysRecoveryFeatureToggles() async throws {
-        XCTAssertEqual(Defaults[.enableConnectionIssuesRecovery], true)
-        XCTAssertEqual(Defaults[.enableCursorForceStoppedRecovery], true)
-        XCTAssertEqual(Defaults[.enableCursorStopsRecovery], true)
+    @Test("Recovery feature toggles have correct default values")
+    func defaultsKeysRecoveryFeatureToggles() async throws {
+        #expect(Defaults[.enableConnectionIssuesRecovery])
+        #expect(Defaults[.enableCursorForceStoppedRecovery])
+        #expect(Defaults[.enableCursorStopsRecovery])
     }
 
-    func testDefaultsKeysOnboardingState() async throws {
-        XCTAssertEqual(Defaults[.hasShownWelcomeGuide], false)
-        XCTAssertEqual(Defaults[.isFirstLaunch], true)
-        XCTAssertEqual(Defaults[.hasCompletedOnboarding], false)
-        XCTAssertEqual(Defaults[.showWelcomeScreen], true)
+    @Test("Onboarding state settings have correct default values")
+    func defaultsKeysOnboardingState() async throws {
+        #expect(!Defaults[.hasShownWelcomeGuide])
+        #expect(Defaults[.isFirstLaunch])
+        #expect(!Defaults[.hasCompletedOnboarding])
+        #expect(Defaults[.showWelcomeScreen])
     }
 
-    func testDefaultsKeysAppBehaviorSettings() async throws {
-        XCTAssertEqual(Defaults[.startAtLogin], true)
-        XCTAssertEqual(Defaults[.showInDock], false)
-        XCTAssertEqual(Defaults[.showDebugMenu], false)
-        XCTAssertEqual(Defaults[.debugModeEnabled], false)
-        XCTAssertEqual(Defaults[.automaticallyCheckForUpdates], true)
+    @Test("App behavior settings have correct default values")
+    func defaultsKeysAppBehaviorSettings() async throws {
+        #expect(Defaults[.startAtLogin])
+        #expect(!Defaults[.showInDock])
+        #expect(!Defaults[.showDebugMenu])
+        #expect(!Defaults[.debugModeEnabled])
+        #expect(Defaults[.automaticallyCheckForUpdates])
     }
 
-    func testDefaultsKeysCounterDisplaySettings() async throws {
-        XCTAssertEqual(Defaults[.showCopyCounter], false)
-        XCTAssertEqual(Defaults[.showPasteCounter], false)
-        XCTAssertEqual(Defaults[.showTotalInterventions], true)
-        XCTAssertEqual(Defaults[.flashIconOnIntervention], true)
+    @Test("Counter display settings have correct default values")
+    func defaultsKeysCounterDisplaySettings() async throws {
+        #expect(!Defaults[.showCopyCounter])
+        #expect(!Defaults[.showPasteCounter])
+        #expect(Defaults[.showTotalInterventions])
+        #expect(Defaults[.flashIconOnIntervention])
     }
 
-    func testDefaultsKeysLoggingConfiguration() async throws {
-        XCTAssertEqual(Defaults[.selectedLogLevel], "info")
-        XCTAssertEqual(Defaults[.verboseLogging], false)
-        XCTAssertEqual(Defaults[.enableDetailedLogging], false)
+    @Test("Logging configuration settings have correct default values")
+    func defaultsKeysLoggingConfiguration() async throws {
+        #expect(Defaults[.selectedLogLevel] == "info")
+        #expect(!Defaults[.verboseLogging])
+        #expect(!Defaults[.enableDetailedLogging])
     }
 
-    func testDefaultsKeysMCPConfiguration() async throws {
-        XCTAssertEqual(Defaults[.mcpConfigFilePath], "~/.cursor/mcp_config.json")
-        XCTAssertEqual(Defaults[.autoReloadMCPsOnChanges], true)
+    @Test("MCP configuration settings have correct default values")
+    func defaultsKeysMCPConfiguration() async throws {
+        #expect(Defaults[.mcpConfigFilePath] == "~/.cursor/mcp_config.json")
+        #expect(Defaults[.autoReloadMCPsOnChanges])
     }
 
-    func testDefaultsKeysLocatorJSONDefaults() async throws {
+    @Test("Locator JSON settings have correct default values")
+    func defaultsKeysLocatorJSONDefaults() async throws {
         // All locator JSON keys should default to empty strings
-        XCTAssertEqual(Defaults[.locatorJSONGeneratingIndicatorText], "")
-        XCTAssertEqual(Defaults[.locatorJSONSidebarActivityArea], "")
-        XCTAssertEqual(Defaults[.locatorJSONErrorMessagePopup], "")
-        XCTAssertEqual(Defaults[.locatorJSONStopGeneratingButton], "")
-        XCTAssertEqual(Defaults[.locatorJSONConnectionErrorIndicator], "")
-        XCTAssertEqual(Defaults[.locatorJSONResumeConnectionButton], "")
-        XCTAssertEqual(Defaults[.locatorJSONForceStopResumeLink], "")
-        XCTAssertEqual(Defaults[.locatorJSONMainInputField], "")
+        #expect(Defaults[.locatorJSONGeneratingIndicatorText] == "")
+        #expect(Defaults[.locatorJSONSidebarActivityArea] == "")
+        #expect(Defaults[.locatorJSONErrorMessagePopup] == "")
+        #expect(Defaults[.locatorJSONStopGeneratingButton] == "")
+        #expect(Defaults[.locatorJSONConnectionErrorIndicator] == "")
+        #expect(Defaults[.locatorJSONResumeConnectionButton] == "")
+        #expect(Defaults[.locatorJSONForceStopResumeLink] == "")
+        #expect(Defaults[.locatorJSONMainInputField] == "")
     }
 
-    func testDefaultsKeysAdvancedSettings() async throws {
-        XCTAssertEqual(Defaults[.sidebarActivityMaxDepth], 1)
-        XCTAssertEqual(Defaults[.ollamaBaseURL], "http://localhost:11434")
-        XCTAssertEqual(Defaults[.aiGlobalAnalysisIntervalSeconds], 10)
-        XCTAssertEqual(Defaults[.gitClientApp], "/Applications/Tower.app")
+    @Test("Advanced settings have correct default values")
+    func defaultsKeysAdvancedSettings() async throws {
+        #expect(Defaults[.sidebarActivityMaxDepth] == 1)
+        #expect(Defaults[.ollamaBaseURL] == "http://localhost:11434")
+        #expect(Defaults[.aiGlobalAnalysisIntervalSeconds] == 10)
+        #expect(Defaults[.gitClientApp] == "/Applications/Tower.app")
     }
 
-    func testDefaultsKeysRuleSettings() async throws {
-        XCTAssertEqual(Defaults[.showRuleExecutionCounters], true)
-        XCTAssertEqual(Defaults[.enableRuleNotifications], true)
-        XCTAssertEqual(Defaults[.enableRuleSounds], true)
+    @Test("Rule settings have correct default values")
+    func defaultsKeysRuleSettings() async throws {
+        #expect(Defaults[.showRuleExecutionCounters])
+        #expect(Defaults[.enableRuleNotifications])
+        #expect(Defaults[.enableRuleSounds])
     }
 
-    func testDefaultsKeysRuleSpecificSounds() async throws {
-        XCTAssertEqual(Defaults[.stopAfter25LoopsRuleSound], "Glass")
-        XCTAssertEqual(Defaults[.plainStopRuleSound], "")
-        XCTAssertEqual(Defaults[.connectionIssuesRuleSound], "")
-        XCTAssertEqual(Defaults[.editedInAnotherChatRuleSound], "")
+    @Test("Rule-specific sound settings have correct default values")
+    func defaultsKeysRuleSpecificSounds() async throws {
+        #expect(Defaults[.stopAfter25LoopsRuleSound] == "Glass")
+        #expect(Defaults[.plainStopRuleSound] == "")
+        #expect(Defaults[.connectionIssuesRuleSound] == "")
+        #expect(Defaults[.editedInAnotherChatRuleSound] == "")
     }
 
-    func testDefaultsKeysRuleSpecificNotifications() async throws {
-        XCTAssertEqual(Defaults[.stopAfter25LoopsRuleNotification], true)
-        XCTAssertEqual(Defaults[.plainStopRuleNotification], false)
-        XCTAssertEqual(Defaults[.connectionIssuesRuleNotification], false)
-        XCTAssertEqual(Defaults[.editedInAnotherChatRuleNotification], false)
+    @Test("Rule-specific notification settings have correct default values")
+    func defaultsKeysRuleSpecificNotifications() async throws {
+        #expect(Defaults[.stopAfter25LoopsRuleNotification])
+        #expect(!Defaults[.plainStopRuleNotification])
+        #expect(!Defaults[.connectionIssuesRuleNotification])
+        #expect(!Defaults[.editedInAnotherChatRuleNotification])
     }
 
-    func testDefaultsKeysDebugSettings() async throws {
-        XCTAssertEqual(Defaults[.useDynamicMenuBarIcon], false)
-        XCTAssertEqual(Defaults[.automaticJSHookInjection], false)
+    @Test("Debug settings have correct default values")
+    func defaultsKeysDebugSettings() async throws {
+        #expect(!Defaults[.useDynamicMenuBarIcon])
+        #expect(!Defaults[.automaticJSHookInjection])
 
         // Debug mode default depends on build configuration
         #if DEBUG
-            XCTAssertEqual(Defaults[.debugMode], true)
+            #expect(Defaults[.debugMode])
         #else
-            XCTAssertEqual(Defaults[.debugMode], false)
+            #expect(!Defaults[.debugMode])
         #endif
     }
 
-    func testDefaultsKeysSettingsPersistence() async throws {
+    @Test("Settings can be changed and retrieved correctly")
+    func defaultsKeysSettingsPersistence() async throws {
         // Test that settings can be changed and retrieved
         let originalValue = Defaults[.monitoringIntervalSeconds]
         let testValue: TimeInterval = 2.5
@@ -233,63 +254,67 @@ class SettingsServiceTests: XCTestCase {
         Defaults[.monitoringIntervalSeconds] = testValue
 
         // Verify it was changed
-        XCTAssertEqual(Defaults[.monitoringIntervalSeconds], testValue)
+        #expect(Defaults[.monitoringIntervalSeconds] == testValue)
 
         // Restore original value
         Defaults[.monitoringIntervalSeconds] = originalValue
-        XCTAssertEqual(Defaults[.monitoringIntervalSeconds], originalValue)
+        #expect(Defaults[.monitoringIntervalSeconds] == originalValue)
     }
 
-    func testDefaultsKeysBooleanSettingsToggle() async throws {
+    @Test("Boolean settings can be toggled correctly")
+    func defaultsKeysBooleanSettingsToggle() async throws {
         let originalValue = Defaults[.playSoundOnIntervention]
 
         // Toggle the value
         Defaults[.playSoundOnIntervention] = !originalValue
-        XCTAssertEqual(Defaults[.playSoundOnIntervention], !originalValue)
+        #expect(Defaults[.playSoundOnIntervention] == !originalValue)
 
         // Toggle back
         Defaults[.playSoundOnIntervention] = originalValue
-        XCTAssertEqual(Defaults[.playSoundOnIntervention], originalValue)
+        #expect(Defaults[.playSoundOnIntervention] == originalValue)
     }
 
-    func testDefaultsKeysStringSettingsModification() async throws {
+    @Test("String settings can be modified correctly")
+    func defaultsKeysStringSettingsModification() async throws {
         let originalValue = Defaults[.textForCursorStopsRecovery]
         let testValue = "Custom test recovery text"
 
         // Change the value
         Defaults[.textForCursorStopsRecovery] = testValue
-        XCTAssertEqual(Defaults[.textForCursorStopsRecovery], testValue)
+        #expect(Defaults[.textForCursorStopsRecovery] == testValue)
 
         // Restore original value
         Defaults[.textForCursorStopsRecovery] = originalValue
-        XCTAssertEqual(Defaults[.textForCursorStopsRecovery], originalValue)
+        #expect(Defaults[.textForCursorStopsRecovery] == originalValue)
     }
 
-    func testDefaultsKeysIntegerSettingsRange() async throws {
+    @Test("Integer settings can be changed within valid range")
+    func defaultsKeysIntegerSettingsRange() async throws {
         let originalValue = Defaults[.maxInterventionsBeforePause]
 
         // Test different valid values
         Defaults[.maxInterventionsBeforePause] = 10
-        XCTAssertEqual(Defaults[.maxInterventionsBeforePause], 10)
+        #expect(Defaults[.maxInterventionsBeforePause] == 10)
 
         Defaults[.maxInterventionsBeforePause] = 1
-        XCTAssertEqual(Defaults[.maxInterventionsBeforePause], 1)
+        #expect(Defaults[.maxInterventionsBeforePause] == 1)
 
         // Restore original value
         Defaults[.maxInterventionsBeforePause] = originalValue
-        XCTAssertEqual(Defaults[.maxInterventionsBeforePause], originalValue)
+        #expect(Defaults[.maxInterventionsBeforePause] == originalValue)
     }
 
-    func testDefaultsKeysNotificationSoundOptional() async throws {
+    @Test("Notification sound settings work correctly with optional values")
+    func defaultsKeysNotificationSoundOptional() async throws {
         // Test that optional notification sound defaults work
-        XCTAssertEqual(Defaults[.notificationSoundName], "Default")
+        #expect(Defaults[.notificationSoundName] == "Default")
 
         // Test setting to a different value and back
         Defaults[.notificationSoundName] = "CustomSound"
-        XCTAssertEqual(Defaults[.notificationSoundName], "CustomSound")
+        #expect(Defaults[.notificationSoundName] == "CustomSound")
 
         // Restore default
         Defaults[.notificationSoundName] = "Default"
-        XCTAssertEqual(Defaults[.notificationSoundName], "Default")
+        #expect(Defaults[.notificationSoundName] == "Default")
     }
 }
