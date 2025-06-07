@@ -160,21 +160,26 @@ struct AdvancedSettingsView: View {
     }
 
     private func resetAllDataAndRestart() {
-        // Reset all Defaults keys
+        // Reset all Defaults keys in smaller groups to avoid compiler timeout
         Defaults.reset(
             .startAtLogin,
             .showInMenuBar,
             .showInDock,
             .automaticallyCheckForUpdates,
-            .isGlobalMonitoringEnabled,
+            .isGlobalMonitoringEnabled
+        )
+        
+        Defaults.reset(
             .monitoringIntervalSeconds,
             .maxInterventionsBeforePause,
             .playSoundOnIntervention,
             .textForCursorStopsRecovery,
-            .showDebugMenu,
+            .showDebugMenu
+        )
+        
+        Defaults.reset(
             .gitClientApp,
-            .debugMode,
-            .useDynamicMenuBarIcon
+            .debugMode
         )
 
         // Clear logs
