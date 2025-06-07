@@ -248,10 +248,10 @@ struct SessionLoggingTests {
             "Category-based logger creation",
             arguments: zip(
                 [String.self, Int.self, SessionLoggingTests.self] as [Any.Type],
-                [LogCategory.app, .api, .supervision]
+                [Diagnostics.LogCategory.app, Diagnostics.LogCategory.api, Diagnostics.LogCategory.supervision]
             )
         )
-        func categoryBasedLoggerCreation(type: Any.Type, category: LogCategory) {
+        func categoryBasedLoggerCreation(type: Any.Type, category: Diagnostics.LogCategory) {
             let logger = LoggerFactory.logger(for: type, category: category)
 
             #expect(throws: Never.self) {
