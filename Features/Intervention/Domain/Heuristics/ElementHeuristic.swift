@@ -10,7 +10,7 @@ import Foundation
 ///
 /// This enum provides type-safe access to element locators
 /// and ensures consistency across the locator system.
-public enum LocatorType: String, CaseIterable, Codable {
+public enum LocatorType: String, CaseIterable, Codable, Sendable {
     case connectionErrorIndicator
     case errorMessagePopup
     case forceStopResumeLink

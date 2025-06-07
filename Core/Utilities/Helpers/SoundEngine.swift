@@ -7,7 +7,7 @@ import Foundation
 ///
 /// This enum provides a type-safe way to specify which sound to play,
 /// supporting both the user's preferred alert sound and named system sounds.
-enum SystemSound {
+enum SystemSound: Equatable, Hashable, Sendable {
     /// The user's preferred alert sound as configured in System Settings
     case userAlert // kSystemSoundID_UserPreferredAlert
     /// A named system sound file (e.g. "Boop.aiff")

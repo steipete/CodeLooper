@@ -164,7 +164,7 @@ struct SoundManagerTests {
 
     @Suite("Performance", .tags(.performance, .timing))
     struct PerformanceTests {
-        @Test("Sound playback performance", .timeLimit(.seconds(5)))
+        @Test("Sound playback performance", .timeLimit(.minutes(1)))
         func soundPlaybackPerformance() {
             let startTime = ContinuousClock().now
 

@@ -47,7 +47,7 @@ struct LocatorPatternTests {
                     // Expected criteria count for each type
                     switch type {
                     case .mainInputField, .stopGeneratingButton: 1
-                    case .sidebarActivityIndicator: 2
+                    case .sidebarActivityArea: 2
                     default: 1
                     }
                 }
@@ -59,9 +59,10 @@ struct LocatorPatternTests {
             #expect(locator.criteria.count >= expectedMinCriteria,
                     "\(type) should have at least \(expectedMinCriteria) criteria")
 
-            // Validate first criterion exists
+            // Validate first criterion exists and has content
             if let firstCriterion = locator.criteria.first {
-                #expect(!firstCriterion.isEmpty, "Criteria should not be empty")
+                #expect(!firstCriterion.attribute.isEmpty, "Criterion attribute should not be empty")
+                #expect(!firstCriterion.value.isEmpty, "Criterion value should not be empty")
             }
         }
 
@@ -70,7 +71,7 @@ struct LocatorPatternTests {
             arguments: [
                 (type: LocatorType.mainInputField, prefix: "mainInput"),
                 (type: .stopGeneratingButton, prefix: "stopGenerating"),
-                (type: .sidebarActivityIndicator, prefix: "sidebar"),
+                (type: .sidebarActivityArea, prefix: "sidebar"),
             ]
         )
         func rawValueConsistency(testCase: (type: LocatorType, prefix: String)) {
@@ -135,7 +136,7 @@ struct LocatorPatternTests {
 
             if let locator {
                 #expect(!locator.criteria.isEmpty, "Discovered locator should have criteria")
-                #expect(locator.action == nil || locator.action == testCase.action,
+                #expect(locator.requireAction == nil || locator.requireAction == testCase.action,
                         "Action should match expected type")
             }
         }

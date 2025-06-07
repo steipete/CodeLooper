@@ -158,4 +158,5 @@ extension Tag {
     @Tag static var collections: Self
     @Tag static var rules: Self
     @Tag static var status: Self
+    @Tag static var slow: Self
 }

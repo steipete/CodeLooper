@@ -152,16 +152,20 @@ let project = Project(
             dependencies: [
                 .target(name: "CodeLooper"),
                 .target(name: "Diagnostics"),
+                .package(product: "Defaults"),
+                .package(product: "AXorcist"),
             ],
             settings: .settings(
                 base: [
                     "SWIFT_VERSION": "6.0",
                     "MACOSX_DEPLOYMENT_TARGET": "14.0",
-                    "OTHER_SWIFT_FLAGS": "-strict-concurrency=complete",
+                    "OTHER_SWIFT_FLAGS": "-strict-concurrency=complete -enable-experimental-feature DebugDescriptionMacro",
                     "ENABLE_STRICT_CONCURRENCY_CHECKS": "YES",
                     "ENABLE_TESTING": "YES",
                     "ENABLE_TESTING_SEARCH_PATHS": "YES",
                     "FRAMEWORK_SEARCH_PATHS": "$(inherited) $(PLATFORM_DIR)/Developer/Library/Frameworks",
+                    // Enable Swift Testing framework
+                    "SWIFT_TESTING_ENABLED": "YES",
                     // Enable automatic macro trust for Swift Testing
                     "ENABLE_USER_SCRIPT_SANDBOXING": "NO",
                     "SWIFT_PACKAGE_MACRO_VALIDATION": "NO",
