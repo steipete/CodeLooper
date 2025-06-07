@@ -4,8 +4,7 @@ import Foundation
 import OSLog
 import Testing
 
-// Use Diagnostics.LogCategory to avoid ambiguity
-typealias LogCategory = Diagnostics.LogCategory
+// Import explicitly to avoid conflicts
 
 @Suite("Session Logging", .tags(.diagnostics, .core))
 struct SessionLoggingTests {
@@ -206,13 +205,13 @@ struct SessionLoggingTests {
         @Test(
             "Category logger retrieval",
             arguments: [
-                LogCategory.app,
+                Diagnostics.LogCategory.app,
                 .auth,
                 .api,
                 .supervision,
             ]
         )
-        @MainActor func categoryLoggerRetrieval(category: LogCategory) {
+        @MainActor func categoryLoggerRetrieval(category: Diagnostics.LogCategory) {
             let logManager = Diagnostics.LogManager.shared
             let logger = logManager.getLogger(for: category)
 
@@ -249,10 +248,10 @@ struct SessionLoggingTests {
             "Category-based logger creation",
             arguments: zip(
                 [String.self, Int.self, SessionLoggingTests.self] as [Any.Type],
-                [LogCategory.app, .api, .supervision]
+                [Diagnostics.LogCategory.app, .api, .supervision]
             )
         )
-        func categoryBasedLoggerCreation(type: Any.Type, category: LogCategory) {
+        func categoryBasedLoggerCreation(type: Any.Type, category: Diagnostics.LogCategory) {
             let logger = LoggerFactory.logger(for: type, category: category)
 
             #expect(throws: Never.self) {
