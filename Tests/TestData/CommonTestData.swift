@@ -26,15 +26,15 @@ enum CommonTestData {
     enum CursorMonitorTestData {
         static let testAppConfigurations = [
             (id: 1, displayName: "Cursor 1", status: DisplayStatus.active, windows: 2),
-            (id: 2, displayName: "Cursor 2", status: .idle, windows: 0),
-            (id: 3, displayName: "Cursor 3", status: .monitoring, windows: 5)
+            (id: 2, displayName: "Cursor 2", status: DisplayStatus.idle, windows: 0),
+            (id: 3, displayName: "Cursor 3", status: DisplayStatus.intervening, windows: 5)
         ]
         
         static let stateTransitions = [
-            (from: MonitorState.idle, to: MonitorState.monitoring, valid: true),
-            (from: .monitoring, to: .intervening, valid: true),
-            (from: .intervening, to: .idle, valid: true),
-            (from: .idle, to: .intervening, valid: false)
+            (from: DisplayStatus.idle, to: DisplayStatus.active, valid: true),
+            (from: DisplayStatus.active, to: DisplayStatus.intervening, valid: true),
+            (from: DisplayStatus.intervening, to: DisplayStatus.idle, valid: true),
+            (from: DisplayStatus.idle, to: DisplayStatus.intervening, valid: false)
         ]
         
         static let interventionScenarios = [
@@ -114,9 +114,9 @@ enum CommonTestData {
         
         static let timeoutConfigurations = [
             (operation: "quick", timeout: Duration.milliseconds(100)),
-            (operation: "normal", timeout: .seconds(1)),
-            (operation: "slow", timeout: .seconds(10)),
-            (operation: "very_slow", timeout: .minutes(1))
+            (operation: "normal", timeout: Duration.seconds(1)),
+            (operation: "slow", timeout: Duration.seconds(10)),
+            (operation: "very_slow", timeout: Duration.seconds(60))
         ]
     }
     

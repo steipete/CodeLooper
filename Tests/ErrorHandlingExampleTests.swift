@@ -4,7 +4,7 @@ import Testing
 
 // MARK: - Example of proper error handling with Swift Testing
 
-@Suite("Error Handling Examples", .tags(.errorHandling, .examples))
+@Suite("Error Handling Examples", .tags(.error_handling, .advanced))
 struct ErrorHandlingExampleTests {
     
     // MARK: - Test Errors
@@ -113,7 +113,7 @@ struct ErrorHandlingExampleTests {
     
     // MARK: - Comparison with Old Patterns
     
-    @Suite("Pattern Comparison", .tags(.migration))
+    @Suite("Pattern Comparison", .tags(.advanced))
     struct PatternComparison {
         let service = MockService()
         
@@ -146,7 +146,7 @@ struct ErrorHandlingExampleTests {
     
     // MARK: - Real-World Patterns
     
-    @Suite("Real-World Patterns", .tags(.practical))
+    @Suite("Real-World Patterns", .tags(.integration))
     struct RealWorldPatterns {
         @Test("File operation error handling")
         func fileOperationErrors() {
