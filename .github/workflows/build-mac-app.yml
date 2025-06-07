@@ -288,12 +288,29 @@ jobs:
             echo "::warning::Swift Testing framework not found in Package.swift dependencies"
           fi
           
-          # Test compilation with Swift Testing import
-          echo 'import Testing; @Test func check() { #expect(true) }' > /tmp/testing_check.swift
-          if xcrun swift -I $(xcrun --show-sdk-path)/usr/lib/swift -c -o /tmp/testing_check /tmp/testing_check.swift 2>/dev/null; then
-            echo "✅ Swift Testing framework compilation test passed"
+          # Test compilation with Swift Testing import in the context of the project
+          echo "Testing Swift Testing framework compilation with project context..."
+          cat > /tmp/testing_check.swift << 'EOF'
+import Testing
+
+@Test func basicSwiftTestingCheck() {
+    #expect(true)
+}
+
+@Test("Test with description") 
+func namedTest() {
+    #expect(1 + 1 == 2)
+}
+EOF
+          
+          # Try to compile with the project's build context
+          if swift package resolve && xcrun swift -package-path . -I .build/debug -c -o /tmp/testing_check /tmp/testing_check.swift 2>/dev/null; then
+            echo "✅ Swift Testing framework compilation test passed with project context"
+          elif xcrun swift -c -o /tmp/testing_check /tmp/testing_check.swift 2>/dev/null; then
+            echo "✅ Swift Testing framework compilation test passed with basic context"
           else
-            echo "::warning::Swift Testing framework compilation test failed - may affect test execution"
+            echo "::warning::Swift Testing framework compilation test failed - may impact test execution but not critical"
+            echo "::warning::This is expected if Swift Testing is only available in the Xcode build context"
           fi
           
           # Clean up
@@ -310,8 +327,9 @@ jobs:
           
           # Run main app tests with Swift Testing support
           echo "Running main app tests via xcodebuild..."
+          MAIN_TEST_EXIT_CODE=0
           set -o pipefail
-          xcodebuild test \
+          if ! xcodebuild test \
             -workspace CodeLooper.xcworkspace \
             -scheme CodeLooper \
             -destination "platform=macOS" \
@@ -321,29 +339,50 @@ jobs:
             OTHER_SWIFT_FLAGS="-enable-testing" \
             CODE_SIGN_IDENTITY="" \
             CODE_SIGNING_REQUIRED=NO \
-            CODE_SIGNING_ALLOWED=NO | xcbeautify || echo "::warning::Some main app tests failed"
+            CODE_SIGNING_ALLOWED=NO | xcbeautify; then
+            MAIN_TEST_EXIT_CODE=$?
+            echo "::warning::Main app tests failed with exit code $MAIN_TEST_EXIT_CODE"
+          else
+            echo "✅ Main app tests completed successfully"
+          fi
           
           # Check if test results were generated
           if [ -d "test-results/CodeLooper.xcresult" ]; then
             echo "✅ Test results bundle created successfully"
             # Extract basic test summary
+            echo "Test results summary:"
             xcrun xcresulttool get --format json --path test-results/CodeLooper.xcresult | head -20 || true
           else
             echo "::warning::No test results bundle was created"
           fi
           
-          # Run subpackage tests with Swift Testing framework
-          echo "Running AXorcist tests..."
+          # Run subpackage tests (these use XCTest, not Swift Testing)
+          echo "::group::Running Subpackage Tests"
+          
+          echo "Running AXorcist tests (XCTest-based)..."
           cd AXorcist
-          swift test --enable-code-coverage --verbose || echo "::warning::AXorcist tests failed"
+          if swift test --enable-code-coverage 2>&1 | tee ../test-results/axorcist-output.log; then
+            echo "✅ AXorcist tests completed"
+          else
+            echo "::warning::AXorcist tests failed - see log output above"
+            echo "Note: AXorcist uses XCTest framework which may have integration test dependencies"
+          fi
           cd ..
           
           echo "Running DesignSystem tests..."
-          cd DesignSystem  
-          swift test --enable-code-coverage --verbose || echo "::warning::DesignSystem tests failed"
+          cd DesignSystem
+          if swift test --enable-code-coverage --verbose 2>&1 | tee ../test-results/designsystem-output.log; then
+            echo "✅ DesignSystem tests completed"
+          else
+            echo "::warning::DesignSystem tests failed - see log output above"
+          fi
           cd ..
           
           echo "::endgroup::"
+          echo "::endgroup::"
+          
+          # Summary
+          echo "Test execution completed. Main tests exit code: $MAIN_TEST_EXIT_CODE"
 
       - name: Build, Sign, and Optionally Notarize macOS App
         id: build_sign_notarize_step
