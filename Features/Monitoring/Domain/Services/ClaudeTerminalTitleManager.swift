@@ -40,6 +40,14 @@ final class ClaudeTerminalTitleManager: Loggable {
         }
         
         let title = buildTitle(for: instance)
+        
+        // First try to find the window using the shared service
+        if TTYWindowMappingService.shared.findWindowForTTY(instance.ttyPath) != nil {
+            logger.debug("Found window via TTYWindowMappingService for TTY \(instance.ttyPath)")
+            // We could potentially set the window title directly here if the terminal supports it
+            // For now, we'll still write to the TTY
+        }
+        
         writeTitleToTTY(title: title, ttyPath: instance.ttyPath, instance: instance)
     }
     

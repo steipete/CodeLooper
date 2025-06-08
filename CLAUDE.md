@@ -9,6 +9,7 @@ CodeLooper is a macOS menubar application that monitors Cursor IDE instances and
 - This project uses Swift 6 with strict concurrency.
 - It supports macOS 15+.
 - Refactor properly, do not care about backwards compatibility.
+- After changing swift files, compile with xcodebuild to verify that everything works. (decide if regular or test build depending on which files you changed.)
 
 - To view log entries from the process as it runs, use: 
   `/usr/bin/log show --process CodeLooper --style compact --last 5m | tail -n 50`

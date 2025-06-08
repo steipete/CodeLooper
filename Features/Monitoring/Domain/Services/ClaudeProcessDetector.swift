@@ -222,53 +222,68 @@ final class ClaudeProcessDetector: Loggable, @unchecked Sendable {
     private func isClaudeProcess(arguments: String) -> Bool {
         let lowercasedArgs = arguments.lowercased()
         
+        // Exclude MCP server processes - these are not Claude CLI instances
+        if lowercasedArgs.contains("/mcp/") || lowercasedArgs.contains("\\mcp\\") ||
+           lowercasedArgs.contains("mcp-server") || lowercasedArgs.contains("mcp_server") ||
+           lowercasedArgs.contains("@modelcontextprotocol") {
+            logger.debug("Excluding MCP server process")
+            return false
+        }
+        
         // Parse the KERN_PROCARGS2 format
         // Format: [4 bytes argc][executable path\0][padding\0s][arg0\0][arg1\0]...
         let components = arguments.split(separator: "\0", omittingEmptySubsequences: false)
         
-        // Skip the first component (contains argc bytes) and look for the actual arguments
+        var foundNode = false
+        var nodeIndex = -1
+        
+        // First, find if this is a Node process
         for (index, component) in components.enumerated() {
             let componentStr = String(component).trimmingCharacters(in: .whitespaces)
+            if componentStr.isEmpty { continue }
             
-            // Skip empty components and the executable path
-            if componentStr.isEmpty || index == 0 { continue }
-            
-            // Check if this component is "claude" or ends with "/claude"
-            if componentStr == "claude" || componentStr.hasSuffix("/claude") {
-                logger.debug("Found Claude via argument: \(componentStr)")
-                return true
+            if componentStr.contains("/bin/node") || componentStr.hasSuffix("/node") || componentStr == "node" {
+                foundNode = true
+                nodeIndex = index
+                break
             }
-            
-            // Also check the executable path itself
-            if componentStr.contains("/bin/node") && index + 1 < components.count {
-                // Check the next non-empty component after node
-                for nextIndex in (index + 1)..<components.count {
-                    let nextComponent = String(components[nextIndex]).trimmingCharacters(in: .whitespaces)
-                    if !nextComponent.isEmpty {
-                        if nextComponent == "claude" || nextComponent.hasSuffix("/claude") {
-                            logger.debug("Found Claude as node argument: \(nextComponent)")
-                            return true
-                        }
-                        break // Only check the first non-empty argument after node
+        }
+        
+        // If it's not a Node process, it's not Claude CLI
+        if !foundNode {
+            return false
+        }
+        
+        // Look for Claude CLI being executed directly after node
+        if nodeIndex >= 0 && nodeIndex + 1 < components.count {
+            // Find the next non-empty component after node
+            for nextIndex in (nodeIndex + 1)..<components.count {
+                let nextComponent = String(components[nextIndex]).trimmingCharacters(in: .whitespaces)
+                if !nextComponent.isEmpty {
+                    // Check if this is the Claude CLI script
+                    if nextComponent.hasSuffix("/.claude/local/node_modules/.bin/claude") ||
+                       nextComponent.hasSuffix("\\.claude\\local\\node_modules\\.bin\\claude") {
+                        logger.debug("Found Claude CLI executable: \(nextComponent)")
+                        return true
                     }
+                    // If the first argument after node isn't Claude CLI, it's likely not a Claude process
+                    break
                 }
             }
         }
         
-        // Check for specific Claude installation path patterns
+        // Strict check: Only accept specific Claude installation path patterns
         for pattern in Configuration.claudePathPatterns {
             if arguments.contains(pattern) {
-                logger.debug("Found Claude via path pattern: \(pattern)")
-                return true
-            }
-        }
-        
-        // Check for Claude indicators in combination with node_modules
-        if lowercasedArgs.contains("node_modules") {
-            for indicator in Configuration.claudeIndicators {
-                if lowercasedArgs.contains(indicator) {
-                    logger.debug("Found Claude via indicator: \(indicator)")
-                    return true
+                // Additional validation: ensure it's actually being executed, not just referenced
+                let components = arguments.components(separatedBy: pattern)
+                if components.count > 1 {
+                    // Check if pattern appears early in the arguments (likely being executed)
+                    let beforePattern = components[0]
+                    if beforePattern.count < 1000 { // Arbitrary but reasonable limit
+                        logger.debug("Found Claude via path pattern: \(pattern)")
+                        return true
+                    }
                 }
             }
         }

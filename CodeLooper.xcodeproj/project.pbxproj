@@ -57,6 +57,7 @@
 		34E8AFB04F67145A4411B5EE /* Diagnostics.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 62F13848032738E908F5FD24 /* Diagnostics.framework */; };
 		351882D0C2E70F5FF711F151 /* NotificationPermissionsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0B9496F30757DF1241999A26 /* NotificationPermissionsView.swift */; };
 		35C877C96ECC25DA945F2C7A /* LogConfiguration.swift in Sources */ = {isa = PBXBuildFile; fileRef = E595EC2DD4C455A8998C336F /* LogConfiguration.swift */; };
+		36AC393507E97BD2C7F3D0DE /* TTYWindowMappingService.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC111D7BB12AB02087A73BE7 /* TTYWindowMappingService.swift */; };
 		3788C4C2BEA68BEB095B8C2F /* RuleExecutor.swift in Sources */ = {isa = PBXBuildFile; fileRef = D2FBE815548C247EE6CC17A3 /* RuleExecutor.swift */; };
 		3807B52E0C2E9FB88F6E7E67 /* ScreenshotAnalyzer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6943FF4E98060C242A14D838 /* ScreenshotAnalyzer.swift */; };
 		38601C35979874C23BDC5B0F /* InterventionEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = D92A8EFA918C418736768B7F /* InterventionEngine.swift */; };
@@ -511,6 +512,7 @@
 		B855986CD1C95178888D1AF3 /* CursorSupervisionSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CursorSupervisionSettingsView.swift; sourceTree = "<group>"; };
 		B93FE5DBFB4CA92A0ADD0FF9 /* MarkdownContentPopover.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MarkdownContentPopover.swift; sourceTree = "<group>"; };
 		B96EB1FF68D466C7E9E3F1EE /* CompletionStepView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CompletionStepView.swift; sourceTree = "<group>"; };
+		BC111D7BB12AB02087A73BE7 /* TTYWindowMappingService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TTYWindowMappingService.swift; sourceTree = "<group>"; };
 		BC20A8DCDF3278BF031054DF /* WindowAIDiagnosticsManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WindowAIDiagnosticsManager.swift; sourceTree = "<group>"; };
 		BCA0983521BFC38C9EFB5342 /* WelcomeViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WelcomeViewModel.swift; sourceTree = "<group>"; };
 		BD163C7949B36F1D7EFFF1EF /* CursorMonitorTestData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CursorMonitorTestData.swift; sourceTree = "<group>"; };
@@ -1474,6 +1476,7 @@
 				5AE786A2B4DC323E00FA6ECB /* PortManager.swift */,
 				0D6CAF9E9B702E02DFDBFEB2 /* ProcessMonitorService.swift */,
 				6C04AADFCEDF56D0DEDE19B3 /* QueryDataModels.swift */,
+				BC111D7BB12AB02087A73BE7 /* TTYWindowMappingService.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -1783,6 +1786,7 @@
 				2E764173424783AA0DD4AFD8 /* PortManager.swift in Sources */,
 				BC0A1686EEAA49A0E2E1D5E4 /* ProcessMonitorService.swift in Sources */,
 				1BAE06391EA2E01D698697BB /* QueryDataModels.swift in Sources */,
+				36AC393507E97BD2C7F3D0DE /* TTYWindowMappingService.swift in Sources */,
 				FD1A41D5B07CFB152A30F973 /* CursorAppLifecycleManager.swift in Sources */,
 				7B69C358953A327727D855D2 /* CursorWindowManager.swift in Sources */,
 				3944BC08C53F8A9532580BA0 /* AllPermissionsView.swift in Sources */,

@@ -217,65 +217,82 @@ private struct ClaudeInstanceRow: View {
     }
     
     private func raiseTerminalWindow() {
-        Self.logger.info("Attempting to raise terminal window for Claude instance PID: \(instance.pid)")
+        Self.logger.info("Attempting to raise terminal window for Claude instance PID: \(instance.pid), TTY: \(instance.ttyPath)")
         
-        // First, try to find the terminal window using the running application
-        let runningApps = NSWorkspace.shared.runningApplications
-        
-        // Common terminal bundle identifiers
-        let terminalBundleIDs = [
-            "com.apple.Terminal",
-            "com.googlecode.iterm2",
-            "com.github.wez.wezterm",
-            "dev.warp.Warp-Stable",
-            "net.kovidgoyal.kitty",
-            "co.zeit.hyper",
-            "com.brave.Browser",  // For web terminals
-            "com.google.Chrome",  // For web terminals
-            "org.mozilla.firefox" // For web terminals
-        ]
-        
-        // Find terminal apps that might contain our Claude instance
-        for bundleID in terminalBundleIDs {
-            if let terminalApp = runningApps.first(where: { $0.bundleIdentifier == bundleID }) {
-                Self.logger.debug("Found terminal app: \(bundleID)")
-                
-                // Try to find and raise the specific window containing our Claude process
+        // If we have a TTY path, use the shared service to find the owning terminal window
+        if !instance.ttyPath.isEmpty {
+            if let window = TTYWindowMappingService.shared.findWindowForTTY(instance.ttyPath) {
+                Self.logger.info("Found window for TTY \(instance.ttyPath), raising it")
                 do {
-                    let app = try Element.application(forProcessID: terminalApp.processIdentifier)
-                    let windows = try app.windows()
+                    try window.performAction(.raise)
                     
-                    Self.logger.debug("Terminal app has \(windows.count) windows")
-                    
-                    // Look for a window that might contain our Claude instance
-                    for window in windows {
-                        do {
-                            if let title = try? window.title() {
-                                Self.logger.debug("Checking window with title: '\(title)'")
-                                
-                                // Check if the window title contains our folder name or "claude"
-                                if title.lowercased().contains(instance.folderName.lowercased()) ||
-                                   title.lowercased().contains("claude") ||
-                                   title.contains(instance.workingDirectory) {
-                                    Self.logger.info("Found matching terminal window: '\(title)'")
-                                    
-                                    try window.performAction(.raise)
-                                    terminalApp.activate(options: .activateIgnoringOtherApps)
-                                    Self.logger.info("Successfully raised terminal window")
-                                    return
-                                }
-                            }
-                        } catch {
-                            Self.logger.debug("Could not get title for window: \(error)")
+                    // Also activate the application
+                    if let pid = window.pid() {
+                        if let runningApp = NSRunningApplication(processIdentifier: pid) {
+                            _ = runningApp.activate(options: .activateAllWindows)
                         }
                     }
+                    
+                    Self.logger.info("Successfully raised terminal window")
+                    return
                 } catch {
-                    Self.logger.warning("Could not enumerate windows for \(bundleID): \(error)")
+                    Self.logger.warning("Failed to raise window: \(error)")
                 }
             }
         }
         
-        // Fallback: Open the working directory in Finder
+        // Fallback: Search by window title (less reliable)
+        Self.logger.info("TTY-based search failed, falling back to title search")
+        raiseTerminalWindowByTitle()
+    }
+    
+    private func raiseTerminalWindowByTitle() {
+        // Original title-based search as fallback
+        let runningApps = NSWorkspace.shared.runningApplications
+        
+        
+        for app in runningApps {
+            guard let bundleID = app.bundleIdentifier else { continue }
+            
+            // Check if this is a terminal app using the list from shared service
+            let terminalBundleIDs = [
+                "com.apple.Terminal",
+                "com.googlecode.iterm2",
+                "com.github.wez.wezterm",
+                "dev.warp.Warp-Stable",
+                "net.kovidgoyal.kitty",
+                "co.zeit.hyper",
+                "com.mitchellh.ghostty",
+                "com.brave.Browser",
+                "com.google.Chrome",
+                "org.mozilla.firefox"
+            ]
+            
+            guard terminalBundleIDs.contains(bundleID) else { continue }
+            
+            guard let appElement = Element.application(for: app.processIdentifier) else { continue }
+            guard let windows = appElement.windows() else { continue }
+            
+            for window in windows {
+                if let title = window.title() {
+                    if title.lowercased().contains(instance.folderName.lowercased()) ||
+                       title.lowercased().contains("claude") ||
+                       title.contains(instance.workingDirectory) {
+                        Self.logger.info("Found matching terminal window by title: '\(title)'")
+                        
+                        do {
+                            try window.performAction(.raise)
+                            _ = app.activate(options: .activateAllWindows)
+                            return
+                        } catch {
+                            Self.logger.warning("Failed to raise window: \(error)")
+                        }
+                    }
+                }
+            }
+        }
+        
+        // Final fallback: Open the working directory in Finder
         Self.logger.info("Could not find terminal window, opening folder in Finder: \(instance.workingDirectory)")
         NSWorkspace.shared.selectFile(nil, inFileViewerRootedAtPath: instance.workingDirectory)
     }
