@@ -43,22 +43,8 @@ struct MainPopoverView: View {
 
                     Spacer()
                     
-                    // Instance counters
-                    HStack(spacing: Spacing.xSmall) {
-                        if runningCount > 0 {
-                            Label("\(runningCount)", systemImage: "circle.fill")
-                                .labelStyle(.titleAndIcon)
-                                .font(Typography.caption1(.semibold))
-                                .foregroundColor(.green)
-                        }
-                        
-                        if notRunningCount > 0 {
-                            Label("\(notRunningCount)", systemImage: "circle.fill")
-                                .labelStyle(.titleAndIcon)
-                                .font(Typography.caption1(.semibold))
-                                .foregroundColor(.red)
-                        }
-                    }
+                    // Elegant status indicators
+                    StatusIndicators(runningCount: runningCount, notRunningCount: notRunningCount)
                 }
 
                 // Permissions section (if needed)
@@ -258,6 +244,75 @@ struct MainPopoverView: View {
         }
         
         return count
+    }
+}
+
+// MARK: - Status Indicators
+
+private struct StatusIndicators: View {
+    let runningCount: Int
+    let notRunningCount: Int
+    
+    var body: some View {
+        HStack(spacing: 4) {
+            if runningCount > 0 {
+                StatusBadge(
+                    count: runningCount,
+                    icon: "play.fill",
+                    color: Color(red: 0.2, green: 0.8, blue: 0.2)
+                )
+            }
+            
+            if notRunningCount > 0 {
+                StatusBadge(
+                    count: notRunningCount,
+                    icon: "stop.fill",
+                    color: Color(red: 0.9, green: 0.3, blue: 0.3)
+                )
+            }
+        }
+    }
+}
+
+private struct StatusBadge: View {
+    let count: Int
+    let icon: String
+    let color: Color
+    
+    @State private var isHovered = false
+    
+    var body: some View {
+        HStack(spacing: 2) {
+            ZStack {
+                Circle()
+                    .fill(color.opacity(isHovered ? 1.0 : 0.85))
+                    .frame(width: 16, height: 16)
+                
+                Image(systemName: icon)
+                    .font(.system(size: 9, weight: .semibold))
+                    .foregroundColor(.white)
+            }
+            
+            Text("\(count)")
+                .font(.system(size: 12, weight: .medium, design: .rounded))
+                .foregroundColor(color)
+        }
+        .padding(.horizontal, 4)
+        .padding(.vertical, 1)
+        .background(
+            RoundedRectangle(cornerRadius: 10)
+                .fill(color.opacity(0.15))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 10)
+                        .strokeBorder(color.opacity(0.2), lineWidth: 0.5)
+                )
+        )
+        .scaleEffect(isHovered ? 1.05 : 1.0)
+        .animation(.easeInOut(duration: 0.2), value: isHovered)
+        .onHover { hovering in
+            isHovered = hovering
+        }
+        .help(icon == "play.fill" ? "\(count) instance\(count == 1 ? "" : "s") running" : "\(count) instance\(count == 1 ? "" : "s") stopped")
     }
 }
 
