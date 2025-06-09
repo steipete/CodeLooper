@@ -113,53 +113,61 @@ class MenuBarIconManager: ObservableObject {
     // MARK: - Private Methods
 
     private func setupDiagnosticsObserver() {
-        diagnosticsManager.$windowStates
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] windowStates in
-                guard let self else { return }
+        // Combined publisher for both Cursor windows and Claude instances
+        Publishers.CombineLatest(
+            diagnosticsManager.$windowStates,
+            ClaudeMonitorService.shared.$instances
+        )
+        .receive(on: DispatchQueue.main)
+        .sink { [weak self] windowStates, claudeInstances in
+            guard let self else { return }
 
-                if !Defaults[.isGlobalMonitoringEnabled] {
-                    self.setState(.paused)
-                    return
-                }
+            if !Defaults[.isGlobalMonitoringEnabled] {
+                self.setState(.paused)
+                return
+            }
 
-                var workingCount = 0
-                var notWorkingCount = 0
-                var unknownCount = 0
-                var activeAICount = 0
+            var workingCount = 0
+            var notWorkingCount = 0
+            var unknownCount = 0
 
-                for (_, windowInfo) in windowStates where windowInfo.isLiveWatchingEnabled {
-                    activeAICount += 1
-                    switch windowInfo.lastAIAnalysisStatus {
-                    case .working:
-                        workingCount += 1
-                    case .notWorking:
-                        notWorkingCount += 1
-                    case .unknown:
-                        unknownCount += 1
-                    case .pending, .error, .off:
-                        // Potentially count pending/error as unknown for icon simplicity
-                        // or handle them distinctly if the icon design allows.
-                        // For now, let's treat pending as unknown for the icon.
-                        if windowInfo.lastAIAnalysisStatus == .pending {
-                            unknownCount += 1
-                        }
-                        // .error and .off don't contribute to active counts for icon display
-                    }
-                }
-
-                if activeAICount == 0 && Defaults[.isGlobalMonitoringEnabled] {
-                    self.setState(.idle) // No windows actively AI-watched, but monitoring is on
-                } else if workingCount > 0 || notWorkingCount > 0 || unknownCount > 0 {
-                    self.setState(.aiStatus(working: workingCount, notWorking: notWorkingCount, unknown: unknownCount))
-                } else if Defaults[.isGlobalMonitoringEnabled] {
-                    // AI watching enabled, but no specific statuses yet (e.g. all off or error)
-                    self.setState(.idle) // Or a more specific "no AI targets" state
-                } else {
-                    self.setState(.paused) // Fallback if global monitoring is off
+            // Count Cursor windows
+            for (_, windowInfo) in windowStates where windowInfo.isLiveWatchingEnabled {
+                switch windowInfo.lastAIAnalysisStatus {
+                case .working:
+                    workingCount += 1
+                case .notWorking, .error:
+                    notWorkingCount += 1
+                case .unknown:
+                    unknownCount += 1
+                case .pending:
+                    unknownCount += 1
+                case .off:
+                    // Don't count .off status
+                    break
                 }
             }
-            .store(in: &cancellables)
+            
+            // Count Claude instances if enabled
+            if Defaults[.enableClaudeMonitoring] {
+                for instance in claudeInstances {
+                    if instance.currentActivity.type != .idle {
+                        workingCount += 1
+                    } else {
+                        notWorkingCount += 1
+                    }
+                }
+            }
+
+            if workingCount == 0 && notWorkingCount == 0 && unknownCount == 0 {
+                self.setState(.idle) // No instances detected, but monitoring is on
+            } else if workingCount > 0 || notWorkingCount > 0 || unknownCount > 0 {
+                self.setState(.aiStatus(working: workingCount, notWorking: notWorkingCount, unknown: unknownCount))
+            } else {
+                self.setState(.idle)
+            }
+        }
+        .store(in: &cancellables)
     }
 
     private func updateIconAttributedString(for state: StatusIconState) {

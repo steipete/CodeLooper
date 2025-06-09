@@ -21,103 +21,156 @@ struct MainPopoverView: View {
     // MARK: Internal
 
     var body: some View {
-        VStack(alignment: .leading, spacing: Spacing.medium) {
-            // Header with logo
-            HStack(spacing: Spacing.small) {
-                // App icon
-                if let iconImage = NSImage(named: "loop-color") {
-                    Image(nsImage: iconImage)
-                        .resizable()
-                        .frame(width: 24, height: 24)
-                } else {
-                    Image(systemName: "link.circle.fill")
-                        .font(.title2)
-                        .foregroundColor(ColorPalette.loopTint)
-                }
-
-                Text("CodeLooper")
-                    .font(Typography.title3(.medium))
-                    .foregroundColor(ColorPalette.text)
-
-                Spacer()
-            }
-
-            // Permissions section
-            PermissionsView(showTitle: false, compact: true)
-
-            // Enable supervision toggle
-            DSToggle(
-                "Enable Cursor Supervision",
-                isOn: $isGlobalMonitoringEnabled
-            )
-            .onChange(of: isGlobalMonitoringEnabled) { _, newValue in
-                Task { @MainActor in
-                    if newValue {
-                        diagnosticsManager.enableLiveWatchingForAllWindows()
+        VStack(alignment: .leading, spacing: 0) {
+            // Fixed header section
+            VStack(alignment: .leading, spacing: Spacing.small) {
+                // Header with logo and counters
+                HStack(spacing: Spacing.small) {
+                    // App icon
+                    if let iconImage = NSImage(named: "loop-color") {
+                        Image(nsImage: iconImage)
+                            .resizable()
+                            .frame(width: 20, height: 20)
                     } else {
-                        diagnosticsManager.disableLiveWatchingForAllWindows()
+                        Image(systemName: "link.circle.fill")
+                            .font(.body)
+                            .foregroundColor(ColorPalette.loopTint)
+                    }
+
+                    Text("CodeLooper")
+                        .font(Typography.callout(.medium))
+                        .foregroundColor(ColorPalette.text)
+
+                    Spacer()
+                    
+                    // Instance counters
+                    HStack(spacing: Spacing.xSmall) {
+                        if runningCount > 0 {
+                            Label("\(runningCount)", systemImage: "circle.fill")
+                                .labelStyle(.titleAndIcon)
+                                .font(Typography.caption1(.semibold))
+                                .foregroundColor(.green)
+                        }
+                        
+                        if notRunningCount > 0 {
+                            Label("\(notRunningCount)", systemImage: "circle.fill")
+                                .labelStyle(.titleAndIcon)
+                                .font(Typography.caption1(.semibold))
+                                .foregroundColor(.red)
+                        }
+                    }
+                }
+
+                // Permissions section (if needed)
+                PermissionsView(showTitle: false, compact: true)
+
+                // Enable supervision toggle
+                DSToggle(
+                    "Enable Cursor Supervision",
+                    isOn: $isGlobalMonitoringEnabled
+                )
+                .onChange(of: isGlobalMonitoringEnabled) { _, newValue in
+                    Task { @MainActor in
+                        if newValue {
+                            diagnosticsManager.enableLiveWatchingForAllWindows()
+                        } else {
+                            diagnosticsManager.disableLiveWatchingForAllWindows()
+                        }
                     }
                 }
             }
-
+            .padding(.horizontal, Spacing.medium)
+            .padding(.top, Spacing.medium)
+            .padding(.bottom, Spacing.small)
+            
             DSDivider()
+                .padding(.horizontal, Spacing.medium)
 
-            // Monitoring status section
-            if !cursorMonitor.monitoredApps.isEmpty {
-                // Windows list without "Monitored:" label
-                CursorWindowsList(style: .popover)
-            } else {
-                // Empty state
-                DSCard(style: .filled) {
-                    HStack {
-                        Image(systemName: isGlobalMonitoringEnabled ? "exclamationmark.circle" : "pause.circle")
-                            .font(.title3)
-                            .foregroundColor(isGlobalMonitoringEnabled ? ColorPalette.warning : ColorPalette
-                                .textSecondary)
+            // Scrollable content section
+            ScrollView {
+                VStack(alignment: .leading, spacing: Spacing.small) {
+                    // Cursor windows section
+                    if !cursorMonitor.monitoredApps.isEmpty || !cursorWindowStates.isEmpty {
+                        VStack(alignment: .leading, spacing: Spacing.xSmall) {
+                            Text("Cursor Windows (\(cursorWindowStates.count))")
+                                .font(Typography.caption1(.semibold))
+                                .foregroundColor(ColorPalette.textSecondary)
+                                .padding(.horizontal, Spacing.medium)
+                                .padding(.top, Spacing.xSmall)
+                            
+                            CursorWindowsList(style: .popover)
+                                .padding(.horizontal, Spacing.small)
+                        }
+                    } else if isGlobalMonitoringEnabled {
+                        // Empty state for Cursor
+                        DSCard(style: .filled) {
+                            HStack {
+                                Image(systemName: "exclamationmark.circle")
+                                    .font(.caption)
+                                    .foregroundColor(ColorPalette.warning)
 
-                        Text(isGlobalMonitoringEnabled ? "No Cursor app detected." : "Cursor supervision is paused.")
-                            .font(Typography.body())
-                            .foregroundColor(ColorPalette.textSecondary)
+                                Text("No Cursor windows detected.")
+                                    .font(Typography.caption1())
+                                    .foregroundColor(ColorPalette.textSecondary)
+                            }
+                        }
+                        .padding(.horizontal, Spacing.medium)
+                        .padding(.vertical, Spacing.xSmall)
+                    }
+
+                    // Claude instances section (if enabled)
+                    if enableClaudeMonitoring {
+                        VStack(alignment: .leading, spacing: Spacing.xSmall) {
+                            Text("Claude Instances (\(claudeMonitor.instances.count))")
+                                .font(Typography.caption1(.semibold))
+                                .foregroundColor(ColorPalette.textSecondary)
+                                .padding(.horizontal, Spacing.medium)
+                                .padding(.top, Spacing.small)
+                            
+                            ClaudeInstancesList()
+                                .padding(.horizontal, Spacing.small)
+                        }
                     }
                 }
+                .padding(.bottom, Spacing.small)
             }
+            .frame(maxHeight: 400) // Limit scrollable area height
 
-            // Claude instances section (if enabled)
-            if enableClaudeMonitoring {
+            // Fixed footer section
+            VStack(spacing: 0) {
                 DSDivider()
-                ClaudeInstancesList()
-            }
+                    .padding(.horizontal, Spacing.medium)
+                
+                // Action buttons
+                HStack {
+                    Button(action: {
+                        MainSettingsCoordinator.shared.showSettings()
+                    }, label: {
+                        Image(systemName: "gearshape")
+                            .font(.system(size: 14))
+                            .foregroundColor(ColorPalette.textSecondary)
+                    })
+                    .buttonStyle(.plain)
+                    .help("Open Settings")
 
-            DSDivider()
+                    Spacer()
 
-            // Action buttons
-            HStack {
-                Button(action: {
-                    MainSettingsCoordinator.shared.showSettings()
-                }, label: {
-                    Image(systemName: "gearshape")
-                        .font(.system(size: 16))
-                        .foregroundColor(ColorPalette.textSecondary)
-                })
-                .buttonStyle(.plain)
-                .help("Open Settings")
-
-                Spacer()
-
-                Button("Quit") {
-                    NSApp.terminate(nil)
+                    Button("Quit") {
+                        NSApp.terminate(nil)
+                    }
+                    .buttonStyle(.plain)
+                    .font(Typography.caption1())
+                    .foregroundColor(ColorPalette.text)
                 }
-                .buttonStyle(.plain)
-                .foregroundColor(ColorPalette.text)
+                .padding(.horizontal, Spacing.medium)
+                .padding(.vertical, Spacing.small)
             }
-            .padding(.top, Spacing.xSmall)
         }
-        .padding(Spacing.large)
-        .frame(width: 480)
-        .fixedSize(horizontal: false, vertical: true)
+        .frame(width: 420)
         .background(Color(NSColor.windowBackgroundColor))
         .animation(.default, value: isGlobalMonitoringEnabled)
         .animation(.default, value: diagnosticsManager.windowStates.count)
+        .animation(.default, value: claudeMonitor.instances.count)
     }
 
     // MARK: Private
@@ -131,6 +184,56 @@ struct MainPopoverView: View {
 
     @Default(.isGlobalMonitoringEnabled) private var isGlobalMonitoringEnabled
     @Default(.enableClaudeMonitoring) private var enableClaudeMonitoring
+    
+    // Computed properties for counters
+    private var cursorWindowStates: [MonitoredWindowInfo] {
+        diagnosticsManager.windowStates.values.sorted { $0.id < $1.id }
+    }
+    
+    private var runningCount: Int {
+        var count = 0
+        
+        // Count Cursor windows that are "working" (generating)
+        for windowState in cursorWindowStates {
+            if windowState.lastAIAnalysisStatus == .working {
+                count += 1
+            }
+        }
+        
+        // Count Claude instances that are active (not idle)
+        if enableClaudeMonitoring {
+            for instance in claudeMonitor.instances {
+                if instance.currentActivity.type != .idle {
+                    count += 1
+                }
+            }
+        }
+        
+        return count
+    }
+    
+    private var notRunningCount: Int {
+        var count = 0
+        
+        // Count Cursor windows that are "not working" or in error state
+        for windowState in cursorWindowStates {
+            if windowState.lastAIAnalysisStatus == .notWorking || 
+               windowState.lastAIAnalysisStatus == .error {
+                count += 1
+            }
+        }
+        
+        // Count Claude instances that are idle
+        if enableClaudeMonitoring {
+            for instance in claudeMonitor.instances {
+                if instance.currentActivity.type == .idle {
+                    count += 1
+                }
+            }
+        }
+        
+        return count
+    }
 }
 
 // MARK: - Preview

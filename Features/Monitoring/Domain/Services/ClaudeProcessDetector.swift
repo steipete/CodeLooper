@@ -234,6 +234,8 @@ final class ClaudeProcessDetector: Loggable, @unchecked Sendable {
         // Format: [4 bytes argc][executable path\0][padding\0s][arg0\0][arg1\0]...
         let components = arguments.split(separator: "\0", omittingEmptySubsequences: false)
         
+        logger.debug("Checking \(components.count) components for Claude indicators")
+        
         var foundNode = false
         var nodeIndex = -1
         
@@ -245,47 +247,64 @@ final class ClaudeProcessDetector: Loggable, @unchecked Sendable {
             if componentStr.contains("/bin/node") || componentStr.hasSuffix("/node") || componentStr == "node" {
                 foundNode = true
                 nodeIndex = index
+                logger.debug("Found node at index \(index): \(componentStr)")
                 break
             }
         }
         
-        // If it's not a Node process, it's not Claude CLI
+        // If it's not a Node process, check if it's a direct claude command
         if !foundNode {
+            // Check if it's the claude command being run directly
+            for component in components {
+                let componentStr = String(component).trimmingCharacters(in: .whitespaces)
+                if componentStr == "claude" || componentStr.hasSuffix("/claude") {
+                    logger.debug("Found direct claude command: \(componentStr)")
+                    return true
+                }
+            }
             return false
         }
         
-        // Look for Claude CLI being executed directly after node
-        if nodeIndex >= 0 && nodeIndex + 1 < components.count {
-            // Find the next non-empty component after node
+        // Look for Claude CLI being executed after node
+        if nodeIndex >= 0 {
+            // Check all arguments after node (not just the immediate next one)
             for nextIndex in (nodeIndex + 1)..<components.count {
                 let nextComponent = String(components[nextIndex]).trimmingCharacters(in: .whitespaces)
                 if !nextComponent.isEmpty {
-                    // Check if this is the Claude CLI script
-                    if nextComponent.hasSuffix("/.claude/local/node_modules/.bin/claude") ||
-                       nextComponent.hasSuffix("\\.claude\\local\\node_modules\\.bin\\claude") {
-                        logger.debug("Found Claude CLI executable: \(nextComponent)")
+                    // Check if this is the Claude CLI script or command
+                    if nextComponent == "claude" || 
+                       nextComponent.hasSuffix("/claude") ||
+                       nextComponent.hasSuffix("/.bin/claude") ||
+                       nextComponent.contains("/.claude/") ||
+                       nextComponent.contains("\\.claude\\") {
+                        logger.debug("Found Claude after node: \(nextComponent)")
                         return true
                     }
-                    // If the first argument after node isn't Claude CLI, it's likely not a Claude process
-                    break
+                    
+                    // Also check for direct invocation patterns
+                    if nextComponent.contains("node_modules") && 
+                       (nextComponent.contains("claude") || nextComponent.contains("@anthropic")) {
+                        logger.debug("Found Claude via node_modules pattern: \(nextComponent)")
+                        return true
+                    }
                 }
             }
         }
         
-        // Strict check: Only accept specific Claude installation path patterns
+        // Check for specific Claude installation path patterns anywhere in arguments
         for pattern in Configuration.claudePathPatterns {
             if arguments.contains(pattern) {
-                // Additional validation: ensure it's actually being executed, not just referenced
-                let components = arguments.components(separatedBy: pattern)
-                if components.count > 1 {
-                    // Check if pattern appears early in the arguments (likely being executed)
-                    let beforePattern = components[0]
-                    if beforePattern.count < 1000 { // Arbitrary but reasonable limit
-                        logger.debug("Found Claude via path pattern: \(pattern)")
-                        return true
-                    }
-                }
+                logger.debug("Found Claude via path pattern: \(pattern)")
+                return true
             }
+        }
+        
+        // Check if arguments contain claude-specific flags or commands
+        if lowercasedArgs.contains("claude chat") || 
+           lowercasedArgs.contains("claude code") ||
+           lowercasedArgs.contains("--dangerously-skip-permissions") {
+            logger.debug("Found Claude via command pattern")
+            return true
         }
         
         return false

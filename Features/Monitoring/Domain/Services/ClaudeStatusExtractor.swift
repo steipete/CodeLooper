@@ -81,11 +81,30 @@ final class ClaudeStatusExtractor: ObservableObject, Loggable {
             return nil
         }
         
-        // Find window that matches our specific Claude instance
+        // Try to find the window that matches this specific Claude instance
         for window in windowsArray {
+            // Get window title to help with matching
+            var titleRef: CFTypeRef?
+            var windowTitle = ""
+            if AXUIElementCopyAttributeValue(window, kAXTitleAttribute as CFString, &titleRef) == .success,
+               let title = titleRef as? String {
+                windowTitle = title
+            }
+            
+            // Check if this window matches our instance
+            if windowMatchesInstance(title: windowTitle, instance: instance) {
+                if let content = extractTextFromWindow(window),
+                   content.contains("esc to interrupt") {
+                    logger.debug("Found matching window for instance \(instance.folderName) by title")
+                    return content
+                }
+            }
+            
+            // Also check window content for matching
             if let content = extractTextFromWindow(window),
                windowContainsInstance(content: content, instance: instance),
                content.contains("esc to interrupt") {
+                logger.debug("Found matching window for instance \(instance.folderName) by content")
                 return content
             }
         }
@@ -157,16 +176,47 @@ final class ClaudeStatusExtractor: ObservableObject, Loggable {
     // MARK: - ScreenCaptureKit-based Extraction
     
     private nonisolated func extractViaScreenCapture(instance: ClaudeInstance) async -> String? {
-        logger.debug("Attempting ScreenCaptureKit extraction for \(instance.folderName)")
+        logger.debug("Attempting ScreenCaptureKit extraction for \(instance.folderName) with TTY: \(instance.ttyPath)")
         
         do {
             let content = try await SCShareableContent.excludingDesktopWindows(false, onScreenWindowsOnly: true)
             
-            for window in content.windows {
+            // Sort windows by how well they match the instance
+            let matchingWindows = content.windows.compactMap { window -> (window: SCWindow, score: Int)? in
                 guard let windowTitle = window.title,
                       let appName = window.owningApplication?.applicationName,
-                      isTerminalApp(appName),
-                      windowMatchesInstance(title: windowTitle, instance: instance) else {
+                      isTerminalApp(appName) else {
+                    return nil
+                }
+                
+                var score = 0
+                
+                // TTY match is most specific (highest score)
+                if !instance.ttyPath.isEmpty {
+                    let ttyName = URL(fileURLWithPath: instance.ttyPath).lastPathComponent
+                    if windowTitle.contains(ttyName) {
+                        score += 100
+                    }
+                }
+                
+                // Full working directory match
+                if windowTitle.contains(instance.workingDirectory) {
+                    score += 50
+                }
+                
+                // Folder name match (less specific)
+                if instance.folderName.count > 3 && windowTitle.contains(instance.folderName) {
+                    score += 10
+                }
+                
+                return score > 0 ? (window, score) : nil
+            }.sorted { $0.score > $1.score }
+            
+            // Try the best matching window first
+            for (window, score) in matchingWindows {
+                logger.debug("Trying window '\(window.title ?? "")' with match score \(score) for instance \(instance.folderName)")
+                
+                guard let windowTitle = window.title else {
                     continue
                 }
                 
@@ -323,13 +373,59 @@ final class ClaudeStatusExtractor: ObservableObject, Loggable {
     }
     
     private nonisolated func windowContainsInstance(content: String, instance: ClaudeInstance) -> Bool {
-        content.contains(instance.workingDirectory) || content.contains(instance.folderName)
+        // First check if TTY is mentioned in the content
+        if !instance.ttyPath.isEmpty {
+            let ttyName = URL(fileURLWithPath: instance.ttyPath).lastPathComponent
+            if content.contains(ttyName) {
+                logger.debug("Window content matches instance by TTY: \(ttyName)")
+                return true
+            }
+        }
+        
+        // Then check for specific working directory (more specific than just folder name)
+        if content.contains(instance.workingDirectory) {
+            logger.debug("Window content matches instance by working directory: \(instance.workingDirectory)")
+            return true
+        }
+        
+        // Last resort: check folder name, but only if it's reasonably unique
+        if instance.folderName.count > 3 && instance.folderName != "/" && 
+           content.contains(instance.folderName) {
+            logger.debug("Window content matches instance by folder name: \(instance.folderName)")
+            return true
+        }
+        
+        return false
     }
     
     private nonisolated func windowMatchesInstance(title: String, instance: ClaudeInstance) -> Bool {
-        title.contains(instance.folderName) ||
-        title.contains(instance.workingDirectory) ||
-        title.contains("Claude")
+        // First check if TTY is in the title (most specific)
+        if !instance.ttyPath.isEmpty {
+            let ttyName = URL(fileURLWithPath: instance.ttyPath).lastPathComponent
+            if title.contains(ttyName) {
+                logger.debug("Window title matches instance by TTY: \(ttyName)")
+                return true
+            }
+        }
+        
+        // Check for full working directory path in title
+        if title.contains(instance.workingDirectory) {
+            logger.debug("Window title matches instance by working directory: \(instance.workingDirectory)")
+            return true
+        }
+        
+        // Check folder name only if it's specific enough
+        if instance.folderName.count > 3 && instance.folderName != "/" &&
+           title.contains(instance.folderName) {
+            // Make sure it's not just a partial match
+            let components = title.components(separatedBy: "/")
+            if components.contains(instance.folderName) {
+                logger.debug("Window title matches instance by folder name: \(instance.folderName)")
+                return true
+            }
+        }
+        
+        return false
     }
     
     private nonisolated func isTerminalApp(_ appName: String) -> Bool {

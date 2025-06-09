@@ -38,6 +38,8 @@ let package = Package(
         .package(url: "https://github.com/hummingbird-project/hummingbird.git", from: "2.5.0"),
         // Development-only dependencies
         .package(url: "https://github.com/cpisciotta/xcbeautify", from: "2.28.0"),
+        // Testing
+        .package(url: "https://github.com/swiftlang/swift-testing", from: "0.13.0"),
     ],
     targets: [
         .target(

@@ -11,23 +11,12 @@ struct ClaudeInstancesList: View {
     @Default(.showDebugTab) private var showDebugInfo
 
     var body: some View {
-        VStack(alignment: .leading, spacing: Spacing.small) {
-            // Header
-            HStack {
-                Image(systemName: "terminal.fill")
-                    .font(.caption)
-                    .foregroundColor(ColorPalette.textSecondary)
-
-                Text("Claude Instances (\(claudeMonitor.instances.count))")
-                    .font(Typography.caption1(.semibold))
-                    .foregroundColor(ColorPalette.text)
-            }
-
+        VStack(alignment: .leading, spacing: Spacing.xSmall) {
             if claudeMonitor.instances.isEmpty {
                 Text("No Claude instances detected")
                     .font(Typography.caption1())
                     .foregroundColor(ColorPalette.textSecondary)
-                    .padding(.leading, 10)
+                    .padding(.horizontal, Spacing.small)
             } else {
                 ForEach(claudeMonitor.instances) { instance in
                     ClaudeInstanceRow(instance: instance, showDebugInfo: showDebugInfo)
@@ -49,119 +38,60 @@ private struct ClaudeInstanceRow: View {
 
     var body: some View {
         DSCard {
-            HStack(spacing: Spacing.small) {
-                // Terminal icon
-                Image(systemName: "terminal")
-                    .foregroundColor(ColorPalette.loopTint)
-                    .font(.system(size: 14))
+            HStack(alignment: .top, spacing: Spacing.xSmall) {
+                // Activity status icon
+                Image(systemName: instance.currentActivity.type.icon)
+                    .foregroundColor(activityColor(for: instance.currentActivity.type))
+                    .font(.system(size: 12))
 
-                VStack(alignment: .leading, spacing: 2) {
-                    // Folder name
-                    Text(instance.folderName)
-                        .font(Typography.body(.medium))
-                        .foregroundColor(ColorPalette.text)
-                        .lineLimit(1)
-
-                    // Working directory path
+                VStack(alignment: .leading, spacing: 1) {
+                    // Folder name and status in one line
                     HStack(spacing: Spacing.xxSmall) {
-                        Image(systemName: "folder")
-                            .font(.caption2)
-                            .foregroundColor(isHovering ? ColorPalette.accent : ColorPalette.textSecondary)
-
-                        Text(instance.workingDirectory)
-                            .font(Typography.caption2())
-                            .foregroundColor(isHovering ? ColorPalette.accent : ColorPalette.textSecondary)
-                            .underline(isHovering, color: ColorPalette.accent)
+                        Text(instance.folderName)
+                            .font(Typography.caption1(.medium))
+                            .foregroundColor(ColorPalette.text)
                             .lineLimit(1)
-                            .truncationMode(.middle)
-                    }
-                    
-                    // Status with icon
-                    HStack(spacing: Spacing.xxSmall) {
-                        Image(systemName: instance.status.icon)
-                            .font(.caption2)
-                            .foregroundColor(ColorPalette.textTertiary)
                         
-                        Text(instance.status.displayName)
-                            .font(Typography.caption2())
-                            .foregroundColor(ColorPalette.textTertiary)
-                            .lineLimit(1)
-                    }
-                    
-                    // Current activity with enhanced visual design
-                    VStack(alignment: .leading, spacing: 2) {
-                        HStack(spacing: Spacing.xxSmall) {
-                            Image(systemName: instance.currentActivity.type.icon)
-                                .font(.caption2)
-                                .foregroundColor(activityColor(for: instance.currentActivity.type))
-                            
-                            Text("Activity:")
-                                .font(Typography.caption2(.semibold))
-                                .foregroundColor(ColorPalette.textSecondary)
-                            
-                            // Show duration if available
-                            if let duration = instance.currentActivity.duration {
-                                Text("(\(Int(duration))s)")
-                                    .font(Typography.caption2())
-                                    .foregroundColor(ColorPalette.textTertiary)
-                            }
-                        }
+                        Spacer()
                         
-                        HStack(spacing: Spacing.xxSmall) {
-                            Text(instance.currentActivity.text)
-                                .font(Typography.caption1(.medium))
-                                .foregroundColor(activityColor(for: instance.currentActivity.type))
-                                .lineLimit(2)
-                                .fixedSize(horizontal: false, vertical: true)
-                            
-                            Spacer()
-                            
-                            // Show token count if available
-                            if let tokenCount = instance.currentActivity.tokenCount {
-                                Text("\(formatTokenCount(tokenCount))")
-                                    .font(Typography.caption2())
-                                    .foregroundColor(ColorPalette.textTertiary)
-                                    .padding(.horizontal, 4)
-                                    .padding(.vertical, 1)
-                                    .background(ColorPalette.backgroundTertiary)
-                                    .cornerRadius(3)
-                            }
-                        }
-                        .padding(.leading, 16)
-                    }
-                    .padding(.top, 2)
-                }
-
-                Spacer()
-
-                VStack(alignment: .trailing, spacing: 2) {
-                    Text("PID: \(instance.pid)")
-                        .font(Typography.caption2())
-                        .foregroundColor(ColorPalette.textSecondary)
-                    
-                    if !instance.ttyPath.isEmpty {
+                        // PID and TTY in compact form
                         if showDebugInfo {
-                            // Show full TTY path in debug mode
-                            Text("TTY: \(instance.ttyPath)")
+                            Text("PID: \(instance.pid)")
                                 .font(Typography.caption2())
                                 .foregroundColor(ColorPalette.textTertiary)
-                        } else {
-                            // Show just the TTY name normally
-                            Text("TTY: \(URL(fileURLWithPath: instance.ttyPath).lastPathComponent)")
+                        }
+                        
+                        if !instance.ttyPath.isEmpty {
+                            Text(URL(fileURLWithPath: instance.ttyPath).lastPathComponent)
                                 .font(Typography.caption2())
                                 .foregroundColor(ColorPalette.textTertiary)
                         }
                     }
-                    
-                    // Show instance ID in debug mode
-                    if showDebugInfo {
-                        Text("ID: \(instance.id)")
+
+                    // Activity status with duration and tokens
+                    HStack(spacing: Spacing.xxSmall) {
+                        Text(instance.currentActivity.text)
                             .font(Typography.caption2())
-                            .foregroundColor(ColorPalette.textTertiary)
-                            .italic()
+                            .foregroundColor(activityColor(for: instance.currentActivity.type))
+                            .lineLimit(1)
+                        
+                        // Duration
+                        if let duration = instance.currentActivity.duration {
+                            Text("• \(Int(duration))s")
+                                .font(Typography.caption2())
+                                .foregroundColor(ColorPalette.textTertiary)
+                        }
+                        
+                        // Token count
+                        if let tokenCount = instance.currentActivity.tokenCount {
+                            Text("• \(formatTokenCount(tokenCount))")
+                                .font(Typography.caption2())
+                                .foregroundColor(ColorPalette.textTertiary)
+                        }
                     }
                 }
             }
+            .padding(.vertical, 2)
         }
         .opacity(isHovering ? 1.0 : 0.95)
         .scaleEffect(isHovering ? 1.01 : 1.0)
