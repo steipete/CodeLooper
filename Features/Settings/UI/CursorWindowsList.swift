@@ -77,7 +77,7 @@ private struct WindowRow: View {
 
     var body: some View {
         DSCard {
-            VStack(alignment: .leading, spacing: Spacing.small) {
+            VStack(alignment: .leading, spacing: style == .popover ? Spacing.xSmall : Spacing.small) {
                 // Header row
                 HStack(alignment: .top) {
                     windowIcon
@@ -86,15 +86,15 @@ private struct WindowRow: View {
                     jsHookStatus
                 }
 
-                // AI Status row
-                if isGlobalMonitoringEnabled {
+                // AI Status row - more compact for popover
+                if isGlobalMonitoringEnabled && style == .popover {
+                    compactAiStatusRow
+                } else if isGlobalMonitoringEnabled {
                     aiStatusRow
                 }
 
-                // AI Analysis details are now merged into aiStatusRow
-
-                // Git repository info
-                if let gitRepo = windowState.gitRepository {
+                // Git repository info - only show in settings
+                if style == .settings, let gitRepo = windowState.gitRepository {
                     gitRepositoryInfo(gitRepo)
                 }
             }
@@ -295,6 +295,27 @@ private struct WindowRow: View {
             }
         }
         .padding(.top, Spacing.xxSmall)
+    }
+    
+    @ViewBuilder
+    private var compactAiStatusRow: some View {
+        HStack(spacing: Spacing.xSmall) {
+            Image(systemName: "circle.fill")
+                .font(.system(size: 8))
+                .foregroundColor(aiStatusColor(windowState.lastAIAnalysisStatus))
+            
+            Text("AI: \(windowState.lastAIAnalysisStatus.displayName)")
+                .font(Typography.caption2())
+                .foregroundColor(ColorPalette.textSecondary)
+            
+            Spacer()
+            
+            if let timestamp = windowState.lastAIAnalysisTimestamp {
+                Text(timestamp, style: .relative)
+                    .font(.system(size: 10))
+                    .foregroundColor(ColorPalette.textTertiary)
+            }
+        }
     }
 
     @ViewBuilder
