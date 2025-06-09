@@ -26,7 +26,7 @@ let project = Project(
         .remote(url: "https://github.com/sindresorhus/KeyboardShortcuts", requirement: .upToNextMajor(from: "2.0.0")),
         .remote(url: "https://github.com/orchetect/MenuBarExtraAccess.git", requirement: .upToNextMajor(from: "1.2.1")),
         .remote(url: "https://github.com/MacPaw/OpenAI", requirement: .upToNextMajor(from: "0.3.0")),
-        .remote(url: "https://github.com/loopwork-ai/ollama-swift", requirement: .upToNextMajor(from: "1.0.0")),
+        .local(path: "../ollama-swift"),
         .remote(url: "https://github.com/hummingbird-project/hummingbird.git", requirement: .upToNextMajor(from: "2.5.0")),
         .remote(url: "https://github.com/apple/swift-testing.git", requirement: .upToNextMajor(from: "0.12.0")),
         .local(path: "AXorcist"),

@@ -33,13 +33,14 @@ let package = Package(
         .package(url: "https://github.com/orchetect/MenuBarExtraAccess.git", .upToNextMajor(from: "1.2.1")),
         // AI and image analysis dependencies
         .package(url: "https://github.com/MacPaw/OpenAI", .upToNextMajor(from: "0.4.3")),
-        .package(url: "https://github.com/loopwork-ai/ollama-swift", .upToNextMajor(from: "1.5.0")),
+        .package(path: "../ollama-swift"),
         // HTTP server
         .package(url: "https://github.com/hummingbird-project/hummingbird.git", from: "2.5.0"),
         // Development-only dependencies
         .package(url: "https://github.com/cpisciotta/xcbeautify", from: "2.28.0"),
         // Testing
-        .package(url: "https://github.com/swiftlang/swift-testing", from: "0.13.0"),
+        // Temporarily disabled due to swift-syntax version conflict with Defaults
+        // .package(url: "https://github.com/swiftlang/swift-testing", from: "0.12.0"),
     ],
     targets: [
         .target(
@@ -132,7 +133,7 @@ let package = Package(
             dependencies: [
                 "CodeLooper",
                 "Diagnostics",
-                .product(name: "Testing", package: "swift-testing"),
+                // .product(name: "Testing", package: "swift-testing"),
             ],
             path: "Tests",
             swiftSettings: [

@@ -4,6 +4,11 @@ import Foundation
 import OSLog
 @preconcurrency import UserNotifications
 
+/// Box to safely pass NSImage across concurrency boundaries
+private struct ImageBox: @unchecked Sendable {
+    let image: NSImage
+}
+
 /// Class for showing visual success feedback after a contact upload completes
 @MainActor
 class UploadCompletionFeedback {
@@ -117,6 +122,7 @@ class UploadCompletionFeedback {
 
         // Create a success check mark icon
         let successIcon = createSuccessIcon()
+        let imageBox = ImageBox(image: successIcon)
 
         // Update the tooltip
         button.toolTip = "Contact upload completed successfully!"
@@ -130,18 +136,21 @@ class UploadCompletionFeedback {
                 // Fade out current icon
                 button.animator().alphaValue = 0
 
-            }, completionHandler: {
+            }, completionHandler: { [weak button] in
                 // Replace icon and fade back in
-                button.image = successIcon
+                Task { @MainActor [imageBox] in
+                    guard let button else { return }
+                    button.image = imageBox.image
 
-                NSAnimationContext.runAnimationGroup({ context in
-                    context.duration = 0.3
-                    context.timingFunction = CAMediaTimingFunction(name: .easeInEaseOut)
-                    button.animator().alphaValue = 1.0
-                }, completionHandler: {
-                    // Complete the async operation
-                    continuation.resume()
-                })
+                    NSAnimationContext.runAnimationGroup({ context in
+                        context.duration = 0.3
+                        context.timingFunction = CAMediaTimingFunction(name: .easeInEaseOut)
+                        button.animator().alphaValue = 1.0
+                    }, completionHandler: {
+                        // Complete the async operation
+                        continuation.resume()
+                    })
+                }
             })
         }
     }
@@ -149,6 +158,7 @@ class UploadCompletionFeedback {
     /// Restore the original icon with animation
     private func restoreOriginalIcon(to button: NSButton?, originalImage: NSImage?) async {
         guard let button, let originalImage else { return }
+        let imageBox = ImageBox(image: originalImage)
 
         // Animate back to original icon
         await withCheckedContinuation { continuation in
@@ -159,18 +169,21 @@ class UploadCompletionFeedback {
                 // Fade out success icon
                 button.animator().alphaValue = 0
 
-            }, completionHandler: {
+            }, completionHandler: { [weak button] in
                 // Replace with original icon and fade back in
-                button.image = originalImage
+                Task { @MainActor [imageBox] in
+                    guard let button else { return }
+                    button.image = imageBox.image
 
-                NSAnimationContext.runAnimationGroup({ context in
-                    context.duration = 0.3
-                    context.timingFunction = CAMediaTimingFunction(name: .easeInEaseOut)
-                    button.animator().alphaValue = 1.0
+                    NSAnimationContext.runAnimationGroup({ context in
+                        context.duration = 0.3
+                        context.timingFunction = CAMediaTimingFunction(name: .easeInEaseOut)
+                        button.animator().alphaValue = 1.0
                 }, completionHandler: {
                     // Complete the async operation
                     continuation.resume()
                 })
+                }
             })
         }
     }

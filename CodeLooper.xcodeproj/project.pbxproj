@@ -436,6 +436,7 @@
 		64121F794DD9A0E79182F1E0 /* InterventionStateChecker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InterventionStateChecker.swift; sourceTree = "<group>"; };
 		66D291C6C46A13EA5ABFFE32 /* AccessibilityPermissions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccessibilityPermissions.swift; sourceTree = "<group>"; };
 		684ADFED0C0657FCEEA078BA /* SettingsTab.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsTab.swift; sourceTree = "<group>"; };
+		68599CD24BE62C1DDDBBE786 /* ollama-swift */ = {isa = PBXFileReference; lastKnownFileType = folder; name = "ollama-swift"; path = "../ollama-swift"; sourceTree = "<group>"; };
 		6943FF4E98060C242A14D838 /* ScreenshotAnalyzer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreenshotAnalyzer.swift; sourceTree = "<group>"; };
 		6955584328FDBA7FA95B2D9A /* Task+Timeout.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Task+Timeout.swift"; sourceTree = "<group>"; };
 		69A663588B1C6DE7B23F48C5 /* MainPopoverView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainPopoverView.swift; sourceTree = "<group>"; };
@@ -629,6 +630,7 @@
 				606FD31E5CDAD9A2D805242B /* AXorcist */,
 				7413E3D792A60AC390808102 /* AXpector */,
 				CDAC1075ADD1DD56A1C7CC99 /* DesignSystem */,
+				68599CD24BE62C1DDDBBE786 /* ollama-swift */,
 			);
 			name = Packages;
 			sourceTree = "<group>";
@@ -1606,7 +1608,6 @@
 				BE5120F642B7D3169BB91EFE /* XCRemoteSwiftPackageReference "swift-testing" */,
 				275269C7E27AAA16EFEF2F09 /* XCRemoteSwiftPackageReference "hummingbird" */,
 				EEC18EC5457F52FFE4EE0759 /* XCRemoteSwiftPackageReference "KeychainAccess" */,
-				5C6849CD25343F2442AD744E /* XCRemoteSwiftPackageReference "ollama-swift" */,
 				41AB18DBE856539B065F5C79 /* XCRemoteSwiftPackageReference "MenuBarExtraAccess" */,
 				F977A8B24E9041EEA9D06982 /* XCRemoteSwiftPackageReference "Defaults" */,
 				06BB1D02BB1753D2B3E2EF52 /* XCRemoteSwiftPackageReference "KeyboardShortcuts" */,
@@ -1616,6 +1617,7 @@
 				015BA77169BA6C0C4393D8E2 /* XCLocalSwiftPackageReference "/Users/steipete/Projects/CodeLooper/AXorcist" */,
 				2F333F5A9F706191367AE0CB /* XCLocalSwiftPackageReference "/Users/steipete/Projects/CodeLooper/AXpector" */,
 				4482A0F0D7A4B6F4AF763A2D /* XCLocalSwiftPackageReference "/Users/steipete/Projects/CodeLooper/DesignSystem" */,
+				91ED33B05FC1631BE791FA0E /* XCLocalSwiftPackageReference "/Users/steipete/Projects/ollama-swift" */,
 			);
 			productRefGroup = 62DE123ABE72A0C7DA250733 /* Products */;
 			projectDirPath = "";
@@ -2342,6 +2344,10 @@
 			isa = XCLocalSwiftPackageReference;
 			relativePath = /Users/steipete/Projects/CodeLooper/DesignSystem;
 		};
+		91ED33B05FC1631BE791FA0E /* XCLocalSwiftPackageReference "/Users/steipete/Projects/ollama-swift" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = "/Users/steipete/Projects/ollama-swift";
+		};
 /* End XCLocalSwiftPackageReference section */
 
 /* Begin XCRemoteSwiftPackageReference section */
@@ -2375,14 +2381,6 @@
 			requirement = {
 				kind = upToNextMajorVersion;
 				minimumVersion = 0.9.0;
-			};
-		};
-		5C6849CD25343F2442AD744E /* XCRemoteSwiftPackageReference "ollama-swift" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/loopwork-ai/ollama-swift";
-			requirement = {
-				kind = upToNextMajorVersion;
-				minimumVersion = 1.0.0;
 			};
 		};
 		804E557B8AB1A983E6336E7D /* XCRemoteSwiftPackageReference "Demark" */ = {

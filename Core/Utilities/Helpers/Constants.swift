@@ -7,7 +7,7 @@ import SwiftUI
 ///
 /// UIConstantsProvider ensures all UI components use standardized dimensions,
 /// animation durations, and layout parameters for a cohesive user experience.
-public protocol UIConstantsProvider {
+public protocol UIConstantsProvider: Sendable {
     /// Standard window size for settings
     static var settingsWindowSize: NSSize { get }
 
@@ -107,7 +107,7 @@ extension Color {
 // UI Constants extension for general use
 public enum UserInterfaceConstants {
     /// The current UI constants provider to use throughout the app
-    public static let constants: UIConstantsProvider.Type = Constants.self
+    public static let constants: any UIConstantsProvider.Type = Constants.self
 }
 
 // MARK: - Permission Types

@@ -114,10 +114,12 @@ public enum GitClientLauncher {
             withApplicationAt: appURL,
             configuration: configuration
         ) { app, error in
-            if let error {
-                logger.error("Failed to open Git client: \(error.localizedDescription)")
-            } else if let app {
-                logger.info("Successfully launched \(app.localizedName ?? "Git client")")
+            Task { @MainActor in
+                if let error {
+                    logger.error("Failed to open Git client: \(error.localizedDescription)")
+                } else if let app {
+                    logger.info("Successfully launched \(app.localizedName ?? "Git client")")
+                }
             }
         }
 

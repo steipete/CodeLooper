@@ -155,7 +155,7 @@ public enum AsyncPatterns {
         sequence: S,
         bufferSize: Int = 100,
         processor: @escaping @Sendable (S.Element) async throws -> T
-    ) async -> AsyncStream<Result<T, Error>> where S: AsyncSequence & Sendable, S.Element: Sendable {
+    ) async -> AsyncStream<Result<T, Error>> where S: AsyncSequence & Sendable, S.Element: Sendable, S.AsyncIterator: Sendable {
         AsyncStream { continuation in
             Task {
                 var buffer: [S.Element] = []
