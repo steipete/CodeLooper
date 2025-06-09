@@ -178,7 +178,7 @@ struct MainPopoverView: View {
             }
         }
         .frame(width: 380) // Reduced width for more compact appearance
-        .background(Color(NSColor.windowBackgroundColor))
+        .background(Material.ultraThinMaterial)
         .animation(.default, value: isGlobalMonitoringEnabled)
         .animation(.default, value: diagnosticsManager.windowStates.count)
         .animation(.default, value: claudeMonitor.instances.count)
