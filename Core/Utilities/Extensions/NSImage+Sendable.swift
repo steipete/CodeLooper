@@ -5,4 +5,4 @@ import Foundation
 ///
 /// NSImage is a reference type but is immutable after creation in our use cases,
 /// so it's safe to mark as Sendable with @unchecked.
-extension NSImage: @unchecked Sendable {}
+extension NSImage: @unchecked @retroactive Sendable {}

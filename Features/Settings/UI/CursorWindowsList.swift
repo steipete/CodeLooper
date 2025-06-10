@@ -72,6 +72,7 @@ private struct WindowRow: View {
     @State private var isHoveringGitStatus = false
     @State private var showDebugPopover = false
     @State private var showMarkdownPopover = false
+    @State private var showScreenshotPopover = false
 
     private static let logger = Logger(category: .ui)
 
@@ -244,6 +245,22 @@ private struct WindowRow: View {
                     .help("View Sidebar Content")
                     .popover(isPresented: $showMarkdownPopover) {
                         MarkdownContentPopover(window: windowState, viewModel: inputWatcherViewModel)
+                    }
+
+                    // Show screenshot viewer - only when debug mode is enabled
+                    if Defaults[.showDebugTab] {
+                        Button(action: {
+                            showScreenshotPopover = true
+                        }, label: {
+                            Image(systemName: "eye")
+                                .font(.system(size: 12))
+                                .foregroundColor(ColorPalette.loopTint)
+                        })
+                        .buttonStyle(.plain)
+                        .help("View Window Screenshot")
+                        .popover(isPresented: $showScreenshotPopover) {
+                            WindowScreenshotPopover(windowState: windowState)
+                        }
                     }
                 } else {
                     // Show inject button when not hooked

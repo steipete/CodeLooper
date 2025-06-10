@@ -5,7 +5,7 @@ import SwiftUI
 struct SettingsContainerView: View {
     // MARK: Internal
 
-    @EnvironmentObject var viewModel: MainSettingsViewModel
+    @Environment(MainSettingsViewModel.self) var viewModel
     @Default(.debugMode) private var debugMode
 
     var body: some View {

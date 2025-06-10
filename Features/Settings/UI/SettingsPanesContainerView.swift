@@ -33,13 +33,16 @@ extension View {
 struct SettingsPanesContainerView: View {
     // MARK: Internal
 
-    @EnvironmentObject var mainSettingsViewModel: MainSettingsViewModel
+    @Environment(MainSettingsViewModel.self) private var mainSettingsViewModel
     @EnvironmentObject var sessionLogger: SessionLogger // Assuming SessionLogger is provided higher up
     @Default(.debugMode) private var debugMode
 
     var body: some View {
         VStack(spacing: 0) { // Use VStack to manage TabView and Footer
-            TabView(selection: $mainSettingsViewModel.selectedTab) { // Bind selection to ViewModel
+            TabView(selection: Binding(
+                get: { mainSettingsViewModel.selectedTab },
+                set: { mainSettingsViewModel.selectedTab = $0 }
+            )) { // Bind selection to ViewModel
                 GeneralSettingsView(updaterViewModel: mainSettingsViewModel.updaterViewModel)
                     .readHeight() // Apply readHeight
                     .tabItem {
@@ -105,7 +108,7 @@ struct SettingsPanesContainerView: View {
                         .focused($focusedTab, equals: .debug)
                 }
             }
-            .environmentObject(mainSettingsViewModel) // Provide to tabs that need it
+            .environment(mainSettingsViewModel) // Provide to tabs that need it
             // .frame(maxWidth: .infinity, maxHeight: .infinity) // Remove fixed max height
             .frame(idealHeight: idealContentHeight, maxHeight: idealContentHeight) // Apply dynamic height
             .onPreferenceChange(IdealHeightPreferenceKey.self) { newHeight in
@@ -156,7 +159,7 @@ struct SettingsPanesContainerView: View {
             let dummyUpdaterViewModel = UpdaterViewModel(sparkleUpdaterManager: dummySparkleUpdaterManager)
 
             SettingsPanesContainerView()
-                .environmentObject(MainSettingsViewModel(
+                .environment(MainSettingsViewModel(
                     loginItemManager: LoginItemManager.shared,
                     updaterViewModel: dummyUpdaterViewModel
                 ))

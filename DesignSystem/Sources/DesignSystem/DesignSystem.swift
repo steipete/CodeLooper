@@ -16,6 +16,7 @@ import SwiftUI
 ///
 /// ### Components
 /// - ``DSButton``
+/// - ``DSIconButton``
 /// - ``DSCard``
 /// - ``DSTextField``
 /// - ``DSToggle``

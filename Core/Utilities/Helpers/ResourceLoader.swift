@@ -133,9 +133,9 @@ public extension Constants {
     // Load the app logo icon - making it MainActor-bound for Swift 6 concurrency safety
     @MainActor
     static func loadAppLogo() -> NSImage? {
-        let logoImage = NSImage.loadResourceImage(named: "menu-bar-icon") ??
-            NSImage.loadResourceImage(named: "symbol") ??
-            NSImage.loadResourceImage(named: "logo")
+        let logoImage = ResourceLoader.loadImageResource(named: "menu-bar-icon") ??
+            ResourceLoader.loadImageResource(named: "symbol") ??
+            ResourceLoader.loadImageResource(named: "logo")
 
         return logoImage ?? NSImage(systemSymbolName: "circle.dashed", accessibilityDescription: "CodeLooper")
     }

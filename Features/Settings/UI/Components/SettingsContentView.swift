@@ -23,7 +23,7 @@ struct SettingsContentView: View {
         }
         .background(Color(NSColor.windowBackgroundColor))
         .withDesignSystem()
-        .environmentObject(viewModel)
+        .environment(viewModel)
         .environmentObject(SessionLogger.shared)
         .onChange(of: debugMode) { _, newValue in
             if !newValue, currentTab == .debug {

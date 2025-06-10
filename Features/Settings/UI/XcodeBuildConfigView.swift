@@ -22,7 +22,7 @@ struct XcodeBuildConfigView: View {
     @Binding var isPresented: Bool
 
     // Access to MainSettingsViewModel to save and refresh
-    @EnvironmentObject var viewModel: MainSettingsViewModel
+    @Environment(MainSettingsViewModel.self) var viewModel
 
     var body: some View {
         VStack(alignment: .leading, spacing: 20) {
@@ -114,7 +114,7 @@ extension MainSettingsViewModel {
             // e.g., mockViewModel.mcpConfigManager.updateMCPConfiguration(...)
 
             XcodeBuildConfigView(isPresented: .constant(true))
-                .environmentObject(mockViewModel)
+                .environment(mockViewModel)
         }
     }
 #endif

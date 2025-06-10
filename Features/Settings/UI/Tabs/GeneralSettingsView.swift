@@ -5,7 +5,7 @@ import KeyboardShortcuts
 import SwiftUI
 
 struct GeneralSettingsView: View {
-    @EnvironmentObject var mainSettingsViewModel: MainSettingsViewModel
+    @Environment(MainSettingsViewModel.self) var mainSettingsViewModel
     @Default(.automaticallyCheckForUpdates)
     var automaticallyCheckForUpdates
     @Default(.receivePreReleaseUpdates)

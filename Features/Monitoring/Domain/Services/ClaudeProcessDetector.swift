@@ -223,11 +223,19 @@ final class ClaudeProcessDetector: Loggable, @unchecked Sendable {
         let lowercasedArgs = arguments.lowercased()
         
         // Exclude MCP server processes - these are not Claude CLI instances
-        if lowercasedArgs.contains("/mcp/") || lowercasedArgs.contains("\\mcp\\") ||
-           lowercasedArgs.contains("mcp-server") || lowercasedArgs.contains("mcp_server") ||
-           lowercasedArgs.contains("@modelcontextprotocol") {
-            logger.debug("Excluding MCP server process")
-            return false
+        // Use generic patterns instead of hardcoded names since there are many different MCP servers
+        let mcpExclusionPatterns = [
+            "/mcp/", "\\mcp\\",
+            "mcp-server", "mcp_server",
+            "@modelcontextprotocol",
+            "-mcp", "_mcp" // Generic patterns for MCP servers
+        ]
+        
+        for pattern in mcpExclusionPatterns {
+            if lowercasedArgs.contains(pattern) {
+                logger.debug("Excluding MCP server process (pattern: \(pattern))")
+                return false
+            }
         }
         
         // Parse the KERN_PROCARGS2 format

@@ -125,7 +125,7 @@ struct MainPopoverView: View {
                 }
                 .padding(.bottom, Spacing.small)
             }
-            .frame(minHeight: 100, maxHeight: 400) // Dynamic height with limits
+            .frame(minHeight: 100) // Dynamic height that expands as needed
 
             // Fixed footer section
             VStack(spacing: 0) {
@@ -166,12 +166,15 @@ struct MainPopoverView: View {
 
                     Spacer()
 
-                    Button("Quit") {
+                    Button(action: {
                         NSApp.terminate(nil)
-                    }
+                    }, label: {
+                        Image(systemName: "power")
+                            .font(.system(size: 14, weight: .medium))
+                            .foregroundColor(ColorPalette.error)
+                    })
                     .buttonStyle(.plain)
-                    .font(Typography.caption1())
-                    .foregroundColor(ColorPalette.text)
+                    .help("Quit CodeLooper (⌘Q)")
                 }
                 .padding(.horizontal, Spacing.medium)
                 .padding(.vertical, Spacing.small)
@@ -247,74 +250,7 @@ struct MainPopoverView: View {
     }
 }
 
-// MARK: - Status Indicators
-
-private struct StatusIndicators: View {
-    let runningCount: Int
-    let notRunningCount: Int
-    
-    var body: some View {
-        HStack(spacing: 4) {
-            if runningCount > 0 {
-                StatusBadge(
-                    count: runningCount,
-                    icon: "play.fill",
-                    color: Color(red: 0.2, green: 0.8, blue: 0.2)
-                )
-            }
-            
-            if notRunningCount > 0 {
-                StatusBadge(
-                    count: notRunningCount,
-                    icon: "stop.fill",
-                    color: Color(red: 0.9, green: 0.3, blue: 0.3)
-                )
-            }
-        }
-    }
-}
-
-private struct StatusBadge: View {
-    let count: Int
-    let icon: String
-    let color: Color
-    
-    @State private var isHovered = false
-    
-    var body: some View {
-        HStack(spacing: 2) {
-            ZStack {
-                Circle()
-                    .fill(color.opacity(isHovered ? 1.0 : 0.85))
-                    .frame(width: 16, height: 16)
-                
-                Image(systemName: icon)
-                    .font(.system(size: 9, weight: .semibold))
-                    .foregroundColor(.white)
-            }
-            
-            Text("\(count)")
-                .font(.system(size: 12, weight: .medium, design: .rounded))
-                .foregroundColor(color)
-        }
-        .padding(.horizontal, 4)
-        .padding(.vertical, 1)
-        .background(
-            RoundedRectangle(cornerRadius: 10)
-                .fill(color.opacity(0.15))
-                .overlay(
-                    RoundedRectangle(cornerRadius: 10)
-                        .strokeBorder(color.opacity(0.2), lineWidth: 0.5)
-                )
-        )
-        .scaleEffect(isHovered ? 1.05 : 1.0)
-        .animation(.easeInOut(duration: 0.2), value: isHovered)
-        .onHover { hovering in
-            isHovered = hovering
-        }
-        .help(icon == "play.fill" ? "\(count) instance\(count == 1 ? "" : "s") running" : "\(count) instance\(count == 1 ? "" : "s") stopped")
-    }
-}
+// Status indicators are now handled by the shared StatusIndicators component
 
 // MARK: - Preview
 

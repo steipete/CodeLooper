@@ -1,4 +1,3 @@
-import Combine
 import Defaults
 import Diagnostics
 import Foundation
@@ -9,7 +8,7 @@ import SwiftUI
 /// ViewModel for the Settings view - simplified for CodeLooper
 @MainActor
 @Observable
-public final class MainSettingsViewModel: ObservableObject {
+public final class MainSettingsViewModel {
     // MARK: Lifecycle
 
     // MARK: - Initialization
@@ -187,7 +186,6 @@ public final class MainSettingsViewModel: ObservableObject {
     var xcodeBuildIncrementalBuilds: Bool = false
     var xcodeBuildSentryDisabled: Bool = false
 
-    var defaultsObservations = Set<AnyCancellable>()
 
     // Global Shortcut
 

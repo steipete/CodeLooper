@@ -52,6 +52,9 @@ public final class AppDelegate: NSObject, NSApplicationDelegate, ObservableObjec
     public static var shared: AppDelegate? {
         NSApp.delegate as? AppDelegate
     }
+    
+    // Status bar controller - initialized later
+    private var statusBarController: StatusBarController?
 
     // View models and coordinators
     public var mainSettingsCoordinator: MainSettingsCoordinator?
@@ -97,6 +100,9 @@ public final class AppDelegate: NSObject, NSApplicationDelegate, ObservableObjec
 
         // Initialize core services FIRST
         initializeServices() // Ensure windowManager and other services are ready
+        
+        // Initialize status bar controller after services are ready
+        statusBarController = StatusBarController.shared
 
         // Sync login item state with user preference after services are up
         if !Constants.isTestEnvironment {
@@ -297,7 +303,7 @@ public final class AppDelegate: NSObject, NSApplicationDelegate, ObservableObjec
         loginItemManager = LoginItemManager.shared
 
         _ = self.locatorManager
-        _ = MenuBarIconManager.shared // Ensure shared instance is initialized
+        // Note: MenuBarIconManager removed - now using SwiftUI MenuBarExtra in CodeLooperApp.swift
 
         // Initialize Sparkle with error handling to prevent dialogs
         sparkleUpdaterManager = SparkleUpdaterManager()
@@ -399,6 +405,7 @@ public final class AppDelegate: NSObject, NSApplicationDelegate, ObservableObjec
         // Initialize WelcomeWindowCoordinator to ensure it's listening for notifications
         _ = WelcomeWindowCoordinator.shared
 
+
         logger.info("Application startup completed successfully")
     }
 
@@ -418,7 +425,7 @@ public final class AppDelegate: NSObject, NSApplicationDelegate, ObservableObjec
     @objc private func handleShowSettingsNotification() {
         Task { @MainActor in
             logger.info("Received request to show settings from another instance")
-            SettingsService.openSettingsSubject.send()
+            MainSettingsCoordinator.shared.showSettings()
             NSApp.activate(ignoringOtherApps: true)
         }
     }
@@ -513,6 +520,7 @@ public final class AppDelegate: NSObject, NSApplicationDelegate, ObservableObjec
                 .error("Failed to start AX observation for Cursor via AXorcist. Error: \(message), Code: \(code)")
         }
     }
+
 
     // MARK: - Global Tint Setup
 

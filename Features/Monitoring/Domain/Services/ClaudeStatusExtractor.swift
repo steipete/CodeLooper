@@ -94,18 +94,20 @@ final class ClaudeStatusExtractor: ObservableObject, Loggable {
             // Check if this window matches our instance
             if windowMatchesInstance(title: windowTitle, instance: instance) {
                 if let content = extractTextFromWindow(window),
-                   content.contains("esc to interrupt") {
-                    logger.debug("Found matching window for instance \(instance.folderName) by title")
-                    return content
+                   let recentContent = extractRecentTerminalContent(content),
+                   recentContent.contains("esc to interrupt") {
+                    logger.debug("Found matching window for instance \(instance.folderName) by title with recent activity")
+                    return recentContent
                 }
             }
             
             // Also check window content for matching
             if let content = extractTextFromWindow(window),
                windowContainsInstance(content: content, instance: instance),
-               content.contains("esc to interrupt") {
-                logger.debug("Found matching window for instance \(instance.folderName) by content")
-                return content
+               let recentContent = extractRecentTerminalContent(content),
+               recentContent.contains("esc to interrupt") {
+                logger.debug("Found matching window for instance \(instance.folderName) by content with recent activity")
+                return recentContent
             }
         }
         
@@ -257,7 +259,8 @@ final class ClaudeStatusExtractor: ObservableObject, Loggable {
     
     private nonisolated func extractTextFromImage(_ image: CGImage) async -> String? {
         await withCheckedContinuation { continuation in
-            Task.detached(priority: .userInitiated) {
+            // Use DispatchQueue with utility QoS for Vision framework operations (background AI processing)
+            DispatchQueue.global(qos: .utility).async {
                 // Preprocess image for better OCR
                 guard let processedImage = self.preprocessImage(image) else {
                     continuation.resume(returning: nil)
@@ -432,5 +435,24 @@ final class ClaudeStatusExtractor: ObservableObject, Loggable {
         Configuration.supportedTerminals.contains { terminal in
             appName.lowercased().contains(terminal)
         }
+    }
+    
+    /// Extract only bottom 30% of terminal content for much faster OCR performance
+    private nonisolated func extractRecentTerminalContent(_ fullContent: String) -> String? {
+        let lines = fullContent.components(separatedBy: .newlines)
+        
+        // Only examine the bottom 30% of terminal content for current activity
+        // This significantly speeds up OCR while focusing on recent/current content
+        let totalLines = lines.count
+        let bottomPercentage = 0.3
+        let linesToExamine = max(5, Int(Double(totalLines) * bottomPercentage)) // At least 5 lines
+        let startIndex = max(0, totalLines - linesToExamine)
+        
+        let recentLines = Array(lines[startIndex...])
+        let recentContent = recentLines.joined(separator: "\n")
+        
+        // Only return content if it's not just empty lines
+        let trimmedContent = recentContent.trimmingCharacters(in: .whitespacesAndNewlines)
+        return trimmedContent.isEmpty ? nil : recentContent
     }
 }

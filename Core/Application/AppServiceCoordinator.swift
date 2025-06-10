@@ -125,8 +125,7 @@ final class AppServiceCoordinator {
         // Initialize login item manager
         loginItemManager = LoginItemManager.shared
 
-        // Initialize menu bar icon manager
-        _ = MenuBarIconManager.shared
+        // Note: MenuBarIconManager removed - now using SwiftUI MenuBarExtra in CodeLooperApp.swift
 
         // Setup settings coordinator
         setupSettingsCoordinator()
