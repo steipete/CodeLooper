@@ -210,32 +210,39 @@ class MenuBarIconManager: ObservableObject {
     private func createAIStatusAttributedString(working: Int, notWorking: Int, unknown: Int) -> AttributedString {
         var result = AttributedString()
         var hasContent = false
+        
+        let currentAppearance = getCurrentAppearance()
+        let isDark = currentAppearance == .darkAqua
 
-        func appendStatus(emoji: String, count: Int, color _: Color) {
+        func appendStatus(icon: String, count: Int, color: NSColor) {
             guard count > 0 else { return }
             if hasContent {
                 result.append(AttributedString(" "))
             }
-            let part = AttributedString("\(emoji)\(count)")
+            
+            // Create a simple, elegant display without background colors
+            var attributes = AttributeContainer()
+            attributes.font = NSFont.systemFont(ofSize: 11, weight: .medium)
+            attributes.foregroundColor = isDark ? NSColor.white : NSColor.black
+            
+            let statusString = "\(icon)\(count)"
+            let part = AttributedString(statusString, attributes: attributes)
+            
             result.append(part)
             hasContent = true
         }
 
-        // Define colors based on current appearance (though direct Text view modifiers are better)
-        let workingColor: Color = .green
-        let notWorkingColor: Color = .red
-        let unknownColor: Color = .orange
-
+        // Use simple Unicode symbols that look clean in the menu bar
         if working > 0 {
-            appendStatus(emoji: "🟢", count: working, color: workingColor)
+            appendStatus(icon: "▶", count: working, color: .systemGreen)
         }
         if notWorking > 0 {
-            appendStatus(emoji: "🔴", count: notWorking, color: notWorkingColor)
+            appendStatus(icon: "⏸", count: notWorking, color: .systemRed)
         }
         if unknown > 0, !hasContent {
-            appendStatus(emoji: "🟡", count: unknown, color: unknownColor)
+            appendStatus(icon: "○", count: unknown, color: .systemOrange)
         } else if unknown > 0, Defaults[.debugModeEnabled] {
-            appendStatus(emoji: "🟡", count: unknown, color: unknownColor)
+            appendStatus(icon: "○", count: unknown, color: .systemOrange)
         }
 
         if !hasContent {
