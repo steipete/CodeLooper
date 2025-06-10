@@ -54,6 +54,22 @@ private struct ClaudeInstanceRow: View {
                         
                         Spacer()
                         
+                        // Screenshot button when debug mode is enabled
+                        if showDebugInfo {
+                            Button(action: {
+                                showScreenshotPopover = true
+                            }, label: {
+                                Image(systemName: "eye")
+                                    .font(.system(size: 11))
+                                    .foregroundColor(ColorPalette.loopTint)
+                            })
+                            .buttonStyle(.plain)
+                            .help("View Terminal Screenshot")
+                            .popover(isPresented: $showScreenshotPopover) {
+                                ClaudeTerminalScreenshotPopover(instance: instance)
+                            }
+                        }
+                        
                         // PID and TTY in compact form
                         if showDebugInfo {
                             Text("PID: \(instance.pid)")
@@ -113,6 +129,7 @@ private struct ClaudeInstanceRow: View {
     
     private static let logger = Logger(category: .ui)
     @State private var isHovering = false
+    @State private var showScreenshotPopover = false
     
     // MARK: - Helper Functions
     

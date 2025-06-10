@@ -48,6 +48,7 @@
 		26DEF8E209C4E833EE8C2048 /* Ollama in Frameworks */ = {isa = PBXBuildFile; productRef = 0B727DC7A228F234F413942E /* Ollama */; };
 		2755A41A7569026C8F18778A /* DocumentPathTracker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8934AB7C0DF5445978C46683 /* DocumentPathTracker.swift */; };
 		2850357F96675166FD40C6D3 /* XcodeBuildConfigView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 044E767DB568D90A9D156B32 /* XcodeBuildConfigView.swift */; };
+		2A915D5B906401EE5C4AA430 /* HUDMenuWindow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 69016E540D00CB212180D77A /* HUDMenuWindow.swift */; };
 		2B231ADF6F02176D061DA120 /* OpenAIProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 17FA2368F54DA4948C833482 /* OpenAIProvider.swift */; };
 		2C2E7C35306F874157E596AC /* CommonTestData.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD43FC5F94134B87E7B8228D /* CommonTestData.swift */; };
 		2E153716DF27FD15981D5417 /* APIKeyManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 02281B1D972E2A403443EB0A /* APIKeyManager.swift */; };
@@ -193,6 +194,7 @@
 		AE40CB2D386F76F851DF362B /* cursor-hook.js in Resources */ = {isa = PBXBuildFile; fileRef = 987465FE6147F57B5B370533 /* cursor-hook.js */; };
 		AEE59E343C16B2410F168E00 /* CommandHelpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = 45DA6275BB9C155446F51C09 /* CommandHelpers.swift */; };
 		AF117898DB9DE292A02E63F4 /* Hummingbird in Frameworks */ = {isa = PBXBuildFile; productRef = 9219D0D29ADC67E6FFC41C9E /* Hummingbird */; };
+		AFBD9CC04A00D186F6F29151 /* ClaudeTerminalScreenshotPopover.swift in Sources */ = {isa = PBXBuildFile; fileRef = EBA0A7B4F2E9CD8CF3FD1FE7 /* ClaudeTerminalScreenshotPopover.swift */; };
 		B0A0FBA998D6FCCDC67C0FAE /* StatsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 45D9E0B64A840097604A7F12 /* StatsView.swift */; };
 		B0D851F70AC0DF46828207D8 /* LogManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = F256179755CF3F87928E07C4 /* LogManager.swift */; };
 		B1518551AB661422B2630F3D /* DebugSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 165123800EC52083254362A0 /* DebugSettingsView.swift */; };
@@ -215,6 +217,7 @@
 		C38FC68EC5B5ABC820F98C3A /* Defaults in Frameworks */ = {isa = PBXBuildFile; productRef = 5EC9776FF97D257EE8DCC72B /* Defaults */; };
 		C4DA4EC486CAAD57B8BE618B /* CodeLooperApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 60B16BA7518E957E64AF9F8F /* CodeLooperApp.swift */; };
 		C56C2BDFC2610F2A42F05006 /* RuleExecutionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0326A9F74898F5007E15ED29 /* RuleExecutionTests.swift */; };
+		C6D998B235103AF448BE5A80 /* NativePopoverController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5106D3073FAE7B4DC45FE4CF /* NativePopoverController.swift */; };
 		C7150D5BC7B0B12C4349D194 /* CursorInstanceModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5DEDCE2213643BD9D3AD5C4B /* CursorInstanceModels.swift */; };
 		C9022C479CF0F7AC9C3382FF /* MacOSAutomatorConfigView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5690C84AB82C7DB84BD6DCA /* MacOSAutomatorConfigView.swift */; };
 		C964EA15D3C0F430C00B4EB1 /* ThreadSafeBox.swift in Sources */ = {isa = PBXBuildFile; fileRef = B7EBAB588F0605B4C5CA0304 /* ThreadSafeBox.swift */; };
@@ -408,6 +411,7 @@
 		4D0E00D428925064E6EFD24B /* AIWindowAnalyzer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIWindowAnalyzer.swift; sourceTree = "<group>"; };
 		4D742DBB2C6E98D0F0FF241B /* CursorInputWatcherViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CursorInputWatcherViewModel.swift; sourceTree = "<group>"; };
 		50A25A5FB23DB0E34CBBC220 /* MainInputFieldHeuristic.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainInputFieldHeuristic.swift; sourceTree = "<group>"; };
+		5106D3073FAE7B4DC45FE4CF /* NativePopoverController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NativePopoverController.swift; sourceTree = "<group>"; };
 		5174C00218163417DA60504F /* AsyncPatterns.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AsyncPatterns.swift; sourceTree = "<group>"; };
 		521C37D802EABF317FFA3944 /* AppIconStateController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppIconStateController.swift; sourceTree = "<group>"; };
 		5223F335B0AAADC0E755A7DC /* ConnectionErrorIndicatorHeuristic.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConnectionErrorIndicatorHeuristic.swift; sourceTree = "<group>"; };
@@ -437,6 +441,7 @@
 		66D291C6C46A13EA5ABFFE32 /* AccessibilityPermissions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccessibilityPermissions.swift; sourceTree = "<group>"; };
 		684ADFED0C0657FCEEA078BA /* SettingsTab.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsTab.swift; sourceTree = "<group>"; };
 		68599CD24BE62C1DDDBBE786 /* ollama-swift */ = {isa = PBXFileReference; lastKnownFileType = folder; name = "ollama-swift"; path = "../ollama-swift"; sourceTree = "<group>"; };
+		69016E540D00CB212180D77A /* HUDMenuWindow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HUDMenuWindow.swift; sourceTree = "<group>"; };
 		6943FF4E98060C242A14D838 /* ScreenshotAnalyzer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreenshotAnalyzer.swift; sourceTree = "<group>"; };
 		6955584328FDBA7FA95B2D9A /* Task+Timeout.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Task+Timeout.swift"; sourceTree = "<group>"; };
 		69A663588B1C6DE7B23F48C5 /* MainPopoverView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainPopoverView.swift; sourceTree = "<group>"; };
@@ -568,6 +573,7 @@
 		E9C56058467A580C6FAFC033 /* DiagnosticsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiagnosticsTests.swift; sourceTree = "<group>"; };
 		E9D1442BBCD2FA1805B7745A /* ErrorHandlingUtility.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ErrorHandlingUtility.swift; sourceTree = "<group>"; };
 		EA71CF8FCCFDA0FB0072AE01 /* SettingsCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsCoordinator.swift; sourceTree = "<group>"; };
+		EBA0A7B4F2E9CD8CF3FD1FE7 /* ClaudeTerminalScreenshotPopover.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClaudeTerminalScreenshotPopover.swift; sourceTree = "<group>"; };
 		EE3BB643B3D258F00DFA6762 /* InterventionEngineTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InterventionEngineTests.swift; sourceTree = "<group>"; };
 		EFFE475498AF35EF793EFE0C /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		F0B9729B09602019CB5866EF /* LogCategory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LogCategory.swift; sourceTree = "<group>"; };
@@ -708,9 +714,12 @@
 			children = (
 				521C37D802EABF317FFA3944 /* AppIconStateController.swift */,
 				9E7B41C8E7FEA8B47BB303DB /* ClaudeInstancesList.swift */,
+				EBA0A7B4F2E9CD8CF3FD1FE7 /* ClaudeTerminalScreenshotPopover.swift */,
 				CD48A8F36F6F295C5068D703 /* CustomMenuWindow.swift */,
+				69016E540D00CB212180D77A /* HUDMenuWindow.swift */,
 				69A663588B1C6DE7B23F48C5 /* MainPopoverView.swift */,
 				B6BAE97B9CA85115B2ED3031 /* MenuBarStatusView.swift */,
+				5106D3073FAE7B4DC45FE4CF /* NativePopoverController.swift */,
 				456D6E1466D850D7B4432DF1 /* StatusBarController.swift */,
 				C7F87E01850EB3AD8908A5A6 /* StatusIndicators.swift */,
 			);
@@ -1867,9 +1876,12 @@
 				E3AFE5ECE90642DFC8E72043 /* UploadCompletionFeedback.swift in Sources */,
 				85F11293F5276E948EF17DF9 /* AppIconStateController.swift in Sources */,
 				4AA21744D490EA8A2CDEBA0B /* ClaudeInstancesList.swift in Sources */,
+				AFBD9CC04A00D186F6F29151 /* ClaudeTerminalScreenshotPopover.swift in Sources */,
 				DA6F200CAC58C9CE5C5C50FD /* CustomMenuWindow.swift in Sources */,
+				2A915D5B906401EE5C4AA430 /* HUDMenuWindow.swift in Sources */,
 				D6506A1CBB22DB21B67E0E2D /* MainPopoverView.swift in Sources */,
 				7791A26DE75B43DAED4284F2 /* MenuBarStatusView.swift in Sources */,
+				C6D998B235103AF448BE5A80 /* NativePopoverController.swift in Sources */,
 				4AF986F21576D42B1D0DCA65 /* StatusBarController.swift in Sources */,
 				A6552E5E86BF245B84DE09CC /* StatusIndicators.swift in Sources */,
 			);
