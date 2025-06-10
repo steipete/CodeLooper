@@ -2,6 +2,7 @@ import AppKit
 import Combine
 import Defaults
 import DesignSystem
+import Diagnostics
 import SwiftUI
 
 /// Settings window with native NSToolbar implementation
@@ -45,6 +46,7 @@ final class NativeToolbarSettingsWindow: NSWindow {
             viewModel: viewModel,
             selectedTab: selectedTabSubject
         )
+        .environmentObject(SessionLogger.shared)
 
         self.contentView = NSHostingView(rootView: contentView)
         self.center()
