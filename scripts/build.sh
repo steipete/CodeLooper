@@ -213,6 +213,13 @@ log "✅ App bundle created at $APP_BUNDLE"
 if [ "$SIGN_APP" = true ]; then
     log "Code signing CodeLooper.app..."
     
+    # Source signing configuration if available
+    CODESIGN_CONFIG="$APP_DIR/.codesign-config"
+    if [ -f "$CODESIGN_CONFIG" ]; then
+        source "$CODESIGN_CONFIG"
+        log "📋 Loaded signing configuration from $CODESIGN_CONFIG"
+    fi
+    
     if [ -n "$P12_FILE_ARG" ] && [ -n "$P12_PASSWORD_ARG" ]; then
         log "Using P12 certificate for signing..."
         if ! command -v rcodesign &> /dev/null; then
@@ -227,7 +234,16 @@ if [ "$SIGN_APP" = true ]; then
             "$APP_BUNDLE"
     else
         log "Using system keychain for signing..."
-        codesign --force --deep --options runtime --sign "Developer ID Application" "$APP_BUNDLE"
+        # Use Apple Development certificate for development builds to maintain consistent TCC permissions
+        # This prevents TCC database thrashing that occurs with ad-hoc or changing signatures
+        if [ "$BUILD_TYPE" = "debug" ]; then
+            SIGNING_IDENTITY="${DEVELOPMENT_SIGNING_IDENTITY:-Apple Development: Peter Steinberger (2ZAC4GM7GD)}"
+            log "Using Apple Development certificate for debug build..."
+        else
+            SIGNING_IDENTITY="${DISTRIBUTION_SIGNING_IDENTITY:-Developer ID Application}"
+            log "Using Developer ID certificate for release build..."
+        fi
+        codesign --force --deep --options runtime --sign "$SIGNING_IDENTITY" "$APP_BUNDLE"
     fi
     
     log "✅ Code signing completed"

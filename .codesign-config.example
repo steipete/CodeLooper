@@ -1,0 +1,15 @@
+# Code Signing Configuration Example for CodeLooper
+# Copy this file to .codesign-config and update with your signing identities
+# This ensures consistent code signing across builds to prevent TCC permission issues
+
+# Use Apple Development certificate for local development builds
+# This prevents TCC database thrashing that occurs with ad-hoc or changing signatures
+# Find your identity with: security find-identity -v -p codesigning | grep "Apple Development"
+DEVELOPMENT_SIGNING_IDENTITY="Apple Development: Your Name (TEAMID)"
+
+# Use Developer ID for distribution builds
+# Find your identity with: security find-identity -v -p codesigning | grep "Developer ID"
+DISTRIBUTION_SIGNING_IDENTITY="Developer ID Application: Your Name (TEAMID)"
+
+# Default signing identity (used when BUILD_TYPE is not specified)
+DEFAULT_SIGNING_IDENTITY="$DEVELOPMENT_SIGNING_IDENTITY"
