@@ -38,13 +38,29 @@ https://aistudio.google.com/prompts/1Kr0eQwevQj5iD_vllx6g78EbrCKzYkSc
     *   `terminator_rule.mdc`: MDC rule file for the "Terminator Terminal Controller" Cursor Rule Set.
     *   A subtle, short audio file (e.g., `.aiff`, `.wav`) for intervention feedback.
     *   Hardcoded default `AXorcist.Locator` definitions (as Swift struct initializers or JSON strings) for key Cursor UI elements. These serve as the baseline before user overrides.
-*   **1.6. Menu Bar Icon Behavior (`NSStatusItem.button.image`):**
-    *   **Green:** At least one monitored Cursor instance is in a "Generating..." state (confirmed by `AXorcist`), AND no instances are in a "Red" state (Persistent Error/Unrecoverable).
-    *   **Black:** No instances are "Generating...", but all monitored instances are either "Idle" (running, no errors, responsive) or "Active" (e.g., recent sidebar activity detected), AND no instances are in a "Red" or "Yellow/Orange" state.
-    *   **Gray:** Code Looper's main monitoring toggle (global) is disabled by the user.
-    *   **Yellow/Orange:** At least one Cursor instance is in a "Recovering" state (Code Looper is actively attempting an automated fix), AND no instances are in a "Red" state.
-    *   **Red:** At least one Cursor instance is in a "Persistent Error" state (multiple recovery cycles failed) OR an "Unrecoverable: UI Element Not Found" state for a critical action. This state takes precedence over Green/Black/Yellow if co-occurring.
-    *   **Action Performed Flash:** Upon successful automated intervention, the icon will briefly change to a highlight variant (e.g., brighter current color or a distinct "success" color) for approximately 0.2-0.3 seconds, then revert to its current state-indicative color.
+*   **1.6. Menu Bar Display & Behavior:**
+    *   **Visual Design:**
+        *   Custom NSStatusItem implementation using StatusBarController singleton
+        *   Displays CodeLooper logo icon alongside colored status badges
+        *   Status badges show counts with play/stop icons:
+            *   Green play icon with count: Number of instances actively generating/working
+            *   Red stop icon with count: Number of instances stopped/errored
+        *   Uses ImageRenderer to convert SwiftUI views to NSImage for menu bar display
+        *   Icon uses effective tint color (adapts to light/dark menu bar appearance)
+    *   **Popover Implementation:**
+        *   Custom NSPanel-based window (CustomMenuWindow) instead of MenuBarExtra
+        *   NSVisualEffectView with .popover material for native macOS appearance
+        *   Rounded corners (10pt radius) with subtle border
+        *   Proper highlight state on NSStatusBarButton when popover is active
+        *   Click-outside dismissal with event monitoring
+        *   Shows at 380pt width with dynamic height
+    *   **Icon States (Legacy - for reference):**
+        *   **Green:** At least one monitored instance is "Generating..." 
+        *   **Black:** All instances idle/active with no errors
+        *   **Gray:** Global monitoring disabled
+        *   **Yellow/Orange:** At least one instance in recovery state
+        *   **Red:** Persistent error or unrecoverable state
+        *   **Action Flash:** Brief highlight on successful intervention
 *   **1.7. Logging Service (`SessionLogger`):**
     *   An `actor SessionLogger: ObservableObject` will be implemented as a singleton (`SessionLogger.shared`).
     *   **Storage:** `@Published private(set) var entries: [LogEntry] = []`. Max entries (e.g., 1000, configurable internally); oldest entries evicted (FIFO).

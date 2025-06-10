@@ -6,8 +6,14 @@
 
 **A macOS menubar app that keeps your agents working in Cursor** 🔄
 
-CodeLooper is a native macOS application that sits in your menubar, monitoring the status of each Cursor window.
-When Cursor breaks out of its productive loop – getting stuck generating code, dropping connections, or hitting errors – CodeLooper loops back in to restore the flow using macOS accessibility APIs:
+CodeLooper is a native macOS application that sits in your menubar, displaying real-time status of your Cursor instances with elegant visual indicators. When Cursor breaks out of its productive loop – getting stuck generating code, dropping connections, or hitting errors – CodeLooper loops back in to restore the flow using macOS accessibility APIs.
+
+### Menu Bar Status Display
+The menu bar shows the CodeLooper icon alongside colored status badges:
+- 🟢 **Green play button** with count: Number of instances actively generating/working
+- 🔴 **Red stop button** with count: Number of instances stopped or in error state
+
+Click the menu bar icon to see detailed status of each Cursor window in a native macOS popover.
 
 It resolves these situations:
 
@@ -40,6 +46,28 @@ Warning: These tools give your agent full power over your system, so integrate a
 - **macOS Version**: macOS 15 (Sequoia)
 - **Architecture**: Apple Silicon
 - **Accessibility**: Requires accessibility, automation and screen capture permissions for IDE automation
+
+## Features
+
+### Core Monitoring & Automation
+- **Real-time Status Display**: Visual status badges in menu bar showing running/stopped instances
+- **Automatic Recovery**: Detects and resolves common Cursor interruptions
+- **Multi-window Support**: Monitors all open Cursor windows independently
+- **Claude Instance Monitoring**: Optional monitoring of Claude.ai browser instances
+- **JavaScript Hook Injection**: Advanced monitoring via injected hooks for better state detection
+
+### User Interface
+- **Native macOS Design**: Uses NSVisualEffectView for authentic popover appearance
+- **Adaptive Icons**: Menu bar icon adapts to light/dark appearance
+- **Detailed Status Popover**: Shows individual window status, git info, and AI analysis state
+- **Settings Window**: Native toolbar-based preferences with multiple tabs
+- **Screenshot Analysis**: Built-in window screenshot viewer for debugging
+
+### Developer Features
+- **MCP Integration**: Automatic installation and configuration of Model Context Protocol servers
+- **Git Repository Tracking**: Shows branch and change status for each window
+- **Debug Mode**: Advanced diagnostics and JavaScript console access
+- **Session Logging**: Comprehensive activity logs for troubleshooting
 
 ### Getting Started
 

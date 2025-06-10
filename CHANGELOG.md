@@ -5,6 +5,95 @@ All notable changes to CodeLooper will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased] - 2025-06-10
+
+### 🎨 Major UI Overhaul - Native Menu Bar Implementation
+
+This release represents a complete reimplementation of the menu bar interface, transitioning from SwiftUI's MenuBarExtra to a native AppKit implementation for superior control and visual refinement.
+
+### Added
+
+#### Menu Bar & Status Display
+- **Custom Status Bar Implementation**: Created `StatusBarController` as a singleton managing NSStatusItem directly
+- **Visual Status Indicators**: New `StatusIndicators` and `StatusBadge` SwiftUI components showing:
+  - 🟢 Green play icons with counts for running/generating instances
+  - 🔴 Red stop icons with counts for stopped/errored instances
+  - Gray idle indicator when no instances are active
+- **Dynamic Icon Rendering**: Uses ImageRenderer to convert SwiftUI views to NSImage for menu bar display
+- **Adaptive Tinting**: Menu bar icon adapts to effective appearance (light/dark backgrounds)
+
+#### Native Popover Window
+- **Custom Menu Window**: Implemented `CustomMenuWindow` using NSPanel for precise control
+- **Visual Effects**: NSVisualEffectView with `.popover` material for authentic macOS appearance
+- **Rounded Corners**: Proper 10pt corner radius with masksToBounds for clean edges
+- **Native Borders**: Uses NSColor.separatorColor for adaptive border styling
+- **Click-Outside Dismissal**: Event monitoring for proper popover behavior
+- **Highlight State**: NSStatusBarButton shows pressed state when popover is active
+
+#### UI Components
+- **DSIconButton**: New design system component for icon-only buttons
+- **WindowScreenshotPopover**: Functional screenshot viewer for debugging window states
+- **Refined Color Palette**: Toned down status badge colors for professional appearance:
+  - Green: RGB(0.3, 0.65, 0.3) - more subtle than before
+  - Red: RGB(0.7, 0.35, 0.35) - less harsh on the eyes
+
+### Changed
+
+#### Architecture Improvements
+- **Removed MenuBarExtra**: Eliminated SwiftUI's MenuBarExtra in favor of direct NSStatusItem control
+- **Singleton Pattern**: StatusBarController manages all menu bar interactions as a centralized singleton
+- **State Preservation**: Menu bar highlight state properly maintained during icon updates
+- **Async Dispatch**: Used DispatchQueue for proper timing of UI updates
+
+#### Settings Window
+- **Single Implementation**: Removed duplicate settings window implementations
+- **NativeToolbarSettingsWindow**: Kept only the native toolbar-based settings window
+- **WindowGroup Removal**: Eliminated SwiftUI WindowGroup for settings in CodeLooperApp
+
+### Fixed
+
+#### Visual Issues
+- **Rounded Corners**: Fixed missing rounded corners on popover window
+- **Highlight State**: Menu bar button now properly shows highlighted background when active
+- **Color Intensity**: Reduced overly bright colors in status badges
+- **Popover Positioning**: Window appears correctly below menu bar item, not in screen center
+
+#### Technical Issues
+- **Settings Duplication**: Resolved issue where two settings windows would appear
+- **Build Errors**: Fixed "ambiguous use of logger" and other Swift 6 compilation issues
+- **Thread Safety**: All UI updates now properly dispatched to main thread
+- **Memory Management**: Proper cleanup of event monitors and observers
+
+### Technical Details
+
+#### Implementation Architecture
+- **StatusBarController.swift**: Main controller managing NSStatusItem lifecycle
+- **CustomMenuWindow.swift**: NSPanel subclass with visual effects and event handling
+- **StatusIndicators.swift**: Reusable SwiftUI components for status display
+- **MenuBarStatusView.swift**: Container view for menu bar content composition
+
+#### Key Technologies
+- NSStatusItem & NSStatusBarButton for menu bar integration
+- NSVisualEffectView for native macOS materials
+- ImageRenderer for SwiftUI → NSImage conversion
+- NSPanel with borderless style mask for custom windows
+- Event monitors for click-outside detection
+- Effective appearance detection for adaptive UI
+
+### Developer Experience
+
+#### Code Quality
+- Removed unnecessary comments explaining temporary code
+- Consistent use of design system components
+- Proper Swift 6 concurrency patterns throughout
+- Clear separation of concerns between UI layers
+
+#### Debugging Support
+- Screenshot popover for visual debugging
+- Comprehensive logging for status bar operations
+- State tracking for menu visibility
+- Clear error messages for common issues
+
 ## [1.0.0] - 2025-06-02
 
 ### 🎉 First Production Release
