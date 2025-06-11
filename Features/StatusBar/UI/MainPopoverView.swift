@@ -45,6 +45,7 @@ struct MainPopoverView: View {
                     
                     // Elegant status indicators
                     StatusIndicators(runningCount: runningCount, notRunningCount: notRunningCount)
+                        .help("Active: \(runningCount) instance\(runningCount == 1 ? "" : "s") generating\nIdle: \(notRunningCount) instance\(notRunningCount == 1 ? "" : "s") waiting")
                 }
 
                 // Permissions section (if needed)
@@ -65,11 +66,17 @@ struct MainPopoverView: View {
                         // Cursor windows section
                         if !cursorMonitor.monitoredApps.isEmpty || !cursorWindowStates.isEmpty {
                             VStack(alignment: .leading, spacing: Spacing.xSmall) {
-                                Text("Cursor Windows (\(cursorWindowStates.count))")
-                                    .font(Typography.caption1(.semibold))
-                                    .foregroundColor(ColorPalette.textSecondary)
-                                    .padding(.horizontal, Spacing.medium)
-                                    .padding(.top, Spacing.xSmall)
+                                HStack(spacing: Spacing.xSmall) {
+                                    Text("Cursor Windows")
+                                        .font(Typography.caption1(.semibold))
+                                        .foregroundColor(ColorPalette.textSecondary)
+                                    
+                                    Text("(\(cursorWindowStates.count))")
+                                        .font(Typography.caption1())
+                                        .foregroundColor(ColorPalette.textTertiary)
+                                }
+                                .padding(.horizontal, Spacing.medium)
+                                .padding(.top, Spacing.xSmall)
                                 
                                 CursorWindowsList(style: .popover)
                                     .padding(.horizontal, Spacing.small)
@@ -94,11 +101,17 @@ struct MainPopoverView: View {
                         // Claude instances section (if enabled)
                         if enableClaudeMonitoring {
                             VStack(alignment: .leading, spacing: Spacing.xSmall) {
-                                Text("Claude Instances (\(claudeMonitor.instances.count))")
-                                    .font(Typography.caption1(.semibold))
-                                    .foregroundColor(ColorPalette.textSecondary)
-                                    .padding(.horizontal, Spacing.medium)
-                                    .padding(.top, Spacing.small)
+                                HStack(spacing: Spacing.xSmall) {
+                                    Text("Claude Instances")
+                                        .font(Typography.caption1(.semibold))
+                                        .foregroundColor(ColorPalette.textSecondary)
+                                    
+                                    Text("(\(claudeMonitor.instances.count))")
+                                        .font(Typography.caption1())
+                                        .foregroundColor(ColorPalette.textTertiary)
+                                }
+                                .padding(.horizontal, Spacing.medium)
+                                .padding(.top, Spacing.small)
                                 
                                 ClaudeInstancesList()
                                     .padding(.horizontal, Spacing.small)
@@ -183,8 +196,11 @@ struct MainPopoverView: View {
         .frame(width: 380) // Reduced width for more compact appearance
         .background(Material.ultraThinMaterial)
         .animation(.default, value: isGlobalMonitoringEnabled)
-        .animation(.default, value: diagnosticsManager.windowStates.count)
+        .animation(.default, value: cursorWindowStates.count)
         .animation(.default, value: claudeMonitor.instances.count)
+        .animation(.default, value: runningCount)
+        .animation(.default, value: notRunningCount)
+        .id("popover-\(cursorWindowStates.count)-\(claudeMonitor.instances.count)") // Force refresh
     }
 
     // MARK: Private

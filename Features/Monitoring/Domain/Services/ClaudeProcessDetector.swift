@@ -388,13 +388,26 @@ final class ClaudeProcessDetector: Loggable, @unchecked Sendable {
             guard let output = String(data: data, encoding: .utf8) else { return "" }
             
             // Look for lines starting with "n" that contain tty/pts
+            var ttyPaths: [String] = []
             for line in output.components(separatedBy: "\n") {
                 if line.hasPrefix("n") && (line.contains("/dev/ttys") || line.contains("/dev/pts/") || line.contains("/dev/tty")) {
                     let ttyPath = String(line.dropFirst()) // Remove the "n" prefix
-                    if ttyPath.hasPrefix("/dev/") {
-                        return ttyPath
+                    if ttyPath.hasPrefix("/dev/") && !ttyPath.contains("tty.") && !ttyPath.contains("ptmx") { // Exclude serial ports and ptmx
+                        ttyPaths.append(ttyPath)
                     }
                 }
+            }
+            
+            // Return the first TTY that looks like a terminal (prefer ttys over pts)
+            if let ttys = ttyPaths.first(where: { $0.contains("/dev/ttys") }) {
+                logger.debug("Found TTY for PID \(pid): \(ttys)")
+                return ttys
+            } else if let pts = ttyPaths.first(where: { $0.contains("/dev/pts/") }) {
+                logger.debug("Found PTS for PID \(pid): \(pts)")
+                return pts
+            } else if let tty = ttyPaths.first {
+                logger.debug("Found TTY for PID \(pid): \(tty)")
+                return tty
             }
         } catch {
             logger.debug("lsof failed for PID \(pid): \(error)")

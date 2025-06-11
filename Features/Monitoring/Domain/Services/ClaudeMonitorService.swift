@@ -132,6 +132,9 @@ public final class ClaudeMonitorService: ObservableObject, Sendable, Loggable {
     private func performMonitoringCycle() async {
         logger.debug("Starting monitoring cycle")
         
+        // Clear the window cache to ensure fresh matching
+        statusExtractor.clearWindowCache()
+        
         // Step 1: Detect running Claude processes
         let detectedInstances = await processDetector.detectClaudeInstances()
         logger.debug("Process detector found \(detectedInstances.count) instances")
@@ -139,8 +142,16 @@ public final class ClaudeMonitorService: ObservableObject, Sendable, Loggable {
         // Step 2: Extract current activity status for each instance
         var updatedInstances: [ClaudeInstance] = []
         
+        // Log all detected instances for debugging
+        logger.info("Detected instances:")
+        for (index, instance) in detectedInstances.enumerated() {
+            logger.info("  [\(index)] PID: \(instance.pid), TTY: \(instance.ttyPath), Dir: \(instance.workingDirectory), Folder: \(instance.folderName)")
+        }
+        
         for instance in detectedInstances {
             let currentActivity = await statusExtractor.extractStatus(for: instance)
+            
+            logger.info("Instance \(instance.folderName) (PID: \(instance.pid)) status: '\(currentActivity.text)'")
             
             let updatedInstance = ClaudeInstance(
                 id: instance.id,

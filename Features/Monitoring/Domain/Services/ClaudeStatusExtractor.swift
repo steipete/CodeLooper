@@ -5,6 +5,66 @@ import Vision
 import CoreImage
 import Diagnostics
 
+// MARK: - Window Cache Management
+
+/// A more robust window cache that tracks both claimed windows and instance-to-window mappings
+@MainActor
+private final class WindowCache {
+    private var windowToInstance: [String: UUID] = [:]
+    private var instanceToWindow: [UUID: String] = [:]
+    private let logger = Logger(category: .supervision)
+    
+    /// Check if a window is available for an instance
+    func isWindowAvailable(_ windowID: String, for instanceID: UUID) -> Bool {
+        if let claimedBy = windowToInstance[windowID] {
+            return claimedBy == instanceID
+        }
+        return true
+    }
+    
+    /// Check if an instance already has a window
+    func hasWindow(instanceID: UUID) -> Bool {
+        return instanceToWindow[instanceID] != nil
+    }
+    
+    /// Get the window ID for an instance
+    func getWindow(for instanceID: UUID) -> String? {
+        return instanceToWindow[instanceID]
+    }
+    
+    /// Claim a window for an instance
+    func claimWindow(_ windowID: String, for instanceID: UUID) {
+        // If instance already has a window, release it first
+        if let existingWindow = instanceToWindow[instanceID] {
+            windowToInstance.removeValue(forKey: existingWindow)
+            logger.debug("Released previous window '\(existingWindow)' from instance \(instanceID)")
+        }
+        
+        // If window is already claimed by another instance, don't allow
+        if let existingInstance = windowToInstance[windowID], existingInstance != instanceID {
+            logger.warning("Window '\(windowID)' is already claimed by instance \(existingInstance), cannot claim for \(instanceID)")
+            return
+        }
+        
+        // Claim the window
+        windowToInstance[windowID] = instanceID
+        instanceToWindow[instanceID] = windowID
+        logger.debug("Claimed window '\(windowID)' for instance \(instanceID)")
+    }
+    
+    /// Clear all mappings
+    func clear() {
+        logger.debug("Clearing window cache with \(windowToInstance.count) windows and \(instanceToWindow.count) instances")
+        windowToInstance.removeAll()
+        instanceToWindow.removeAll()
+    }
+    
+    /// Get debug info
+    var debugDescription: String {
+        return "WindowCache: \(windowToInstance.count) windows mapped to \(instanceToWindow.count) instances"
+    }
+}
+
 // MARK: - Claude Status Extraction Service
 
 /// Dedicated service for extracting live Claude status from terminal windows
@@ -20,6 +80,11 @@ final class ClaudeStatusExtractor: ObservableObject, Loggable {
         static let maxTextLength = 150
         static let supportedTerminals = ["ghostty", "terminal", "iterm", "warp"]
     }
+    
+    // MARK: - Private State
+    
+    /// Robust window cache to prevent duplicate matches
+    private let windowCache = WindowCache()
     
     // MARK: - Public API
     
@@ -46,6 +111,11 @@ final class ClaudeStatusExtractor: ObservableObject, Loggable {
         return .idle
     }
     
+    /// Clear the window cache (should be called at the start of each monitoring cycle)
+    func clearWindowCache() {
+        windowCache.clear()
+    }
+    
     // MARK: - Accessibility-based Extraction
     
     private nonisolated func extractViaAccessibility(instance: ClaudeInstance) async -> String? {
@@ -60,7 +130,7 @@ final class ClaudeStatusExtractor: ObservableObject, Loggable {
         }
         
         for terminalApp in terminalApps {
-            if let content = getTerminalContent(terminalPID: terminalApp.processIdentifier, instance: instance) {
+            if let content = await getTerminalContent(terminalPID: terminalApp.processIdentifier, instance: instance) {
                 if let parsedStatus = parseClaudeStatus(from: content) {
                     return parsedStatus
                 }
@@ -70,7 +140,7 @@ final class ClaudeStatusExtractor: ObservableObject, Loggable {
         return nil
     }
     
-    private nonisolated func getTerminalContent(terminalPID: pid_t, instance: ClaudeInstance) -> String? {
+    private nonisolated func getTerminalContent(terminalPID: pid_t, instance: ClaudeInstance) async -> String? {
         let app = AXUIElementCreateApplication(terminalPID)
         
         var windowsRef: CFTypeRef?
@@ -81,7 +151,18 @@ final class ClaudeStatusExtractor: ObservableObject, Loggable {
             return nil
         }
         
+        // Check if instance already has a window
+        let hasExistingWindow = await MainActor.run { self.windowCache.hasWindow(instanceID: instance.id) }
+        if hasExistingWindow {
+            // If instance already has a window, try to use the same window
+            if let existingWindowID = await MainActor.run { self.windowCache.getWindow(for: instance.id) } {
+                logger.debug("Instance \(instance.folderName) already has window \(existingWindowID), checking if still valid")
+            }
+        }
+        
         // Try to find the window that matches this specific Claude instance
+        var bestMatch: (window: AXUIElement, content: String, score: Int)?
+        
         for window in windowsArray {
             // Get window title to help with matching
             var titleRef: CFTypeRef?
@@ -91,24 +172,81 @@ final class ClaudeStatusExtractor: ObservableObject, Loggable {
                 windowTitle = title
             }
             
-            // Check if this window matches our instance
-            if windowMatchesInstance(title: windowTitle, instance: instance) {
-                if let content = extractTextFromWindow(window),
-                   let recentContent = extractRecentTerminalContent(content),
-                   recentContent.contains("esc to interrupt") {
-                    logger.debug("Found matching window for instance \(instance.folderName) by title with recent activity")
-                    return recentContent
+            // Create window ID for cache checking
+            let windowID = "\(Unmanaged.passUnretained(window).toOpaque())_\(windowTitle)"
+            
+            // Skip if already claimed by another instance
+            let isAvailable = await MainActor.run { self.windowCache.isWindowAvailable(windowID, for: instance.id) }
+            if !isAvailable {
+                continue
+            }
+            
+            // Calculate match score
+            var score = 0
+            
+            // TTY match is highest priority - should be unique
+            if !instance.ttyPath.isEmpty && !windowTitle.isEmpty {
+                let ttyName = URL(fileURLWithPath: instance.ttyPath).lastPathComponent
+                if windowTitle.contains(ttyName) {
+                    score += 1000  // Very high score for TTY match
+                    logger.debug("Window '\(windowTitle)' matches TTY \(ttyName) for instance \(instance.folderName)")
                 }
             }
             
-            // Also check window content for matching
-            if let content = extractTextFromWindow(window),
-               windowContainsInstance(content: content, instance: instance),
-               let recentContent = extractRecentTerminalContent(content),
-               recentContent.contains("esc to interrupt") {
-                logger.debug("Found matching window for instance \(instance.folderName) by content with recent activity")
-                return recentContent
+            // Exact working directory match (more specific than partial)
+            if windowTitle == instance.workingDirectory {
+                score += 200
+            } else if windowTitle.contains(instance.workingDirectory) {
+                // Prefer longer matches (more specific paths)
+                let matchRatio = Double(instance.workingDirectory.count) / Double(windowTitle.count)
+                score += Int(50 * matchRatio)
             }
+            
+            // Folder name match - but only if it's specific enough
+            if instance.folderName.count > 3 && instance.folderName != "/" && windowTitle.contains(instance.folderName) {
+                // Check if it's a complete word match (not partial)
+                let components = windowTitle.components(separatedBy: CharacterSet(charactersIn: "/ "))
+                if components.contains(instance.folderName) {
+                    score += 30
+                } else {
+                    score += 10
+                }
+            }
+            
+            // Only consider windows with some match
+            if score > 0 {
+                // Check if this window has relevant content
+                if let content = extractTextFromWindow(window),
+                   let recentContent = extractRecentTerminalContent(content),
+                   recentContent.contains("esc to interrupt") {
+                    
+                    // Keep track of the best match
+                    if bestMatch == nil || score > bestMatch!.score {
+                        bestMatch = (window, recentContent, score)
+                    }
+                }
+            }
+        }
+        
+        // Return the best match if found
+        if let match = bestMatch {
+            logger.debug("Found best matching window for instance \(instance.folderName) with score \(match.score)")
+            
+            // Get window title for cache key
+            var titleRef: CFTypeRef?
+            var windowTitle = ""
+            if AXUIElementCopyAttributeValue(match.window, kAXTitleAttribute as CFString, &titleRef) == .success,
+               let title = titleRef as? String {
+                windowTitle = title
+            }
+            
+            // Update cache on main actor with consistent window ID
+            let windowID = "\(Unmanaged.passUnretained(match.window).toOpaque())_\(windowTitle)"
+            await MainActor.run {
+                self.windowCache.claimWindow(windowID, for: instance.id)
+            }
+            
+            return match.content
         }
         
         return nil
@@ -180,15 +318,30 @@ final class ClaudeStatusExtractor: ObservableObject, Loggable {
     private nonisolated func extractViaScreenCapture(instance: ClaudeInstance) async -> String? {
         logger.debug("Attempting ScreenCaptureKit extraction for \(instance.folderName) with TTY: \(instance.ttyPath)")
         
+        // Check if instance already has a window from previous cycle
+        let hasExistingWindow = await MainActor.run { self.windowCache.hasWindow(instanceID: instance.id) }
+        
         do {
             let content = try await SCShareableContent.excludingDesktopWindows(false, onScreenWindowsOnly: true)
             
-            // Sort windows by how well they match the instance
-            let matchingWindows = content.windows.compactMap { window -> (window: SCWindow, score: Int)? in
+            // Pre-filter terminal windows
+            var candidateWindows: [(window: SCWindow, score: Int, windowID: String)] = []
+            
+            for window in content.windows {
                 guard let windowTitle = window.title,
                       let appName = window.owningApplication?.applicationName,
                       isTerminalApp(appName) else {
-                    return nil
+                    continue
+                }
+                
+                // Create a unique window ID
+                let windowID = "\(window.windowID)_\(windowTitle)"
+                
+                // Check if this window is already claimed by another instance
+                let isAvailable = await MainActor.run { self.windowCache.isWindowAvailable(windowID, for: instance.id) }
+                if !isAvailable {
+                    logger.debug("Window '\(windowTitle)' already claimed by another instance, skipping")
+                    continue
                 }
                 
                 var score = 0
@@ -201,30 +354,53 @@ final class ClaudeStatusExtractor: ObservableObject, Loggable {
                     }
                 }
                 
-                // Full working directory match
-                if windowTitle.contains(instance.workingDirectory) {
+                // Full working directory match (exact match preferred)
+                if windowTitle == instance.workingDirectory {
+                    score += 80
+                } else if windowTitle.contains(instance.workingDirectory) {
                     score += 50
                 }
                 
-                // Folder name match (less specific)
-                if instance.folderName.count > 3 && windowTitle.contains(instance.folderName) {
-                    score += 10
+                // Folder name match (less specific, require word boundaries)
+                if instance.folderName.count > 3 && instance.folderName != "/" {
+                    // Check for exact folder name match with word boundaries
+                    let components = windowTitle.components(separatedBy: "/")
+                    if components.contains(instance.folderName) {
+                        score += 20
+                    } else if windowTitle.contains(instance.folderName) {
+                        score += 10
+                    }
                 }
                 
-                return score > 0 ? (window, score) : nil
-            }.sorted { $0.score > $1.score }
+                if score > 0 {
+                    candidateWindows.append((window, score, windowID))
+                }
+            }
+            
+            // Sort by score
+            let matchingWindows = candidateWindows.sorted { $0.score > $1.score }
             
             // Try the best matching window first
-            for (window, score) in matchingWindows {
+            for (window, score, windowID) in matchingWindows {
                 logger.debug("Trying window '\(window.title ?? "")' with match score \(score) for instance \(instance.folderName)")
                 
                 guard let windowTitle = window.title else {
                     continue
                 }
                 
+                // Only proceed if score is high enough to be confident
+                if score < 20 {
+                    logger.debug("Score too low (\(score)) for window '\(windowTitle)', skipping")
+                    continue
+                }
+                
                 logger.debug("Found matching terminal window: '\(windowTitle)' for \(instance.folderName)")
                 
                 if let statusText = await captureAndExtractText(from: window) {
+                    // Update cache on main actor
+                    await MainActor.run {
+                        self.windowCache.claimWindow(windowID, for: instance.id)
+                    }
                     return statusText
                 }
             }
