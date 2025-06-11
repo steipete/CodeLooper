@@ -86,20 +86,32 @@ final class ClaudeStatusExtractor: ObservableObject, Loggable {
     /// Robust window cache to prevent duplicate matches
     private let windowCache = WindowCache()
     
+    /// iTerm helper for AppleScript-based text extraction
+    private let iTermHelper = ITermAppleScriptHelper()
+    
     // MARK: - Public API
     
     /// Extract Claude status for a specific instance using multiple methods
     func extractStatus(for instance: ClaudeInstance) async -> ClaudeActivity {
         logger.debug("Extracting Claude status for PID \(instance.pid) in \(instance.folderName)")
         
-        // Method 1: Try accessibility API first (fastest and most reliable)
+        // Method 1: Try iTerm AppleScript for iTerm windows (most reliable for iTerm)
+        if iTermHelper.isITermRunning() {
+            if let statusText = await extractViaITermAppleScript(instance: instance) {
+                let activity = ClaudeActivity(text: statusText)
+                logger.info("Extracted status via iTerm AppleScript for \(instance.folderName): '\(activity.text)' (type: \(activity.type))")
+                return activity
+            }
+        }
+        
+        // Method 2: Try accessibility API (fastest and most reliable for other terminals)
         if let statusText = await extractViaAccessibility(instance: instance) {
             let activity = ClaudeActivity(text: statusText)
             logger.info("Extracted status via accessibility for \(instance.folderName): '\(activity.text)' (type: \(activity.type))")
             return activity
         }
         
-        // Method 2: Try modern ScreenCaptureKit with OCR fallback
+        // Method 3: Try modern ScreenCaptureKit with OCR fallback
         if let statusText = await extractViaScreenCapture(instance: instance) {
             let activity = ClaudeActivity(text: statusText)
             logger.info("Extracted status via OCR for \(instance.folderName): '\(activity.text)' (type: \(activity.type))")
@@ -114,6 +126,60 @@ final class ClaudeStatusExtractor: ObservableObject, Loggable {
     /// Clear the window cache (should be called at the start of each monitoring cycle)
     func clearWindowCache() {
         windowCache.clear()
+    }
+    
+    // MARK: - iTerm AppleScript-based Extraction
+    
+    private func extractViaITermAppleScript(instance: ClaudeInstance) async -> String? {
+        logger.debug("Attempting iTerm AppleScript extraction for \(instance.folderName)")
+        
+        // First try to find by TTY if available
+        if !instance.ttyPath.isEmpty {
+            if let content = await iTermHelper.getITermSessionByTTY(instance.ttyPath) {
+                logger.debug("Found iTerm session by TTY for \(instance.folderName)")
+                return parseClaudeStatus(from: content)
+            }
+        }
+        
+        // Fall back to directory matching
+        if let content = await iTermHelper.getITermSessionByDirectory(instance.folderName) {
+            logger.debug("Found iTerm session by directory for \(instance.folderName)")
+            return parseClaudeStatus(from: content)
+        }
+        
+        // If no direct match, try all sessions and match
+        let sessions = await iTermHelper.getAllITermSessions()
+        for session in sessions {
+            // Check if this session matches our instance
+            if sessionMatchesInstance(session: session, instance: instance) {
+                logger.debug("Found matching iTerm session for \(instance.folderName)")
+                return parseClaudeStatus(from: session.content)
+            }
+        }
+        
+        return nil
+    }
+    
+    private func sessionMatchesInstance(session: (sessionId: String, tty: String, content: String), instance: ClaudeInstance) -> Bool {
+        // Check TTY match
+        if !instance.ttyPath.isEmpty {
+            let ttyName = URL(fileURLWithPath: instance.ttyPath).lastPathComponent
+            if session.tty.contains(ttyName) {
+                return true
+            }
+        }
+        
+        // Check content for Claude indicators and instance directory
+        let content = session.content.lowercased()
+        if content.contains("claude") && content.contains("esc to interrupt") {
+            // Check if working directory is in the content
+            if content.contains(instance.workingDirectory.lowercased()) ||
+               content.contains(instance.folderName.lowercased()) {
+                return true
+            }
+        }
+        
+        return false
     }
     
     // MARK: - Accessibility-based Extraction

@@ -8,6 +8,8 @@ import Darwin
 @MainActor
 final class ClaudeTerminalTitleManager: Loggable {
     
+    private let iTermHelper = ITermAppleScriptHelper()
+    
     // MARK: - Configuration
     
     private struct Configuration {
@@ -40,6 +42,15 @@ final class ClaudeTerminalTitleManager: Loggable {
         }
         
         let title = buildTitle(for: instance)
+        
+        // Check if this is an iTerm session
+        if iTermHelper.isITermRunning() {
+            // Try to update iTerm title via AppleScript
+            if await updateITermTitle(title: title, instance: instance) {
+                logger.info("✅ Updated iTerm title for \(instance.folderName) via AppleScript")
+                return
+            }
+        }
         
         // First try to find the window using the shared service
         if TTYWindowMappingService.shared.findWindowForTTY(instance.ttyPath) != nil {
@@ -115,6 +126,50 @@ final class ClaudeTerminalTitleManager: Loggable {
         } else {
             let error = String(cString: strerror(errno))
             logger.error("Failed to write title to TTY \(ttyPath): \(error)")
+        }
+    }
+    
+    // MARK: - iTerm Support
+    
+    private func updateITermTitle(title: String, instance: ClaudeInstance) async -> Bool {
+        let ttyName = URL(fileURLWithPath: instance.ttyPath).lastPathComponent
+        
+        let script = """
+        tell application "iTerm"
+            repeat with w in windows
+                tell w
+                    repeat with t in tabs
+                        tell t
+                            repeat with s in sessions
+                                tell s
+                                    try
+                                        if tty contains "\(ttyName)" then
+                                            set name to "\(title)"
+                                            return true
+                                        end if
+                                    end try
+                                end tell
+                            end repeat
+                        end tell
+                    end repeat
+                end tell
+            end repeat
+            return false
+        end tell
+        """
+        
+        do {
+            var error: NSDictionary?
+            let appleScript = NSAppleScript(source: script)
+            let result = appleScript?.executeAndReturnError(&error)
+            
+            if let error = error {
+                let errorMessage = error["NSAppleScriptErrorMessage"] as? String ?? "Unknown error"
+                logger.error("Failed to update iTerm title: \(errorMessage)")
+                return false
+            }
+            
+            return result?.booleanValue ?? false
         }
     }
 }

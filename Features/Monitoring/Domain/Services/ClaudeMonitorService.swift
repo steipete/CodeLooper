@@ -26,7 +26,7 @@ public final class ClaudeMonitorService: ObservableObject, Sendable, Loggable {
     // MARK: - Configuration
     
     private struct Configuration {
-        static let monitoringInterval: TimeInterval = 5.0
+        static let monitoringInterval: TimeInterval = 1.0
         static let maxRetries = 3
         static let retryDelay: TimeInterval = 1.0
     }

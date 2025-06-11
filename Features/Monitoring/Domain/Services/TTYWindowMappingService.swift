@@ -20,6 +20,8 @@ final class TTYWindowMappingService: Loggable {
     
     static let shared = TTYWindowMappingService()
     
+    private let iTermHelper = ITermAppleScriptHelper()
+    
     private init() {}
     
     // MARK: - Public API
@@ -142,6 +144,11 @@ final class TTYWindowMappingService: Loggable {
         
         logger.debug("Checking \(windows.count) windows in \(app.bundleIdentifier ?? "unknown") for TTY \(ttyName)")
         
+        // Special handling for iTerm2
+        if app.bundleIdentifier == "com.googlecode.iterm2" {
+            return findITermWindowForTTY(windows: windows, ttyName: ttyName)
+        }
+        
         // For each window, check if it's associated with our TTY
         for window in windows {
                 // Different terminals expose TTY info differently
@@ -251,6 +258,29 @@ final class TTYWindowMappingService: Loggable {
             }
         } catch {
             logger.error("Failed to get TTY for process \(pid): \(error)")
+        }
+        
+        return nil
+    }
+    
+    /// Find iTerm window that contains a session with the given TTY
+    private func findITermWindowForTTY(windows: [Element], ttyName: String) -> Element? {
+        logger.debug("Using iTerm-specific logic to find window for TTY \(ttyName)")
+        
+        // For synchronous context, we'll use a different approach
+        // Check if any window title contains the TTY name
+        for window in windows {
+            if let title = window.title(), title.contains(ttyName) {
+                logger.debug("Found iTerm window by title containing TTY \(ttyName)")
+                return window
+            }
+        }
+        
+        // In iTerm, windows typically don't show TTY in title, so return the first window
+        // iTerm usually has one main window with multiple tabs/sessions
+        if let firstWindow = windows.first {
+            logger.debug("Returning first iTerm window as likely container for TTY \(ttyName)")
+            return firstWindow
         }
         
         return nil

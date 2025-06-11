@@ -205,6 +205,7 @@
 		B4EF67DB32B4713E51AD4972 /* GeneralSettingsTab.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA6CB723D91D9348E2086AAD /* GeneralSettingsTab.swift */; };
 		B5F52A6677D9BC895B34A60B /* QueryManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0C40C39CC2F895E1A45E415B /* QueryManager.swift */; };
 		B64065FF2DB310363F17F357 /* AISettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2322F598135E442321A408B0 /* AISettingsView.swift */; };
+		B8E51A81C6B99B427F084FCC /* ITermAppleScriptHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51772CC8CF625D8BA2502A4D /* ITermAppleScriptHelper.swift */; };
 		BC0A1686EEAA49A0E2E1D5E4 /* ProcessMonitorService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0D6CAF9E9B702E02DFDBFEB2 /* ProcessMonitorService.swift */; };
 		BDA9C21C437EE2BB5BDE4630 /* AXpector in Frameworks */ = {isa = PBXBuildFile; productRef = C82404169CD50D644E1ED271 /* AXpector */; };
 		BDFA492781204ACB586E5163 /* Demark in Frameworks */ = {isa = PBXBuildFile; productRef = 8EAC0DEA71BA55AC629B56ED /* Demark */; };
@@ -413,6 +414,7 @@
 		50A25A5FB23DB0E34CBBC220 /* MainInputFieldHeuristic.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainInputFieldHeuristic.swift; sourceTree = "<group>"; };
 		5106D3073FAE7B4DC45FE4CF /* NativePopoverController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NativePopoverController.swift; sourceTree = "<group>"; };
 		5174C00218163417DA60504F /* AsyncPatterns.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AsyncPatterns.swift; sourceTree = "<group>"; };
+		51772CC8CF625D8BA2502A4D /* ITermAppleScriptHelper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ITermAppleScriptHelper.swift; sourceTree = "<group>"; };
 		521C37D802EABF317FFA3944 /* AppIconStateController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppIconStateController.swift; sourceTree = "<group>"; };
 		5223F335B0AAADC0E755A7DC /* ConnectionErrorIndicatorHeuristic.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConnectionErrorIndicatorHeuristic.swift; sourceTree = "<group>"; };
 		531FE09FAC2B42748DE1EEF5 /* ClaudeTerminalTitleManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClaudeTerminalTitleManager.swift; sourceTree = "<group>"; };
@@ -1336,6 +1338,7 @@
 			children = (
 				458A7357AE49C33B120A678C /* CursorAppLifecycleManager.swift */,
 				3FD09182D0EEA303D40F5CFC /* CursorWindowManager.swift */,
+				51772CC8CF625D8BA2502A4D /* ITermAppleScriptHelper.swift */,
 			);
 			path = Infrastructure;
 			sourceTree = "<group>";
@@ -1804,6 +1807,7 @@
 				36AC393507E97BD2C7F3D0DE /* TTYWindowMappingService.swift in Sources */,
 				FD1A41D5B07CFB152A30F973 /* CursorAppLifecycleManager.swift in Sources */,
 				7B69C358953A327727D855D2 /* CursorWindowManager.swift in Sources */,
+				B8E51A81C6B99B427F084FCC /* ITermAppleScriptHelper.swift in Sources */,
 				3944BC08C53F8A9532580BA0 /* AllPermissionsView.swift in Sources */,
 				EAD2792BDE3E13E195ECC83F /* AutomationPermissionsView.swift in Sources */,
 				9DC624C8FA666B3A80C48E90 /* AccessibilityStepView.swift in Sources */,

@@ -184,7 +184,11 @@ struct ClaudeTerminalScreenshotPopover: View {
             let content = try await SCShareableContent.excludingDesktopWindows(false, onScreenWindowsOnly: true)
             
             // Get window ID from the element using WindowInfoHelper
-            guard let windowID = WindowInfoHelper.getWindowID(from: element) else {
+            let windowID = await MainActor.run {
+                WindowInfoHelper.getWindowID(from: element)
+            }
+            
+            guard let windowID else {
                 logger.warning("Could not get window ID from element")
                 return nil
             }
