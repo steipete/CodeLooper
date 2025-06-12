@@ -333,16 +333,21 @@ final class ClaudeProcessDetector: Loggable, @unchecked Sendable {
     // MARK: - TTY Detection
     
     private func findTTYPath(for pid: pid_t, processInfo: (command: String, device: dev_t)) -> String {
-        // If device is 0, it means no TTY device
-        guard processInfo.device != 0 else {
-            return ""
-        }
-        
-        // First try to find the TTY using lsof
+        // First try to find the TTY using lsof - this works for most terminals
         let ttyFromLsof = getTTYUsingLsof(pid: pid)
         if !ttyFromLsof.isEmpty {
             logger.debug("Found TTY for PID \(pid) using lsof: \(ttyFromLsof)")
             return ttyFromLsof
+        }
+        
+        // If device is 0, it means no direct TTY device
+        // This is common for processes running in modern terminals like iTerm2
+        // Note: getProcessInfo already converts 0xFFFFFFFF to 0
+        if processInfo.device == 0 {
+            logger.debug("No direct TTY device for PID \(pid), likely running in iTerm2 or similar")
+            // For iTerm2, we'll need to use AppleScript to find the session
+            // Return empty string here and handle iTerm2 specially in the status extractor
+            return ""
         }
         
         // Fallback: Try to find TTY by device number in common locations
@@ -372,6 +377,7 @@ final class ClaudeProcessDetector: Loggable, @unchecked Sendable {
     }
     
     private func getTTYUsingLsof(pid: pid_t) -> String {
+        // First try to get TTY directly from the process
         let task = Process()
         task.launchPath = "/usr/sbin/lsof"
         task.arguments = ["-p", "\(pid)", "-Fn"]
@@ -411,6 +417,71 @@ final class ClaudeProcessDetector: Loggable, @unchecked Sendable {
             }
         } catch {
             logger.debug("lsof failed for PID \(pid): \(error)")
+        }
+        
+        // If direct TTY lookup failed, try to find parent shell process
+        // This is common for processes spawned in iTerm2 or other modern terminals
+        if let parentShellPID = findParentShellProcess(for: pid) {
+            logger.debug("Checking parent shell process \(parentShellPID) for TTY")
+            return getTTYFromParentShell(parentShellPID)
+        }
+        
+        return ""
+    }
+    
+    /// Find the parent shell process for a given PID
+    private func findParentShellProcess(for pid: pid_t) -> pid_t? {
+        var current = pid
+        let shellCommands = ["bash", "zsh", "sh", "fish", "tcsh", "csh"]
+        
+        // Walk up the process tree to find a shell
+        for _ in 0..<10 { // Limit depth to prevent infinite loops
+            guard let parentInfo = getProcessInfo(pid: current) else { break }
+            
+            // Check if current process is a shell
+            let currentCommand = parentInfo.command.lowercased()
+            if shellCommands.contains(currentCommand) {
+                logger.debug("Found parent shell '\(currentCommand)' with PID \(current)")
+                return current
+            }
+            
+            // Move to parent
+            if parentInfo.ppid == 1 || parentInfo.ppid == current {
+                break // Reached init or self-reference
+            }
+            current = parentInfo.ppid
+        }
+        
+        return nil
+    }
+    
+    /// Get TTY from a shell process
+    private func getTTYFromParentShell(_ shellPID: pid_t) -> String {
+        let task = Process()
+        task.launchPath = "/usr/sbin/lsof"
+        task.arguments = ["-p", "\(shellPID)", "-a", "-d", "0,1,2", "-Fn"] // Check stdin, stdout, stderr
+        
+        let pipe = Pipe()
+        task.standardOutput = pipe
+        task.standardError = Pipe()
+        
+        do {
+            try task.run()
+            task.waitUntilExit()
+            
+            let data = pipe.fileHandleForReading.readDataToEndOfFile()
+            guard let output = String(data: data, encoding: .utf8) else { return "" }
+            
+            // Look for TTY devices
+            for line in output.components(separatedBy: "\n") {
+                if line.hasPrefix("n") && line.contains("/dev/ttys") {
+                    let ttyPath = String(line.dropFirst())
+                    logger.debug("Found TTY from parent shell: \(ttyPath)")
+                    return ttyPath
+                }
+            }
+        } catch {
+            logger.debug("Failed to get TTY from parent shell \(shellPID): \(error)")
         }
         
         return ""

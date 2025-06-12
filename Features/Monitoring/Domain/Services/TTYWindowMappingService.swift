@@ -267,17 +267,35 @@ final class TTYWindowMappingService: Loggable {
     private func findITermWindowForTTY(windows: [Element], ttyName: String) -> Element? {
         logger.debug("Using iTerm-specific logic to find window for TTY \(ttyName)")
         
-        // For synchronous context, we'll use a different approach
-        // Check if any window title contains the TTY name
+        // iTerm2 windows have unique IDs that we can use
+        // First, try to match by window title (some users configure iTerm to show paths)
         for window in windows {
-            if let title = window.title(), title.contains(ttyName) {
-                logger.debug("Found iTerm window by title containing TTY \(ttyName)")
+            if let title = window.title() {
+                // Check if title contains the TTY name
+                if title.contains(ttyName) {
+                    logger.debug("Found iTerm window by title containing TTY \(ttyName)")
+                    return window
+                }
+                
+                // Also check if title contains path segments that might match
+                let ttyShortName = ttyName.replacingOccurrences(of: "/dev/", with: "")
+                if title.contains(ttyShortName) {
+                    logger.debug("Found iTerm window by title containing short TTY name \(ttyShortName)")
+                    return window
+                }
+            }
+        }
+        
+        // For iTerm2, we often can't determine the exact window from TTY alone
+        // Return the first window that seems active (has focus or is frontmost)
+        for window in windows {
+            if let isFocused = window.isFocused(), isFocused {
+                logger.debug("Returning focused iTerm window for TTY \(ttyName)")
                 return window
             }
         }
         
-        // In iTerm, windows typically don't show TTY in title, so return the first window
-        // iTerm usually has one main window with multiple tabs/sessions
+        // Fall back to the first window
         if let firstWindow = windows.first {
             logger.debug("Returning first iTerm window as likely container for TTY \(ttyName)")
             return firstWindow

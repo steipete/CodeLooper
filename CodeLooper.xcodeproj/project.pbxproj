@@ -125,6 +125,7 @@
 		715C20835309BB1938AAE8A1 /* TuistAssets+CodeLooper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 86D2A836363CA4B076AC653B /* TuistAssets+CodeLooper.swift */; };
 		7167D4DEB91B9E3AC510F888 /* UserDefaultsStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8304762033C20EAE78A7A4D5 /* UserDefaultsStorage.swift */; };
 		717339DC84DC0492B9B3EDBB /* OperationTracker.swift in Sources */ = {isa = PBXBuildFile; fileRef = DDE89DBB68E6535CD8ACD23F /* OperationTracker.swift */; };
+		721E394E870747026AE0EBF9 /* WindowScreenshotService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6A782102B961F66409CE00B9 /* WindowScreenshotService.swift */; };
 		737BCB282D36F76132755E13 /* AppDelegate+AppleScript.swift in Sources */ = {isa = PBXBuildFile; fileRef = C27DA87D5C163E34ED40FF37 /* AppDelegate+AppleScript.swift */; };
 		738A69F5921EC40B51F2E293 /* ToolbarTabButtonView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CBF80EDE90739047D07DFD6C /* ToolbarTabButtonView.swift */; };
 		739D8BE54670F5039910A792 /* SettingsContainerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84998560B2C11EA98CEA6602 /* SettingsContainerView.swift */; };
@@ -447,6 +448,7 @@
 		6943FF4E98060C242A14D838 /* ScreenshotAnalyzer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreenshotAnalyzer.swift; sourceTree = "<group>"; };
 		6955584328FDBA7FA95B2D9A /* Task+Timeout.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Task+Timeout.swift"; sourceTree = "<group>"; };
 		69A663588B1C6DE7B23F48C5 /* MainPopoverView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainPopoverView.swift; sourceTree = "<group>"; };
+		6A782102B961F66409CE00B9 /* WindowScreenshotService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WindowScreenshotService.swift; sourceTree = "<group>"; };
 		6A9BA067B809E5DBE22AC644 /* StopGeneratingButtonHeuristic.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StopGeneratingButtonHeuristic.swift; sourceTree = "<group>"; };
 		6B07276F0EF930F7FA621853 /* DiagnosticContext.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiagnosticContext.swift; sourceTree = "<group>"; };
 		6C04AADFCEDF56D0DEDE19B3 /* QueryDataModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QueryDataModels.swift; sourceTree = "<group>"; };
@@ -674,6 +676,7 @@
 				1050CA274088678E3892B440 /* AIAnalysisService.swift */,
 				6943FF4E98060C242A14D838 /* ScreenshotAnalyzer.swift */,
 				BC20A8DCDF3278BF031054DF /* WindowAIDiagnosticsManager.swift */,
+				6A782102B961F66409CE00B9 /* WindowScreenshotService.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -1759,6 +1762,7 @@
 				76F1BB13703D590B4497FA50 /* AIAnalysisService.swift in Sources */,
 				3807B52E0C2E9FB88F6E7E67 /* ScreenshotAnalyzer.swift in Sources */,
 				FC4583DB522F0986BE255B24 /* WindowAIDiagnosticsManager.swift in Sources */,
+				721E394E870747026AE0EBF9 /* WindowScreenshotService.swift in Sources */,
 				2E153716DF27FD15981D5417 /* APIKeyManager.swift in Sources */,
 				AA0BA3801781EB602EB0D051 /* OllamaProvider.swift in Sources */,
 				2B231ADF6F02176D061DA120 /* OpenAIProvider.swift in Sources */,

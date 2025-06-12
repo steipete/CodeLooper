@@ -136,7 +136,7 @@ final class ITermAppleScriptHelper {
     
     private func runAppleScript(_ script: String) async throws -> Any? {
         return try await withCheckedThrowingContinuation { continuation in
-            DispatchQueue.global(qos: .userInitiated).async {
+            DispatchQueue.global(qos: .utility).async {
                 var error: NSDictionary?
                 let appleScript = NSAppleScript(source: script)
                 let result = appleScript?.executeAndReturnError(&error)
@@ -148,35 +148,79 @@ final class ITermAppleScriptHelper {
                         code: -1,
                         userInfo: [NSLocalizedDescriptionKey: errorMessage]
                     ))
-                } else {
-                    // Return the raw descriptor
-                    if let descriptor = result {
-                        // Try to extract list items from the descriptor
+                } else if let descriptor = result {
+                    // For simple string results
+                    if descriptor.descriptorType == typeUnicodeText || descriptor.descriptorType == typeUTF8Text {
+                        let stringResult = descriptor.stringValue ?? ""
+                        continuation.resume(returning: stringResult)
+                    } 
+                    // For boolean results
+                    else if descriptor.descriptorType == typeBoolean {
+                        continuation.resume(returning: descriptor.booleanValue)
+                    }
+                    // For list results (like getAllITermSessions)
+                    else if descriptor.descriptorType == typeAEList {
                         var results: [[String: String]] = []
                         let itemCount = descriptor.numberOfItems
-                        if itemCount > 0 {
-                            for i in 1...itemCount {
-                                if let item = descriptor.atIndex(i) {
-                                    // Extract properties from each record
-                                    var record: [String: String] = [:]
-                                    // These would need proper AppleScript record parsing
-                                    // For now, just return empty array
+                        
+                        for i in 1...itemCount {
+                            if let recordDescriptor = descriptor.atIndex(i),
+                               recordDescriptor.descriptorType == typeAERecord {
+                                var record: [String: String] = [:]
+                                
+                                // Extract sessionId
+                                if let sessionIdDesc = recordDescriptor.forKeyword(ITermAppleScriptHelper.FourCharCode(kw: "seid")) {
+                                    record["sessionId"] = sessionIdDesc.stringValue ?? ""
+                                }
+                                
+                                // Extract tty
+                                if let ttyDesc = recordDescriptor.forKeyword(ITermAppleScriptHelper.FourCharCode(kw: "ttyn")) {
+                                    record["tty"] = ttyDesc.stringValue ?? ""
+                                }
+                                
+                                // Extract content
+                                if let contentDesc = recordDescriptor.forKeyword(ITermAppleScriptHelper.FourCharCode(kw: "cont")) {
+                                    record["content"] = contentDesc.stringValue ?? ""
+                                }
+                                
+                                if !record.isEmpty {
                                     results.append(record)
                                 }
                             }
                         }
+                        
                         continuation.resume(returning: results)
                     } else {
                         continuation.resume(returning: nil)
                     }
+                } else {
+                    continuation.resume(returning: nil)
                 }
             }
         }
     }
     
+    // Helper to create FourCharCode from string
+    private nonisolated static func FourCharCode(kw: String) -> AEKeyword {
+        var result: AEKeyword = 0
+        for (i, char) in kw.utf8.prefix(4).enumerated() {
+            result |= AEKeyword(char) << (8 * (3 - i))
+        }
+        return result
+    }
+    
     private func parseITermSessions(_ data: Any?) -> [(sessionId: String, tty: String, content: String)] {
-        // For now, return empty array since AppleScript record parsing is complex
-        // We'll rely on the individual session queries instead
-        return []
+        guard let records = data as? [[String: String]] else {
+            return []
+        }
+        
+        return records.compactMap { record in
+            guard let sessionId = record["sessionId"],
+                  let tty = record["tty"],
+                  let content = record["content"] else {
+                return nil
+            }
+            return (sessionId: sessionId, tty: tty, content: content)
+        }
     }
 }

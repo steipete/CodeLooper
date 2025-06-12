@@ -200,7 +200,6 @@ struct MainPopoverView: View {
         .animation(.default, value: claudeMonitor.instances.count)
         .animation(.default, value: runningCount)
         .animation(.default, value: notRunningCount)
-        .id("popover-\(cursorWindowStates.count)-\(claudeMonitor.instances.count)") // Force refresh
     }
 
     // MARK: Private

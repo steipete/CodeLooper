@@ -9,6 +9,7 @@ struct ClaudeInstancesList: View {
     // MARK: Internal
     
     @Default(.showDebugTab) private var showDebugInfo
+    @State private var selectedInstanceForScreenshot: ClaudeInstance?
 
     var body: some View {
         VStack(alignment: .leading, spacing: Spacing.xSmall) {
@@ -19,9 +20,18 @@ struct ClaudeInstancesList: View {
                     .padding(.horizontal, Spacing.small)
             } else {
                 ForEach(claudeMonitor.instances) { instance in
-                    ClaudeInstanceRow(instance: instance, showDebugInfo: showDebugInfo)
+                    ClaudeInstanceRow(
+                        instance: instance,
+                        showDebugInfo: showDebugInfo,
+                        onShowScreenshot: {
+                            selectedInstanceForScreenshot = instance
+                        }
+                    )
                 }
             }
+        }
+        .popover(item: $selectedInstanceForScreenshot) { instance in
+            ClaudeTerminalScreenshotPopover(instance: instance)
         }
     }
 
@@ -35,6 +45,7 @@ private struct ClaudeInstanceRow: View {
 
     let instance: ClaudeInstance
     let showDebugInfo: Bool
+    let onShowScreenshot: () -> Void
 
     var body: some View {
         DSCard {
@@ -57,7 +68,7 @@ private struct ClaudeInstanceRow: View {
                         // Screenshot button when debug mode is enabled
                         if showDebugInfo {
                             Button(action: {
-                                showScreenshotPopover = true
+                                onShowScreenshot()
                             }, label: {
                                 Image(systemName: "eye")
                                     .font(.system(size: 11))
@@ -65,9 +76,6 @@ private struct ClaudeInstanceRow: View {
                             })
                             .buttonStyle(.plain)
                             .help("View Terminal Screenshot")
-                            .popover(isPresented: $showScreenshotPopover) {
-                                ClaudeTerminalScreenshotPopover(instance: instance)
-                            }
                         }
                         
                         // PID and TTY in compact form
@@ -129,7 +137,6 @@ private struct ClaudeInstanceRow: View {
     
     private static let logger = Logger(category: .ui)
     @State private var isHovering = false
-    @State private var showScreenshotPopover = false
     
     // MARK: - Helper Functions
     

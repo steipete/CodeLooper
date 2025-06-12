@@ -11,7 +11,7 @@ struct ClaudeTerminalScreenshotPopover: View {
     @State private var screenshotImage: NSImage?
     @State private var isLoading = false
     @State private var errorMessage: String?
-    @StateObject private var screenshotAnalyzer = CursorScreenshotAnalyzer()
+    // Removed WindowScreenshotService - will use ScreenCaptureKit directly
     
     private let logger = Logger(category: .ui)
     
@@ -136,36 +136,62 @@ struct ClaudeTerminalScreenshotPopover: View {
         screenshotImage = nil
         
         Task {
-            do {
-                // First, find the terminal window using TTY mapping
-                guard let terminalWindow = await findTerminalWindow() else {
-                    await MainActor.run {
-                        self.isLoading = false
-                        self.errorMessage = "Could not find terminal window for this Claude instance"
-                    }
-                    return
-                }
+            logger.info("Starting screenshot capture for Claude instance: \(instance.folderName) (PID: \(instance.pid), TTY: \(instance.ttyPath))")
+            
+            // First, find the terminal window using TTY mapping
+            if let terminalWindow = await findTerminalWindow() {
+                logger.info("Found terminal window via TTY mapping")
+                await captureWindowScreenshot(terminalWindow)
+                return
+            }
+            
+            logger.warning("Could not find terminal window for TTY: \(instance.ttyPath)")
+            
+            // Try alternative approach: find any terminal window with Claude in title
+            if let fallbackWindow = await findTerminalWindowByTitle() {
+                logger.info("Found terminal window using title-based search")
+                await captureWindowScreenshot(fallbackWindow)
+                return
+            }
+            
+            // If we couldn't find a window, show error
+            await MainActor.run {
+                self.isLoading = false
+                self.errorMessage = "Could not find terminal window for this Claude instance. TTY: \(instance.ttyPath)"
+            }
+        }
+    }
+    
+    private func captureWindowScreenshot(_ terminalWindow: Element) async {
+        do {
+            // Find the SCWindow for this terminal window
+            let scWindow = await findSCWindow(for: terminalWindow)
+            
+            if scWindow == nil {
+                logger.warning("Could not find SCWindow for terminal window")
+            }
+            
+            // Capture the screenshot using ScreenCaptureKit directly
+            let image: NSImage?
+            if let scWindow = scWindow {
+                image = try await captureScreenshot(of: scWindow)
+            } else {
+                image = nil
+            }
+            
+            await MainActor.run {
+                self.screenshotImage = image
+                self.isLoading = false
                 
-                // Find the SCWindow for this terminal window
-                let scWindow = await findSCWindow(for: terminalWindow)
-                
-                // Capture the screenshot
-                let image = try await screenshotAnalyzer.captureCursorWindow(targetSCWindow: scWindow)
-                
-                await MainActor.run {
-                    self.screenshotImage = image
-                    self.isLoading = false
-                    
-                    if image == nil {
-                        self.errorMessage = "Could not capture window. The window may be minimized or hidden."
-                    }
+                if image == nil {
+                    self.errorMessage = "Could not capture window. The window may be minimized or hidden."
                 }
-            } catch {
-                await MainActor.run {
-                    self.isLoading = false
-                    self.errorMessage = error.localizedDescription
-                    logger.error("Failed to capture screenshot for Claude instance \(instance.id): \(error)")
-                }
+            }
+        } catch {
+            await MainActor.run {
+                self.isLoading = false
+                self.errorMessage = error.localizedDescription
+                logger.error("Screenshot capture error: \(error)")
             }
         }
     }
@@ -176,6 +202,57 @@ struct ClaudeTerminalScreenshotPopover: View {
         if !instance.ttyPath.isEmpty {
             return TTYWindowMappingService.shared.findWindowForTTY(instance.ttyPath)
         }
+        return nil
+    }
+    
+    @MainActor
+    private func findTerminalWindowByTitle() async -> Element? {
+        logger.info("Attempting to find terminal window by title containing: \(instance.folderName)")
+        
+        let terminalBundleIDs = [
+            "com.apple.Terminal",
+            "com.googlecode.iterm2",
+            "com.github.wez.wezterm",
+            "dev.warp.Warp-Stable",
+            "net.kovidgoyal.kitty",
+            "co.zeit.hyper",
+            "com.mitchellh.ghostty"
+        ]
+        
+        for app in NSWorkspace.shared.runningApplications {
+            guard let bundleID = app.bundleIdentifier,
+                  terminalBundleIDs.contains(bundleID) else { continue }
+            
+            logger.debug("Checking terminal app: \(bundleID)")
+            
+            guard let appElement = Element.application(for: app.processIdentifier),
+                  let windows = appElement.windows() else { continue }
+            
+            for window in windows {
+                if let title = window.title()?.lowercased() {
+                    // Check if title contains the folder name or "claude"
+                    if title.contains(instance.folderName.lowercased()) ||
+                       title.contains("claude") {
+                        logger.info("Found window with matching title: '\(title)'")
+                        return window
+                    }
+                }
+            }
+        }
+        
+        // If no match found, try to get the focused terminal window
+        for app in NSWorkspace.shared.runningApplications {
+            guard let bundleID = app.bundleIdentifier,
+                  terminalBundleIDs.contains(bundleID),
+                  app.isActive else { continue }
+            
+            if let appElement = Element.application(for: app.processIdentifier),
+               let focusedWindow = appElement.focusedWindow() {
+                logger.info("Using focused window from active terminal app: \(bundleID)")
+                return focusedWindow
+            }
+        }
+        
         return nil
     }
     
@@ -201,6 +278,23 @@ struct ClaudeTerminalScreenshotPopover: View {
             logger.error("Failed to get shareable content: \(error)")
             return nil
         }
+    }
+    
+    private func captureScreenshot(of window: SCWindow) async throws -> NSImage? {
+        let configuration = SCStreamConfiguration()
+        configuration.width = Int(window.frame.width)
+        configuration.height = Int(window.frame.height)
+        configuration.scalesToFit = true
+        configuration.showsCursor = false
+        
+        let filter = SCContentFilter(desktopIndependentWindow: window)
+        
+        let image = try await SCScreenshotManager.captureImage(
+            contentFilter: filter,
+            configuration: configuration
+        )
+        
+        return NSImage(cgImage: image, size: NSSize(width: image.width, height: image.height))
     }
     
     private func saveImageToDesktop() {

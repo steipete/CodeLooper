@@ -135,25 +135,28 @@ final class ClaudeStatusExtractor: ObservableObject, Loggable {
         
         // First try to find by TTY if available
         if !instance.ttyPath.isEmpty {
-            if let content = await iTermHelper.getITermSessionByTTY(instance.ttyPath) {
+            if let content = await iTermHelper.getITermSessionByTTY(instance.ttyPath),
+               let recentContent = extractRecentTerminalContent(content) {
                 logger.debug("Found iTerm session by TTY for \(instance.folderName)")
-                return parseClaudeStatus(from: content)
+                return parseClaudeStatus(from: recentContent)
             }
         }
         
         // Fall back to directory matching
-        if let content = await iTermHelper.getITermSessionByDirectory(instance.folderName) {
+        if let content = await iTermHelper.getITermSessionByDirectory(instance.folderName),
+           let recentContent = extractRecentTerminalContent(content) {
             logger.debug("Found iTerm session by directory for \(instance.folderName)")
-            return parseClaudeStatus(from: content)
+            return parseClaudeStatus(from: recentContent)
         }
         
         // If no direct match, try all sessions and match
         let sessions = await iTermHelper.getAllITermSessions()
         for session in sessions {
             // Check if this session matches our instance
-            if sessionMatchesInstance(session: session, instance: instance) {
+            if sessionMatchesInstance(session: session, instance: instance),
+               let recentContent = extractRecentTerminalContent(session.content) {
                 logger.debug("Found matching iTerm session for \(instance.folderName)")
-                return parseClaudeStatus(from: session.content)
+                return parseClaudeStatus(from: recentContent)
             }
         }
         
